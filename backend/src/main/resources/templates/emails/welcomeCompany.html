@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bem-vindo à WeUnite, {name}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .header {
+            background: linear-gradient(to right, #4CAF50, #45a049);
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .content {
+            padding: 20px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .content p {
+            margin-bottom: 15px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #888;
+            font-size: 0.8em;
+        }
+
+        .footer p {
+            margin: 5px 0;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Bem-vindo à WeUnite!</h1>
+    </div>
+    <div class="content">
+        <p>Olá,</p>
+        <p>Estamos muito felizes em informar que sua solicitação de cadastro foi aprovada! Bem-vindo à WeUnite, a
+            plataforma que conecta atletas, clubes, empresários e personalidades do futebol.</p>
+        <p>Para acessar sua conta, use as seguintes informações:</p>
+        <ul>
+            <li><strong>Nome de usuário:</strong> {username}</li>
+            <li><strong>Senha:</strong> {password}</li>
+        </ul>
+        <p>Essa é uma senha gerada automaticamente. Recomendamos que você altere a senha assim que acessar a plataforma
+            utilizando a função de redefinição de senha.</p>
+        <p>Estamos ansiosos para que você aproveite todos os recursos da WeUnite e tenha uma ótima experiência
+            conosco.</p>
+    </div>
+    <div class="footer">
+        <p>Essa é uma mensagem automática, por favor não responda.</p>
+    </div>
+</div>
+</body>
+</html>

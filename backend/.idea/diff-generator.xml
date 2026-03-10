@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DiffGenerationConfig">
+    <option name="sourceModelValue" value="weunite-auth:entityManagerFactory" />
+    <option name="targetDbValue" value="5485b491-1320-4632-bbbb-5e5a1012a81e" />
+  </component>
+</project>

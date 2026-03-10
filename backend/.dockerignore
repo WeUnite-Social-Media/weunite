@@ -1,0 +1,7 @@
+.git
+*.md
+*.log
+target/
+docker-compose.yml
+.env
+*.properties
