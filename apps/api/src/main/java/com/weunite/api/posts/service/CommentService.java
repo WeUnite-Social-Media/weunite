@@ -55,7 +55,7 @@ public class CommentService {
   @Transactional
   public List<CommentDTO> getCommentsByPost(Long postId) {
     if (!postRepository.existsById(postId)) {
-      throw new CommentNotFoundException();
+      throw new PostNotFoundException();
     }
 
     List<Comment> comments = commentRepository.findByPostId(postId);

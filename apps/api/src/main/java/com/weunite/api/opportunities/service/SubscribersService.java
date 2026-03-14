@@ -36,7 +36,6 @@ public class SubscribersService {
 
   @Transactional
   public ResponseDTO<SubscriberDTO> toggleSubscriber(Long athleteId, Long opportunityId) {
-
     Athlete athlete = athleteRepository.findById(athleteId).orElseThrow(UserNotFoundException::new);
 
     Opportunity opportunity =
@@ -51,20 +50,20 @@ public class SubscribersService {
       Subscriber newSubscriber = new Subscriber(athlete, opportunity);
       opportunity.addSubscriber(newSubscriber);
       subscribersRepository.save(newSubscriber);
-      return subscribersMapper.toResponseDTO("Inscrição criada com sucesso!", newSubscriber);
-    } else {
-      opportunity.removeSubscriber(existingSubscriber);
-      subscribersRepository.save(existingSubscriber);
-      return subscribersMapper.toResponseDTO("Inscrição removida com sucesso!", existingSubscriber);
+      return subscribersMapper.toResponseDTO("InscriÃ§Ã£o criada com sucesso!", newSubscriber);
     }
+
+    ResponseDTO<SubscriberDTO> response =
+        subscribersMapper.toResponseDTO("InscriÃ§Ã£o removida com sucesso!", existingSubscriber);
+
+    opportunity.removeSubscriber(existingSubscriber);
+    subscribersRepository.delete(existingSubscriber);
+    return response;
   }
 
   @Transactional
   public List<SubscriberDTO> getSubscribersByOpportunity(Long opportunityId) {
-    Opportunity opportunity =
-        opportunityRepository
-            .findById(opportunityId)
-            .orElseThrow(OpportunityNotFoundException::new);
+    opportunityRepository.findById(opportunityId).orElseThrow(OpportunityNotFoundException::new);
 
     List<Subscriber> subscribers = subscribersRepository.findByOpportunityId(opportunityId);
     return subscribersMapper.mapSubscribersToList(subscribers);

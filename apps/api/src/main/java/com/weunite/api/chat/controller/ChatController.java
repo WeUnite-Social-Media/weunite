@@ -1,5 +1,6 @@
 package com.weunite.api.chat.controller;
 
+import com.weunite.api.chat.dto.MarkMessagesAsReadRequestDTO;
 import com.weunite.api.chat.dto.MessageDTO;
 import com.weunite.api.chat.dto.SendMessageRequestDTO;
 import com.weunite.api.chat.service.MessageService;
@@ -15,7 +16,10 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 @Controller
@@ -34,10 +38,11 @@ public class ChatController {
   }
 
   @MessageMapping("/chat.markAsRead")
-  public void markAsRead(@Payload Long conversationId, @Payload Long userId) {
-    messageService.markMessagesAsRead(conversationId, userId);
+  public void markAsRead(@Payload @Valid MarkMessagesAsReadRequestDTO request) {
+    messageService.markMessagesAsRead(request.conversationId(), request.userId());
 
-    messagingTemplate.convertAndSend("/topic/conversation/" + conversationId + "/read", userId);
+    messagingTemplate.convertAndSend(
+        "/topic/conversation/" + request.conversationId() + "/read", request.userId());
   }
 
   @PostMapping("/messages/upload")
@@ -53,7 +58,7 @@ public class ChatController {
 
       if (file.getSize() > 10 * 1024 * 1024) {
         return ResponseEntity.badRequest()
-            .body(Map.of("error", "Arquivo muito grande. Máximo 10MB"));
+            .body(Map.of("error", "Arquivo muito grande. MÃ¡ximo 10MB"));
       }
 
       String originalFilename = file.getOriginalFilename();
@@ -71,10 +76,7 @@ public class ChatController {
       String fileUrl = "/uploads/" + filename;
       String fileType = file.getContentType().startsWith("image/") ? "IMAGE" : "FILE";
 
-      return ResponseEntity.ok(
-          Map.of(
-              "fileUrl", fileUrl,
-              "fileType", fileType));
+      return ResponseEntity.ok(Map.of("fileUrl", fileUrl, "fileType", fileType));
     } catch (Exception e) {
       return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
     }

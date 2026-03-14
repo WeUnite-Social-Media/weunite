@@ -454,15 +454,14 @@ public class CommentServiceTest {
   }
 
   @Test
-  @DisplayName("Should throw CommentNotFoundException when post does not exist")
+  @DisplayName("Should throw PostNotFoundException when post does not exist")
   void getCommentsByPostWithNonExistentPost() {
     Long postId = 999L;
 
     when(postRepository.existsById(postId)).thenReturn(false);
 
-    CommentNotFoundException exception =
-        assertThrows(
-            CommentNotFoundException.class, () -> commentService.getCommentsByPost(postId));
+    PostNotFoundException exception =
+        assertThrows(PostNotFoundException.class, () -> commentService.getCommentsByPost(postId));
 
     assertNotNull(exception);
     verify(postRepository).existsById(postId);

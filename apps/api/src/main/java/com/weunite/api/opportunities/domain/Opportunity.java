@@ -43,7 +43,7 @@ public class Opportunity {
     this.title = title;
     this.description = description;
     this.location = location;
-    this.dateEnd = null;
+    this.dateEnd = date_end;
     this.skills = skills;
     this.subscribers = subscribers;
   }

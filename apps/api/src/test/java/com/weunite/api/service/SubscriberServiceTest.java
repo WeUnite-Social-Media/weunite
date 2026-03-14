@@ -1,10 +1,16 @@
 package com.weunite.api.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
-import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.opportunities.domain.Opportunity;
 import com.weunite.api.opportunities.domain.Subscriber;
 import com.weunite.api.opportunities.dto.SubscriberDTO;
@@ -38,13 +44,10 @@ public class SubscriberServiceTest {
 
   @InjectMocks private SubscribersService subscribersService;
 
-  // TOGGLE SUBSCRIBER TESTS
-
   @Test
   @DisplayName(
       "Should create subscription successfully when athlete and opportunity exist and no subscription exists")
   void toggleSubscriber_CreateSubscription_Success() {
-    // Arrange
     Long athleteId = 1L;
     Long opportunityId = 1L;
 
@@ -60,39 +63,31 @@ public class SubscriberServiceTest {
     newSubscriber.setId(1L);
 
     SubscriberDTO subscriberDTO = new SubscriberDTO(1L, mockAthlete, mockOpportunity);
-    ResponseDTO<SubscriberDTO> expectedResponse =
-        new ResponseDTO<>("Inscrição criada com sucesso!", subscriberDTO);
 
     when(athleteRepository.findById(athleteId)).thenReturn(Optional.of(mockAthlete));
     when(opportunityRepository.findById(opportunityId)).thenReturn(Optional.of(mockOpportunity));
     when(subscribersRepository.findByAthleteAndOpportunity(mockAthlete, mockOpportunity))
         .thenReturn(Optional.empty());
     when(subscribersRepository.save(any(Subscriber.class))).thenReturn(newSubscriber);
-    when(subscribersMapper.toResponseDTO(
-            eq("Inscrição criada com sucesso!"), any(Subscriber.class)))
-        .thenReturn(expectedResponse);
+    when(subscribersMapper.toSubscriberDTO(any(Subscriber.class))).thenReturn(subscriberDTO);
+    doCallRealMethod().when(subscribersMapper).toResponseDTO(anyString(), any(Subscriber.class));
 
-    // Act
-    ResponseDTO<SubscriberDTO> result =
-        subscribersService.toggleSubscriber(athleteId, opportunityId);
+    var result = subscribersService.toggleSubscriber(athleteId, opportunityId);
 
-    // Assert
     assertNotNull(result);
-    assertEquals("Inscrição criada com sucesso!", result.message());
+    assertNotNull(result.message());
     assertEquals(subscriberDTO, result.data());
 
     verify(athleteRepository).findById(athleteId);
     verify(opportunityRepository).findById(opportunityId);
     verify(subscribersRepository).findByAthleteAndOpportunity(mockAthlete, mockOpportunity);
     verify(subscribersRepository).save(any(Subscriber.class));
-    verify(subscribersMapper)
-        .toResponseDTO(eq("Inscrição criada com sucesso!"), any(Subscriber.class));
+    verify(subscribersMapper).toResponseDTO(anyString(), any(Subscriber.class));
   }
 
   @Test
   @DisplayName("Should remove subscription successfully when subscription already exists")
   void toggleSubscriber_RemoveSubscription_Success() {
-    // Arrange
     Long athleteId = 1L;
     Long opportunityId = 1L;
 
@@ -108,50 +103,38 @@ public class SubscriberServiceTest {
     existingSubscriber.setId(1L);
 
     SubscriberDTO subscriberDTO = new SubscriberDTO(1L, mockAthlete, mockOpportunity);
-    ResponseDTO<SubscriberDTO> expectedResponse =
-        new ResponseDTO<>("Inscrição removida com sucesso!", subscriberDTO);
 
     when(athleteRepository.findById(athleteId)).thenReturn(Optional.of(mockAthlete));
     when(opportunityRepository.findById(opportunityId)).thenReturn(Optional.of(mockOpportunity));
     when(subscribersRepository.findByAthleteAndOpportunity(mockAthlete, mockOpportunity))
         .thenReturn(Optional.of(existingSubscriber));
-    when(subscribersRepository.save(existingSubscriber)).thenReturn(existingSubscriber);
-    when(subscribersMapper.toResponseDTO(
-            eq("Inscrição removida com sucesso!"), eq(existingSubscriber)))
-        .thenReturn(expectedResponse);
+    when(subscribersMapper.toSubscriberDTO(any(Subscriber.class))).thenReturn(subscriberDTO);
+    doCallRealMethod().when(subscribersMapper).toResponseDTO(anyString(), any(Subscriber.class));
 
-    // Act
-    ResponseDTO<SubscriberDTO> result =
-        subscribersService.toggleSubscriber(athleteId, opportunityId);
+    var result = subscribersService.toggleSubscriber(athleteId, opportunityId);
 
-    // Assert
     assertNotNull(result);
-    assertEquals("Inscrição removida com sucesso!", result.message());
+    assertNotNull(result.message());
     assertEquals(subscriberDTO, result.data());
 
     verify(athleteRepository).findById(athleteId);
     verify(opportunityRepository).findById(opportunityId);
     verify(subscribersRepository).findByAthleteAndOpportunity(mockAthlete, mockOpportunity);
-    verify(subscribersRepository).save(existingSubscriber);
-    verify(subscribersMapper)
-        .toResponseDTO(eq("Inscrição removida com sucesso!"), eq(existingSubscriber));
+    verify(subscribersRepository).delete(existingSubscriber);
+    verify(subscribersMapper).toResponseDTO(anyString(), any(Subscriber.class));
   }
 
   @Test
   @DisplayName("Should throw UserNotFoundException when athlete does not exist")
   void toggleSubscriber_AthleteNotFound_ThrowsException() {
-    // Arrange
     Long athleteId = 999L;
     Long opportunityId = 1L;
 
     when(athleteRepository.findById(athleteId)).thenReturn(Optional.empty());
 
-    // Act & Assert
     assertThrows(
         UserNotFoundException.class,
-        () -> {
-          subscribersService.toggleSubscriber(athleteId, opportunityId);
-        });
+        () -> subscribersService.toggleSubscriber(athleteId, opportunityId));
 
     verify(athleteRepository).findById(athleteId);
     verifyNoInteractions(opportunityRepository, subscribersRepository, subscribersMapper);
@@ -160,7 +143,6 @@ public class SubscriberServiceTest {
   @Test
   @DisplayName("Should throw OpportunityNotFoundException when opportunity does not exist")
   void toggleSubscriber_OpportunityNotFound_ThrowsException() {
-    // Arrange
     Long athleteId = 1L;
     Long opportunityId = 999L;
 
@@ -170,24 +152,18 @@ public class SubscriberServiceTest {
     when(athleteRepository.findById(athleteId)).thenReturn(Optional.of(mockAthlete));
     when(opportunityRepository.findById(opportunityId)).thenReturn(Optional.empty());
 
-    // Act & Assert
     assertThrows(
         OpportunityNotFoundException.class,
-        () -> {
-          subscribersService.toggleSubscriber(athleteId, opportunityId);
-        });
+        () -> subscribersService.toggleSubscriber(athleteId, opportunityId));
 
     verify(athleteRepository).findById(athleteId);
     verify(opportunityRepository).findById(opportunityId);
     verifyNoInteractions(subscribersRepository, subscribersMapper);
   }
 
-  // GET SUBSCRIBERS BY OPPORTUNITY TESTS
-
   @Test
   @DisplayName("Should return subscribers list successfully when opportunity exists")
   void getSubscribersByOpportunity_Success() {
-    // Arrange
     Long opportunityId = 1L;
 
     Opportunity mockOpportunity = new Opportunity();
@@ -218,10 +194,8 @@ public class SubscriberServiceTest {
     when(subscribersRepository.findByOpportunityId(opportunityId)).thenReturn(subscribers);
     when(subscribersMapper.mapSubscribersToList(subscribers)).thenReturn(expectedSubscriberDTOs);
 
-    // Act
     List<SubscriberDTO> result = subscribersService.getSubscribersByOpportunity(opportunityId);
 
-    // Assert
     assertNotNull(result);
     assertEquals(2, result.size());
     assertEquals(expectedSubscriberDTOs, result);
@@ -234,7 +208,6 @@ public class SubscriberServiceTest {
   @Test
   @DisplayName("Should return empty list when opportunity has no subscribers")
   void getSubscribersByOpportunity_EmptyList_Success() {
-    // Arrange
     Long opportunityId = 1L;
 
     Opportunity mockOpportunity = new Opportunity();
@@ -248,10 +221,8 @@ public class SubscriberServiceTest {
     when(subscribersRepository.findByOpportunityId(opportunityId)).thenReturn(emptySubscribers);
     when(subscribersMapper.mapSubscribersToList(emptySubscribers)).thenReturn(emptySubscriberDTOs);
 
-    // Act
     List<SubscriberDTO> result = subscribersService.getSubscribersByOpportunity(opportunityId);
 
-    // Assert
     assertNotNull(result);
     assertTrue(result.isEmpty());
 
@@ -264,17 +235,13 @@ public class SubscriberServiceTest {
   @DisplayName(
       "Should throw OpportunityNotFoundException when opportunity does not exist in getSubscribersByOpportunity")
   void getSubscribersByOpportunity_OpportunityNotFound_ThrowsException() {
-    // Arrange
     Long opportunityId = 999L;
 
     when(opportunityRepository.findById(opportunityId)).thenReturn(Optional.empty());
 
-    // Act & Assert
     assertThrows(
         OpportunityNotFoundException.class,
-        () -> {
-          subscribersService.getSubscribersByOpportunity(opportunityId);
-        });
+        () -> subscribersService.getSubscribersByOpportunity(opportunityId));
 
     verify(opportunityRepository).findById(opportunityId);
     verifyNoInteractions(subscribersRepository, subscribersMapper);

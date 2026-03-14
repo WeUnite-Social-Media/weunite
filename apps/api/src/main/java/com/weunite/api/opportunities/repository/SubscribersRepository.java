@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface SubscribersRepository extends JpaRepository<Subscriber, Integer> {
+public interface SubscribersRepository extends JpaRepository<Subscriber, Long> {
 
   Optional<Subscriber> findByAthleteAndOpportunity(Athlete athlete, Opportunity opportunity);
 

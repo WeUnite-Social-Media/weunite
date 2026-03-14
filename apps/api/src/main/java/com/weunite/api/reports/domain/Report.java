@@ -67,6 +67,5 @@ public class Report {
   @PreUpdate
   protected void onUpdate() {
     this.updatedAt = Instant.now();
-    this.status = ReportStatus.REVIEWED;
   }
 }

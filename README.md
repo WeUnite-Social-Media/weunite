@@ -31,7 +31,7 @@ WeUnite is a social platform that connects athletes, companies, opportunities, a
 
 - Web uses `VITE_API_URL` and falls back to `/api` for local proxy-based development.
 - Mobile uses `EXPO_PUBLIC_API_URL`.
-- API uses the variables documented in [apps/api/.env.example](/C:/Users/Caio/Documents/Repos/weunite-1/apps/api/.env.example).
+- API uses the variables documented in [apps/api/.env.example](apps/api/.env.example).
 
 ## Documentation model
 
@@ -39,4 +39,4 @@ WeUnite is a social platform that connects athletes, companies, opportunities, a
 - `docs/`: stable shared docs for the team and remote repository.
 - `tmp/`: local working notes, progress logs, and runtime logs.
 
-Start with [AGENTS.md](/C:/Users/Caio/Documents/Repos/weunite-1/AGENTS.md) for repository-wide guidance.
+Start with [AGENTS.md](AGENTS.md) for repository-wide guidance.
