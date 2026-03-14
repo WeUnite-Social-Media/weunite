@@ -3,12 +3,12 @@ const { platform } = require("node:os");
 const { cwd, exit } = require("node:process");
 const path = require("node:path");
 
-const wrapper = platform() === "win32" ? "mvnw.cmd" : "./mvnw";
-const command = platform() === "win32" ? "cmd.exe" : wrapper;
-const args =
-  platform() === "win32"
-    ? ["/c", "mvnw.cmd", ...process.argv.slice(2)]
-    : process.argv.slice(2);
+const isWindows = platform() === "win32";
+const wrapper = isWindows ? "mvnw.cmd" : "./mvnw";
+const command = isWindows ? "cmd.exe" : "sh";
+const args = isWindows
+  ? ["/c", "mvnw.cmd", ...process.argv.slice(2)]
+  : [wrapper, ...process.argv.slice(2)];
 
 const result = spawnSync(command, args, {
   cwd: cwd(),
