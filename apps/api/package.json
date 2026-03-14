@@ -1,0 +1,15 @@
+{
+  "name": "@weunite/api",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Spring Boot API for WeUnite",
+  "scripts": {
+    "dev": "node ../../scripts/run-maven.cjs spring-boot:run",
+    "typecheck": "node -e \"console.log('Java typechecking is covered by the Maven build')\"",
+    "build": "node ../../scripts/run-maven.cjs clean package -DskipTests",
+    "test": "node ../../scripts/run-maven.cjs test",
+    "lint": "node ../../scripts/run-maven.cjs spotless:check",
+    "format": "node ../../scripts/run-maven.cjs spotless:apply",
+    "clean": "node ../../scripts/run-maven.cjs clean"
+  }
+}

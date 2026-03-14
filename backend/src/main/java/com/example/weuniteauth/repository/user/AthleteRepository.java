@@ -1,7 +1,0 @@
-package com.example.weuniteauth.repository.user;
-
-import com.example.weuniteauth.domain.users.Athlete;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-public interface AthleteRepository extends JpaRepository<Athlete, Long> {
-}

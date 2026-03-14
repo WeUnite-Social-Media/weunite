@@ -1,0 +1,212 @@
+package com.weunite.api.users.service;
+
+import com.weunite.api.auth.exception.ExpiredTokenException;
+import com.weunite.api.auth.exception.InvalidTokenException;
+import com.weunite.api.common.exception.NotFoundResourceException;
+import com.weunite.api.common.response.ResponseDTO;
+import com.weunite.api.common.storage.service.CloudinaryService;
+import com.weunite.api.users.domain.Role;
+import com.weunite.api.users.domain.User;
+import com.weunite.api.users.dto.CreateUserRequestDTO;
+import com.weunite.api.users.dto.UpdateUserRequestDTO;
+import com.weunite.api.users.dto.UserDTO;
+import com.weunite.api.users.exception.UserAlreadyExistsException;
+import com.weunite.api.users.exception.UserNotFoundException;
+import com.weunite.api.users.mapper.UserMapper;
+import com.weunite.api.users.repository.RoleRepository;
+import com.weunite.api.users.repository.UserRepository;
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+@Service
+public class UserService {
+
+  private static final int TOKEN_EXPIRATION_MINUTES = 10;
+
+  private final UserRepository userRepository;
+  private final UserMapper userMapper;
+  private final PasswordEncoder passwordEncoder;
+  private final RoleRepository roleRepository;
+  private final CloudinaryService cloudinaryService;
+
+  public UserService(
+      UserRepository userRepository,
+      UserMapper userMapper,
+      PasswordEncoder passwordEncoder,
+      RoleRepository roleRepository,
+      CloudinaryService cloudinaryService) {
+    this.userRepository = userRepository;
+    this.userMapper = userMapper;
+    this.passwordEncoder = passwordEncoder;
+    this.roleRepository = roleRepository;
+    this.cloudinaryService = cloudinaryService;
+  }
+
+  @Transactional
+  public User createUser(CreateUserRequestDTO userDTO) {
+    boolean userExists =
+        userRepository.existsByUsernameOrEmail(userDTO.username(), userDTO.email());
+
+    if (userExists) {
+      throw new UserAlreadyExistsException();
+    }
+
+    String encodedPassword = passwordEncoder.encode(userDTO.password());
+
+    User newUser = userMapper.toEntity(userDTO);
+
+    newUser.setPassword(encodedPassword);
+
+    Role roleUser = roleRepository.findByName(userDTO.role().toUpperCase());
+    if (roleUser == null) {
+      throw new NotFoundResourceException("Role not found: " + userDTO.role());
+    }
+
+    newUser.setRole(Set.of(roleUser));
+    newUser = generateAndSetToken(newUser);
+    userRepository.save(newUser);
+
+    return newUser;
+  }
+
+  @Transactional(isolation = Isolation.REPEATABLE_READ)
+  public ResponseDTO<UserDTO> deleteUser(String username) {
+    User user =
+        userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException());
+
+    user.getRole().clear();
+
+    userRepository.delete(user);
+
+    return userMapper.toResponseDTO("Usuário deletado com sucesso", user);
+  }
+
+  @Transactional(isolation = Isolation.REPEATABLE_READ)
+  public ResponseDTO<UserDTO> deleteBanner(String username) {
+    User user =
+        userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException());
+
+    user.setBannerImg(null);
+
+    userRepository.save(user);
+
+    return userMapper.toResponseDTO("Banner deletado com sucesso", user);
+  }
+
+  @Transactional(readOnly = true)
+  public ResponseDTO<UserDTO> getUser(Long id) {
+    User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
+
+    return userMapper.toResponseDTO("Usuário encontrado com sucesso", user);
+  }
+
+  @Transactional(readOnly = true)
+  public ResponseDTO<UserDTO> getUser(String username) {
+    User user = userRepository.findByUsername(username).orElseThrow(UserNotFoundException::new);
+
+    return userMapper.toResponseDTO("Usuário encontrado com sucesso", user);
+  }
+
+  @Transactional
+  public ResponseDTO<UserDTO> updateUser(
+      UpdateUserRequestDTO requestDTO,
+      String username,
+      MultipartFile profileImage,
+      MultipartFile bannerImage) {
+    User user = findUserEntityByUsername(username);
+
+    if (userRepository.existsByUsername(requestDTO.username())) {
+
+      if (!user.getUsername().equals(requestDTO.username())) {
+        throw new UserAlreadyExistsException();
+      }
+    }
+
+    user.setUsername(requestDTO.username());
+    user.setName(requestDTO.name());
+    user.setBio(requestDTO.bio());
+
+    if (requestDTO.isPrivate() != null) {
+      user.setPrivate(requestDTO.isPrivate());
+    }
+
+    if (profileImage != null && !profileImage.isEmpty()) {
+      String imageUrl = cloudinaryService.uploadProfileImg(profileImage, username);
+      user.setProfileImg(imageUrl);
+    }
+
+    if (bannerImage != null && !bannerImage.isEmpty()) {
+      String bannerUrl = cloudinaryService.uploadBannerImg(bannerImage, username);
+      user.setBannerImg(bannerUrl);
+    }
+
+    userRepository.save(user);
+
+    return userMapper.toResponseDTO("Usuário atualizado com sucesso!", user);
+  }
+
+  @Transactional(readOnly = true)
+  public User findUserEntityByUsername(String username) {
+    return userRepository.findByUsername(username).orElseThrow(UserNotFoundException::new);
+  }
+
+  @Transactional(readOnly = true)
+  public User findUserEntityById(Long userId) {
+    return userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+  }
+
+  @Transactional(readOnly = true)
+  public User findUserEntityByEmail(String email) {
+    return userRepository.findByEmail(email).orElseThrow(UserNotFoundException::new);
+  }
+
+  @Transactional(readOnly = true)
+  public User findUserByVerificationToken(String verificationToken) {
+    return userRepository
+        .findByVerificationToken(verificationToken)
+        .orElseThrow(InvalidTokenException::new);
+  }
+
+  @Transactional
+  public User verifyUserEmail(User user) {
+    Instant now = Instant.now();
+
+    if (user.getVerificationTokenExpires().isBefore(now)) {
+      throw new ExpiredTokenException();
+    }
+
+    user.setEmailVerified(true);
+    user.setVerificationToken(null);
+    user.setVerificationTokenExpires(null);
+
+    return userRepository.save(user);
+  }
+
+  public User generateAndSetToken(User user) {
+    SecureRandom generator = new SecureRandom();
+    int randomNumber = 100000 + generator.nextInt(900000);
+
+    Instant now = Instant.now();
+    Instant expirationDate = now.plusSeconds(TOKEN_EXPIRATION_MINUTES * 60);
+
+    user.setVerificationToken(String.valueOf(randomNumber));
+    user.setVerificationTokenExpires(expirationDate);
+
+    return user;
+  }
+
+  @Transactional(readOnly = true)
+  public ResponseDTO<List<UserDTO>> searchUsers(String query) {
+
+    List<User> users = userRepository.searchUsers(query.trim());
+
+    return userMapper.toSearchResponseDTO("Usuários encontrados com sucesso", users);
+  }
+}

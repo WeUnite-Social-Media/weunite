@@ -1,0 +1,20 @@
+{
+  "name": "@weunite/contracts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "node -e \"console.log('No lint rules for @weunite/contracts yet')\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node -e \"console.log('No tests configured for @weunite/contracts yet')\"",
+    "build": "tsc --emitDeclarationOnly -p tsconfig.json",
+    "format": "pnpm exec prettier --check ."
+  },
+  "devDependencies": {
+    "@weunite/typescript-config": "workspace:*",
+    "typescript": "~5.8.3"
+  }
+}

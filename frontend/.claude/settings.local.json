@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": ["Read(//c/Users/lgtgu/OneDrive/Documentos/weunite/**)"],
-    "deny": [],
-    "ask": []
-  }
-}
