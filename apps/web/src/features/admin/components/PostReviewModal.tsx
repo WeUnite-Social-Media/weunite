@@ -35,10 +35,9 @@ export function PostReviewModal({
   onOpenChange,
   post,
 }: PostReviewModalProps) {
-  if (!post) return null;
-
   const queryClient = useQueryClient();
-  const initials = getInitials(post.user.name);
+  const initials = getInitials(post?.user.name ?? "");
+  const postId = post?.id?.toString();
 
   const hidePostMutation = useMutation({
     mutationFn: (postId: string) => hidePostRequest(postId),
@@ -65,12 +64,16 @@ export function PostReviewModal({
   });
 
   const handleHidePost = () => {
-    hidePostMutation.mutate(post.id.toString());
+    if (!postId) return;
+    hidePostMutation.mutate(postId);
   };
 
   const handleDeletePost = () => {
-    deletePostMutation.mutate(post.id.toString());
+    if (!postId) return;
+    deletePostMutation.mutate(postId);
   };
+
+  if (!post) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
