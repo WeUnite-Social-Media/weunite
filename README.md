@@ -13,6 +13,29 @@ WeUnite is a social platform that connects athletes, companies, opportunities, a
 - `docs`: stable repository docs that belong in Git.
 - `tmp`: local-only planning and runtime space. This directory is ignored by Git.
 
+## Tech snapshot
+
+- Web: React, TypeScript, Vite, TanStack Query, Zustand, React Hook Form, and Zod.
+- API: Java 17, Spring Boot 3, Spring Security, JPA + PostgreSQL, Cloudinary, mail, and WebSocket support.
+- Tooling: pnpm workspaces, Turbo, Husky, and shared workspace config packages.
+
+## Prerequisites
+
+- Node.js 22 with Corepack enabled.
+- Java 17+.
+- PostgreSQL 15+ locally or through Docker.
+- Docker and Docker Compose are optional, but useful for local infrastructure.
+
+## Quick start
+
+1. `corepack pnpm install`
+2. Copy `apps/api/.env.example` to `apps/api/.env` and fill in the required values.
+3. `corepack pnpm dev:infra`
+4. `corepack pnpm dev`
+
+- Web: `http://localhost:5173`
+- API: `http://localhost:8080/api`
+
 ## Core commands
 
 - `pnpm install`: install workspace dependencies.
@@ -32,6 +55,12 @@ WeUnite is a social platform that connects athletes, companies, opportunities, a
 - Web uses `VITE_API_URL` and falls back to `/api` for local proxy-based development.
 - Mobile uses `EXPO_PUBLIC_API_URL`.
 - API uses the variables documented in [apps/api/.env.example](apps/api/.env.example).
+
+## CI and merge requirements
+
+- `.github/workflows/ci.yml` runs workspace lint, typecheck, test, and build jobs.
+- `.github/workflows/pr-quality.yml` runs focused web and API validation on pull requests to `main`.
+- Recommended protected branch checks are `validate`, `frontend`, `backend`, and `copilot-review`.
 
 ## Documentation model
 

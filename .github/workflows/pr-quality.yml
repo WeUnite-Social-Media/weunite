@@ -1,0 +1,104 @@
+name: PR Quality
+
+on:
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm --filter @weunite/web lint
+      - name: Build
+        run: pnpm --filter @weunite/web build
+
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build (skip tests)
+        run: pnpm --filter @weunite/api build
+
+  copilot-review:
+    runs-on: ubuntu-latest
+    needs: [frontend, backend]
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const reviewer = "github-copilot";
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.setFailed("No pull request payload.");
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const prNumber = pr.number;
+
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner,
+              repo,
+              pull_number: prNumber,
+              per_page: 100,
+            });
+
+            const hasApproval = reviews.some(
+              (r) =>
+                r.user?.login === reviewer &&
+                r.state?.toUpperCase() === "APPROVED",
+            );
+
+            if (hasApproval) {
+              core.info("Copilot has already approved this PR.");
+              return;
+            }
+
+            try {
+              await github.rest.pulls.requestReviewers({
+                owner,
+                repo,
+                pull_number: prNumber,
+                reviewers: [reviewer],
+              });
+              core.info("Requested Copilot review. Waiting for approval.");
+            } catch (error) {
+              core.warning(`Could not request Copilot review: ${error.message}`);
+            }
+
+            core.setFailed("Copilot approval missing. Re-run after Copilot approves.");
+
