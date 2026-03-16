@@ -58,6 +58,9 @@ public class ValidOpportunityValidator
   }
 
   private void addViolation(ConstraintValidatorContext context, String field, String message) {
-    context.buildConstraintViolationWithTemplate(message).addPropertyNode(field).addConstraintViolation();
+    context
+        .buildConstraintViolationWithTemplate(message)
+        .addPropertyNode(field)
+        .addConstraintViolation();
   }
 }
