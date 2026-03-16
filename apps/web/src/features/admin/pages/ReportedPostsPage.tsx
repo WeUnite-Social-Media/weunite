@@ -64,6 +64,21 @@ export function ReportedPostsPage() {
     setIsLoading(false);
   };
 
+  const normalizeReportStatus = (status: string): Report["status"] => {
+    switch (status.toLowerCase()) {
+      case "reviewed":
+      case "under_review":
+        return "under_review";
+      case "dismissed":
+        return "dismissed";
+      case "resolved":
+        return "resolved";
+      case "pending":
+      default:
+        return "pending";
+    }
+  };
+
   const handleReviewPost = (reportedPost: ReportedPost) => {
     // Pegar o primeiro report para exibir no modal
     const firstReport = reportedPost.reports[0];
@@ -84,7 +99,7 @@ export function ReportedPostsPage() {
       },
       reason: firstReport.reason,
       description: `Post denunciado por ${firstReport.reason}. Total de ${reportedPost.totalReports} denúncias.`,
-      status: firstReport.status,
+      status: normalizeReportStatus(firstReport.status),
       createdAt: firstReport.createdAt,
       content: reportedPost.post.text,
       imageUrl: reportedPost.post.imageUrl || undefined,

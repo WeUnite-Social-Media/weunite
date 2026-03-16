@@ -5,6 +5,7 @@ import com.weunite.api.opportunities.domain.Skill;
 import com.weunite.api.opportunities.dto.SkillDTO;
 import com.weunite.api.opportunities.dto.SkillRequestDTO;
 import com.weunite.api.opportunities.exception.SkillAlreadyExistsException;
+import com.weunite.api.opportunities.exception.SkillNotFoundException;
 import com.weunite.api.opportunities.mapper.SkillMapper;
 import com.weunite.api.opportunities.repository.SkillRepository;
 import java.util.List;
@@ -31,11 +32,15 @@ public class SkillService {
 
     skillRepository.save(newSkill);
 
-    return skillMapper.toResponseDTO("Skill criada com sucesso", newSkill);
+    return skillMapper.toResponseDTO("Habilidade criada com sucesso", newSkill);
   }
 
   public ResponseDTO<SkillDTO> getSkillByName(String skillName) {
     Skill skill = skillRepository.findByName(skillName);
+    if (skill == null) {
+      throw new SkillNotFoundException();
+    }
+
     return skillMapper.toResponseDTO("Habilidade encontrada com sucesso", skill);
   }
 
@@ -54,11 +59,11 @@ public class SkillService {
   public ResponseDTO<SkillDTO> deleteSkill(String skillName) {
     Skill skill = skillRepository.findByName(skillName);
     if (skill == null) {
-      throw new SkillAlreadyExistsException();
+      throw new SkillNotFoundException();
     }
 
     skillRepository.delete(skill);
 
-    return skillMapper.toResponseDTO("Skill deletada com sucesso", skill);
+    return skillMapper.toResponseDTO("Habilidade deletada com sucesso", skill);
   }
 }

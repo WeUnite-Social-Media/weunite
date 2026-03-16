@@ -35,8 +35,10 @@ export function PostReviewModal({
   onOpenChange,
   post,
 }: PostReviewModalProps) {
+  if (!post) return null;
+
   const queryClient = useQueryClient();
-  const initials = getInitials(post?.user.name);
+  const initials = getInitials(post.user.name);
 
   const hidePostMutation = useMutation({
     mutationFn: (postId: string) => hidePostRequest(postId),
@@ -61,8 +63,6 @@ export function PostReviewModal({
       console.error("Erro ao deletar post:", error);
     },
   });
-
-  if (!post) return null;
 
   const handleHidePost = () => {
     hidePostMutation.mutate(post.id.toString());

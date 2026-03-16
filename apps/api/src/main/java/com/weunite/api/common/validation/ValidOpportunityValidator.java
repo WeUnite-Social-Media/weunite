@@ -4,8 +4,6 @@ import com.weunite.api.opportunities.dto.OpportunityRequestDTO;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ValidOpportunityValidator
     implements ConstraintValidator<ValidOpportunity, OpportunityRequestDTO> {
@@ -15,45 +13,51 @@ public class ValidOpportunityValidator
       return true;
     }
 
-    List<String> violations = new ArrayList<>();
+    boolean valid = true;
+    context.disableDefaultConstraintViolation();
 
     if (dto.title() == null || dto.title().isBlank()) {
-      violations.add("O tÃ­tulo Ã© obrigatÃ³rio");
+      addViolation(context, "title", "O título é obrigatório");
+      valid = false;
     } else if (dto.title().length() < 3 || dto.title().length() > 120) {
-      violations.add("O tÃ­tulo deve ter entre 3 e 120 caracteres");
+      addViolation(context, "title", "O título deve ter entre 3 e 120 caracteres");
+      valid = false;
     }
 
     if (dto.description() == null || dto.description().isBlank()) {
-      violations.add("A descriÃ§Ã£o Ã© obrigatÃ³ria");
+      addViolation(context, "description", "A descrição é obrigatória");
+      valid = false;
     } else if (dto.description().length() < 10 || dto.description().length() > 500) {
-      violations.add("A descriÃ§Ã£o deve ter entre 10 e 500 caracteres");
+      addViolation(context, "description", "A descrição deve ter entre 10 e 500 caracteres");
+      valid = false;
     }
 
     if (dto.location() == null || dto.location().isBlank()) {
-      violations.add("A localizaÃ§Ã£o Ã© obrigatÃ³ria");
+      addViolation(context, "location", "A localização é obrigatória");
+      valid = false;
     }
 
     if (dto.dateEnd() == null) {
-      violations.add("A data de tÃ©rmino Ã© obrigatÃ³ria");
+      addViolation(context, "dateEnd", "A data de término é obrigatória");
+      valid = false;
     } else if (dto.dateEnd().isBefore(LocalDate.now())) {
-      violations.add("A data de tÃ©rmino nÃ£o pode estar no passado");
+      addViolation(context, "dateEnd", "A data de término não pode estar no passado");
+      valid = false;
     }
 
     if (dto.skills() == null || dto.skills().isEmpty()) {
-      violations.add("Selecione pelo menos uma habilidade");
+      addViolation(context, "skills", "Selecione pelo menos uma habilidade");
+      valid = false;
     } else if (dto.skills().stream()
         .anyMatch(skill -> skill == null || skill.getName() == null || skill.getName().isBlank())) {
-      violations.add("As habilidades precisam ter nomes vÃ¡lidos");
+      addViolation(context, "skills", "As habilidades precisam ter nomes válidos");
+      valid = false;
     }
 
-    if (!violations.isEmpty()) {
-      context.disableDefaultConstraintViolation();
-      for (String violation : violations) {
-        context.buildConstraintViolationWithTemplate(violation).addConstraintViolation();
-      }
-      return false;
-    }
+    return valid;
+  }
 
-    return true;
+  private void addViolation(ConstraintValidatorContext context, String field, String message) {
+    context.buildConstraintViolationWithTemplate(message).addPropertyNode(field).addConstraintViolation();
   }
 }

@@ -18,11 +18,11 @@ public class SubscriberController {
     this.subscribersService = subscribersService;
   }
 
-  @PostMapping("/toggleSubscriber/{athletId}/{opportunityId}")
+  @PostMapping("/toggleSubscriber/{athleteId}/{opportunityId}")
   public ResponseEntity<ResponseDTO<SubscriberDTO>> toggleSubscriber(
-      @PathVariable Long athletId, @PathVariable Long opportunityId) {
+      @PathVariable Long athleteId, @PathVariable Long opportunityId) {
     ResponseDTO<SubscriberDTO> result =
-        subscribersService.toggleSubscriber(athletId, opportunityId);
+        subscribersService.toggleSubscriber(athleteId, opportunityId);
     return ResponseEntity.status(HttpStatus.OK).body(result);
   }
 

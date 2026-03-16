@@ -50,11 +50,11 @@ public class SubscribersService {
       Subscriber newSubscriber = new Subscriber(athlete, opportunity);
       opportunity.addSubscriber(newSubscriber);
       subscribersRepository.save(newSubscriber);
-      return subscribersMapper.toResponseDTO("InscriÃ§Ã£o criada com sucesso!", newSubscriber);
+      return subscribersMapper.toResponseDTO("Inscrição criada com sucesso!", newSubscriber);
     }
 
     ResponseDTO<SubscriberDTO> response =
-        subscribersMapper.toResponseDTO("InscriÃ§Ã£o removida com sucesso!", existingSubscriber);
+        subscribersMapper.toResponseDTO("Inscrição removida com sucesso!", existingSubscriber);
 
     opportunity.removeSubscriber(existingSubscriber);
     subscribersRepository.delete(existingSubscriber);

@@ -13,7 +13,10 @@ import lombok.Setter;
 @Entity
 @Table(
     name = "tb_post_like",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "post_id", "comment_id"}))
+    uniqueConstraints = {
+      @UniqueConstraint(columnNames = {"user_id", "post_id"}),
+      @UniqueConstraint(columnNames = {"user_id", "comment_id"})
+    })
 public class Like {
 
   public Like(Post post, User user) {

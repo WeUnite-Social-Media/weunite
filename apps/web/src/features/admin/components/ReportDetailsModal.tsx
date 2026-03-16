@@ -47,7 +47,7 @@ export function ReportDetailsModal({
       report.entityId === undefined ||
       (report.entityType !== "POST" && report.entityType !== "OPPORTUNITY")
     ) {
-      toast.error("Nao foi possivel identificar a entidade reportada.");
+      toast.error("Não foi possível identificar a entidade reportada.");
       return null;
     }
 

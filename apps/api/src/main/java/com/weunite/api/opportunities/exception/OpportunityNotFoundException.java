@@ -4,6 +4,6 @@ import com.weunite.api.common.exception.NotFoundResourceException;
 
 public class OpportunityNotFoundException extends NotFoundResourceException {
   public OpportunityNotFoundException() {
-    super("Publicação");
+    super("Oportunidade não encontrada", true);
   }
 }

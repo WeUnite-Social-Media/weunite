@@ -30,7 +30,9 @@ export const useAuthStore = create<AuthState>()(
       error: null,
       message: null,
 
-      clearMessages: () => set({ message: null, error: null }),
+      clearMessages: (): void => {
+        set({ message: null, error: null });
+      },
       setUser: (user: User) => set({ user }),
 
       logout: () => {

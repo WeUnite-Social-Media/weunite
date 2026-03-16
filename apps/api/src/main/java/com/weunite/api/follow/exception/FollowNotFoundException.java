@@ -1,7 +1,9 @@
 package com.weunite.api.follow.exception;
 
-public class FollowNotFoundException extends RuntimeException {
+import com.weunite.api.common.exception.NotFoundResourceException;
+
+public class FollowNotFoundException extends NotFoundResourceException {
   public FollowNotFoundException() {
-    super("Follow");
+    super("Relacionamento de seguidores não encontrado", true);
   }
 }
