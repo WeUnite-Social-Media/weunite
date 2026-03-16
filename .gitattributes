@@ -1,2 +1,2 @@
-/mvnw text eol=lf
+apps/api/mvnw text eol=lf
 *.cmd text eol=crlf
