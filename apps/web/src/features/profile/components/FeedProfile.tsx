@@ -3,7 +3,7 @@ import Post from "@/features/feed/components/post/Post";
 import Comment from "@/features/feed/components/post/Comments/Comment";
 import type { Post as PostType } from "@/shared/types/post.types";
 import type { Comment as CommentType } from "@/shared/types/comment.types";
-import { useGetPosts } from "@/features/feed/state/usePosts";
+import { useGetPostsByUser } from "@/features/feed/state/usePosts";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useGetCommentsByUserId } from "@/features/feed/state/useComments";
 import AboutProfile from "./AboutProfile";
@@ -20,7 +20,7 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
   const isOwnProfile = !profileUsername || profileUsername === user?.username;
   const displayUser = isOwnProfile ? user : profileUser;
 
-  const { data } = useGetPosts();
+  const { data } = useGetPostsByUser(displayUser?.id ? Number(displayUser.id) : 0);
 
   const { data: dataComments } = useGetCommentsByUserId(
     displayUser?.id ? Number(displayUser.id) : 0,
@@ -29,8 +29,7 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
   const posts = data?.data || [];
   const comments = dataComments?.data || [];
 
-  const userPosts =
-    posts.filter((post: PostType) => post.user?.id === displayUser?.id) || [];
+  const userPosts = posts as PostType[];
   const userComments =
     comments.filter(
       (comment: CommentType) => comment.user?.id === displayUser?.id,

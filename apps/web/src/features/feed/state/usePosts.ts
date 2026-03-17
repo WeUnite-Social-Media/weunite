@@ -3,6 +3,7 @@ import {
   createPostRequest,
   deletePostRequest,
   getPostsRequest,
+  getPostsByUserRequest,
   updatePostRequest,
 } from "@/features/feed/api/postService";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -69,6 +70,16 @@ export const useGetPosts = () => {
   return useQuery({
     queryKey: postKeys.lists(),
     queryFn: getPostsRequest,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
+  });
+};
+
+export const useGetPostsByUser = (userId: number) => {
+  return useQuery({
+    queryKey: postKeys.list(`user-${userId}`),
+    queryFn: () => getPostsByUserRequest(userId),
+    enabled: userId > 0,
     staleTime: 5 * 60 * 1000,
     retry: 2,
   });

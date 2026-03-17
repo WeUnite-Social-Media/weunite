@@ -109,7 +109,12 @@ export const getPostRequest = async (data: GetPost) => {
 
 export const getPostsRequest = async () => {
   try {
-    const response = await axios.get(`/posts/get`);
+    const response = await axios.get(`/posts/get`, {
+      params: {
+        page: 0,
+        size: 20,
+      },
+    });
 
     return {
       success: true,
@@ -125,6 +130,33 @@ export const getPostsRequest = async () => {
       data: null,
       message: null,
       error: error.response?.data?.message || "Erro ao consultar publicações",
+    };
+  }
+};
+
+export const getPostsByUserRequest = async (userId: number) => {
+  try {
+    const response = await axios.get(`/posts/get/user/${userId}`, {
+      params: {
+        page: 0,
+        size: 50,
+      },
+    });
+
+    return {
+      success: true,
+      data: response.data,
+      message: response.data.message || "PublicaÃ§Ãµes consultadas com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao consultar publicaÃ§Ãµes",
     };
   }
 };

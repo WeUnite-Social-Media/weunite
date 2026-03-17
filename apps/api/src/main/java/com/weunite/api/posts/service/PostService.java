@@ -13,6 +13,7 @@ import com.weunite.api.users.domain.User;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.UserRepository;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -83,9 +84,23 @@ public class PostService {
   }
 
   @Transactional(readOnly = true)
-  public List<PostDTO> getPosts() {
+  public List<PostDTO> getPosts(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 100);
+    PageRequest pageable = PageRequest.of(safePage, safeSize);
+    List<Post> posts = postRepository.findFeedPosts(pageable).getContent();
 
-    List<Post> posts = postRepository.findAllOrderedByCreationDate();
+    return postMapper.toPostDTOList(posts);
+  }
+
+  @Transactional(readOnly = true)
+  public List<PostDTO> getPostsByUser(Long userId, int page, int size) {
+    userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 100);
+    PageRequest pageable = PageRequest.of(safePage, safeSize);
+    List<Post> posts = postRepository.findPostsByUserId(userId, pageable).getContent();
 
     return postMapper.toPostDTOList(posts);
   }

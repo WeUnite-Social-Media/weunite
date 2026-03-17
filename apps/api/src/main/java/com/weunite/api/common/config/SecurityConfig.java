@@ -65,6 +65,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/posts/get")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/posts/get/user/{userId}")
+                    .permitAll()
                     .requestMatchers(HttpMethod.DELETE, "/api/posts/delete/{userId}/{postId}")
                     .permitAll()
 
