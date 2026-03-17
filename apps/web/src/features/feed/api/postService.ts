@@ -6,6 +6,13 @@ import type {
 import { instance as axios } from "@/shared/api/http";
 import { AxiosError } from "axios";
 
+export const FEED_POSTS_PAGE_SIZE = 20;
+
+interface GetPostsRequestParams {
+  page?: number;
+  size?: number;
+}
+
 export const createPostRequest = async (data: CreatePost, userId: number) => {
   try {
     const formData = new FormData();
@@ -107,12 +114,15 @@ export const getPostRequest = async (data: GetPost) => {
   }
 };
 
-export const getPostsRequest = async () => {
+export const getPostsRequest = async ({
+  page = 0,
+  size = FEED_POSTS_PAGE_SIZE,
+}: GetPostsRequestParams = {}) => {
   try {
     const response = await axios.get(`/posts/get`, {
       params: {
-        page: 0,
-        size: 20,
+        page,
+        size,
       },
     });
 

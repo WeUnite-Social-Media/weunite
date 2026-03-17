@@ -2,11 +2,17 @@ import type { CreatePost, UpdatePost } from "@/shared/types/post.types";
 import {
   createPostRequest,
   deletePostRequest,
+  FEED_POSTS_PAGE_SIZE,
   getPostsRequest,
   getPostsByUserRequest,
   updatePostRequest,
 } from "@/features/feed/api/postService";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export const postKeys = {
@@ -67,9 +73,19 @@ export const useUpdatePost = () => {
 };
 
 export const useGetPosts = () => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: postKeys.lists(),
-    queryFn: getPostsRequest,
+    queryFn: ({ pageParam }) => getPostsRequest({ page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.success || !lastPage.data) {
+        return undefined;
+      }
+
+      return lastPage.data.length < FEED_POSTS_PAGE_SIZE
+        ? undefined
+        : allPages.length;
+    },
     staleTime: 5 * 60 * 1000,
     retry: 2,
   });
