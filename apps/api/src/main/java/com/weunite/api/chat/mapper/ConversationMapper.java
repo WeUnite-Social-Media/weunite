@@ -65,7 +65,10 @@ public abstract class ConversationMapper {
         lastMessage.isRead(),
         lastMessage.getCreatedAt(),
         lastMessage.getReadAt(),
-        lastMessage.getType());
+        lastMessage.getType(),
+        lastMessage.isDeleted(),
+        lastMessage.isEdited(),
+        lastMessage.getEditedAt());
   }
 
   @Named("getUnreadCount")

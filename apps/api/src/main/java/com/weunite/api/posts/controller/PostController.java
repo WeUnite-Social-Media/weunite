@@ -3,7 +3,9 @@ package com.weunite.api.posts.controller;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.posts.dto.PostDTO;
 import com.weunite.api.posts.dto.PostRequestDTO;
+import com.weunite.api.posts.dto.RepostDTO;
 import com.weunite.api.posts.service.PostService;
+import com.weunite.api.posts.service.RepostService;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -19,9 +21,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class PostController {
 
   private final PostService postService;
+  private final RepostService repostService;
 
-  public PostController(PostService postService) {
+  public PostController(PostService postService, RepostService repostService) {
     this.postService = postService;
+    this.repostService = repostService;
   }
 
   @PostMapping(value = "/create/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -70,5 +74,12 @@ public class PostController {
       @PathVariable Long userId, @PathVariable Long postId) {
     ResponseDTO<PostDTO> post = postService.deletePost(userId, postId);
     return ResponseEntity.status(HttpStatus.OK).body(post);
+  }
+
+  @PostMapping("/repost/{userId}/{postId}")
+  public ResponseEntity<ResponseDTO<RepostDTO>> toggleRepost(
+      @PathVariable Long userId, @PathVariable Long postId) {
+    ResponseDTO<RepostDTO> repost = repostService.toggleRepost(userId, postId);
+    return ResponseEntity.status(HttpStatus.OK).body(repost);
   }
 }

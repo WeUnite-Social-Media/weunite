@@ -11,15 +11,16 @@ import org.springframework.data.repository.query.Param;
 public interface PostRepository extends JpaRepository<Post, Long> {
 
   @Query(
-      value = "SELECT p FROM Post p ORDER BY COALESCE(p.updatedAt, p.createdAt) DESC",
-      countQuery = "SELECT COUNT(p) FROM Post p")
+      value =
+          "SELECT p FROM Post p WHERE p.deleted = false ORDER BY COALESCE(p.updatedAt, p.createdAt) DESC",
+      countQuery = "SELECT COUNT(p) FROM Post p WHERE p.deleted = false")
   Page<Post> findFeedPosts(Pageable pageable);
 
   @Query(
       value =
-          "SELECT p FROM Post p WHERE p.user.id = :userId"
+          "SELECT p FROM Post p WHERE p.user.id = :userId AND p.deleted = false"
               + " ORDER BY COALESCE(p.updatedAt, p.createdAt) DESC",
-      countQuery = "SELECT COUNT(p) FROM Post p WHERE p.user.id = :userId")
+      countQuery = "SELECT COUNT(p) FROM Post p WHERE p.user.id = :userId AND p.deleted = false")
   Page<Post> findPostsByUserId(@Param("userId") Long userId, Pageable pageable);
 
   @Query("SELECT COUNT(l) FROM Like l WHERE l.post IS NOT NULL")

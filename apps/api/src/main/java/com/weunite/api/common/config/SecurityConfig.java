@@ -67,6 +67,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/posts/get/user/{userId}")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/posts/repost/{userId}/{postId}")
+                    .permitAll()
                     .requestMatchers(HttpMethod.DELETE, "/api/posts/delete/{userId}/{postId}")
                     .permitAll()
 
@@ -146,6 +148,19 @@ public class SecurityConfig {
                         "/api/saved-opportunities/isSaved/{athleteId}/{opportunityId}")
                     .permitAll()
 
+                    // Notifications endpoints
+                    .requestMatchers(HttpMethod.GET, "/api/notifications/user/{userId}")
+                    .permitAll()
+                    .requestMatchers(
+                        HttpMethod.GET, "/api/notifications/user/{userId}/unread-count")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.PUT, "/api/notifications/{notificationId}/read")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.PUT, "/api/notifications/user/{userId}/read-all")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.DELETE, "/api/notifications/{notificationId}")
+                    .permitAll()
+
                     // Report endpoints
                     .requestMatchers(HttpMethod.POST, "/api/reports/create/{userId}")
                     .permitAll()
@@ -179,6 +194,12 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.PUT, "/api/admin/reports/review/{entityId}/{type}")
                     .permitAll()
                     .requestMatchers(HttpMethod.PUT, "/api/admin/reports/resolve/{entityId}/{type}")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/messages/upload")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.PUT, "/api/messages/{messageId}")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.DELETE, "/api/messages/{messageId}")
                     .permitAll()
                     .requestMatchers("/ws/**")
                     .permitAll()

@@ -6,6 +6,8 @@ import com.weunite.api.follow.dto.FollowDTO;
 import com.weunite.api.follow.exception.FollowNotFoundException;
 import com.weunite.api.follow.mapper.FollowMapper;
 import com.weunite.api.follow.repository.FollowRepository;
+import com.weunite.api.notifications.domain.NotificationType;
+import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.UserRepository;
@@ -22,16 +24,19 @@ public class FollowService {
   private final FollowRepository followRepository;
   private final FollowMapper followMapper;
   private final UserService userService;
+  private final NotificationService notificationService;
 
   public FollowService(
       UserRepository userRepository,
       FollowRepository followRepository,
       FollowMapper followMapper,
-      UserService userService) {
+      UserService userService,
+      NotificationService notificationService) {
     this.followMapper = followMapper;
     this.userRepository = userRepository;
     this.followRepository = followRepository;
     this.userService = userService;
+    this.notificationService = notificationService;
   }
 
   @Transactional
@@ -40,6 +45,8 @@ public class FollowService {
     Follow follow = new Follow(follower, followed);
 
     followRepository.save(follow);
+    notificationService.createNotification(
+        followed.getId(), NotificationType.NEW_FOLLOWER, follower.getId(), followed.getId(), null);
 
     return followMapper.toResponseDTO("Seguiu com sucesso", follow);
   }

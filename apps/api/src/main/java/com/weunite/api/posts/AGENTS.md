@@ -2,13 +2,14 @@
 
 ## Scope
 
-This module owns posts, comments, and likes in `com.weunite.api.posts`.
+This module owns posts, comments, likes, and reposts in `com.weunite.api.posts`.
 
 ## Responsibilities
 
 - Expose endpoints for post/comment/like operations.
+- Expose repost operations.
 - Manage feed-oriented post retrieval.
-- Persist post/comment/like domain entities.
+- Persist post/comment/like/repost domain entities.
 
 ## Does not own
 
@@ -24,12 +25,14 @@ This module owns posts, comments, and likes in `com.weunite.api.posts`.
 - `service/PostService.java`
 - `service/CommentService.java`
 - `service/LikeService.java`
+- `service/RepostService.java`
 
 ## Core use cases
 
 - Create, update, list, and delete posts.
 - Create, update, list, and delete comments.
 - Like/unlike posts and comments.
+- Repost and undo reposts.
 
 ## Working rules
 

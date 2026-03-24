@@ -41,6 +41,14 @@ public class Message {
   @Column(nullable = false)
   private MessageType type = MessageType.TEXT;
 
+  @Column(nullable = false)
+  private boolean deleted = false;
+
+  @Column(nullable = false)
+  private boolean edited = false;
+
+  @Column private Instant editedAt;
+
   @PrePersist
   protected void onCreate() {
     this.createdAt = Instant.now();

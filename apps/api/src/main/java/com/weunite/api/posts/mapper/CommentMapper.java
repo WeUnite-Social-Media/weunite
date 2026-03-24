@@ -40,9 +40,12 @@ public interface CommentMapper {
   @Mapping(target = "imageUrl", source = "post.imageUrl")
   @Mapping(target = "likes", ignore = true)
   @Mapping(target = "comments", ignore = true)
+  @Mapping(target = "reposts", ignore = true)
   @Mapping(target = "createdAt", source = "post.createdAt")
   @Mapping(target = "updatedAt", source = "post.updatedAt")
   @Mapping(target = "user", source = "post.user")
+  @Mapping(target = "repostedBy", ignore = true)
+  @Mapping(target = "repostedAt", ignore = true)
   PostDTO mapPostWithoutLikesFromComment(Post post);
 
   @Named("mapParentComment")

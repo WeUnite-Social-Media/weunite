@@ -1,6 +1,8 @@
 package com.weunite.api.posts.service;
 
 import com.weunite.api.common.response.ResponseDTO;
+import com.weunite.api.notifications.domain.NotificationType;
+import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.posts.domain.Comment;
 import com.weunite.api.posts.domain.Like;
 import com.weunite.api.posts.domain.Post;
@@ -30,18 +32,21 @@ public class LikeService {
   private final CommentRepository commentRepository;
   private final LikeRepository likeRepository;
   private final LikeMapper likeMapper;
+  private final NotificationService notificationService;
 
   public LikeService(
       UserRepository userRepository,
       PostRepository postRepository,
       CommentRepository commentRepository,
       LikeRepository likeRepository,
-      LikeMapper likeMapper) {
+      LikeMapper likeMapper,
+      NotificationService notificationService) {
     this.userRepository = userRepository;
     this.postRepository = postRepository;
     this.commentRepository = commentRepository;
     this.likeRepository = likeRepository;
     this.likeMapper = likeMapper;
+    this.notificationService = notificationService;
   }
 
   @Transactional
@@ -57,6 +62,8 @@ public class LikeService {
       Like newLike = new Like(post, user);
       post.addLike(newLike);
       likeRepository.save(newLike);
+      notificationService.createNotification(
+          post.getUser().getId(), NotificationType.POST_LIKE, userId, postId, null);
       return likeMapper.toResponseDTO("Curtida criada com sucesso!", newLike);
     } else {
       post.removeLike(existingLike);
@@ -79,6 +86,8 @@ public class LikeService {
       Like newLike = new Like(comment, user);
       comment.addLike(newLike);
       likeRepository.save(newLike);
+      notificationService.createNotification(
+          comment.getUser().getId(), NotificationType.COMMENT_LIKE, userId, commentId, null);
       return likeMapper.toResponseDTO("Curtida criada com sucesso!", newLike);
     } else {
       comment.removeLike(existingLike);

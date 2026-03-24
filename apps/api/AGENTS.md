@@ -7,7 +7,7 @@ This package owns the Spring Boot backend in `apps/api`.
 ## Responsibilities
 
 - Expose the platform API under `/api/...`.
-- Hold auth, users, posts, opportunities, chat, reporting, moderation, and shared backend infrastructure.
+- Hold auth, users, posts, opportunities, chat, notifications, reporting, moderation, and shared backend infrastructure.
 - Own database access, transactional business logic, websocket support, and email/image integrations.
 
 ## Does not own

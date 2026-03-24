@@ -111,6 +111,7 @@ public class AdminReportService {
                         null,
                         null,
                         List.of(),
+                        List.of(),
                         Instant.now(),
                         Instant.now(),
                         new UserDTO(
@@ -124,7 +125,9 @@ public class AdminReportService {
                             "",
                             false,
                             Instant.now(),
-                            Instant.now()));
+                            Instant.now()),
+                        null,
+                        null);
               }
 
               List<ReportDTO> reportDTOs = reportMapper.toReportDTOList(allReports);

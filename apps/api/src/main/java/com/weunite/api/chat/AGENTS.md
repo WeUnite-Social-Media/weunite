@@ -27,6 +27,7 @@ This module owns chat conversations, messages, and user chat presence in `com.we
 ## Core use cases
 
 - Send and list messages by conversation.
+- Edit and delete messages by conversation.
 - Manage user conversations.
 - Update and query user chat status.
 
@@ -43,5 +44,5 @@ This module owns chat conversations, messages, and user chat presence in `com.we
 
 ## Keep this file updated when
 
-- Chat endpoints or message flows change.
+- Chat endpoints or message lifecycle flows change.
 - Conversation/status ownership changes.

@@ -18,7 +18,10 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -45,6 +48,36 @@ public class ChatController {
 
     messagingTemplate.convertAndSend(
         "/topic/conversation/" + request.conversationId() + "/read", request.userId());
+  }
+
+  @DeleteMapping("/messages/{messageId}")
+  @ResponseBody
+  public ResponseEntity<Map<String, Object>> deleteMessage(
+      @PathVariable Long messageId,
+      @RequestParam Long userId,
+      @RequestParam(defaultValue = "false") boolean forEveryone) {
+    MessageDTO deletedMessage = messageService.deleteMessage(messageId, userId, forEveryone);
+
+    Map<String, Object> deleteEvent =
+        Map.of(
+            "type", "DELETE", "messageId", messageId, "forEveryone", forEveryone, "userId", userId);
+
+    messagingTemplate.convertAndSend(
+        "/topic/conversation/" + deletedMessage.conversationId(), deleteEvent);
+
+    return ResponseEntity.ok(Map.of("success", true));
+  }
+
+  @PutMapping("/messages/{messageId}")
+  @ResponseBody
+  public ResponseEntity<MessageDTO> editMessage(
+      @PathVariable Long messageId, @RequestParam Long userId, @RequestParam String content) {
+    MessageDTO editedMessage = messageService.editMessage(messageId, userId, content);
+
+    messagingTemplate.convertAndSend(
+        "/topic/conversation/" + editedMessage.conversationId(), editedMessage);
+
+    return ResponseEntity.ok(editedMessage);
   }
 
   @PostMapping("/messages/upload")
