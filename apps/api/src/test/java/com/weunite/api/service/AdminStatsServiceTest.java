@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.weunite.api.admin.stats.dto.DashboardActivityDTO;
 import com.weunite.api.admin.stats.dto.OpportunityByCategoryDTO;
 import com.weunite.api.admin.stats.dto.OpportunityCategoryWithSkillsDTO;
+import com.weunite.api.admin.stats.dto.OpportunitySkillDTO;
 import com.weunite.api.admin.stats.service.AdminStatsService;
 import com.weunite.api.opportunities.domain.Opportunity;
 import com.weunite.api.opportunities.domain.Skill;
@@ -75,7 +76,9 @@ class AdminStatsServiceTest {
     assertEquals(3, result.size());
     assertEquals("Java", result.get(0).category());
     assertEquals(3L, result.get(0).count());
-    assertEquals(List.of("React", "Spring"), result.get(0).topSkills());
+    assertEquals(
+        List.of(new OpportunitySkillDTO("React", 1L), new OpportunitySkillDTO("Spring", 1L)),
+        result.get(0).topSkills());
   }
 
   @Test

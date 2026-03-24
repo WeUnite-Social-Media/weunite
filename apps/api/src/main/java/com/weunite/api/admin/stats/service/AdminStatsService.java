@@ -6,6 +6,7 @@ import com.weunite.api.admin.stats.dto.DashboardDataDTO;
 import com.weunite.api.admin.stats.dto.MonthlyDataDTO;
 import com.weunite.api.admin.stats.dto.OpportunityByCategoryDTO;
 import com.weunite.api.admin.stats.dto.OpportunityCategoryWithSkillsDTO;
+import com.weunite.api.admin.stats.dto.OpportunitySkillDTO;
 import com.weunite.api.admin.stats.dto.PreviousMonthStatsDTO;
 import com.weunite.api.admin.stats.dto.UserTypeDataDTO;
 import com.weunite.api.opportunities.domain.Opportunity;
@@ -285,7 +286,7 @@ public class AdminStatsService {
         .collect(Collectors.toCollection(HashSet::new));
   }
 
-  private List<String> getTopRelatedSkills(Map<String, Long> relatedSkillCounts) {
+  private List<OpportunitySkillDTO> getTopRelatedSkills(Map<String, Long> relatedSkillCounts) {
     if (relatedSkillCounts == null || relatedSkillCounts.isEmpty()) {
       return List.of();
     }
@@ -298,7 +299,7 @@ public class AdminStatsService {
     return relatedSkillCounts.entrySet().stream()
         .sorted(byCountDescThenName)
         .limit(RELATED_SKILL_LIMIT)
-        .map(Map.Entry::getKey)
+        .map(entry -> new OpportunitySkillDTO(entry.getKey(), entry.getValue()))
         .collect(Collectors.toList());
   }
 
@@ -330,5 +331,6 @@ public class AdminStatsService {
 
   private record MonthlySnapshot(String month, Long posts, Long opportunities, Long users) {}
 
-  private record OpportunitySkillInsight(String name, Long count, List<String> topRelatedSkills) {}
+  private record OpportunitySkillInsight(
+      String name, Long count, List<OpportunitySkillDTO> topRelatedSkills) {}
 }
