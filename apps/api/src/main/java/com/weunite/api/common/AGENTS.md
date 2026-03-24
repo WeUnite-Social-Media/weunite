@@ -1,0 +1,49 @@
+# API Common Agent Notes
+
+## Scope
+
+This module owns cross-cutting backend infrastructure in `com.weunite.api.common`.
+
+## Responsibilities
+
+- Provide shared config, security, validation, error handling, and response models.
+- Provide shared integrations like mail and storage.
+- Keep reusable backend primitives used by feature modules.
+
+## Does not own
+
+- Feature-specific business rules (posts, users, chat, reports, etc.).
+- Feature endpoint orchestration.
+
+## Key entrypoints
+
+- `config/*`
+- `security/*`
+- `handler/*`
+- `validation/*`
+- `mail/*`
+- `storage/*`
+- `response/*`
+
+## Core use cases
+
+- Centralize security and request validation primitives.
+- Standardize API response and exception handling.
+- Share infrastructure adapters for integrations.
+
+## Working rules
+
+- Keep this module generic and dependency-light.
+- Do not move feature-specific DTOs/services into `common`.
+- Prefer extension/composition by feature modules over tight coupling.
+
+## Validation
+
+- `pnpm --filter @weunite/api lint`
+- `pnpm --filter @weunite/api test`
+- `pnpm --filter @weunite/api build`
+
+## Keep this file updated when
+
+- Cross-cutting infrastructure ownership changes.
+- Shared security/validation/handler contracts change.
