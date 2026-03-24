@@ -8,11 +8,13 @@ import com.weunite.api.common.exception.UnauthorizedException;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.storage.service.CloudinaryService;
 import com.weunite.api.posts.domain.Post;
+import com.weunite.api.posts.domain.Repost;
 import com.weunite.api.posts.dto.PostDTO;
 import com.weunite.api.posts.dto.PostRequestDTO;
 import com.weunite.api.posts.exception.PostNotFoundException;
 import com.weunite.api.posts.mapper.PostMapper;
 import com.weunite.api.posts.repository.PostRepository;
+import com.weunite.api.posts.repository.RepostRepository;
 import com.weunite.api.posts.service.PostService;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.dto.UserDTO;
@@ -20,6 +22,7 @@ import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.UserRepository;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,6 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +39,8 @@ public class PostServiceTest {
   @Mock private UserRepository userRepository;
 
   @Mock private PostRepository postRepository;
+
+  @Mock private RepostRepository repostRepository;
 
   @Mock private PostMapper postMapper;
 
@@ -80,9 +86,12 @@ public class PostServiceTest {
             "http://image.url/test.jpg",
             new ArrayList<>(),
             new ArrayList<>(),
+            new ArrayList<>(),
             Instant.now(),
             null,
-            userDTO);
+            userDTO,
+            null,
+            null);
 
     ResponseDTO<PostDTO> expectedResponse =
         new ResponseDTO<>("Publicação criada com sucesso!", postDTO);
@@ -144,9 +153,12 @@ public class PostServiceTest {
             null,
             new ArrayList<>(),
             new ArrayList<>(),
+            new ArrayList<>(),
             Instant.now(),
             null,
-            userDTO);
+            userDTO,
+            null,
+            null);
 
     ResponseDTO<PostDTO> expectedResponse =
         new ResponseDTO<>("Publicação criada com sucesso!", postDTO);
@@ -228,9 +240,12 @@ public class PostServiceTest {
             "http://new-image.url",
             new ArrayList<>(),
             new ArrayList<>(),
+            new ArrayList<>(),
             Instant.now(),
             Instant.now(),
-            userDTO);
+            userDTO,
+            null,
+            null);
 
     ResponseDTO<PostDTO> expectedResponse =
         new ResponseDTO<>("Publicação atualizada com sucesso!", updatedPostDTO);
@@ -341,9 +356,12 @@ public class PostServiceTest {
             null,
             new ArrayList<>(),
             new ArrayList<>(),
+            new ArrayList<>(),
             Instant.now(),
             null,
-            userDTO);
+            userDTO,
+            null,
+            null);
 
     ResponseDTO<PostDTO> expectedResponse =
         new ResponseDTO<>("Publicação excluída com sucesso", deletedPostDTO);
@@ -404,5 +422,69 @@ public class PostServiceTest {
     verify(postRepository).findById(postId);
     verify(postRepository, never()).delete(any());
     verifyNoInteractions(postMapper);
+  }
+
+  @Test
+  @DisplayName("Should merge posts and reposts ordered by newest feed timestamp")
+  void getPostsMergesPostsAndReposts() {
+    User author = new User();
+    author.setId(1L);
+    author.setUsername("author");
+
+    User reposter = new User();
+    reposter.setId(2L);
+    reposter.setUsername("reposter");
+
+    Post post = new Post();
+    post.setId(1L);
+    post.setUser(author);
+    post.setCreatedAt(Instant.parse("2026-03-24T10:00:00Z"));
+
+    Repost repost = new Repost();
+    repost.setId(5L);
+    repost.setPost(post);
+    repost.setUser(reposter);
+    repost.setCreatedAt(Instant.parse("2026-03-24T12:00:00Z"));
+
+    PostDTO originalPostDTO =
+        new PostDTO(
+            "1",
+            "Original post",
+            null,
+            new ArrayList<>(),
+            new ArrayList<>(),
+            new ArrayList<>(),
+            post.getCreatedAt(),
+            null,
+            null,
+            null,
+            null);
+
+    PostDTO repostedPostDTO =
+        new PostDTO(
+            "1",
+            "Original post",
+            null,
+            new ArrayList<>(),
+            new ArrayList<>(),
+            new ArrayList<>(),
+            post.getCreatedAt(),
+            null,
+            null,
+            null,
+            repost.getCreatedAt());
+
+    when(postRepository.findFeedPosts(any())).thenReturn(new PageImpl<>(List.of(post)));
+    when(repostRepository.findFeedReposts(any())).thenReturn(new PageImpl<>(List.of(repost)));
+    when(postMapper.toPostDTO(post)).thenReturn(originalPostDTO);
+    when(postMapper.toPostDTOFromRepost(repost)).thenReturn(repostedPostDTO);
+
+    List<PostDTO> result = postService.getPosts(0, 10);
+
+    assertEquals(List.of(repostedPostDTO, originalPostDTO), result);
+    verify(postRepository).findFeedPosts(any());
+    verify(repostRepository).findFeedReposts(any());
+    verify(postMapper).toPostDTO(post);
+    verify(postMapper).toPostDTOFromRepost(repost);
   }
 }

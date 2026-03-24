@@ -11,6 +11,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.weunite.api.notifications.domain.NotificationType;
+import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.opportunities.domain.Opportunity;
 import com.weunite.api.opportunities.domain.Subscriber;
 import com.weunite.api.opportunities.dto.SubscriberDTO;
@@ -20,6 +22,7 @@ import com.weunite.api.opportunities.repository.OpportunityRepository;
 import com.weunite.api.opportunities.repository.SubscribersRepository;
 import com.weunite.api.opportunities.service.SubscribersService;
 import com.weunite.api.users.domain.Athlete;
+import com.weunite.api.users.domain.Company;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.AthleteRepository;
 import java.util.List;
@@ -42,6 +45,8 @@ public class SubscriberServiceTest {
 
   @Mock private SubscribersMapper subscribersMapper;
 
+  @Mock private NotificationService notificationService;
+
   @InjectMocks private SubscribersService subscribersService;
 
   @Test
@@ -58,6 +63,9 @@ public class SubscriberServiceTest {
     Opportunity mockOpportunity = new Opportunity();
     mockOpportunity.setId(opportunityId);
     mockOpportunity.setTitle("Test Opportunity");
+    Company company = new Company();
+    company.setId(10L);
+    mockOpportunity.setCompany(company);
 
     Subscriber newSubscriber = new Subscriber(mockAthlete, mockOpportunity);
     newSubscriber.setId(1L);
@@ -83,6 +91,13 @@ public class SubscriberServiceTest {
     verify(subscribersRepository).findByAthleteAndOpportunity(mockAthlete, mockOpportunity);
     verify(subscribersRepository).save(any(Subscriber.class));
     verify(subscribersMapper).toResponseDTO(anyString(), any(Subscriber.class));
+    verify(notificationService)
+        .createNotification(
+            company.getId(),
+            NotificationType.OPPORTUNITY_SUBSCRIPTION,
+            athleteId,
+            opportunityId,
+            null);
   }
 
   @Test
