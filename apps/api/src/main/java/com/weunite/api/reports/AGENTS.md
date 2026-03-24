@@ -8,6 +8,7 @@ This module owns report creation, report queries, and reporting-related data str
 
 - Store and expose user-submitted reports.
 - Provide report DTOs, repository access, and reporting services used by moderation flows.
+- Expose report queue queries used by moderation surfaces.
 
 ## Does not own
 
@@ -27,6 +28,7 @@ This module owns report creation, report queries, and reporting-related data str
 
 - Keep report submission flows public and moderation resolution flows coordinated through the admin module.
 - Keep report payload types here instead of leaking them into unrelated modules.
+- Keep status-based report listing logic inside this module instead of duplicating it in admin.
 
 ## Validation
 

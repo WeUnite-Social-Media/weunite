@@ -45,4 +45,10 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
   @Query("SELECT r FROM Report r WHERE r.status = 'PENDING' ORDER BY r.createdAt DESC")
   List<Report> findAllPendingReports();
+
+  @Query("SELECT r FROM Report r ORDER BY r.createdAt DESC")
+  List<Report> findAllReports();
+
+  @Query("SELECT r FROM Report r WHERE r.status = :status ORDER BY r.createdAt DESC")
+  List<Report> findAllReportsByStatus(@Param("status") Report.ReportStatus status);
 }

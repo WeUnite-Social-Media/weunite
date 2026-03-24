@@ -35,6 +35,18 @@ public class ReportController {
     return ResponseEntity.ok(reports);
   }
 
+  @GetMapping("/all")
+  public ResponseEntity<List<ReportDTO>> getAllReports() {
+    List<ReportDTO> reports = reportService.getAllReports();
+    return ResponseEntity.ok(reports);
+  }
+
+  @GetMapping("/status/{status}")
+  public ResponseEntity<List<ReportDTO>> getAllReportsByStatus(@PathVariable String status) {
+    List<ReportDTO> reports = reportService.getAllReportsByStatus(status);
+    return ResponseEntity.ok(reports);
+  }
+
   @GetMapping("/count/{entityId}/{type}")
   public ResponseEntity<Long> getReportCount(
       @PathVariable Long entityId, @PathVariable String type) {

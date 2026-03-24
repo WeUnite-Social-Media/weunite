@@ -246,4 +246,60 @@ public class SubscriberServiceTest {
     verify(opportunityRepository).findById(opportunityId);
     verifyNoInteractions(subscribersRepository, subscribersMapper);
   }
+
+  @Test
+  @DisplayName("Should return true when athlete is subscribed to the opportunity")
+  void isSubscribed_ReturnsTrue() {
+    Long athleteId = 1L;
+    Long opportunityId = 1L;
+
+    Athlete athlete = new Athlete();
+    athlete.setId(athleteId);
+
+    Opportunity opportunity = new Opportunity();
+    opportunity.setId(opportunityId);
+
+    when(athleteRepository.findById(athleteId)).thenReturn(Optional.of(athlete));
+    when(opportunityRepository.findById(opportunityId)).thenReturn(Optional.of(opportunity));
+    when(subscribersRepository.findByAthleteAndOpportunity(athlete, opportunity))
+        .thenReturn(Optional.of(new Subscriber(athlete, opportunity)));
+
+    boolean result = subscribersService.isSubscribed(athleteId, opportunityId);
+
+    assertTrue(result);
+    verify(athleteRepository).findById(athleteId);
+    verify(opportunityRepository).findById(opportunityId);
+    verify(subscribersRepository).findByAthleteAndOpportunity(athlete, opportunity);
+  }
+
+  @Test
+  @DisplayName("Should return subscribers list for a specific athlete")
+  void getSubscribersByAthlete_Success() {
+    Long athleteId = 1L;
+
+    Athlete athlete = new Athlete();
+    athlete.setId(athleteId);
+    athlete.setUsername("athlete1");
+
+    Opportunity opportunity = new Opportunity();
+    opportunity.setId(10L);
+    opportunity.setTitle("Test Opportunity");
+
+    Subscriber subscriber = new Subscriber(athlete, opportunity);
+    subscriber.setId(5L);
+
+    SubscriberDTO subscriberDTO = new SubscriberDTO(5L, athlete, opportunity);
+
+    when(athleteRepository.findById(athleteId)).thenReturn(Optional.of(athlete));
+    when(subscribersRepository.findByAthleteId(athleteId)).thenReturn(List.of(subscriber));
+    when(subscribersMapper.mapSubscribersToList(List.of(subscriber)))
+        .thenReturn(List.of(subscriberDTO));
+
+    List<SubscriberDTO> result = subscribersService.getSubscribersByAthlete(athleteId);
+
+    assertEquals(List.of(subscriberDTO), result);
+    verify(athleteRepository).findById(athleteId);
+    verify(subscribersRepository).findByAthleteId(athleteId);
+    verify(subscribersMapper).mapSubscribersToList(List.of(subscriber));
+  }
 }

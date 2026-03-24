@@ -68,4 +68,24 @@ public class SubscribersService {
     List<Subscriber> subscribers = subscribersRepository.findByOpportunityId(opportunityId);
     return subscribersMapper.mapSubscribersToList(subscribers);
   }
+
+  @Transactional(readOnly = true)
+  public boolean isSubscribed(Long athleteId, Long opportunityId) {
+    Athlete athlete = athleteRepository.findById(athleteId).orElseThrow(UserNotFoundException::new);
+
+    Opportunity opportunity =
+        opportunityRepository
+            .findById(opportunityId)
+            .orElseThrow(OpportunityNotFoundException::new);
+
+    return subscribersRepository.findByAthleteAndOpportunity(athlete, opportunity).isPresent();
+  }
+
+  @Transactional(readOnly = true)
+  public List<SubscriberDTO> getSubscribersByAthlete(Long athleteId) {
+    athleteRepository.findById(athleteId).orElseThrow(UserNotFoundException::new);
+
+    List<Subscriber> subscribers = subscribersRepository.findByAthleteId(athleteId);
+    return subscribersMapper.mapSubscribersToList(subscribers);
+  }
 }

@@ -9,6 +9,7 @@ import com.weunite.api.opportunities.dto.OpportunityRequestDTO;
 import com.weunite.api.opportunities.exception.OpportunityNotFoundException;
 import com.weunite.api.opportunities.mapper.OpportunityMapper;
 import com.weunite.api.opportunities.repository.OpportunityRepository;
+import com.weunite.api.opportunities.repository.SavedOpportunityRepository;
 import com.weunite.api.opportunities.repository.SkillRepository;
 import com.weunite.api.users.domain.Company;
 import com.weunite.api.users.domain.User;
@@ -24,16 +25,19 @@ public class OpportunityService {
 
   private final CompanyRepository companyRepository;
   private final OpportunityRepository opportunityRepository;
+  private final SavedOpportunityRepository savedOpportunityRepository;
   private final OpportunityMapper opportunityMapper;
   private final SkillRepository skillRepository;
 
   public OpportunityService(
       CompanyRepository companyRepository,
       OpportunityRepository opportunityRepository,
+      SavedOpportunityRepository savedOpportunityRepository,
       OpportunityMapper opportunityMapper,
       SkillRepository skillRepository) {
     this.companyRepository = companyRepository;
     this.opportunityRepository = opportunityRepository;
+    this.savedOpportunityRepository = savedOpportunityRepository;
     this.opportunityMapper = opportunityMapper;
     this.skillRepository = skillRepository;
   }
@@ -119,6 +123,7 @@ public class OpportunityService {
           "Você não possui autorização para deletar esta oportunidade.");
     }
 
+    savedOpportunityRepository.deleteByOpportunityId(opportunityId);
     opportunityRepository.delete(existingOpportunity);
 
     return opportunityMapper.toResponseDTO(

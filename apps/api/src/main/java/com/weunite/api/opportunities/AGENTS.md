@@ -2,12 +2,13 @@
 
 ## Scope
 
-This module owns opportunities, skills association, and subscriptions in `com.weunite.api.opportunities`.
+This module owns opportunities, skills association, subscriptions, and saved opportunity flows in `com.weunite.api.opportunities`.
 
 ## Responsibilities
 
 - Expose CRUD endpoints for opportunities.
 - Expose subscription flows for opportunities.
+- Expose save/unsave flows for opportunities.
 - Manage opportunity-skill relationships.
 
 ## Does not own
@@ -19,14 +20,17 @@ This module owns opportunities, skills association, and subscriptions in `com.we
 
 - `controller/OpportunityController.java`
 - `controller/SubscriberController.java`
+- `controller/SavedOpportunityController.java`
 - `service/OpportunityService.java`
 - `service/SubscribersService.java`
+- `service/SavedOpportunityService.java`
 - `service/SkillService.java`
 
 ## Core use cases
 
 - Create, update, delete, and list opportunities.
 - Subscribe/unsubscribe users to opportunities.
+- Save/unsave opportunities for athletes.
 - Associate skills with opportunities.
 
 ## Working rules
@@ -42,5 +46,5 @@ This module owns opportunities, skills association, and subscriptions in `com.we
 
 ## Keep this file updated when
 
-- Opportunity/subscription API contracts change.
-- Skill or subscription ownership moves across modules.
+- Opportunity/subscription/saved API contracts change.
+- Skill, subscription, or saved-opportunity ownership moves across modules.

@@ -83,6 +83,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/comment/get")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/comment/get/**")
+                    .permitAll()
                     .requestMatchers(HttpMethod.PUT, "/api/comment/update/{userId}/{commentId}")
                     .permitAll()
                     .requestMatchers(HttpMethod.DELETE, "/api/comment/delete/{userId}/{postId}")
@@ -114,13 +116,44 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/opportunities/get/{opportunityId}")
                     .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/opportunities/get/user/{userId}")
+                    .requestMatchers(HttpMethod.GET, "/api/opportunities/get/company/{companyId}")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/opportunities/get")
                     .permitAll()
+
+                    // Subscriber endpoints
+                    .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/subscriber/toggleSubscriber/{athleteId}/{opportunityId}")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/subscriber/subscribers/{opportunityId}")
+                    .permitAll()
+                    .requestMatchers(
+                        HttpMethod.GET, "/api/subscriber/isSubscribed/{athleteId}/{opportunityId}")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/subscriber/athlete/{athleteId}")
+                    .permitAll()
+
+                    // Saved opportunities endpoints
+                    .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/saved-opportunities/toggle/{athleteId}/{opportunityId}")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/saved-opportunities/athlete/{athleteId}")
+                    .permitAll()
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/saved-opportunities/isSaved/{athleteId}/{opportunityId}")
+                    .permitAll()
+
+                    // Report endpoints
                     .requestMatchers(HttpMethod.POST, "/api/reports/create/{userId}")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/reports/pending")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/reports/all")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/reports/status/{status}")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/reports/count/{entityId}/{type}")
                     .permitAll()

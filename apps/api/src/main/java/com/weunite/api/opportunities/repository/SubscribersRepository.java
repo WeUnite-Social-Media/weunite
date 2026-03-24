@@ -12,4 +12,6 @@ public interface SubscribersRepository extends JpaRepository<Subscriber, Long> {
   Optional<Subscriber> findByAthleteAndOpportunity(Athlete athlete, Opportunity opportunity);
 
   List<Subscriber> findByOpportunityId(Long opportunityId);
+
+  List<Subscriber> findByAthleteId(Long athleteId);
 }
