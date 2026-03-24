@@ -26,6 +26,8 @@ public class User {
     this.email = email;
     this.password = password;
     this.emailVerified = false;
+    this.isBanned = false;
+    this.isSuspended = false;
     this.isPrivate = false;
   }
 
@@ -52,6 +54,24 @@ public class User {
 
   @Column(nullable = false)
   private boolean emailVerified;
+
+  @Column(nullable = false)
+  private boolean isBanned;
+
+  @Column(nullable = false)
+  private boolean isSuspended;
+
+  @Column private Instant bannedAt;
+
+  @Column(length = 500)
+  private String bannedReason;
+
+  @Column private Long bannedByAdminId;
+
+  @Column private Instant suspendedUntil;
+
+  @Column(length = 500)
+  private String suspensionReason;
 
   @Column private String verificationToken;
 

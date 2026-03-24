@@ -64,6 +64,9 @@ public class Opportunity {
   @Column(nullable = false)
   private LocalDate dateEnd;
 
+  @Column(nullable = false)
+  private boolean deleted;
+
   @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
