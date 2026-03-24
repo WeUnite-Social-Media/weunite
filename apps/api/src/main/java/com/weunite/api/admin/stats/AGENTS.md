@@ -18,6 +18,7 @@ This module owns admin dashboard statistics in `com.weunite.api.admin.stats`.
 
 ## Key entrypoints
 
+- `controller/AdminDashboardController.java`
 - `controller/AdminStatsController.java`
 - `service/AdminStatsService.java`
 - `dto/*`
@@ -25,6 +26,7 @@ This module owns admin dashboard statistics in `com.weunite.api.admin.stats`.
 ## Core use cases
 
 - Return general admin dashboard metrics.
+- Return dashboard compatibility payloads for the web admin.
 - Return monthly chart data.
 - Return user type distribution.
 - Return opportunities skill aggregation.

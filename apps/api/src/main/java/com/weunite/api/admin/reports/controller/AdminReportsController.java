@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -70,6 +71,12 @@ public class AdminReportsController {
 
   @DeleteMapping("/posts/{postId}")
   public ResponseEntity<ResponseDTO<PostDTO>> deletePost(@PathVariable Long postId) {
+    ResponseDTO<PostDTO> response = adminReportService.deletePostByAdmin(postId);
+    return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/posts/{postId}/hide")
+  public ResponseEntity<ResponseDTO<PostDTO>> hidePost(@PathVariable Long postId) {
     ResponseDTO<PostDTO> response = adminReportService.deletePostByAdmin(postId);
     return ResponseEntity.ok(response);
   }
@@ -133,6 +140,12 @@ public class AdminReportsController {
   public ResponseEntity<ResponseDTO<String>> dismissReports(
       @PathVariable Long entityId, @PathVariable String type) {
     ResponseDTO<String> response = adminReportService.dismissReports(entityId, type);
+    return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/posts/{postId}/dismiss")
+  public ResponseEntity<ResponseDTO<String>> dismissPostReports(@PathVariable Long postId) {
+    ResponseDTO<String> response = adminReportService.dismissReports(postId, "POST");
     return ResponseEntity.ok(response);
   }
 

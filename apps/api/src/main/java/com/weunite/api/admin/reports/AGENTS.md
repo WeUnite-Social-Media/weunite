@@ -25,6 +25,7 @@ This module owns admin-side report analysis and moderation actions in `com.weuni
 
 - List/report details for posts, opportunities, and comments.
 - Delete/restore reported content by admin action.
+- Expose compatibility moderation actions for admin web clients when they map to the same report workflow.
 - Transition report states (dismiss/review/resolve).
 
 ## Working rules
