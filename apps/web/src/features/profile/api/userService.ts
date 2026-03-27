@@ -1,5 +1,6 @@
 import type { UpdateUser, User } from "@/shared/types/user.types";
 import { instance as axios } from "@/shared/api/http";
+import { normalizeUser } from "@/shared/lib/normalizeUser";
 import { AxiosError } from "axios";
 
 export const updateUser = async (data: UpdateUser, username: string) => {
@@ -12,6 +13,14 @@ export const updateUser = async (data: UpdateUser, username: string) => {
           name: data.name,
           username: data.username,
           email: data.email,
+          bio: data.bio,
+          isPrivate: data.isPrivate,
+          height: data.height,
+          weight: data.weight,
+          footDomain: data.footDomain,
+          position: data.position,
+          birthDate: data.birthDate,
+          skills: data.skills,
         }),
       ],
       {
@@ -30,10 +39,14 @@ export const updateUser = async (data: UpdateUser, username: string) => {
     }
 
     const response = await axios.put(`/user/update/${username}`, formData);
+    const normalizedData = normalizeUser(response.data.data);
 
     return {
       success: true,
-      data: response.data,
+      data: {
+        ...response.data,
+        data: normalizedData,
+      },
       message: response.data.message || "Perfil atualizado com sucesso!",
       error: null,
     };
@@ -57,7 +70,7 @@ export const getUserByUsername = async (username: string) => {
 
     return {
       success: true,
-      data: userData as User,
+      data: normalizeUser(userData) as User,
       message: response.data.message || null,
       error: null,
     };
@@ -87,7 +100,7 @@ export const getUserById = async (userId: number) => {
 
     return {
       success: true,
-      data: userData as User,
+      data: normalizeUser(userData) as User,
       message: response.data.message || null,
       error: null,
     };
@@ -106,10 +119,14 @@ export const getUserById = async (userId: number) => {
 export const deleteBannerUser = async (username: string) => {
   try {
     const response = await axios.delete(`/user/banner/delete/${username}`);
+    const normalizedData = normalizeUser(response.data.data);
 
     return {
       success: true,
-      data: response.data,
+      data: {
+        ...response.data,
+        data: normalizedData,
+      },
       message: response.data.message || "Banner deletado com sucesso!",
       error: null,
     };

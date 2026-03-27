@@ -57,6 +57,7 @@ import {
   useCommentLikes,
 } from "@/features/feed/state/useLikes";
 import { useEffect } from "react";
+import { ReportModal } from "@/features/reporting/components/ReportModal";
 
 const actions = [{ icon: Heart }, { icon: MessageCircle }, { icon: Repeat2 }];
 
@@ -66,6 +67,7 @@ export default function Comment({ comment }: { comment: Comment }) {
 
   const [isEditCommentOpen, setIsEditCommentOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   type LikeUser = { user: { id: string | number } };
   const { data: likesData } = useCommentLikes(Number(comment.id));
   const serverLikes: LikeUser[] = likesData?.success
@@ -126,10 +128,18 @@ export default function Comment({ comment }: { comment: Comment }) {
         comment={comment}
       />
 
-      <Card className="w-full max-w-[45em] bg-red shadow-none border-0 border-b rounded-none border-foreground/30">
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onOpenChange={setIsReportModalOpen}
+        entityType="COMMENT"
+        entityId={Number(comment.id)}
+        entityTitle={comment.text?.substring(0, 50) || "Comentario"}
+      />
+
+      <Card className="mx-auto w-full max-w-[42em] border-0 border-b border-foreground/30 rounded-none bg-red shadow-none">
         <CardHeader className="flex flex-row items-center gap-2 mb-[0.5em]">
           <Avatar className="hover:cursor-pointer h-[2.8em] w-[2.8em]">
-            <AvatarImage src={user?.profileImg} alt="profile image" />
+            <AvatarImage src={comment.user.profileImg} alt="profile image" />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
 
@@ -210,7 +220,10 @@ export default function Comment({ comment }: { comment: Comment }) {
                     Compartilhar
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-red-600 hover:cursor-pointer">
+                  <DropdownMenuItem
+                    className="text-red-600 hover:cursor-pointer"
+                    onClick={() => setIsReportModalOpen(true)}
+                  >
                     <Flag className="mr-2 h-4 w-4" />
                     Denunciar
                   </DropdownMenuItem>

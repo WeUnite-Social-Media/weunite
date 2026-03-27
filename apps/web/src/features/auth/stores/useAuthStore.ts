@@ -16,6 +16,7 @@ import type {
   SignUpCompany,
   VerifyCode,
 } from "@/shared/types/auth.types";
+import { normalizeUser } from "@/shared/lib/normalizeUser";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { User } from "@/shared/types/user.types";
@@ -33,7 +34,7 @@ export const useAuthStore = create<AuthState>()(
       clearMessages: (): void => {
         set({ message: null, error: null });
       },
-      setUser: (user: User) => set({ user }),
+      setUser: (user: User) => set({ user: normalizeUser(user) ?? null }),
 
       logout: () => {
         set({
@@ -84,7 +85,7 @@ export const useAuthStore = create<AuthState>()(
             message: result.message,
             jwt: result.data.data.jwt,
             isAuthenticated: true,
-            user: result.data.data.user,
+            user: normalizeUser(result.data.data.user) ?? null,
           });
         } else {
           set({
@@ -148,7 +149,7 @@ export const useAuthStore = create<AuthState>()(
 
         if (result.success) {
           set({
-            user: result.data.data.user,
+            user: normalizeUser(result.data.data.user) ?? null,
             jwt: result.data.data.jwt,
             isAuthenticated: true,
             loading: false,

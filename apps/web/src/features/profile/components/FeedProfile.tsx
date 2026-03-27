@@ -6,8 +6,9 @@ import type { Comment as CommentType } from "@/shared/types/comment.types";
 import { useGetPostsByUser } from "@/features/feed/state/usePosts";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useGetCommentsByUserId } from "@/features/feed/state/useComments";
-import AboutProfile from "./AboutProfile";
+import AboutProfile from "@/features/profile/components/AboutProfile";
 import { useUserProfile } from "@/features/profile/hooks/useUserProfile";
+import CompanyOpportunities from "@/features/profile/components/CompanyOpportunities";
 
 interface FeedProfileProps {
   profileUsername?: string;
@@ -19,82 +20,100 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
 
   const isOwnProfile = !profileUsername || profileUsername === user?.username;
   const displayUser = isOwnProfile ? user : profileUser;
+  const isCompanyProfile = displayUser?.role === "company";
 
-  const { data } = useGetPostsByUser(displayUser?.id ? Number(displayUser.id) : 0);
+  const userId = displayUser?.id ? Number(displayUser.id) : 0;
+  const { data: postsResponse } = useGetPostsByUser(userId);
+  const { data: commentsResponse } = useGetCommentsByUserId(userId);
 
-  const { data: dataComments } = useGetCommentsByUserId(
-    displayUser?.id ? Number(displayUser.id) : 0,
-  );
   const [activeTab, setActiveTab] = useState("publicacoes");
-  const posts = data?.data || [];
-  const comments = dataComments?.data || [];
-
-  const userPosts = posts as PostType[];
-  const userComments =
-    comments.filter(
-      (comment: CommentType) => comment.user?.id === displayUser?.id,
-    ) || [];
+  const posts = (postsResponse?.data || []) as PostType[];
+  const comments = (commentsResponse?.data || []) as CommentType[];
 
   return (
-    <div className="max-w-2xl xl:w-[48em] mx-auto">
-      <div className="flex border-b border-primary justify-center">
-        <div
-          className={`w-full justify-center flex cursor-pointer py-2 ${
-            activeTab === "publicacoes" ? "border-b-2 border-primary" : ""
-          }`}
+    <div className="mx-auto max-w-2xl xl:w-[48em]">
+      <div className="flex justify-center border-b border-primary">
+        <TabButton
+          isActive={activeTab === "publicacoes"}
           onClick={() => setActiveTab("publicacoes")}
         >
-          <p className="">Publicações</p>
-        </div>
+          Publicacoes
+        </TabButton>
 
-        <div
-          className={`w-full justify-center flex cursor-pointer py-2 ${
-            activeTab === "comentarios" ? "border-b-2 border-primary" : ""
-          }`}
+        <TabButton
+          isActive={activeTab === "comentarios"}
           onClick={() => setActiveTab("comentarios")}
         >
-          <p className="">Comentários</p>
-        </div>
+          Comentarios
+        </TabButton>
 
-        <div
-          className={`w-full justify-center flex cursor-pointer py-2 ${
-            activeTab === "Sobre" ? "border-b-2 border-primary" : ""
-          }`}
-          onClick={() => setActiveTab("Sobre")}
+        {isCompanyProfile && (
+          <TabButton
+            isActive={activeTab === "oportunidades"}
+            onClick={() => setActiveTab("oportunidades")}
+          >
+            Oportunidades
+          </TabButton>
+        )}
+
+        <TabButton
+          isActive={activeTab === "sobre"}
+          onClick={() => setActiveTab("sobre")}
         >
-          <p className="">Sobre</p>
-        </div>
+          Sobre
+        </TabButton>
       </div>
 
       {activeTab === "publicacoes" && (
         <div className="flex flex-col items-center justify-center">
-          {userPosts.length > 0 ? (
-            userPosts.map((post: PostType) => (
-              <Post key={post.id} post={post} />
-            ))
+          {posts.length > 0 ? (
+            posts.map((post) => <Post key={post.id} post={post} />)
           ) : (
-            <p className="text-gray-500 mt-8">Nenhuma publicação encontrada</p>
+            <p className="mt-8 text-gray-500">Nenhuma publicacao encontrada</p>
           )}
         </div>
       )}
 
       {activeTab === "comentarios" && (
         <div className="flex flex-col items-center justify-center">
-          {userComments.length > 0 ? (
-            userComments.map((comment: CommentType) => (
-              <Comment key={comment.id} comment={comment} />
-            ))
+          {comments.length > 0 ? (
+            comments.map((comment) => <Comment key={comment.id} comment={comment} />)
           ) : (
-            <p className="text-gray-500 mt-8">Nenhum comentário encontrado</p>
+            <p className="mt-8 text-gray-500">Nenhum comentario encontrado</p>
           )}
         </div>
       )}
 
-      {activeTab === "Sobre" && (
-        <div className="flex flex-col items-center justify-center mt-3">
-          <AboutProfile />
+      {activeTab === "oportunidades" && isCompanyProfile && userId > 0 && (
+        <CompanyOpportunities companyId={userId} />
+      )}
+
+      {activeTab === "sobre" && (
+        <div className="mt-3 mb-8 flex flex-col items-center justify-center">
+          <AboutProfile user={displayUser} />
         </div>
       )}
+    </div>
+  );
+}
+
+function TabButton({
+  children,
+  isActive,
+  onClick,
+}: {
+  children: string;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      className={`flex w-full cursor-pointer justify-center py-2 ${
+        isActive ? "border-b-2 border-primary" : ""
+      }`}
+      onClick={onClick}
+    >
+      <p>{children}</p>
     </div>
   );
 }

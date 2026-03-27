@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { postKeys } from "@/features/feed/state/usePosts";
 import { commentKeys } from "@/features/feed/state/useComments";
+import { normalizeUser } from "@/shared/lib/normalizeUser";
 
 export const profileKeys = {
   all: ["profiles"] as const,
@@ -36,22 +37,20 @@ export const useUpdateProfile = () => {
     onSuccess: (result) => {
       if (result.success) {
         toast.success(result.message || "Perfil atualizado com sucesso!");
+        const updatedUser = normalizeUser(result.data?.data);
 
-        if (user && result.data?.data) {
+        if (user && updatedUser) {
           setUser({
             ...user,
-            name: result.data.data.name || user.name,
-            username: result.data.data.username || user.username,
-            profileImg: result.data.data.profileImg || user.profileImg,
-            bannerImg: result.data.data.bannerImg || user.bannerImg,
+            ...updatedUser,
           });
         }
 
         queryClient.invalidateQueries({
-          queryKey: ["user-profile", user?.username],
+          queryKey: profileKeys.detailByUsername(user?.username || ""),
         });
         queryClient.invalidateQueries({
-          queryKey: profileKeys.listByUser(result.data.data.userId),
+          queryKey: profileKeys.detailByUsername(updatedUser?.username || ""),
         });
         queryClient.invalidateQueries({ queryKey: postKeys.lists() });
         queryClient.invalidateQueries({ queryKey: commentKeys.lists() });
@@ -76,16 +75,17 @@ export const useDeleteProfileBanner = () => {
     onSuccess: (result) => {
       if (result.success) {
         toast.success(result.message || "Banner deletado com sucesso!");
+        const updatedUser = normalizeUser(result.data?.data);
 
-        if (user && result.data?.data) {
+        if (user && updatedUser) {
           setUser({
             ...user,
-            bannerImg: result.data.bannerImg ?? null,
+            ...updatedUser,
           });
         }
 
         queryClient.invalidateQueries({
-          queryKey: ["user-profile", user?.username],
+          queryKey: profileKeys.detailByUsername(user?.username || ""),
         });
       } else {
         toast.error(result?.error || "Erro ao deletar banner");

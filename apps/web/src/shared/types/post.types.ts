@@ -26,7 +26,13 @@ export interface Post {
   imageUrl: string | null;
   likes: Like[];
   comments: Comment[];
+  reposts?: Array<{
+    id: string;
+    user: User;
+  }>;
   createdAt: string;
   updatedAt: string | null;
   user: User;
+  repostedBy?: User | null;
+  repostedAt?: string | null;
 }
