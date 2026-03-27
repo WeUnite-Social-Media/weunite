@@ -13,6 +13,13 @@
 pnpm install
 ```
 
+Run the workspace scripts from the repository root (`weunite/`).
+
+If you are inside `apps/api` or `apps/web`, go back first:
+
+- Windows PowerShell: `cd ..\..`
+- macOS/Linux: `cd ../..`
+
 ## Environment files
 
 - Web: `apps/web/.env.example`
@@ -36,6 +43,13 @@ psql -U postgres -c "CREATE DATABASE weunite;"
 ```
 
 3. Copy the example env files and fill them in:
+
+```powershell
+Copy-Item apps/api/.env.example apps/api/.env
+Copy-Item apps/web/.env.example apps/web/.env
+```
+
+Alternative on macOS/Linux:
 
 ```bash
 cp apps/api/.env.example apps/api/.env

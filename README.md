@@ -28,10 +28,64 @@ WeUnite is a social platform that connects athletes, companies, opportunities, a
 
 ## Quick start
 
-1. `corepack pnpm install`
-2. Copy `apps/api/.env.example` to `apps/api/.env` and fill in the required values.
-3. `corepack pnpm dev:infra`
-4. `corepack pnpm dev`
+All workspace scripts should be run from the repository root: `weunite/`.
+
+If you are inside `apps/api` or `apps/web`, go back to the root first:
+
+- Windows PowerShell: `cd ..\..`
+- macOS/Linux: `cd ../..`
+
+### Local native PostgreSQL
+
+1. Go to the repository root:
+
+   ```powershell
+   cd C:\Users\mathe\Documents\Matheus\programming\weunite
+   ```
+
+2. Install dependencies:
+
+   ```powershell
+   corepack pnpm install
+   ```
+
+3. Create the local env files:
+
+   ```powershell
+   Copy-Item apps/api/.env.example apps/api/.env
+   Copy-Item apps/web/.env.example apps/web/.env
+   ```
+
+4. Fill in `apps/api/.env` and `apps/web/.env`.
+
+5. Run the local preflight:
+
+   ```powershell
+   corepack pnpm dev:infra:local
+   ```
+
+6. Start web and api:
+
+   ```powershell
+   corepack pnpm dev
+   ```
+
+### Local with Docker
+
+1. Go to the repository root.
+2. Install dependencies with `corepack pnpm install`.
+3. Copy `apps/api/.env.example` to `apps/api/.env`.
+4. Start the bundled PostgreSQL container:
+
+   ```powershell
+   corepack pnpm dev:infra
+   ```
+
+5. Start web and api:
+
+   ```powershell
+   corepack pnpm dev
+   ```
 
 - Web: `http://localhost:5173`
 - API: `http://localhost:8080/api`
@@ -40,6 +94,7 @@ WeUnite is a social platform that connects athletes, companies, opportunities, a
 
 - `pnpm install`: install workspace dependencies.
 - `pnpm dev:infra`: start local Postgres.
+- `pnpm dev:infra:local`: validate the native PostgreSQL local setup.
 - `pnpm dev`: start the web and api apps together.
 - `pnpm dev:web`: start only the web app.
 - `pnpm dev:api`: start only the api app.
