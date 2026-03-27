@@ -36,6 +36,7 @@ This module owns cross-cutting backend infrastructure in `com.weunite.api.common
 - Keep this module generic and dependency-light.
 - Do not move feature-specific DTOs/services into `common`.
 - Prefer extension/composition by feature modules over tight coupling.
+- Keep database bootstrap and legacy schema/data normalization in `config/*` when the fix is cross-cutting and must run before feature traffic.
 
 ## Validation
 
