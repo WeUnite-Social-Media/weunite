@@ -6,8 +6,8 @@ This package owns the Vite + React web client in `apps/web`.
 
 ## Responsibilities
 
-- Render the main web routes for auth, feed, profile, opportunities, chat, admin, and reporting flows.
-- Hold browser-side auth state, route composition, shared UI primitives, and the web API client.
+- Render the main web routes for auth, feed, profile, opportunities, chat, notifications, admin, and reporting flows.
+- Hold browser-side auth state, route composition, shared UI primitives, realtime subscriptions, and the web API client.
 - Consume the Spring API through HTTP and websocket flows.
 
 ## Does not own

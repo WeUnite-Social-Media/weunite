@@ -9,6 +9,7 @@ import {
   createOpportunityRequest,
   deleteOpportunityRequest,
   getAthleteSubscriptionsRequest,
+  getOpportunityRequest,
   getOpportunitiesCompanyRequest,
   getOpportunitiesRequest,
   getOpportunitySubscribersRequest,
@@ -42,6 +43,14 @@ export const opportunityKeys = {
   athleteSubscriptions: (athleteId: number) =>
     [...opportunityKeys.all, "athlete-subscriptions", athleteId] as const,
 };
+
+export const opportunityDetailQueryOptions = (opportunityId: number) => ({
+  queryKey: opportunityKeys.detail(String(opportunityId)),
+  queryFn: () => getOpportunityRequest(opportunityId),
+  enabled: opportunityId > 0,
+  staleTime: 5 * 60 * 1000,
+  retry: 2,
+});
 
 export const useCreateOpportunity = () => {
   const queryClient = useQueryClient();
@@ -140,6 +149,16 @@ export const useGetOpportunities = () => {
     queryFn: getOpportunitiesRequest,
     staleTime: 5 * 60 * 1000,
     retry: 2,
+  });
+};
+
+export const useGetOpportunity = (
+  opportunityId: number,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    ...opportunityDetailQueryOptions(opportunityId),
+    enabled: options?.enabled ?? opportunityId > 0,
   });
 };
 

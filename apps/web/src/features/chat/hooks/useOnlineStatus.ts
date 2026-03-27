@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useWebSocket } from "@/features/chat/context/WebSocketContext";
+import { useWebSocket } from "@/features/chat/hooks/useWebSocket";
 import { instance as axios } from "@/shared/api/http";
 
 /**

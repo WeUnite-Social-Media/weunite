@@ -3,8 +3,9 @@ import {
   createPostRequest,
   deletePostRequest,
   FEED_POSTS_PAGE_SIZE,
-  getPostsRequest,
+  getPostRequest,
   getPostsByUserRequest,
+  getPostsRequest,
   updatePostRequest,
 } from "@/features/feed/api/postService";
 import {
@@ -23,6 +24,14 @@ export const postKeys = {
   detail: (id: string) => [...postKeys.details(), id] as const,
 };
 
+export const postDetailQueryOptions = (postId: number) => ({
+  queryKey: postKeys.detail(String(postId)),
+  queryFn: () => getPostRequest(postId),
+  enabled: postId > 0,
+  staleTime: 5 * 60 * 1000,
+  retry: 2,
+});
+
 export const useCreatePost = () => {
   const queryClient = useQueryClient();
 
@@ -31,11 +40,11 @@ export const useCreatePost = () => {
       createPostRequest(data, userId),
     onSuccess: (result) => {
       if (result.success) {
-        toast.success(result.message || "Publicação criada com sucesso!");
+        toast.success(result.message || "Publicacao criada com sucesso!");
 
         queryClient.invalidateQueries({ queryKey: postKeys.lists() });
       } else {
-        toast.error(result.message || "Erro ao criar publicação");
+        toast.error(result.message || "Erro ao criar publicacao");
       }
     },
     onError: () => {
@@ -59,11 +68,11 @@ export const useUpdatePost = () => {
     }) => updatePostRequest(data, userId, postId),
     onSuccess: (result) => {
       if (result.success) {
-        toast.success(result.message || "Publicação atualizada com sucesso!");
+        toast.success(result.message || "Publicacao atualizada com sucesso!");
 
         queryClient.invalidateQueries({ queryKey: postKeys.lists() });
       } else {
-        toast.error(result.message || "Erro ao atualizar publicação");
+        toast.error(result.message || "Erro ao atualizar publicacao");
       }
     },
     onError: () => {
@@ -91,6 +100,13 @@ export const useGetPosts = () => {
   });
 };
 
+export const useGetPost = (postId: number, options?: { enabled?: boolean }) => {
+  return useQuery({
+    ...postDetailQueryOptions(postId),
+    enabled: options?.enabled ?? postId > 0,
+  });
+};
+
 export const useGetPostsByUser = (userId: number) => {
   return useQuery({
     queryKey: postKeys.list(`user-${userId}`),
@@ -109,11 +125,11 @@ export const useDeletePost = () => {
       deletePostRequest(userId, postId),
     onSuccess: (result) => {
       if (result.success) {
-        toast.success(result.message || "Publicação deletada com sucesso!");
+        toast.success(result.message || "Publicacao deletada com sucesso!");
 
         queryClient.invalidateQueries({ queryKey: postKeys.lists() });
       } else {
-        toast.error(result.message || "Erro ao deletar publicação");
+        toast.error(result.message || "Erro ao deletar publicacao");
       }
     },
     onError: () => {

@@ -1,5 +1,6 @@
 import type {
   CreateOpportunity,
+  Opportunity,
   SavedOpportunity,
   Subscriber,
   UpdateOpportunity,
@@ -150,6 +151,26 @@ export const getOpportunitiesRequest = async () => {
   }
 };
 
+export const getOpportunityRequest = async (opportunityId: number) => {
+  try {
+    const response = await axios.get(`/opportunities/get/${opportunityId}`);
+    return {
+      success: true,
+      data: response.data.data as Opportunity,
+      message: response.data.message || "Oportunidade carregada com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao carregar a oportunidade",
+    };
+  }
+};
+
 export const getOpportunitySubscribersRequest = async (
   opportunityId: number,
 ) => {
@@ -257,7 +278,7 @@ export const toggleSavedOpportunityRequest = async (
       success: true,
       data: response.data.data as SavedOpportunity | null,
       isSaved: response.data.data !== null,
-      message: response.data.message || "Operação realizada com sucesso!",
+      message: response.data.message || "Operacao realizada com sucesso!",
       error: null,
     };
   } catch (err) {
@@ -318,7 +339,7 @@ export const checkIsSavedRequest = async (
       message: null,
       error:
         error.response?.data?.message ||
-        "Erro ao verificar se a oportunidade está salva",
+        "Erro ao verificar se a oportunidade esta salva",
     };
   }
 };

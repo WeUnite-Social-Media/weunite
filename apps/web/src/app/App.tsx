@@ -7,7 +7,7 @@ import { ProfileRoutes } from "@/features/profile/routes/ProfileRoutes";
 import { OpportunityRoutes } from "@/features/opportunities/routes/OpportunityRoutes";
 import { ChatRoutes } from "@/features/chat/routes/ChatRoutes";
 import { AdminRoutes } from "@/features/admin/routes/AdminRoutes";
-import { WebSocketProvider } from "@/features/chat/context/WebSocketContext";
+import { WebSocketProvider } from "@/app/providers/WebSocketProvider";
 
 function App() {
   return (
