@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { FileText, Flag, Heart, Image, Loader2, RotateCcw, Search } from "lucide-react";
+import { FileText, Flag, Image, Loader2, RotateCcw, Search } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { ReportDetailsModal } from "@/features/admin/components/ReportDetailsModal";
 import {
-  deletePostByAdminRequest,
+  deleteCommentByAdminRequest,
   dismissReportsRequest,
-  getReportedPostsDetailsRequest,
-  restorePostByAdminRequest,
+  getReportedCommentsDetailsRequest,
+  restoreCommentByAdminRequest,
 } from "@/features/admin/api/adminService";
 import { getReportStatusBadge } from "@/features/admin/utils/adminBadges";
 import { Button } from "@/shared/components/ui/button";
@@ -34,7 +34,7 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { Badge } from "@/shared/components/ui/badge";
-import type { Report, ReportedPost } from "@/shared/types/admin.types";
+import type { Report, ReportedComment } from "@/shared/types/admin.types";
 
 function normalizeStatus(status: string): Report["status"] {
   switch (status.toLowerCase()) {
@@ -54,33 +54,37 @@ function normalizeStatus(status: string): Report["status"] {
   }
 }
 
-export function ReportedPostsPage() {
+export function ReportedCommentsPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [reportedPosts, setReportedPosts] = useState<ReportedPost[]>([]);
+  const [reportedComments, setReportedComments] = useState<ReportedComment[]>(
+    [],
+  );
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadReportedPosts = async () => {
+  const loadReportedComments = async () => {
     setIsLoading(true);
-    const response = await getReportedPostsDetailsRequest();
+    const response = await getReportedCommentsDetailsRequest();
 
     if (response.success && response.data) {
-      setReportedPosts(response.data);
+      setReportedComments(response.data);
     } else {
-      toast.error(response.error || "Não foi possível carregar os posts denunciados.");
+      toast.error(
+        response.error || "Não foi possível carregar os comentários denunciados.",
+      );
     }
 
     setIsLoading(false);
   };
 
   useEffect(() => {
-    void loadReportedPosts();
+    void loadReportedComments();
   }, []);
 
-  const handleReview = (reportedPost: ReportedPost) => {
-    const firstReport = reportedPost.reports[0];
+  const handleReview = (reportedComment: ReportedComment) => {
+    const firstReport = reportedComment.reports[0];
 
     if (!firstReport) {
       return;
@@ -88,8 +92,8 @@ export function ReportedPostsPage() {
 
     setSelectedReport({
       id: firstReport.id,
-      entityId: Number(reportedPost.post.id),
-      entityType: "POST",
+      entityId: Number(reportedComment.comment.id),
+      entityType: "COMMENT",
       reportedBy: {
         id: firstReport.reporter.id,
         name: firstReport.reporter.name,
@@ -97,63 +101,65 @@ export function ReportedPostsPage() {
         profileImg: firstReport.reporter.profileImg,
       },
       reportedUser: {
-        id: reportedPost.post.user.id,
-        name: reportedPost.post.user.name,
-        username: reportedPost.post.user.username,
-        profileImg: reportedPost.post.user.profileImg,
+        id: reportedComment.comment.user.id,
+        name: reportedComment.comment.user.name,
+        username: reportedComment.comment.user.username,
+        profileImg: reportedComment.comment.user.profileImg,
       },
       reason: firstReport.reason,
-      description: `Post denunciado ${reportedPost.totalReports} vez(es).`,
-      status: normalizeStatus(reportedPost.status),
+      description: `Comentário denunciado ${reportedComment.totalReports} vez(es).`,
+      status: normalizeStatus(reportedComment.status),
       createdAt: firstReport.createdAt,
-      content: reportedPost.post.text,
-      imageUrl: reportedPost.post.imageUrl || undefined,
+      content: reportedComment.comment.text || "",
+      imageUrl: reportedComment.comment.imageUrl || undefined,
     });
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (postId: number) => {
-    const confirmed = window.confirm("Tem certeza que deseja deletar este post?");
+  const handleDelete = async (commentId: number) => {
+    const confirmed = window.confirm(
+      "Tem certeza que deseja deletar este comentário?",
+    );
     if (!confirmed) {
       return;
     }
 
-    const response = await deletePostByAdminRequest(postId);
+    const response = await deleteCommentByAdminRequest(commentId);
 
     if (response.success) {
-      toast.success(response.message || "Post deletado com sucesso!");
-      void loadReportedPosts();
+      toast.success(response.message || "Comentário deletado com sucesso!");
+      void loadReportedComments();
       return;
     }
 
-    toast.error(response.error || "Erro ao deletar post");
+    toast.error(response.error || "Erro ao deletar comentário");
   };
 
-  const handleRestore = async (postId: number) => {
-    const response = await restorePostByAdminRequest(postId);
+  const handleRestore = async (commentId: number) => {
+    const response = await restoreCommentByAdminRequest(commentId);
 
     if (response.success) {
-      toast.success(response.message || "Post restaurado com sucesso!");
-      void loadReportedPosts();
+      toast.success(response.message || "Comentário restaurado com sucesso!");
+      void loadReportedComments();
       return;
     }
 
-    toast.error(response.error || "Erro ao restaurar post");
+    toast.error(response.error || "Erro ao restaurar comentário");
   };
 
-  const handleDismiss = async (postId: number) => {
-    const response = await dismissReportsRequest(postId, "POST");
+  const handleDismiss = async (commentId: number) => {
+    const response = await dismissReportsRequest(commentId, "COMMENT");
 
     if (response.success) {
       toast.success(response.message || "Denúncias descartadas com sucesso!");
-      void loadReportedPosts();
+      void loadReportedComments();
       return;
     }
 
     toast.error(response.error || "Erro ao descartar denúncias");
   };
 
-  const filteredPosts = reportedPosts.filter((item) => {
+  const filteredComments = reportedComments.filter((item) => {
     const normalizedStatus = normalizeStatus(item.status);
     const matchesStatus =
       statusFilter === "all" || normalizedStatus === statusFilter;
@@ -165,16 +171,16 @@ export function ReportedPostsPage() {
 
     return (
       matchesStatus &&
-      ((item.post.text || "").toLowerCase().includes(query) ||
-        item.post.user.name.toLowerCase().includes(query))
+      ((item.comment.text || "").toLowerCase().includes(query) ||
+        item.comment.user.name.toLowerCase().includes(query))
     );
   });
 
-  const totalReports = reportedPosts.reduce(
+  const totalReports = reportedComments.reduce(
     (count, item) => count + item.totalReports,
     0,
   );
-  const pendingCount = reportedPosts.filter(
+  const pendingCount = reportedComments.filter(
     (item) => normalizeStatus(item.status) === "pending",
   ).length;
 
@@ -182,20 +188,22 @@ export function ReportedPostsPage() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Posts Denunciados</h1>
+          <h1 className="text-3xl font-bold">Comentários Denunciados</h1>
           <p className="text-muted-foreground">
-            Revise e modere posts reportados pelos usuários.
+            Revise e modere comentários reportados pelos usuários.
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Posts denunciados</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Comentários denunciados
+              </CardTitle>
               <Flag className="h-4 w-4 text-red-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{reportedPosts.length}</div>
+              <div className="text-2xl font-bold">{reportedComments.length}</div>
               <p className="text-xs text-muted-foreground">Requerem atenção</p>
             </CardContent>
           </Card>
@@ -218,7 +226,7 @@ export function ReportedPostsPage() {
               <CardTitle className="text-sm font-medium">
                 Total de denúncias
               </CardTitle>
-              <Heart className="h-4 w-4 text-blue-600" />
+              <Image className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalReports}</div>
@@ -229,7 +237,7 @@ export function ReportedPostsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Gerenciar posts denunciados</CardTitle>
+            <CardTitle>Gerenciar comentários denunciados</CardTitle>
             <div className="flex flex-col gap-4 pt-4 md:flex-row">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -276,29 +284,29 @@ export function ReportedPostsPage() {
                       <TableCell colSpan={5} className="py-8 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Carregando posts denunciados...</span>
+                          <span>Carregando comentários denunciados...</span>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ) : filteredPosts.length === 0 ? (
+                  ) : filteredComments.length === 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={5}
                         className="py-8 text-center text-muted-foreground"
                       >
-                        Nenhum post denunciado encontrado.
+                        Nenhum comentário denunciado encontrado.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredPosts.map((item) => (
-                      <TableRow key={item.post.id}>
+                    filteredComments.map((item) => (
+                      <TableRow key={item.comment.id}>
                         <TableCell className="max-w-md">
                           <div className="space-y-1">
-                            <p className="font-medium">{item.post.user.name}</p>
+                            <p className="font-medium">{item.comment.user.name}</p>
                             <p className="truncate text-sm text-muted-foreground">
-                              {item.post.text}
+                              {item.comment.text}
                             </p>
-                            {item.post.imageUrl ? (
+                            {item.comment.imageUrl ? (
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Image className="h-3 w-3" />
                                 <span>Com mídia</span>
@@ -334,7 +342,7 @@ export function ReportedPostsPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleRestore(Number(item.post.id))}
+                                onClick={() => handleRestore(Number(item.comment.id))}
                               >
                                 <RotateCcw className="mr-2 h-4 w-4" />
                                 Restaurar
@@ -344,14 +352,14 @@ export function ReportedPostsPage() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => handleDismiss(Number(item.post.id))}
+                                  onClick={() => handleDismiss(Number(item.comment.id))}
                                 >
                                   Descartar
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() => handleDelete(Number(item.post.id))}
+                                  onClick={() => handleDelete(Number(item.comment.id))}
                                 >
                                   Deletar
                                 </Button>
@@ -372,7 +380,7 @@ export function ReportedPostsPage() {
           isOpen={isModalOpen}
           onOpenChange={setIsModalOpen}
           report={selectedReport}
-          onActionComplete={loadReportedPosts}
+          onActionComplete={loadReportedComments}
         />
       </div>
     </AdminLayout>

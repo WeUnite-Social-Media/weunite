@@ -18,8 +18,10 @@ public interface ReportMapper {
   @Mapping(target = "type", expression = "java(report.getType().name())")
   @Mapping(target = "entityId", source = "report.entityId")
   @Mapping(target = "reason", source = "report.reason")
-  @Mapping(target = "status", expression = "java(report.getStatus().name())")
+  @Mapping(target = "status", expression = "java(report.getStatus().name().toLowerCase())")
   @Mapping(target = "createdAt", source = "report.createdAt")
+  @Mapping(target = "resolvedAt", source = "report.resolvedAt")
+  @Mapping(target = "resolvedByAdminId", source = "report.resolvedByAdminId")
   ReportDTO toReportDTO(Report report);
 
   default ResponseDTO<ReportDTO> toResponseDTO(String message, Report report) {

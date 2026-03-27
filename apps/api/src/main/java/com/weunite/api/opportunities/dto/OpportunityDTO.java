@@ -15,4 +15,19 @@ public record OpportunityDTO(
     Set<Skill> skills,
     Instant createdAt,
     Instant updatedAt,
-    UserDTO company) {}
+    UserDTO company,
+    Integer subscribersCount) {
+
+  public OpportunityDTO(
+      Long id,
+      String title,
+      String description,
+      String location,
+      LocalDate dateEnd,
+      Set<Skill> skills,
+      Instant createdAt,
+      Instant updatedAt,
+      UserDTO company) {
+    this(id, title, description, location, dateEnd, skills, createdAt, updatedAt, company, 0);
+  }
+}

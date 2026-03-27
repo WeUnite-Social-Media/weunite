@@ -139,7 +139,7 @@ export default function FeedOpportunity() {
         </div>
       </div>
 
-      {!isDesktop && (
+      {!isDesktop && user?.role === "company" && (
         <Button
           onClick={() => setIsCreateOpportunityOpen(true)}
           className="fixed bottom-20 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-[10]"

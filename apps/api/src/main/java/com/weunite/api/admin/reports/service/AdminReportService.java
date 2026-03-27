@@ -269,7 +269,8 @@ public class AdminReportService {
                             "",
                             false,
                             Instant.now(),
-                            Instant.now()));
+                            Instant.now()),
+                        0);
               }
 
               List<ReportDTO> reportDTOs = reportMapper.toReportDTOList(allReports);

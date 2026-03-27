@@ -36,7 +36,7 @@ class ReportServiceTest {
     Report report = new Report();
     report.setId(1L);
 
-    ReportDTO reportDTO = new ReportDTO("1", null, "POST", 10L, "Spam", "PENDING", Instant.now());
+    ReportDTO reportDTO = new ReportDTO("1", null, "POST", 10L, "Spam", "pending", Instant.now());
 
     when(reportRepository.findAllReports()).thenReturn(List.of(report));
     when(reportMapper.toReportDTOList(List.of(report))).thenReturn(List.of(reportDTO));
@@ -56,7 +56,7 @@ class ReportServiceTest {
     report.setStatus(Report.ReportStatus.RESOLVED);
 
     ReportDTO reportDTO =
-        new ReportDTO("2", null, "COMMENT", 99L, "Resolved", "RESOLVED", Instant.now());
+        new ReportDTO("2", null, "COMMENT", 99L, "Resolved", "resolved", Instant.now());
 
     when(reportRepository.findAllReportsByStatus(Report.ReportStatus.RESOLVED))
         .thenReturn(List.of(report));

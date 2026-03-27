@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
-import { FileText, Flag, Heart, Image, Loader2, RotateCcw, Search } from "lucide-react";
+import {
+  Briefcase,
+  Flag,
+  Loader2,
+  MapPin,
+  RotateCcw,
+  Search,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { ReportDetailsModal } from "@/features/admin/components/ReportDetailsModal";
 import {
-  deletePostByAdminRequest,
+  deleteOpportunityByAdminRequest,
   dismissReportsRequest,
-  getReportedPostsDetailsRequest,
-  restorePostByAdminRequest,
+  getReportedOpportunitiesDetailsRequest,
+  restoreOpportunityByAdminRequest,
 } from "@/features/admin/api/adminService";
 import { getReportStatusBadge } from "@/features/admin/utils/adminBadges";
 import { Button } from "@/shared/components/ui/button";
@@ -34,7 +41,7 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { Badge } from "@/shared/components/ui/badge";
-import type { Report, ReportedPost } from "@/shared/types/admin.types";
+import type { Report, ReportedOpportunity } from "@/shared/types/admin.types";
 
 function normalizeStatus(status: string): Report["status"] {
   switch (status.toLowerCase()) {
@@ -54,33 +61,38 @@ function normalizeStatus(status: string): Report["status"] {
   }
 }
 
-export function ReportedPostsPage() {
+export function ReportedOpportunitiesPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [reportedPosts, setReportedPosts] = useState<ReportedPost[]>([]);
+  const [reportedOpportunities, setReportedOpportunities] = useState<
+    ReportedOpportunity[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadReportedPosts = async () => {
+  const loadReportedOpportunities = async () => {
     setIsLoading(true);
-    const response = await getReportedPostsDetailsRequest();
+    const response = await getReportedOpportunitiesDetailsRequest();
 
     if (response.success && response.data) {
-      setReportedPosts(response.data);
+      setReportedOpportunities(response.data);
     } else {
-      toast.error(response.error || "Não foi possível carregar os posts denunciados.");
+      toast.error(
+        response.error ||
+          "Não foi possível carregar as oportunidades denunciadas.",
+      );
     }
 
     setIsLoading(false);
   };
 
   useEffect(() => {
-    void loadReportedPosts();
+    void loadReportedOpportunities();
   }, []);
 
-  const handleReview = (reportedPost: ReportedPost) => {
-    const firstReport = reportedPost.reports[0];
+  const handleReview = (reportedOpportunity: ReportedOpportunity) => {
+    const firstReport = reportedOpportunity.reports[0];
 
     if (!firstReport) {
       return;
@@ -88,8 +100,8 @@ export function ReportedPostsPage() {
 
     setSelectedReport({
       id: firstReport.id,
-      entityId: Number(reportedPost.post.id),
-      entityType: "POST",
+      entityId: Number(reportedOpportunity.opportunity.id),
+      entityType: "OPPORTUNITY",
       reportedBy: {
         id: firstReport.reporter.id,
         name: firstReport.reporter.name,
@@ -97,63 +109,66 @@ export function ReportedPostsPage() {
         profileImg: firstReport.reporter.profileImg,
       },
       reportedUser: {
-        id: reportedPost.post.user.id,
-        name: reportedPost.post.user.name,
-        username: reportedPost.post.user.username,
-        profileImg: reportedPost.post.user.profileImg,
+        id: reportedOpportunity.opportunity.company?.id,
+        name:
+          reportedOpportunity.opportunity.company?.name || "Empresa desconhecida",
+        username:
+          reportedOpportunity.opportunity.company?.username || "empresa",
+        profileImg: reportedOpportunity.opportunity.company?.profileImg,
       },
       reason: firstReport.reason,
-      description: `Post denunciado ${reportedPost.totalReports} vez(es).`,
-      status: normalizeStatus(reportedPost.status),
+      description: `Oportunidade denunciada ${reportedOpportunity.totalReports} vez(es).`,
+      status: normalizeStatus(reportedOpportunity.status),
       createdAt: firstReport.createdAt,
-      content: reportedPost.post.text,
-      imageUrl: reportedPost.post.imageUrl || undefined,
+      content: reportedOpportunity.opportunity.description,
     });
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (postId: number) => {
-    const confirmed = window.confirm("Tem certeza que deseja deletar este post?");
+  const handleDelete = async (opportunityId: number) => {
+    const confirmed = window.confirm(
+      "Tem certeza que deseja deletar esta oportunidade?",
+    );
     if (!confirmed) {
       return;
     }
 
-    const response = await deletePostByAdminRequest(postId);
+    const response = await deleteOpportunityByAdminRequest(opportunityId);
 
     if (response.success) {
-      toast.success(response.message || "Post deletado com sucesso!");
-      void loadReportedPosts();
+      toast.success(response.message || "Oportunidade deletada com sucesso!");
+      void loadReportedOpportunities();
       return;
     }
 
-    toast.error(response.error || "Erro ao deletar post");
+    toast.error(response.error || "Erro ao deletar oportunidade");
   };
 
-  const handleRestore = async (postId: number) => {
-    const response = await restorePostByAdminRequest(postId);
+  const handleRestore = async (opportunityId: number) => {
+    const response = await restoreOpportunityByAdminRequest(opportunityId);
 
     if (response.success) {
-      toast.success(response.message || "Post restaurado com sucesso!");
-      void loadReportedPosts();
+      toast.success(response.message || "Oportunidade restaurada com sucesso!");
+      void loadReportedOpportunities();
       return;
     }
 
-    toast.error(response.error || "Erro ao restaurar post");
+    toast.error(response.error || "Erro ao restaurar oportunidade");
   };
 
-  const handleDismiss = async (postId: number) => {
-    const response = await dismissReportsRequest(postId, "POST");
+  const handleDismiss = async (opportunityId: number) => {
+    const response = await dismissReportsRequest(opportunityId, "OPPORTUNITY");
 
     if (response.success) {
       toast.success(response.message || "Denúncias descartadas com sucesso!");
-      void loadReportedPosts();
+      void loadReportedOpportunities();
       return;
     }
 
     toast.error(response.error || "Erro ao descartar denúncias");
   };
 
-  const filteredPosts = reportedPosts.filter((item) => {
+  const filteredOpportunities = reportedOpportunities.filter((item) => {
     const normalizedStatus = normalizeStatus(item.status);
     const matchesStatus =
       statusFilter === "all" || normalizedStatus === statusFilter;
@@ -165,16 +180,17 @@ export function ReportedPostsPage() {
 
     return (
       matchesStatus &&
-      ((item.post.text || "").toLowerCase().includes(query) ||
-        item.post.user.name.toLowerCase().includes(query))
+      (item.opportunity.title.toLowerCase().includes(query) ||
+        item.opportunity.description.toLowerCase().includes(query) ||
+        (item.opportunity.company?.name || "").toLowerCase().includes(query))
     );
   });
 
-  const totalReports = reportedPosts.reduce(
+  const totalReports = reportedOpportunities.reduce(
     (count, item) => count + item.totalReports,
     0,
   );
-  const pendingCount = reportedPosts.filter(
+  const pendingCount = reportedOpportunities.filter(
     (item) => normalizeStatus(item.status) === "pending",
   ).length;
 
@@ -182,20 +198,24 @@ export function ReportedPostsPage() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Posts Denunciados</h1>
+          <h1 className="text-3xl font-bold">Oportunidades Denunciadas</h1>
           <p className="text-muted-foreground">
-            Revise e modere posts reportados pelos usuários.
+            Revise e modere oportunidades reportadas pelos usuários.
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Posts denunciados</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Oportunidades denunciadas
+              </CardTitle>
               <Flag className="h-4 w-4 text-red-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{reportedPosts.length}</div>
+              <div className="text-2xl font-bold">
+                {reportedOpportunities.length}
+              </div>
               <p className="text-xs text-muted-foreground">Requerem atenção</p>
             </CardContent>
           </Card>
@@ -203,7 +223,7 @@ export function ReportedPostsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-              <FileText className="h-4 w-4 text-orange-600" />
+              <Briefcase className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{pendingCount}</div>
@@ -218,7 +238,7 @@ export function ReportedPostsPage() {
               <CardTitle className="text-sm font-medium">
                 Total de denúncias
               </CardTitle>
-              <Heart className="h-4 w-4 text-blue-600" />
+              <MapPin className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalReports}</div>
@@ -229,14 +249,14 @@ export function ReportedPostsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Gerenciar posts denunciados</CardTitle>
+            <CardTitle>Gerenciar oportunidades denunciadas</CardTitle>
             <div className="flex flex-col gap-4 pt-4 md:flex-row">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Buscar por autor ou conteúdo..."
+                  placeholder="Buscar por título, empresa ou descrição..."
                   className="pl-10"
                 />
               </div>
@@ -249,9 +269,9 @@ export function ReportedPostsPage() {
                   <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="pending">Pendente</SelectItem>
                   <SelectItem value="under_review">Em análise</SelectItem>
-                  <SelectItem value="resolved">Resolvido</SelectItem>
-                  <SelectItem value="dismissed">Rejeitado</SelectItem>
-                  <SelectItem value="deleted">Deletado</SelectItem>
+                  <SelectItem value="resolved">Resolvida</SelectItem>
+                  <SelectItem value="dismissed">Rejeitada</SelectItem>
+                  <SelectItem value="deleted">Deletada</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -262,7 +282,7 @@ export function ReportedPostsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Conteúdo</TableHead>
+                    <TableHead>Oportunidade</TableHead>
                     <TableHead>Denúncias</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data</TableHead>
@@ -276,34 +296,31 @@ export function ReportedPostsPage() {
                       <TableCell colSpan={5} className="py-8 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Carregando posts denunciados...</span>
+                          <span>Carregando oportunidades denunciadas...</span>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ) : filteredPosts.length === 0 ? (
+                  ) : filteredOpportunities.length === 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={5}
                         className="py-8 text-center text-muted-foreground"
                       >
-                        Nenhum post denunciado encontrado.
+                        Nenhuma oportunidade denunciada encontrada.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredPosts.map((item) => (
-                      <TableRow key={item.post.id}>
+                    filteredOpportunities.map((item) => (
+                      <TableRow key={item.opportunity.id}>
                         <TableCell className="max-w-md">
                           <div className="space-y-1">
-                            <p className="font-medium">{item.post.user.name}</p>
-                            <p className="truncate text-sm text-muted-foreground">
-                              {item.post.text}
+                            <p className="font-medium">{item.opportunity.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Por {item.opportunity.company?.name || "Empresa"}
                             </p>
-                            {item.post.imageUrl ? (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Image className="h-3 w-3" />
-                                <span>Com mídia</span>
-                              </div>
-                            ) : null}
+                            <p className="truncate text-sm text-muted-foreground">
+                              {item.opportunity.description}
+                            </p>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -334,7 +351,7 @@ export function ReportedPostsPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleRestore(Number(item.post.id))}
+                                onClick={() => handleRestore(Number(item.opportunity.id))}
                               >
                                 <RotateCcw className="mr-2 h-4 w-4" />
                                 Restaurar
@@ -344,14 +361,18 @@ export function ReportedPostsPage() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => handleDismiss(Number(item.post.id))}
+                                  onClick={() =>
+                                    handleDismiss(Number(item.opportunity.id))
+                                  }
                                 >
                                   Descartar
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() => handleDelete(Number(item.post.id))}
+                                  onClick={() =>
+                                    handleDelete(Number(item.opportunity.id))
+                                  }
                                 >
                                   Deletar
                                 </Button>
@@ -372,7 +393,7 @@ export function ReportedPostsPage() {
           isOpen={isModalOpen}
           onOpenChange={setIsModalOpen}
           report={selectedReport}
-          onActionComplete={loadReportedPosts}
+          onActionComplete={loadReportedOpportunities}
         />
       </div>
     </AdminLayout>

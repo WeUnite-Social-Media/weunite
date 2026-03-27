@@ -2,6 +2,7 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
 } from "@/shared/components/ui/drawer";
@@ -15,9 +16,20 @@ import {
 import type { Opportunity } from "@/shared/types/opportunity.types";
 import { X as CloseIcon, MapPin, Calendar, Users } from "lucide-react";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
-import { Dialog, DialogContent } from "@/shared/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+} from "@/shared/components/ui/dialog";
 import { getInitials } from "@/shared/utils/getInitials";
 import { getTimeAgo } from "@/shared/hooks/useGetTimeAgo";
+import { useAuthStore } from "@/features/auth/stores/useAuthStore";
+import {
+  useCheckIsSubscribed,
+  useToggleSubscriber,
+} from "@/features/opportunities/state/useOpportunities";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface OpportunityDescriptionProps {
   isOpen?: boolean;
@@ -30,11 +42,24 @@ export function OpportunityDescription({
   onOpenChange,
   opportunity,
 }: OpportunityDescriptionProps) {
-  // const { user } = useAuthStore();
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const toggleSubscriber = useToggleSubscriber();
 
   const companyInitials = getInitials(opportunity.company?.name || "");
 
   const { commentDesktop } = useBreakpoints();
+  const isOwner = opportunity.company?.id === user?.id;
+  const isAthlete = user?.role === "athlete";
+  const subscribersCount =
+    opportunity.subscribersCount ?? opportunity.subscribers?.length ?? 0;
+
+  const { data: isSubscribedData } = useCheckIsSubscribed(
+    Number(user?.id),
+    Number(opportunity.id),
+    Boolean(user?.id) && isAthlete && !isOwner,
+  );
+  const isSubscribed = isSubscribedData?.data ?? false;
 
   const opportunityDate = new Date(opportunity.dateEnd).toLocaleDateString(
     "pt-BR",
@@ -45,7 +70,29 @@ export function OpportunityDescription({
     },
   );
 
-  const handleApply = () => {};
+  const isExpired = (() => {
+    const deadline = new Date(opportunity.dateEnd);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    deadline.setHours(0, 0, 0, 0);
+    return deadline < today;
+  })();
+
+  const handleApply = () => {
+    if (!user?.id || !isAthlete || toggleSubscriber.isPending) {
+      return;
+    }
+
+    if (isExpired) {
+      toast.error("O prazo desta oportunidade já expirou.");
+      return;
+    }
+
+    toggleSubscriber.mutate({
+      athleteId: Number(user.id),
+      opportunityId: Number(opportunity.id),
+    });
+  };
 
   if (!commentDesktop) {
     return (
@@ -56,6 +103,9 @@ export function OpportunityDescription({
               <CloseIcon className="h-5 w-5 hover:cursor-pointer" />
             </DrawerClose>
             <DrawerTitle>Detalhes da Oportunidade</DrawerTitle>
+            <DrawerDescription>
+              Veja os detalhes da vaga e acompanhe suas candidaturas.
+            </DrawerDescription>
           </DrawerHeader>
 
           <div className="flex flex-col w-full items-center overflow-y-auto px-4 py-6">
@@ -87,7 +137,7 @@ export function OpportunityDescription({
                 </div>
                 <div className="flex items-center gap-1">
                   <Users className="h-4 w-4" />
-                  {opportunity.subscribers?.length || 0} candidatos
+                  {subscribersCount} candidatos
                 </div>
               </div>
 
@@ -108,11 +158,36 @@ export function OpportunityDescription({
             </div>
 
             {/* Botão de candidatura */}
-            <div className="w-full max-w-[45em] border-t pt-4">
-              <Button onClick={handleApply} className="w-full">
-                Candidatar-se
-              </Button>
-            </div>
+            {!isOwner && isAthlete ? (
+              <div className="w-full max-w-[45em] border-t pt-4">
+                <Button
+                  onClick={handleApply}
+                  className="w-full"
+                  disabled={toggleSubscriber.isPending || isExpired}
+                >
+                  {toggleSubscriber.isPending
+                    ? "Processando..."
+                    : isSubscribed
+                      ? "Cancelar candidatura"
+                      : "Candidatar-se"}
+                </Button>
+              </div>
+            ) : null}
+
+            {isOwner ? (
+              <div className="w-full max-w-[45em] border-t pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    onOpenChange?.(false);
+                    navigate(`/opportunity/${opportunity.id}/subscribers`);
+                  }}
+                  className="w-full"
+                >
+                  Ver inscritos ({subscribersCount})
+                </Button>
+              </div>
+            ) : null}
           </div>
         </DrawerContent>
       </Drawer>
@@ -122,6 +197,9 @@ export function OpportunityDescription({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-[90vw] h-[90vh] p-0 rounded-xl overflow-hidden">
+        <DialogDescription className="sr-only">
+          Veja os detalhes da vaga e acompanhe suas candidaturas.
+        </DialogDescription>
         <div className="flex w-full h-full">
           <div className="w-full flex flex-col">
             {/* Cabeçalho */}
@@ -153,7 +231,7 @@ export function OpportunityDescription({
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>{opportunity.subscribers?.length || 0} candidatos</span>
+                  <span>{subscribersCount} candidatos</span>
                 </div>
               </div>
 
@@ -183,11 +261,36 @@ export function OpportunityDescription({
             </div>
 
             {/* Footer com botão de candidatura */}
-            <div className="border-t p-6">
-              <Button onClick={handleApply} className="w-full">
-                Candidatar-se para esta oportunidade
-              </Button>
-            </div>
+            {!isOwner && isAthlete ? (
+              <div className="border-t p-6">
+                <Button
+                  onClick={handleApply}
+                  className="w-full"
+                  disabled={toggleSubscriber.isPending || isExpired}
+                >
+                  {toggleSubscriber.isPending
+                    ? "Processando..."
+                    : isSubscribed
+                      ? "Cancelar candidatura"
+                      : "Candidatar-se para esta oportunidade"}
+                </Button>
+              </div>
+            ) : null}
+
+            {isOwner ? (
+              <div className="border-t p-6">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    onOpenChange?.(false);
+                    navigate(`/opportunity/${opportunity.id}/subscribers`);
+                  }}
+                  className="w-full"
+                >
+                  Ver inscritos ({subscribersCount})
+                </Button>
+              </div>
+            ) : null}
           </div>
         </div>
       </DialogContent>

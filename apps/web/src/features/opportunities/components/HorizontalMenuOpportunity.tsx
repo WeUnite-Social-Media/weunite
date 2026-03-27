@@ -18,7 +18,7 @@ export function HorizontalMenuOpportunity() {
         {user?.role === "company" && (
           <Button
             variant="outline"
-            onClick={() => navigate("/opportunity/my")}
+            onClick={() => navigate("/opportunity/my-opportunities")}
             className="w-[14em] justify-center text-xs h-[2em] bg-gradient-to-r from-third to-green-500 hover:from-green-500 hover:to-emerald-500 text-white shadow-md hover:shadow-lg transition-all duration-300"
           >
             <Building2 className="h-4 w-4 text-white" />

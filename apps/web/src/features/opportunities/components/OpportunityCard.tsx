@@ -52,7 +52,14 @@ import { OpportunityDescription } from "./DescriptionOpportunity";
 import { EditOpportunity } from "./EditOpportunity";
 import type { Opportunity } from "@/shared/types/opportunity.types";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
-import { useDeleteOpportunity } from "@/features/opportunities/state/useOpportunities";
+import {
+  useCheckIsSaved,
+  useCheckIsSubscribed,
+  useDeleteOpportunity,
+  useToggleSavedOpportunity,
+  useToggleSubscriber,
+} from "@/features/opportunities/state/useOpportunities";
+import { ReportModal } from "@/features/reporting/components/ReportModal";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
@@ -63,11 +70,13 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const deleteOpportunity = useDeleteOpportunity();
+  const toggleSubscriber = useToggleSubscriber();
+  const toggleSavedOpportunity = useToggleSavedOpportunity();
 
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditOpportunityOpen, setIsEditOpportunityOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const timeAgo = getTimeAgo(opportunity.createdAt);
 
@@ -81,13 +90,34 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
   );
 
   const isOwner = opportunity.company?.id === user?.id;
+  const isAthlete = user?.role === "athlete";
+  const subscribersCount =
+    opportunity.subscribersCount ?? opportunity.subscribers?.length ?? 0;
+
+  const { data: isSubscribedData } = useCheckIsSubscribed(
+    Number(user?.id),
+    Number(opportunity.id),
+    Boolean(user?.id) && isAthlete && !isOwner,
+  );
+  const { data: isSavedData } = useCheckIsSaved(
+    Number(user?.id),
+    Number(opportunity.id),
+    Boolean(user?.id) && isAthlete,
+  );
+
+  const isSubscribed = isSubscribedData?.data ?? false;
+  const isSaved = isSavedData?.data ?? false;
 
   const handleCompanyClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isOwner) {
       navigate("/profile");
     } else {
-      navigate(`/profile/${opportunity.company?.id}`);
+      navigate(
+        opportunity.company?.username
+          ? `/profile/${opportunity.company.username}`
+          : "/profile",
+      );
     }
   };
 
@@ -112,11 +142,28 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
   const handleApply = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    if (!user?.id || !isAthlete || toggleSubscriber.isPending) {
+      return;
+    }
+
+    toggleSubscriber.mutate({
+      athleteId: Number(user.id),
+      opportunityId: Number(opportunity.id),
+    });
   };
 
   const handleBookmark = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsBookmarked(!isBookmarked);
+
+    if (!user?.id || !isAthlete || toggleSavedOpportunity.isPending) {
+      return;
+    }
+
+    toggleSavedOpportunity.mutate({
+      athleteId: Number(user.id),
+      opportunityId: Number(opportunity.id),
+    });
   };
 
   const handleDropdownClick = (e: React.MouseEvent) => {
@@ -163,6 +210,18 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
                 <DropdownMenuContent align="end" className="w-48">
                   {isOwner ? (
                     <>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/opportunity/${opportunity.id}/subscribers`);
+                        }}
+                        className="hover:cursor-pointer"
+                      >
+                        <Users className="mr-2 h-4 w-4" />
+                        Ver inscritos ({subscribersCount})
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={handleEditOpportunityOpen}
                         className="hover:cursor-pointer"
@@ -230,7 +289,13 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
                         Compartilhar
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-red-600 hover:cursor-pointer">
+                      <DropdownMenuItem
+                        className="text-red-600 hover:cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsReportModalOpen(true);
+                        }}
+                      >
                         <Flag className="mr-2 h-4 w-4" />
                         Denunciar
                       </DropdownMenuItem>
@@ -265,7 +330,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
               <div className="flex items-center gap-1">
                 <Users className="h-4 w-4" />
-                <span>{opportunity.subscribers?.length || 0} candidatos</span>
+                <span>{subscribersCount} candidatos</span>
               </div>
             </div>
           </div>
@@ -274,28 +339,49 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
         <CardFooter className="flex flex-col mt-[-15px]">
           <div className="flex w-full justify-between items-center">
             <CardAction className="flex items-center gap-3">
-              {!isOwner && (
+              {!isOwner && isAthlete && (
                 <Button
                   size="sm"
                   variant="default"
                   className="bg-third hover:bg-third/90 text-white rounded-full px-4"
                   onClick={handleApply}
+                  disabled={toggleSubscriber.isPending}
                 >
-                  Candidatar-se
+                  {toggleSubscriber.isPending
+                    ? "Processando..."
+                    : isSubscribed
+                      ? "Cancelar candidatura"
+                      : "Candidatar-se"}
+                </Button>
+              )}
+              {isOwner && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full px-4 border-third text-third hover:bg-third hover:text-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/opportunity/${opportunity.id}/subscribers`);
+                  }}
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  Ver inscritos ({subscribersCount})
                 </Button>
               )}
             </CardAction>
 
             <CardAction className="flex items-center gap-2">
-              <div onClick={handleBookmark} className="hover:cursor-pointer">
-                <Bookmark
-                  className={`h-5 w-5 transition-colors ${
-                    isBookmarked
-                      ? "text-third fill-third"
-                      : "text-muted-foreground hover:text-third"
-                  }`}
-                />
-              </div>
+              {isAthlete ? (
+                <div onClick={handleBookmark} className="hover:cursor-pointer">
+                  <Bookmark
+                    className={`h-5 w-5 transition-colors ${
+                      isSaved
+                        ? "fill-third text-third"
+                        : "text-muted-foreground hover:text-third"
+                    }`}
+                  />
+                </div>
+              ) : null}
             </CardAction>
           </div>
         </CardFooter>
@@ -311,6 +397,14 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
         open={isEditOpportunityOpen}
         onOpenChange={setIsEditOpportunityOpen}
         opportunity={opportunity}
+      />
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onOpenChange={setIsReportModalOpen}
+        entityType="OPPORTUNITY"
+        entityId={Number(opportunity.id)}
+        entityTitle={opportunity.title}
       />
     </>
   );

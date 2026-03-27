@@ -32,6 +32,10 @@ public interface OpportunityMapper {
   @Mapping(target = "updatedAt", source = "opportunity.updatedAt")
   @Mapping(target = "skills", source = "opportunity.skills")
   @Mapping(target = "company", source = "opportunity.company")
+  @Mapping(
+      target = "subscribersCount",
+      expression =
+          "java(opportunity.getSubscribers() != null ? opportunity.getSubscribers().size() : 0)")
   OpportunityDTO toOpportunityDTO(Opportunity opportunity);
 
   default ResponseDTO<OpportunityDTO> toResponseDTO(String message, Opportunity opportunity) {

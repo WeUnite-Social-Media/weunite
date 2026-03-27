@@ -27,7 +27,7 @@ export function OpportunitySidebar() {
 
             <Button
               variant="outline"
-              onClick={() => navigate("/opportunity/my")}
+              onClick={() => navigate("/opportunity/my-opportunities")}
               className="group relative w-full justify-start gap-3 h-12 bg-gradient-to-r from-card to-card/90 hover:from-green-50 hover:to-green-100 dark:hover:from-green-950/20 dark:hover:to-green-900/30 border-border hover:border-green-300 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/10 overflow-hidden"
             >
               <div className="relative z-10 flex items-center gap-3">

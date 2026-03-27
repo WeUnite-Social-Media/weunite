@@ -5,15 +5,22 @@
 import type { User } from "./user.types";
 import type { Post } from "./post.types";
 import type { Opportunity } from "./opportunity.types";
+import type { Comment } from "./comment.types";
 
 /**
  * Status possíveis de uma denúncia
  */
 export type ReportStatus =
   | "pending"
+  | "reviewed"
   | "under_review"
   | "resolved"
-  | "dismissed";
+  | "dismissed"
+  | "deleted"
+  | "hidden"
+  | "resolved_dismissed"
+  | "resolved_suspended"
+  | "resolved_banned";
 
 /**
  * Motivos de denúncia disponíveis
@@ -25,6 +32,11 @@ export type ReportReason =
   | "fake_profile"
   | "fake_opportunity"
   | "copyright_violation"
+  | "violence"
+  | "hate_speech"
+  | "misinformation"
+  | "scam"
+  | "discrimination"
   | "other";
 
 /**
@@ -40,12 +52,16 @@ export interface Report {
   entityId?: number;
   entityType?: "POST" | "USER" | "OPPORTUNITY" | "COMMENT";
   reportedBy: {
+    id?: string;
     name: string;
     username: string;
+    profileImg?: string;
   };
   reportedUser: {
+    id?: string;
     name: string;
     username: string;
+    profileImg?: string;
   };
   reason: ReportReason;
   description: string;
@@ -77,7 +93,14 @@ export interface ReportedPost {
   post: Post;
   reports: PostReport[];
   totalReports: number;
-  status: "pending" | "hidden" | "deleted";
+  status:
+    | "pending"
+    | "hidden"
+    | "deleted"
+    | "reviewed"
+    | "under_review"
+    | "resolved"
+    | "dismissed";
 }
 
 /**
@@ -127,7 +150,41 @@ export interface ReportedOpportunity {
   opportunity: Opportunity;
   reports: OpportunityReport[];
   totalReports: number;
-  status: "active" | "hidden" | "deleted";
+  status:
+    | "active"
+    | "hidden"
+    | "deleted"
+    | "reviewed"
+    | "under_review"
+    | "resolved"
+    | "dismissed"
+    | "pending";
+}
+
+export interface CommentReport {
+  id: string;
+  commentId: string;
+  reporter: User;
+  reason: ReportReason;
+  description: string;
+  status: ReportStatus;
+  createdAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+}
+
+export interface ReportedComment {
+  comment: Comment;
+  reports: CommentReport[];
+  totalReports: number;
+  status:
+    | "pending"
+    | "hidden"
+    | "deleted"
+    | "reviewed"
+    | "under_review"
+    | "resolved"
+    | "dismissed";
 }
 
 /**

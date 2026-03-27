@@ -4,6 +4,8 @@ import { Navigate, Outlet } from "react-router-dom";
 import { AdminDashboardPage } from "@/features/admin/pages/AdminDashboardPage";
 import { AdminUsersPage } from "@/features/admin/pages/AdminUsersPage";
 import { AdminReportsPage } from "@/features/admin/pages/AdminReportsPage";
+import { ReportedCommentsPage } from "@/features/admin/pages/ReportedCommentsPage";
+import { ReportedOpportunitiesPage } from "@/features/admin/pages/ReportedOpportunitiesPage";
 import { ReportedPostsPage } from "@/features/admin/pages/ReportedPostsPage";
 import { AdminModerationDemo } from "@/features/admin/pages/AdminModerationDemo";
 
@@ -47,6 +49,11 @@ export function AdminRoutes() {
         <Route path="/users" element={<AdminUsersPage />} />
         <Route path="/reports" element={<AdminReportsPage />} />
         <Route path="/posts/reported" element={<ReportedPostsPage />} />
+        <Route
+          path="/opportunities/reported"
+          element={<ReportedOpportunitiesPage />}
+        />
+        <Route path="/comments/reported" element={<ReportedCommentsPage />} />
         <Route path="/moderation-demo" element={<AdminModerationDemo />} />
         {/* Adicionar outras rotas admin aqui */}
       </Route>

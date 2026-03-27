@@ -83,6 +83,7 @@ export type {
   ModerationAction,
   ModerationResponse,
   Report,
+  ReportedComment,
   ReportedOpportunity,
   ReportedPost,
 } from "./report.types";
