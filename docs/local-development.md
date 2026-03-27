@@ -5,7 +5,7 @@
 - Node.js 22 LTS
 - pnpm 10
 - Java 17
-- Docker Desktop or compatible Docker runtime
+- PostgreSQL 15+ local, or Docker Desktop / compatible Docker runtime
 
 ## Install
 
@@ -19,24 +19,66 @@ pnpm install
 - API: `apps/api/.env.example`
 - Mobile: `apps/mobile/.env.example`
 
-## Local workflow
+## Local workflow with native PostgreSQL
 
-1. Start infrastructure:
+1. Install and start PostgreSQL locally.
+
+2. Create the local database:
 
 ```bash
-pnpm dev:infra
+createdb weunite
 ```
 
-2. Start web and api together:
+Alternative with `psql`:
+
+```bash
+psql -U postgres -c "CREATE DATABASE weunite;"
+```
+
+3. Copy the example env files and fill them in:
+
+```bash
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
+```
+
+4. Run the local preflight:
+
+```bash
+pnpm dev:infra:local
+```
+
+5. Start web and api together:
 
 ```bash
 pnpm dev
 ```
 
-3. Start mobile separately when needed:
+6. Start mobile separately when needed:
 
 ```bash
 pnpm dev:mobile
+```
+
+`pnpm dev:infra:local` validates:
+
+- `apps/api/.env` and `apps/web/.env`
+- required API env vars
+- base64 RSA JWT keys
+- TCP connectivity to PostgreSQL using `DB_HOST` / `DB_PORT`
+
+## Local workflow with Docker
+
+1. Start the bundled PostgreSQL container:
+
+```bash
+pnpm dev:infra
+```
+
+2. Start web and api:
+
+```bash
+pnpm dev
 ```
 
 ## Validation

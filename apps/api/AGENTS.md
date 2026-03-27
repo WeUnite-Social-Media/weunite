@@ -29,6 +29,7 @@ This package owns the Spring Boot backend in `apps/api`.
 - Keep controllers thin and push domain logic into services.
 - Keep feature-specific types, repositories, and mappers inside their feature module.
 - Keep cross-cutting config, error handling, validation, mail, storage, and security under `common`.
+- Keep runtime configuration environment-driven; local PostgreSQL support should flow through app properties and env defaults instead of hardcoded machine-specific values.
 - Preserve existing HTTP contracts unless a product/API change is explicit.
 - Do not recreate root-level package-by-layer buckets such as `controller`, `dto`, `mapper`, `repository`, `service`, or `exceptions`.
 - Add deeper `AGENTS.md` files only for backend feature modules with real ownership or non-obvious maintenance rules.
