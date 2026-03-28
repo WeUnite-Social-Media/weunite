@@ -1,25 +1,21 @@
+import { useState, type MouseEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/features/auth/stores/useAuthStore";
+import { ReportModal } from "@/features/reporting/components/ReportModal";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-  CardAction,
-} from "@/shared/components/ui/card";
+  useCheckIsSaved,
+  useCheckIsSubscribed,
+  useDeleteOpportunity,
+  useToggleSavedOpportunity,
+  useToggleSubscriber,
+} from "@/features/opportunities/state/useOpportunities";
+import { OpportunityDescription } from "./DescriptionOpportunity";
+import { EditOpportunity } from "./EditOpportunity";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/shared/components/ui/avatar";
-import { Button } from "@/shared/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/shared/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,42 +27,43 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/shared/components/ui/alert-dialog";
+import { Button } from "@/shared/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/shared/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/components/ui/dropdown-menu";
+import { getTimeAgo } from "@/shared/hooks/useGetTimeAgo";
+import { getInitials } from "@/shared/utils/getInitials";
+import type { Opportunity } from "@/shared/types/opportunity.types";
 import {
   Bookmark,
-  Share,
-  EllipsisVertical,
-  MapPin,
   Calendar,
-  Users,
-  Trash2,
-  Flag,
   Edit,
+  EllipsisVertical,
+  Flag,
+  MapPin,
+  Share,
+  Trash2,
+  Users,
 } from "lucide-react";
-
-import { getTimeAgo } from "@/shared/hooks/useGetTimeAgo";
-
-import { useState } from "react";
-import { getInitials } from "@/shared/utils/getInitials";
-import { useNavigate } from "react-router-dom";
-import { OpportunityDescription } from "./DescriptionOpportunity";
-import { EditOpportunity } from "./EditOpportunity";
-import type { Opportunity } from "@/shared/types/opportunity.types";
-import { useAuthStore } from "@/features/auth/stores/useAuthStore";
-import {
-  useCheckIsSaved,
-  useCheckIsSubscribed,
-  useDeleteOpportunity,
-  useToggleSavedOpportunity,
-  useToggleSubscriber,
-} from "@/features/opportunities/state/useOpportunities";
-import { ReportModal } from "@/features/reporting/components/ReportModal";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
 }
 
 export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
-  const initials = getInitials(opportunity.company?.username || "");
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const deleteOpportunity = useDeleteOpportunity();
@@ -78,8 +75,10 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
   const [isEditOpportunityOpen, setIsEditOpportunityOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
+  const companyName =
+    opportunity.company?.name || opportunity.company?.username || "";
+  const initials = getInitials(companyName);
   const timeAgo = getTimeAgo(opportunity.createdAt);
-
   const deadlineDate = new Date(opportunity.dateEnd).toLocaleDateString(
     "pt-BR",
     {
@@ -108,21 +107,25 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
   const isSubscribed = isSubscribedData?.data ?? false;
   const isSaved = isSavedData?.data ?? false;
 
-  const handleCompanyClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCompanyClick = (event: MouseEvent) => {
+    event.stopPropagation();
+
     if (isOwner) {
       navigate("/profile");
-    } else {
-      navigate(
-        opportunity.company?.username
-          ? `/profile/${opportunity.company.username}`
-          : "/profile",
-      );
+      return;
     }
+
+    navigate(
+      opportunity.company?.username
+        ? `/profile/${opportunity.company.username}`
+        : "/profile",
+    );
   };
 
   const handleDelete = () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      return;
+    }
 
     deleteOpportunity.mutate({
       companyId: Number(user.id),
@@ -132,16 +135,12 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
     setIsDeleteDialogOpen(false);
   };
 
-  const handleEditOpportunityOpen = () => {
-    setIsEditOpportunityOpen(true);
-  };
-
   const handleCardClick = () => {
     setIsDescriptionOpen(true);
   };
 
-  const handleApply = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleApply = (event: MouseEvent) => {
+    event.stopPropagation();
 
     if (!user?.id || !isAthlete || toggleSubscriber.isPending) {
       return;
@@ -153,8 +152,8 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
     });
   };
 
-  const handleBookmark = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleBookmark = (event: MouseEvent) => {
+    event.stopPropagation();
 
     if (!user?.id || !isAthlete || toggleSavedOpportunity.isPending) {
       return;
@@ -166,38 +165,37 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
     });
   };
 
-  const handleDropdownClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDropdownClick = (event: MouseEvent) => {
+    event.stopPropagation();
   };
 
   return (
     <>
       <Card
-        className="w-full max-w-[45em] bg-card shadow-none border-0 rounded-none border-foreground/50 hover:bg-muted/30 transition-colors cursor-pointer"
+        className="w-full max-w-[45em] cursor-pointer rounded-none border-0 border-foreground/50 bg-card shadow-none transition-colors hover:bg-muted/30"
         onClick={handleCardClick}
       >
-        <CardHeader className="flex flex-row items-center gap-2 mb-[0.5em]">
+        <CardHeader className="mb-[0.5em] flex flex-row items-center gap-2">
           <Avatar
-            className="hover:cursor-pointer h-[2.8em] w-[2.8em]"
+            className="h-[2.8em] w-[2.8em] cursor-pointer"
             onClick={handleCompanyClick}
           >
             <AvatarImage
               src={opportunity.company?.profileImg}
-              alt="company logo"
+              alt={`${companyName} logo`}
             />
-            <AvatarFallback className="bg-third/10 text-third font-semibold">
+            <AvatarFallback className="bg-third/10 font-semibold text-third">
               {initials}
             </AvatarFallback>
           </Avatar>
 
           <div className="flex flex-col">
             <CardTitle
-              className="text-base font-medium hover:cursor-pointer"
+              className="cursor-pointer text-base font-medium"
               onClick={handleCompanyClick}
             >
-              {opportunity.company?.username}
+              {opportunity.company?.username || companyName}
             </CardTitle>
-
             <CardDescription className="text-xs">há {timeAgo}</CardDescription>
           </div>
 
@@ -205,26 +203,30 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
             <div onClick={handleDropdownClick}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <EllipsisVertical className="h-5 w-5 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
+                  <EllipsisVertical className="h-5 w-5 cursor-pointer text-muted-foreground transition-colors hover:text-primary" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   {isOwner ? (
                     <>
                       <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        onClick={(event) => {
+                          event.stopPropagation();
                           navigate(`/opportunity/${opportunity.id}/subscribers`);
                         }}
-                        className="hover:cursor-pointer"
+                        className="cursor-pointer"
                       >
                         <Users className="mr-2 h-4 w-4" />
                         Ver inscritos ({subscribersCount})
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
+
                       <DropdownMenuItem
-                        onClick={handleEditOpportunityOpen}
-                        className="hover:cursor-pointer"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setIsEditOpportunityOpen(true);
+                        }}
+                        className="cursor-pointer"
                       >
                         <Edit className="mr-2 h-4 w-4" />
                         Editar
@@ -236,9 +238,9 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
                       >
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem
-                            className="hover:cursor-pointer"
-                            onSelect={(e) => {
-                              e.preventDefault();
+                            className="cursor-pointer"
+                            onSelect={(event) => {
+                              event.preventDefault();
                               setIsDeleteDialogOpen(true);
                             }}
                           >
@@ -251,20 +253,20 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
                             <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
                             <AlertDialogDescription>
                               Esta ação não pode ser desfeita. A oportunidade
-                              será permanentemente removida da plataforma.
+                              será removida permanentemente da plataforma.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel className="hover:cursor-pointer">
+                            <AlertDialogCancel className="cursor-pointer">
                               Cancelar
                             </AlertDialogCancel>
                             <AlertDialogAction
                               onClick={handleDelete}
-                              className="bg-red-600 hover:bg-red-700 text-zinc-100 hover:cursor-pointer"
+                              className="cursor-pointer bg-red-600 text-zinc-100 hover:bg-red-700"
                               disabled={deleteOpportunity.isPending}
                             >
                               {deleteOpportunity.isPending
-                                ? "Deletando..."
+                                ? "Excluindo..."
                                 : "Excluir"}
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -272,7 +274,8 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
                       </AlertDialog>
 
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="hover:cursor-pointer">
+
+                      <DropdownMenuItem className="cursor-pointer">
                         <Share className="mr-2 h-4 w-4" />
                         Compartilhar
                       </DropdownMenuItem>
@@ -280,9 +283,9 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
                   ) : (
                     <>
                       <DropdownMenuItem
-                        className="hover:cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        className="cursor-pointer"
+                        onClick={(event) => {
+                          event.stopPropagation();
                         }}
                       >
                         <Share className="mr-2 h-4 w-4" />
@@ -290,9 +293,9 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        className="text-red-600 hover:cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        className="cursor-pointer text-red-600"
+                        onClick={(event) => {
+                          event.stopPropagation();
                           setIsReportModalOpen(true);
                         }}
                       >
@@ -307,13 +310,13 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
           </div>
         </CardHeader>
 
-        <CardContent className="w-full mt-[-18px]">
+        <CardContent className="mt-[-18px] w-full">
           <div className="space-y-2">
             <h3 className="text-lg font-bold text-foreground">
               {opportunity.title}
             </h3>
 
-            <p className="text-xs text-foreground line-clamp-3">
+            <p className="line-clamp-3 text-xs text-foreground">
               {opportunity.description}
             </p>
 
@@ -336,14 +339,14 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-col mt-[-15px]">
-          <div className="flex w-full justify-between items-center">
+        <CardFooter className="mt-[-15px] flex flex-col">
+          <div className="flex w-full items-center justify-between">
             <CardAction className="flex items-center gap-3">
-              {!isOwner && isAthlete && (
+              {!isOwner && isAthlete ? (
                 <Button
                   size="sm"
                   variant="default"
-                  className="bg-third hover:bg-third/90 text-white rounded-full px-4"
+                  className="rounded-full bg-third px-4 text-white hover:bg-third/90"
                   onClick={handleApply}
                   disabled={toggleSubscriber.isPending}
                 >
@@ -353,26 +356,27 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
                       ? "Cancelar candidatura"
                       : "Candidatar-se"}
                 </Button>
-              )}
-              {isOwner && (
+              ) : null}
+
+              {isOwner ? (
                 <Button
                   size="sm"
                   variant="outline"
-                  className="rounded-full px-4 border-third text-third hover:bg-third hover:text-white"
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  className="rounded-full border-third px-4 text-third hover:bg-third hover:text-white"
+                  onClick={(event) => {
+                    event.stopPropagation();
                     navigate(`/opportunity/${opportunity.id}/subscribers`);
                   }}
                 >
                   <Users className="mr-2 h-4 w-4" />
                   Ver inscritos ({subscribersCount})
                 </Button>
-              )}
+              ) : null}
             </CardAction>
 
             <CardAction className="flex items-center gap-2">
               {isAthlete ? (
-                <div onClick={handleBookmark} className="hover:cursor-pointer">
+                <div onClick={handleBookmark} className="cursor-pointer">
                   <Bookmark
                     className={`h-5 w-5 transition-colors ${
                       isSaved

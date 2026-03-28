@@ -60,11 +60,11 @@ public class OpportunityService {
                       Skill existingSkill = skillRepository.findByName(skill.getName());
                       if (existingSkill != null) {
                         return existingSkill;
-                      } else {
-                        Skill newSkill = new Skill(skill.getName());
-                        skillRepository.save(newSkill);
-                        return newSkill;
                       }
+
+                      Skill newSkill = new Skill(skill.getName());
+                      skillRepository.save(newSkill);
+                      return newSkill;
                     })
                 .collect(Collectors.toSet()));
 
@@ -142,9 +142,7 @@ public class OpportunityService {
 
   @Transactional
   public List<OpportunityDTO> getOpportunities() {
-
     List<Opportunity> opportunities = opportunityRepository.findAllOrderedByCreationDate();
-
     return opportunityMapper.toOpportunityDTOList(opportunities);
   }
 

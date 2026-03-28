@@ -5,8 +5,16 @@ import {
   Building2,
   Calendar,
   MapPin,
+  UserCheck,
   Users,
 } from "lucide-react";
+import { useAuthStore } from "@/features/auth/stores/useAuthStore";
+import OpportunityDetailModal from "@/features/opportunities/components/OpportunityDetailModal";
+import {
+  useGetAthleteSubscriptions,
+  useGetOpportunitiesCompany,
+} from "@/features/opportunities/state/useOpportunities";
+import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
   Card,
@@ -16,15 +24,8 @@ import {
   CardTitle,
 } from "@/shared/components/ui/card";
 import { Skeleton } from "@/shared/components/ui/skeleton";
-import { Badge } from "@/shared/components/ui/badge";
-import { useAuthStore } from "@/features/auth/stores/useAuthStore";
-import {
-  useGetAthleteSubscriptions,
-  useGetOpportunitiesCompany,
-} from "@/features/opportunities/state/useOpportunities";
-import type { Opportunity } from "@/shared/types/opportunity.types";
-import OpportunityDetailModal from "@/features/opportunities/components/OpportunityDetailModal";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
+import type { Opportunity } from "@/shared/types/opportunity.types";
 
 export function MyOpportunities() {
   const navigate = useNavigate();
@@ -88,18 +89,22 @@ export function MyOpportunities() {
         <div className="w-full max-w-3xl px-4 py-8 pb-[5em]">
           <div className="mb-8">
             <h1 className="text-3xl font-bold">
-              {isCompany ? "Minhas Oportunidades" : "Minhas Candidaturas"}
+              {isCompany ? "Minhas oportunidades" : "Minhas candidaturas"}
             </h1>
             <p className="mt-2 text-muted-foreground">
               {isCompany
-                ? "Gerencie as oportunidades da sua empresa."
-                : "Acompanhe as oportunidades em que você já se candidatou."}
+                ? "Gerencie suas oportunidades e acompanhe quem se inscreveu."
+                : "Acompanhe as oportunidades para as quais você já se candidatou."}
             </p>
           </div>
 
           <Card className="border-2 border-dashed">
             <CardContent className="flex min-h-[360px] flex-col items-center justify-center p-12 text-center">
-              <Briefcase className="mb-6 h-20 w-20 text-muted-foreground/30" />
+              {isCompany ? (
+                <Briefcase className="mb-6 h-20 w-20 text-muted-foreground/30" />
+              ) : (
+                <UserCheck className="mb-6 h-20 w-20 text-muted-foreground/30" />
+              )}
               <h2 className="mb-3 text-2xl font-semibold">
                 {isCompany
                   ? "Você ainda não criou nenhuma oportunidade"
@@ -122,11 +127,11 @@ export function MyOpportunities() {
       <div className="w-full max-w-[45em] px-4 py-8 pb-[5em]">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">
-            {isCompany ? "Minhas Oportunidades" : "Minhas Candidaturas"}
+            {isCompany ? "Minhas oportunidades" : "Minhas candidaturas"}
           </h1>
           <p className="mt-2 text-muted-foreground">
             {isCompany
-              ? "Gerencie as oportunidades da sua empresa e acompanhe os inscritos."
+              ? "Gerencie suas oportunidades e acompanhe os inscritos."
               : "Revise as oportunidades para as quais você já enviou candidatura."}
           </p>
         </div>
@@ -137,7 +142,10 @@ export function MyOpportunities() {
               opportunity.subscribersCount ?? opportunity.subscribers?.length ?? 0;
 
             return (
-              <Card key={opportunity.id} className="transition-shadow hover:shadow-lg">
+              <Card
+                key={opportunity.id}
+                className="transition-shadow hover:shadow-lg"
+              >
                 <CardHeader>
                   <CardTitle className="line-clamp-2">
                     {opportunity.title}
@@ -151,7 +159,9 @@ export function MyOpportunities() {
                   {isAthlete && opportunity.company ? (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Building2 className="h-4 w-4" />
-                      <span className="truncate">{opportunity.company.username}</span>
+                      <span className="truncate">
+                        {opportunity.company.username || opportunity.company.name}
+                      </span>
                     </div>
                   ) : null}
 
@@ -169,7 +179,7 @@ export function MyOpportunities() {
 
                   {opportunity.skills?.length ? (
                     <div className="flex flex-wrap gap-2">
-                      {opportunity.skills.slice(0, 3).map((skill: { id: number; name: string }) => (
+                      {opportunity.skills.slice(0, 3).map((skill) => (
                         <Badge key={skill.id} variant="secondary">
                           {skill.name}
                         </Badge>
@@ -199,6 +209,7 @@ export function MyOpportunities() {
                           onClick={() =>
                             navigate(`/opportunity/${opportunity.id}/subscribers`)
                           }
+                          disabled={subscribersCount === 0}
                         >
                           <Users className="mr-2 h-4 w-4" />
                           Ver inscritos

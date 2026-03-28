@@ -1,30 +1,34 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Calendar, MapPin, Users } from "lucide-react";
-import { Button } from "@/shared/components/ui/button";
-import { Badge } from "@/shared/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { ArrowLeft, Calendar, Loader2, MapPin, Users } from "lucide-react";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
-import { useGetOpportunities } from "@/features/opportunities/state/useOpportunities";
 import { OpportunitySubscribers } from "@/features/opportunities/components/OpportunitySubscribers";
-import { getInitials } from "@/shared/utils/getInitials";
+import { useGetOpportunity } from "@/features/opportunities/state/useOpportunities";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { getTimeAgo } from "@/shared/hooks/useGetTimeAgo";
+import { getInitials } from "@/shared/utils/getInitials";
 
 export function OpportunitySubscribersPage() {
   const navigate = useNavigate();
   const { opportunityId } = useParams<{ opportunityId: string }>();
   const { user } = useAuthStore();
-  const { data, isLoading } = useGetOpportunities();
 
   const opportunityIdNumber = Number(opportunityId);
-  const opportunity =
-    data?.data?.find((item: { id: number }) => item.id === opportunityIdNumber) ??
-    null;
+  const { data, isLoading } = useGetOpportunity(opportunityIdNumber, {
+    enabled: opportunityIdNumber > 0,
+  });
+
+  const opportunity = data?.data ?? null;
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">Carregando candidatos...</p>
+        <div className="text-center">
+          <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-primary" />
+          <p className="text-muted-foreground">Carregando candidatos...</p>
+        </div>
       </div>
     );
   }
@@ -62,7 +66,9 @@ export function OpportunitySubscribersPage() {
     );
   }
 
-  const companyInitials = getInitials(opportunity.company?.username || "");
+  const companyInitials = getInitials(
+    opportunity.company?.name || opportunity.company?.username || "",
+  );
   const subscribersCount =
     opportunity.subscribersCount ?? opportunity.subscribers?.length ?? 0;
 
@@ -87,7 +93,7 @@ export function OpportunitySubscribersPage() {
                   {opportunity.title}
                 </CardTitle>
                 <p className="mb-3 text-sm text-muted-foreground">
-                  {opportunity.company?.username} • Publicado há{" "}
+                  {opportunity.company?.username || opportunity.company?.name} • Publicado há{" "}
                   {getTimeAgo(opportunity.createdAt)}
                 </p>
 
@@ -133,7 +139,7 @@ export function OpportunitySubscribersPage() {
           ) : null}
         </Card>
 
-        <OpportunitySubscribers opportunityId={Number(opportunityId)} />
+        <OpportunitySubscribers opportunityId={opportunityIdNumber} />
       </div>
     </div>
   );

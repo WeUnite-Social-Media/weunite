@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   Drawer,
   DrawerClose,
@@ -6,29 +7,28 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/shared/components/ui/drawer";
-import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/shared/components/ui/avatar";
-import type { Opportunity } from "@/shared/types/opportunity.types";
-import { X as CloseIcon, MapPin, Calendar, Users } from "lucide-react";
-import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
 } from "@/shared/components/ui/dialog";
-import { getInitials } from "@/shared/utils/getInitials";
-import { getTimeAgo } from "@/shared/hooks/useGetTimeAgo";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import {
   useCheckIsSubscribed,
   useToggleSubscriber,
 } from "@/features/opportunities/state/useOpportunities";
-import { useNavigate } from "react-router-dom";
+import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
+import { getTimeAgo } from "@/shared/hooks/useGetTimeAgo";
+import { getInitials } from "@/shared/utils/getInitials";
+import type { Opportunity } from "@/shared/types/opportunity.types";
+import { Calendar, MapPin, Users, X as CloseIcon } from "lucide-react";
 import { toast } from "sonner";
 
 interface OpportunityDescriptionProps {
@@ -42,13 +42,14 @@ export function OpportunityDescription({
   onOpenChange,
   opportunity,
 }: OpportunityDescriptionProps) {
-  const { user } = useAuthStore();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { commentDesktop } = useBreakpoints();
   const toggleSubscriber = useToggleSubscriber();
 
-  const companyInitials = getInitials(opportunity.company?.name || "");
-
-  const { commentDesktop } = useBreakpoints();
+  const companyName =
+    opportunity.company?.name || opportunity.company?.username || "Empresa";
+  const companyInitials = getInitials(companyName);
   const isOwner = opportunity.company?.id === user?.id;
   const isAthlete = user?.role === "athlete";
   const subscribersCount =
@@ -59,6 +60,7 @@ export function OpportunityDescription({
     Number(opportunity.id),
     Boolean(user?.id) && isAthlete && !isOwner,
   );
+
   const isSubscribed = isSubscribedData?.data ?? false;
 
   const opportunityDate = new Date(opportunity.dateEnd).toLocaleDateString(
@@ -94,24 +96,28 @@ export function OpportunityDescription({
     });
   };
 
+  const handleViewSubscribers = () => {
+    onOpenChange?.(false);
+    navigate(`/opportunity/${opportunity.id}/subscribers`);
+  };
+
   if (!commentDesktop) {
     return (
       <Drawer open={isOpen} onOpenChange={onOpenChange}>
-        <DrawerContent className="h-[100vh] data-[vaul-drawer-direction=bottom]:max-h-[100vh] mt-0 flex flex-col">
-          <DrawerHeader className="pt-4 px-6 flex-shrink-0">
-            <DrawerClose className="absolute rounded-sm transition-opacity right-4">
-              <CloseIcon className="h-5 w-5 hover:cursor-pointer" />
+        <DrawerContent className="mt-0 flex h-[100vh] flex-col data-[vaul-drawer-direction=bottom]:max-h-[100vh]">
+          <DrawerHeader className="flex-shrink-0 px-6 pt-4">
+            <DrawerClose className="absolute right-4 rounded-sm transition-opacity">
+              <CloseIcon className="h-5 w-5" />
             </DrawerClose>
-            <DrawerTitle>Detalhes da Oportunidade</DrawerTitle>
+            <DrawerTitle>Detalhes da oportunidade</DrawerTitle>
             <DrawerDescription>
               Veja os detalhes da vaga e acompanhe suas candidaturas.
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="flex flex-col w-full items-center overflow-y-auto px-4 py-6">
-            {/* Cabeçalho da oportunidade */}
-            <div className="w-full max-w-[45em] mb-6">
-              <div className="flex items-center gap-3 mb-4">
+          <div className="flex w-full flex-col items-center overflow-y-auto px-4 py-6">
+            <div className="mb-6 w-full max-w-[45em]">
+              <div className="mb-4 flex items-center gap-3">
                 <Avatar className="h-12 w-12">
                   <AvatarImage src={opportunity.company?.profileImg} />
                   <AvatarFallback>{companyInitials}</AvatarFallback>
@@ -119,14 +125,12 @@ export function OpportunityDescription({
                 <div>
                   <h2 className="text-xl font-bold">{opportunity.title}</h2>
                   <p className="text-sm text-muted-foreground">
-                    {opportunity.company?.name} • Publicado há{" "}
-                    {getTimeAgo(opportunity.createdAt)}
+                    {companyName} • Publicado há {getTimeAgo(opportunity.createdAt)}
                   </p>
                 </div>
               </div>
 
-              {/* Informações básicas */}
-              <div className="flex flex-wrap gap-4 mb-4 text-sm text-muted-foreground">
+              <div className="mb-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
                   {opportunity.location}
@@ -137,27 +141,27 @@ export function OpportunityDescription({
                 </div>
                 <div className="flex items-center gap-1">
                   <Users className="h-4 w-4" />
-                  {subscribersCount} candidatos
+                  {subscribersCount}{" "}
+                  {subscribersCount === 1 ? "candidato" : "candidatos"}
                 </div>
               </div>
 
-              {/* Habilidades */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                {opportunity.skills?.map((skill) => (
-                  <Badge key={skill.id} variant="secondary">
-                    {skill.name}
-                  </Badge>
-                ))}
-              </div>
+              {opportunity.skills?.length ? (
+                <div className="mb-6 flex flex-wrap gap-2">
+                  {opportunity.skills.map((skill) => (
+                    <Badge key={skill.id} variant="secondary">
+                      {skill.name}
+                    </Badge>
+                  ))}
+                </div>
+              ) : null}
 
-              {/* Descrição */}
               <div className="prose prose-sm max-w-none">
-                <h3 className="text-lg font-semibold mb-2">Descrição</h3>
+                <h3 className="mb-2 text-lg font-semibold">Descrição</h3>
                 <p className="whitespace-pre-wrap">{opportunity.description}</p>
               </div>
             </div>
 
-            {/* Botão de candidatura */}
             {!isOwner && isAthlete ? (
               <div className="w-full max-w-[45em] border-t pt-4">
                 <Button
@@ -178,10 +182,7 @@ export function OpportunityDescription({
               <div className="w-full max-w-[45em] border-t pt-4">
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    onOpenChange?.(false);
-                    navigate(`/opportunity/${opportunity.id}/subscribers`);
-                  }}
+                  onClick={handleViewSubscribers}
                   className="w-full"
                 >
                   Ver inscritos ({subscribersCount})
@@ -196,14 +197,14 @@ export function OpportunityDescription({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl w-[90vw] h-[90vh] p-0 rounded-xl overflow-hidden">
+      <DialogContent className="h-[90vh] w-[90vw] max-w-4xl overflow-hidden rounded-xl p-0">
         <DialogDescription className="sr-only">
           Veja os detalhes da vaga e acompanhe suas candidaturas.
         </DialogDescription>
-        <div className="flex w-full h-full">
-          <div className="w-full flex flex-col">
-            {/* Cabeçalho */}
-            <div className="p-6 border-b flex gap-3 bg-card">
+
+        <div className="flex h-full w-full">
+          <div className="flex w-full flex-col">
+            <div className="flex gap-3 border-b bg-card p-6">
               <Avatar className="h-12 w-12">
                 <AvatarImage src={opportunity.company?.profileImg} />
                 <AvatarFallback>{companyInitials}</AvatarFallback>
@@ -211,16 +212,13 @@ export function OpportunityDescription({
               <div className="flex flex-col">
                 <h2 className="text-xl font-bold">{opportunity.title}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {opportunity.company?.name} • Publicado há{" "}
-                  {getTimeAgo(opportunity.createdAt)}
+                  {companyName} • Publicado há {getTimeAgo(opportunity.createdAt)}
                 </p>
               </div>
             </div>
 
-            {/* Conteúdo */}
-            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-              {/* Informações básicas */}
-              <div className="flex flex-wrap gap-6 mb-6 text-sm">
+            <div className="custom-scrollbar flex-1 overflow-y-auto p-6">
+              <div className="mb-6 flex flex-wrap gap-6 text-sm">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                   <span>{opportunity.location}</span>
@@ -231,36 +229,36 @@ export function OpportunityDescription({
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>{subscribersCount} candidatos</span>
+                  <span>
+                    {subscribersCount}{" "}
+                    {subscribersCount === 1 ? "candidato" : "candidatos"}
+                  </span>
                 </div>
               </div>
 
-              {/* Habilidades */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">
-                  Habilidades necessárias
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {opportunity.skills?.map((skill) => (
-                    <Badge key={skill.id} variant="secondary">
-                      {skill.name}
-                    </Badge>
-                  ))}
+              {opportunity.skills?.length ? (
+                <div className="mb-6">
+                  <h3 className="mb-3 text-lg font-semibold">
+                    Habilidades necessárias
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {opportunity.skills.map((skill) => (
+                      <Badge key={skill.id} variant="secondary">
+                        {skill.name}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : null}
 
-              {/* Descrição */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">Descrição</h3>
+                <h3 className="mb-3 text-lg font-semibold">Descrição</h3>
                 <div className="prose prose-sm max-w-none">
-                  <p className="whitespace-pre-wrap">
-                    {opportunity.description}
-                  </p>
+                  <p className="whitespace-pre-wrap">{opportunity.description}</p>
                 </div>
               </div>
             </div>
 
-            {/* Footer com botão de candidatura */}
             {!isOwner && isAthlete ? (
               <div className="border-t p-6">
                 <Button
@@ -281,10 +279,7 @@ export function OpportunityDescription({
               <div className="border-t p-6">
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    onOpenChange?.(false);
-                    navigate(`/opportunity/${opportunity.id}/subscribers`);
-                  }}
+                  onClick={handleViewSubscribers}
                   className="w-full"
                 >
                   Ver inscritos ({subscribersCount})

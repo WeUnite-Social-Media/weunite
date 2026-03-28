@@ -28,7 +28,8 @@ public class ValidOpportunityValidator
       addViolation(context, "description", "A descrição é obrigatória");
       valid = false;
     } else if (dto.description().length() < 10 || dto.description().length() > 500) {
-      addViolation(context, "description", "A descrição deve ter entre 10 e 500 caracteres");
+      addViolation(
+          context, "description", "A descrição deve ter entre 10 e 500 caracteres");
       valid = false;
     }
 

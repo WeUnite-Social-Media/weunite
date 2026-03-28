@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Bookmark,
-  Briefcase,
-  Calendar,
-  Loader2,
-  MapPin,
-} from "lucide-react";
+import { Bookmark, Briefcase, Calendar, Loader2, MapPin } from "lucide-react";
 import { format } from "date-fns";
+import { useAuthStore } from "@/features/auth/stores/useAuthStore";
+import OpportunityDetailModal from "@/features/opportunities/components/OpportunityDetailModal";
+import { useGetSavedOpportunities } from "@/features/opportunities/state/useOpportunities";
 import { Button } from "@/shared/components/ui/button";
 import {
   Card,
@@ -15,11 +12,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
-import { useAuthStore } from "@/features/auth/stores/useAuthStore";
-import { useGetSavedOpportunities } from "@/features/opportunities/state/useOpportunities";
-import type { Opportunity } from "@/shared/types/opportunity.types";
-import OpportunityDetailModal from "@/features/opportunities/components/OpportunityDetailModal";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
+import type { Opportunity } from "@/shared/types/opportunity.types";
 
 export function SavedOpportunitiesPage() {
   const navigate = useNavigate();
@@ -68,7 +62,7 @@ export function SavedOpportunitiesPage() {
         <div className="mb-8">
           <div className="mb-2 flex items-center gap-3">
             <Bookmark className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">Oportunidades Salvas</h1>
+            <h1 className="text-3xl font-bold">Oportunidades salvas</h1>
           </div>
           <p className="text-muted-foreground">
             {savedOpportunities.length} oportunidade
@@ -94,8 +88,11 @@ export function SavedOpportunitiesPage() {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {savedOpportunities.map((opportunity: Opportunity) => (
-              <Card key={opportunity.id} className="transition-shadow hover:shadow-lg">
+            {savedOpportunities.map((opportunity) => (
+              <Card
+                key={opportunity.id}
+                className="transition-shadow hover:shadow-lg"
+              >
                 <CardHeader>
                   <div className="mb-2 flex items-start justify-between gap-3">
                     <CardTitle className="line-clamp-2 text-lg">
@@ -107,7 +104,9 @@ export function SavedOpportunitiesPage() {
                   {opportunity.company ? (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Briefcase className="h-4 w-4" />
-                      <span className="truncate">{opportunity.company.name}</span>
+                      <span className="truncate">
+                        {opportunity.company.name || opportunity.company.username}
+                      </span>
                     </div>
                   ) : null}
                 </CardHeader>
@@ -135,7 +134,7 @@ export function SavedOpportunitiesPage() {
 
                   {opportunity.skills?.length ? (
                     <div className="flex flex-wrap gap-2">
-                      {opportunity.skills.slice(0, 3).map((skill: { id: number; name: string }) => (
+                      {opportunity.skills.slice(0, 3).map((skill) => (
                         <span
                           key={skill.id}
                           className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary"

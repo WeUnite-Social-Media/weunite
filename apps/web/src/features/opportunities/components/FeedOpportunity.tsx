@@ -1,41 +1,41 @@
-import { Skeleton } from "@/shared/components/ui/skeleton";
-import { Button } from "@/shared/components/ui/button";
-import { useGetOpportunities } from "@/features/opportunities/state/useOpportunities";
-import OpportunityCard from "./OpportunityCard";
-import { HorizontalMenuOpportunity } from "./HorizontalMenuOpportunity";
-import OpportunitySearch from "./OpportunitySearch";
-import { CreateOpportunity } from "./CreateOpportunity";
 import { useState } from "react";
-import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
-import { OpportunitySidebar } from "./OpportunitySidebar";
-import type { Opportunity } from "@/shared/types/opportunity.types";
-import { Plus } from "lucide-react";
-import OpportunitySuggestionCarousel from "./OpportunitySuggestionCarousel";
+import { Building2, Plus } from "lucide-react";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
+import { useGetOpportunities } from "@/features/opportunities/state/useOpportunities";
+import type { Opportunity } from "@/shared/types/opportunity.types";
+import { Button } from "@/shared/components/ui/button";
+import { Skeleton } from "@/shared/components/ui/skeleton";
+import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
+import { CreateOpportunity } from "./CreateOpportunity";
+import { HorizontalMenuOpportunity } from "./HorizontalMenuOpportunity";
+import OpportunityCard from "./OpportunityCard";
+import OpportunitySearch from "./OpportunitySearch";
+import { OpportunitySidebar } from "./OpportunitySidebar";
+import OpportunitySuggestionCarousel from "./OpportunitySuggestionCarousel";
 
 function OpportunitySkeleton() {
   return (
-    <div className="w-full max-w-[500px] mb-3 bg-card border rounded-xl p-4">
-      <div className="flex items-center space-x-3 mb-4">
+    <div className="mb-3 w-full max-w-[500px] rounded-xl border bg-card p-4">
+      <div className="mb-4 flex items-center space-x-3">
         <Skeleton className="h-12 w-12 rounded-full" />
         <div className="flex-1">
-          <Skeleton className="h-4 w-32 mb-2" />
+          <Skeleton className="mb-2 h-4 w-32" />
           <Skeleton className="h-3 w-20" />
         </div>
       </div>
 
-      <div className="space-y-3 mb-4">
+      <div className="mb-4 space-y-3">
         <Skeleton className="h-6 w-3/4" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-2/3" />
       </div>
 
-      <div className="space-y-2 mb-4">
+      <div className="mb-4 space-y-2">
         <Skeleton className="h-4 w-1/2" />
         <Skeleton className="h-4 w-1/3" />
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="mb-4 flex gap-2">
         <Skeleton className="h-6 w-16 rounded-full" />
         <Skeleton className="h-6 w-20 rounded-full" />
         <Skeleton className="h-6 w-18 rounded-full" />
@@ -57,14 +57,14 @@ export default function FeedOpportunity() {
   const opportunities = data?.data;
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpportunityOpen, setIsCreateOpportunityOpen] = useState(false);
-  const { isMobile, isTablet, isDesktop } = useBreakpoints();
+  const { isDesktop, isMobile, isTablet } = useBreakpoints();
   const { user } = useAuthStore();
 
   if (isLoading) {
     return (
-      <div className="flex justify-center w-full">
-        {!isMobile && !isTablet && <OpportunitySidebar />}
-        <div className="max-w-[600px] w-full flex flex-col items-center">
+      <div className="flex w-full justify-center">
+        {!isMobile && !isTablet ? <OpportunitySidebar /> : null}
+        <div className="flex w-full max-w-[600px] flex-col items-center">
           {Array.from({ length: 3 }).map((_, index) => (
             <OpportunitySkeleton key={index} />
           ))}
@@ -76,9 +76,9 @@ export default function FeedOpportunity() {
   if (!opportunities || opportunities.length === 0) {
     return (
       <>
-        <div className="flex justify-center w-full pt-4">
-          <div className="max-w-[600px] w-full flex flex-col items-center gap-2">
-            <div className="w-full flex flex-col justify-between items-start gap-4">
+        <div className="flex w-full justify-center pt-4">
+          <div className="flex w-full max-w-[600px] flex-col items-center gap-2">
+            <div className="flex w-full flex-col items-start justify-between gap-4">
               <OpportunitySearch
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
@@ -86,29 +86,29 @@ export default function FeedOpportunity() {
               <OpportunitySidebar />
             </div>
 
-            <div className="flex justify-center items-center min-h-[60vh]">
-              <div className="text-center space-y-3">
-                <div className="text-4xl mb-4">🏢</div>
-                <p className="text-muted-foreground text-lg font-medium">
+            <div className="flex min-h-[60vh] items-center justify-center">
+              <div className="space-y-3 text-center">
+                <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
+                <p className="text-lg font-medium text-muted-foreground">
                   Nenhuma oportunidade disponível
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Seja o primeiro a criar uma oportunidade!
+                  Seja a primeira empresa a publicar uma oportunidade.
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {!isDesktop && user?.role === "company" && (
+        {!isDesktop && user?.role === "company" ? (
           <Button
             onClick={() => setIsCreateOpportunityOpen(true)}
-            className="fixed bottom-20 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-[60]"
+            className="fixed bottom-20 right-6 z-[60] h-14 w-14 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl"
             size="icon"
           >
             <Plus className="h-6 w-6" />
           </Button>
-        )}
+        ) : null}
 
         <CreateOpportunity
           open={isCreateOpportunityOpen}
@@ -120,9 +120,9 @@ export default function FeedOpportunity() {
 
   return (
     <>
-      <div className="flex justify-center w-full pt-4">
-        <div className="max-w-[45em] w-full flex flex-col items-center gap-2">
-          <div className="w-full flex flex-col gap-2 items-end">
+      <div className="flex w-full justify-center pt-4">
+        <div className="flex w-full max-w-[45em] flex-col items-center gap-2">
+          <div className="flex w-full flex-col items-end gap-2">
             <OpportunitySearch
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
@@ -130,24 +130,26 @@ export default function FeedOpportunity() {
 
             {isDesktop ? <OpportunitySidebar /> : <HorizontalMenuOpportunity />}
           </div>
-          {opportunities && opportunities.length > 0 && (
+
+          {opportunities.length > 0 ? (
             <OpportunitySuggestionCarousel opportunities={opportunities} />
-          )}
+          ) : null}
+
           {opportunities.map((opportunity: Opportunity) => (
             <OpportunityCard key={opportunity.id} opportunity={opportunity} />
           ))}
         </div>
       </div>
 
-      {!isDesktop && user?.role === "company" && (
+      {!isDesktop && user?.role === "company" ? (
         <Button
           onClick={() => setIsCreateOpportunityOpen(true)}
-          className="fixed bottom-20 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-[10]"
+          className="fixed bottom-20 right-6 z-[10] h-14 w-14 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl"
           size="icon"
         >
           <Plus className="h-6 w-6" />
         </Button>
-      )}
+      ) : null}
 
       <CreateOpportunity
         open={isCreateOpportunityOpen}

@@ -1,11 +1,11 @@
+import { useNavigate } from "react-router-dom";
+import { ExternalLink, Loader2, Mail, Users } from "lucide-react";
+import { useGetOpportunitySubscribers } from "@/features/opportunities/state/useOpportunities";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
-import { useGetOpportunitySubscribers } from "@/features/opportunities/state/useOpportunities";
-import type { Subscriber } from "@/shared/types/opportunity.types";
-import { ExternalLink, Loader2, Mail, Users } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { getInitials } from "@/shared/utils/getInitials";
+import type { Subscriber } from "@/shared/types/opportunity.types";
 
 interface OpportunitySubscribersProps {
   opportunityId?: number;
