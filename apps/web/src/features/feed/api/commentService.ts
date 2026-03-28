@@ -1,8 +1,8 @@
+import { instance as axios } from "@/shared/api/http";
 import type {
   CreateComment,
   UpdateComment,
 } from "@/shared/types/comment.types";
-import { instance as axios } from "@/shared/api/http";
 import { AxiosError } from "axios";
 
 export const createCommentRequest = async (
@@ -29,11 +29,12 @@ export const createCommentRequest = async (
     };
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
+
     return {
       success: false,
       data: null,
       message: error.response?.data.message || "Erro ao criar comentário",
-      error: error,
+      error,
     };
   }
 };
@@ -45,12 +46,11 @@ export const updateCommentRequest = async (
 ) => {
   try {
     const formData = new FormData();
-
-    const postBlob = new Blob([JSON.stringify({ text: data.text })], {
+    const commentBlob = new Blob([JSON.stringify({ text: data.text })], {
       type: "application/json",
     });
 
-    formData.append("comment", postBlob);
+    formData.append("comment", commentBlob);
 
     if (data.media) {
       formData.append("image", data.media);

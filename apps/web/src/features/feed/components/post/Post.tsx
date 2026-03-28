@@ -1,11 +1,11 @@
 import {
   Card,
+  CardAction,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardDescription,
   CardFooter,
-  CardAction,
+  CardHeader,
+  CardTitle,
 } from "@/shared/components/ui/card";
 import {
   Avatar,
@@ -20,74 +20,72 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
 import {
-  Heart,
-  Repeat2,
-  MessageCircle,
   Bookmark,
-  EllipsisVertical,
-  Trash2,
-  Share,
+  ChevronDown,
+  ChevronUp,
   Edit,
+  EllipsisVertical,
   Flag,
+  Heart,
+  MessageCircle,
+  Repeat2,
+  Share,
+  Trash2,
 } from "lucide-react";
-
 import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/shared/components/ui/alert-dialog";
-
-import type { Post } from "@/shared/types/post.types";
-import { getTimeAgo } from "@/shared/hooks/useGetTimeAgo";
-import { useToggleLike } from "@/features/feed/state/useLikes";
-import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useState } from "react";
-import { EditPost } from "./EditPost";
-import { useDeletePost } from "@/features/feed/state/usePosts";
-import {
-  AlertDialogFooter,
-  AlertDialogHeader,
-} from "@/shared/components/ui/alert-dialog";
-import Comments from "./Comments/Comments";
-import { getInitials } from "@/shared/utils/getInitials";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/features/auth/stores/useAuthStore";
+import Comments from "@/features/feed/components/post/Comments/Comments";
+import { EditPost } from "@/features/feed/components/post/EditPost";
+import { useToggleLike } from "@/features/feed/state/useLikes";
+import { useDeletePost } from "@/features/feed/state/usePosts";
 import { ReportModal } from "@/features/reporting/components/ReportModal";
+import { getTimeAgo } from "@/shared/hooks/useGetTimeAgo";
+import type { Post } from "@/shared/types/post.types";
+import { getInitials } from "@/shared/utils/getInitials";
 
 const actions = [{ icon: Heart }, { icon: MessageCircle }, { icon: Repeat2 }];
+const POST_PREVIEW_LENGTH = 200;
 
 export default function Post({ post }: { post: Post }) {
   const initials = getInitials(post.user.name);
-
   const { user } = useAuthStore();
+  const navigate = useNavigate();
 
   const toggleLike = useToggleLike();
-
   const deletePost = useDeletePost();
 
   const isLiked = post.likes.some((like) => like.user.id === user?.id);
+  const isOwner = post.user.id === user?.id;
 
   const [isEditPostOpen, setIsEditPostOpen] = useState(false);
-
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
-
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const postText = post.text ?? "";
+  const shouldTruncate = postText.length > POST_PREVIEW_LENGTH;
+  const visiblePostText =
+    shouldTruncate && !isExpanded
+      ? `${postText.slice(0, POST_PREVIEW_LENGTH).trimEnd()}...`
+      : postText;
 
   const handleLikeClick = () => {
     if (!user?.id) return;
 
     toggleLike.mutate({ postId: post.id, userId: user.id, commentId: "" });
-  };
-
-  const isOwner = post.user.id === user?.id;
-
-  const handleEditPostOpen = () => {
-    setIsEditPostOpen(true);
   };
 
   const handleDelete = () => {
@@ -101,22 +99,13 @@ export default function Post({ post }: { post: Post }) {
     setIsDeleteDialogOpen(false);
   };
 
-  const handleCommentsOpen = () => {
-    setIsCommentsOpen(true);
-  };
-
-  const handleReportClick = () => {
-    setIsReportModalOpen(true);
-  };
-
-  const navigate = useNavigate();
-
   const handleProfileClick = () => {
     if (isOwner) {
       navigate("/profile");
-    } else {
-      navigate(`/profile/${post.user.username}`);
+      return;
     }
+
+    navigate(`/profile/${post.user.username}`);
   };
 
   return (
@@ -139,14 +128,14 @@ export default function Post({ post }: { post: Post }) {
         entityType="POST"
         entityId={Number(post.id)}
         entityTitle={
-          post.text.substring(0, 50) + (post.text.length > 50 ? "..." : "")
+          postText.substring(0, 50) + (postText.length > 50 ? "..." : "")
         }
       />
 
-      <Card className="w-full max-w-[45em] bg-red shadow-none border-0 border-b rounded-none border-foreground/50">
-        <CardHeader className="flex flex-row items-center gap-2 mb-[0.5em]">
+      <Card className="w-full max-w-[45em] border-0 border-b border-foreground/50 rounded-none bg-red shadow-none">
+        <CardHeader className="mb-[0.5em] flex flex-row items-center gap-2">
           <Avatar
-            className="hover:cursor-pointer h-[2.8em] w-[2.8em]"
+            className="h-[2.8em] w-[2.8em] hover:cursor-pointer"
             onClick={handleProfileClick}
           >
             <AvatarImage src={post.user.profileImg} alt="profile image" />
@@ -168,14 +157,14 @@ export default function Post({ post }: { post: Post }) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <EllipsisVertical className="ml-auto h-5 w-5 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
+              <EllipsisVertical className="ml-auto h-5 w-5 cursor-pointer text-muted-foreground transition-colors hover:text-primary" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               {isOwner ? (
                 <>
                   <DropdownMenuItem
-                    onClick={handleEditPostOpen}
-                    className=" hover:cursor-pointer"
+                    onClick={() => setIsEditPostOpen(true)}
+                    className="hover:cursor-pointer"
                   >
                     <Edit className="mr-2 h-4 w-4" />
                     Editar
@@ -188,8 +177,8 @@ export default function Post({ post }: { post: Post }) {
                     <AlertDialogTrigger asChild>
                       <DropdownMenuItem
                         className="hover:cursor-pointer"
-                        onSelect={(e) => {
-                          e.preventDefault();
+                        onSelect={(event) => {
+                          event.preventDefault();
                           setIsDeleteDialogOpen(true);
                         }}
                       >
@@ -211,7 +200,7 @@ export default function Post({ post }: { post: Post }) {
                         </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={handleDelete}
-                          className="bg-red-600 hover:bg-red-700 text-zinc-100 hover:cursor-pointer"
+                          className="bg-red-600 text-zinc-100 hover:cursor-pointer hover:bg-red-700"
                           disabled={deletePost.isPending}
                         >
                           {deletePost.isPending ? "Deletando..." : "Excluir"}
@@ -221,7 +210,8 @@ export default function Post({ post }: { post: Post }) {
                   </AlertDialog>
 
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className=" hover:cursor-pointer">
+
+                  <DropdownMenuItem className="hover:cursor-pointer">
                     <Share className="mr-2 h-4 w-4" />
                     Compartilhar
                   </DropdownMenuItem>
@@ -232,10 +222,12 @@ export default function Post({ post }: { post: Post }) {
                     <Share className="mr-2 h-4 w-4" />
                     Compartilhar
                   </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
+
                   <DropdownMenuItem
                     className="text-red-600 hover:cursor-pointer"
-                    onClick={handleReportClick}
+                    onClick={() => setIsReportModalOpen(true)}
                   >
                     <Flag className="mr-2 h-4 w-4" />
                     Denunciar
@@ -246,22 +238,46 @@ export default function Post({ post }: { post: Post }) {
           </DropdownMenu>
         </CardHeader>
 
-        <CardContent className="w-full mt-[-18px]">
-          <div className="w-full flex justify-center items-center">
-            {post.imageUrl && (
+        <CardContent className="mt-[-18px] w-full">
+          <div className="flex w-full items-center justify-center">
+            {post.imageUrl ? (
               <img
                 src={post.imageUrl}
                 alt="Post media"
-                className="rounded-sm mb-2"
+                className="mb-2 rounded-sm"
               />
-            )}
+            ) : null}
           </div>
 
-          <p className="">{post.text}</p>
+          {postText ? (
+            <div className="space-y-2">
+              <p className="whitespace-pre-wrap break-words">{visiblePostText}</p>
+
+              {shouldTruncate ? (
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:underline"
+                  onClick={() => setIsExpanded((current) => !current)}
+                >
+                  {isExpanded ? (
+                    <>
+                      Ver menos
+                      <ChevronUp className="h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      Ler mais
+                      <ChevronDown className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </CardContent>
 
-        <CardFooter className="flex flex-col mt-[-20px]">
-          <div className="flex justify-between w-full mb-3">
+        <CardFooter className="mt-[-20px] flex flex-col">
+          <div className="mb-3 flex w-full justify-between">
             <span className="text-sm text-muted-foreground">
               {post.likes.length || 0} curtidas • {post.comments.length || 0}{" "}
               comentários
@@ -273,19 +289,20 @@ export default function Post({ post }: { post: Post }) {
               {actions.map((action, index) => (
                 <div
                   key={index}
-                  onClick={(e) => {
-                    e.preventDefault();
+                  onClick={(event) => {
+                    event.preventDefault();
+
                     if (action.icon === Heart) {
                       handleLikeClick();
                     } else if (action.icon === MessageCircle) {
-                      handleCommentsOpen();
+                      setIsCommentsOpen(true);
                     }
                   }}
                 >
                   <action.icon
-                    className={`h-5 w-5 transition-colors  ${
+                    className={`h-5 w-5 transition-colors ${
                       index === 0 && isLiked
-                        ? "text-red-500 fill-red-500"
+                        ? "fill-red-500 text-red-500"
                         : "text-muted-foreground"
                     }`}
                   />
@@ -295,7 +312,7 @@ export default function Post({ post }: { post: Post }) {
 
             <CardAction className="flex items-right gap-2 hover:cursor-pointer">
               <div>
-                <Bookmark className="h-5 w-5 text-muted-foreground varient-ghost" />
+                <Bookmark className="varient-ghost h-5 w-5 text-muted-foreground" />
               </div>
             </CardAction>
           </div>

@@ -1,11 +1,11 @@
 import {
   Card,
+  CardAction,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardDescription,
   CardFooter,
-  CardAction,
+  CardHeader,
+  CardTitle,
 } from "@/shared/components/ui/card";
 import {
   Avatar,
@@ -20,59 +20,55 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
 import {
-  Heart,
-  Repeat2,
-  MessageCircle,
   Bookmark,
-  EllipsisVertical,
-  Trash2,
-  Share,
   Edit,
+  EllipsisVertical,
   Flag,
+  Heart,
+  MessageCircle,
+  Repeat2,
+  Share,
+  Trash2,
 } from "lucide-react";
-
 import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/shared/components/ui/alert-dialog";
-
-import { getTimeAgo } from "@/shared/hooks/useGetTimeAgo";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
-import {
-  AlertDialogFooter,
-  AlertDialogHeader,
-} from "@/shared/components/ui/alert-dialog";
-import type { Comment } from "@/shared/types/comment.types";
 import { EditComment } from "@/features/feed/components/post/Comments/EditComment";
-import { useState } from "react";
 import { useDeleteComment } from "@/features/feed/state/useComments";
-import { getInitials } from "@/shared/utils/getInitials";
 import {
-  useToggleLikeComment,
   useCommentLikes,
+  useToggleLikeComment,
 } from "@/features/feed/state/useLikes";
-import { useEffect } from "react";
 import { ReportModal } from "@/features/reporting/components/ReportModal";
+import { getTimeAgo } from "@/shared/hooks/useGetTimeAgo";
+import type { Comment } from "@/shared/types/comment.types";
+import { getInitials } from "@/shared/utils/getInitials";
 
 const actions = [{ icon: Heart }, { icon: MessageCircle }, { icon: Repeat2 }];
 
 export default function Comment({ comment }: { comment: Comment }) {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const initials = getInitials(comment.user.name);
 
   const [isEditCommentOpen, setIsEditCommentOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
   type LikeUser = { user: { id: string | number } };
+
   const { data: likesData } = useCommentLikes(Number(comment.id));
-  const serverLikes: LikeUser[] = likesData?.success
-    ? (likesData.data as LikeUser[])
-    : [];
 
   const [likesCount, setLikesCount] = useState(comment.likes?.length || 0);
   const [isLikedState, setIsLikedState] = useState(
@@ -80,14 +76,17 @@ export default function Comment({ comment }: { comment: Comment }) {
   );
 
   useEffect(() => {
+    const serverLikes: LikeUser[] = likesData?.success
+      ? (likesData.data as LikeUser[])
+      : [];
+
     if (serverLikes.length > 0 || likesData?.success) {
       setLikesCount(serverLikes.length);
       setIsLikedState(serverLikes.some((like) => like.user.id === user?.id));
     }
-  }, [serverLikes, user?.id, likesData]);
+  }, [likesData, user?.id]);
 
   const deleteComment = useDeleteComment();
-
   const toggleLike = useToggleLikeComment();
 
   const isOwner = comment.user.id === user?.id;
@@ -104,12 +103,8 @@ export default function Comment({ comment }: { comment: Comment }) {
     });
   };
 
-  const handleEditCommentOpen = () => {
-    setIsEditCommentOpen(true);
-  };
-
   const handleDelete = () => {
-    if (!user?.id) return;
+    if (!user?.id || !comment.post?.id) return;
 
     deleteComment.mutate({
       userId: Number(user.id),
@@ -118,6 +113,15 @@ export default function Comment({ comment }: { comment: Comment }) {
     });
 
     setIsDeleteDialogOpen(false);
+  };
+
+  const handleProfileClick = () => {
+    if (comment.user.id === user?.id) {
+      navigate("/profile");
+      return;
+    }
+
+    navigate(`/profile/${comment.user.username}`);
   };
 
   return (
@@ -133,18 +137,24 @@ export default function Comment({ comment }: { comment: Comment }) {
         onOpenChange={setIsReportModalOpen}
         entityType="COMMENT"
         entityId={Number(comment.id)}
-        entityTitle={comment.text?.substring(0, 50) || "Comentario"}
+        entityTitle={comment.text?.substring(0, 50) || "Comentário"}
       />
 
       <Card className="mx-auto w-full max-w-[42em] border-0 border-b border-foreground/30 rounded-none bg-red shadow-none">
-        <CardHeader className="flex flex-row items-center gap-2 mb-[0.5em]">
-          <Avatar className="hover:cursor-pointer h-[2.8em] w-[2.8em]">
+        <CardHeader className="mb-[0.5em] flex flex-row items-center gap-2">
+          <Avatar
+            className="h-[2.8em] w-[2.8em] hover:cursor-pointer"
+            onClick={handleProfileClick}
+          >
             <AvatarImage src={comment.user.profileImg} alt="profile image" />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
 
           <div className="flex flex-col">
-            <CardTitle className="text-base font-medium hover:cursor-pointer">
+            <CardTitle
+              className="text-base font-medium hover:cursor-pointer"
+              onClick={handleProfileClick}
+            >
               {comment.user.username}
             </CardTitle>
 
@@ -155,14 +165,14 @@ export default function Comment({ comment }: { comment: Comment }) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <EllipsisVertical className="ml-auto h-5 w-5 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
+              <EllipsisVertical className="ml-auto h-5 w-5 cursor-pointer text-muted-foreground transition-colors hover:text-primary" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               {isOwner ? (
                 <>
                   <DropdownMenuItem
-                    onClick={handleEditCommentOpen}
-                    className=" hover:cursor-pointer"
+                    onClick={() => setIsEditCommentOpen(true)}
+                    className="hover:cursor-pointer"
                   >
                     <Edit className="mr-2 h-4 w-4" />
                     Editar
@@ -175,8 +185,8 @@ export default function Comment({ comment }: { comment: Comment }) {
                     <AlertDialogTrigger asChild>
                       <DropdownMenuItem
                         className="hover:cursor-pointer"
-                        onSelect={(e) => {
-                          e.preventDefault();
+                        onSelect={(event) => {
+                          event.preventDefault();
                           setIsDeleteDialogOpen(true);
                         }}
                       >
@@ -188,7 +198,7 @@ export default function Comment({ comment }: { comment: Comment }) {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Esta ação não pode ser desfeita. O post será
+                          Esta ação não pode ser desfeita. O comentário será
                           permanentemente removido da plataforma.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
@@ -198,7 +208,7 @@ export default function Comment({ comment }: { comment: Comment }) {
                         </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={handleDelete}
-                          className="bg-red-600 hover:bg-red-700 text-zinc-100 hover:cursor-pointer"
+                          className="bg-red-600 text-zinc-100 hover:cursor-pointer hover:bg-red-700"
                           disabled={deleteComment.isPending}
                         >
                           {deleteComment.isPending ? "Deletando..." : "Excluir"}
@@ -208,7 +218,8 @@ export default function Comment({ comment }: { comment: Comment }) {
                   </AlertDialog>
 
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className=" hover:cursor-pointer">
+
+                  <DropdownMenuItem className="hover:cursor-pointer">
                     <Share className="mr-2 h-4 w-4" />
                     Compartilhar
                   </DropdownMenuItem>
@@ -219,7 +230,9 @@ export default function Comment({ comment }: { comment: Comment }) {
                     <Share className="mr-2 h-4 w-4" />
                     Compartilhar
                   </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
+
                   <DropdownMenuItem
                     className="text-red-600 hover:cursor-pointer"
                     onClick={() => setIsReportModalOpen(true)}
@@ -234,11 +247,11 @@ export default function Comment({ comment }: { comment: Comment }) {
         </CardHeader>
 
         <CardContent className="mt-[-18px]">
-          <p className="">{comment.text}</p>
+          <p className="whitespace-pre-wrap break-words">{comment.text}</p>
         </CardContent>
 
-        <CardFooter className="flex flex-col mt-[-20px]">
-          <div className="flex justify-between w-full mb-3">
+        <CardFooter className="mt-[-20px] flex flex-col">
+          <div className="mb-3 flex w-full justify-between">
             <span className="text-sm text-muted-foreground">
               {likesCount} curtidas • {comment.comments.length || 0} comentários
             </span>
@@ -249,17 +262,18 @@ export default function Comment({ comment }: { comment: Comment }) {
               {actions.map((action, index) => (
                 <div
                   key={index}
-                  onClick={(e) => {
-                    e.preventDefault();
+                  onClick={(event) => {
+                    event.preventDefault();
+
                     if (action.icon === Heart) {
                       handleLikeClick();
                     }
                   }}
                 >
                   <action.icon
-                    className={`h-5 w-5 transition-colors  ${
+                    className={`h-5 w-5 transition-colors ${
                       index === 0 && isLikedState
-                        ? "text-red-500 fill-red-500"
+                        ? "fill-red-500 text-red-500"
                         : "text-muted-foreground"
                     }`}
                   />
@@ -269,7 +283,7 @@ export default function Comment({ comment }: { comment: Comment }) {
 
             <CardAction className="flex items-right gap-2 hover:cursor-pointer">
               <div>
-                <Bookmark className="h-5 w-5 text-muted-foreground varient-ghost" />
+                <Bookmark className="varient-ghost h-5 w-5 text-muted-foreground" />
               </div>
             </CardAction>
           </div>
