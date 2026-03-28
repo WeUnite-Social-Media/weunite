@@ -8,6 +8,28 @@ import type {
 import { instance as axios } from "@/shared/api/http";
 import { AxiosError } from "axios";
 
+type ResponseWithData<T> = {
+  data?: T;
+  message?: string;
+};
+
+const unwrapArrayResponse = <T>(payload: unknown): T[] => {
+  if (Array.isArray(payload)) {
+    return payload as T[];
+  }
+
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "data" in payload &&
+    Array.isArray((payload as ResponseWithData<unknown>).data)
+  ) {
+    return (payload as ResponseWithData<T[]>).data ?? [];
+  }
+
+  return [];
+};
+
 export const createOpportunityRequest = async (
   data: CreateOpportunity,
   companyId: number,
@@ -176,10 +198,14 @@ export const getOpportunitySubscribersRequest = async (
 ) => {
   try {
     const response = await axios.get(`/subscriber/subscribers/${opportunityId}`);
+    const subscribers = unwrapArrayResponse<Subscriber>(response.data);
+
     return {
       success: true,
-      data: response.data as Subscriber[],
-      message: "Inscritos carregados com sucesso!",
+      data: subscribers,
+      message:
+        (response.data as ResponseWithData<Subscriber[]>)?.message ||
+        "Inscritos carregados com sucesso!",
       error: null,
     };
   } catch (err) {
@@ -248,10 +274,14 @@ export const checkIsSubscribedRequest = async (
 export const getAthleteSubscriptionsRequest = async (athleteId: number) => {
   try {
     const response = await axios.get(`/subscriber/athlete/${athleteId}`);
+    const subscriptions = unwrapArrayResponse<Subscriber>(response.data);
+
     return {
       success: true,
-      data: response.data as Subscriber[],
-      message: "Candidaturas carregadas com sucesso!",
+      data: subscriptions,
+      message:
+        (response.data as ResponseWithData<Subscriber[]>)?.message ||
+        "Candidaturas carregadas com sucesso!",
       error: null,
     };
   } catch (err) {

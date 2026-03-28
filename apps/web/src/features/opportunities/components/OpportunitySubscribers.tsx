@@ -22,7 +22,11 @@ export function OpportunitySubscribers({
     Boolean(opportunityId) && !subscribersProp,
   );
 
-  const subscribers = subscribersProp ?? data?.data ?? [];
+  const subscribers = Array.isArray(subscribersProp)
+    ? subscribersProp
+    : Array.isArray(data?.data)
+      ? data.data
+      : [];
 
   if (isLoading) {
     return (
