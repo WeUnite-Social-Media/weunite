@@ -48,8 +48,8 @@ export const hidePostRequest = async (
   reason?: string,
 ): Promise<ApiResponse<void>> => {
   try {
-    const response = await axios.post(`/admin/posts/${postId}/hide`, {
-      reason,
+    const response = await axios.delete(`/admin/posts/${postId}`, {
+      data: { reason },
     });
 
     return {

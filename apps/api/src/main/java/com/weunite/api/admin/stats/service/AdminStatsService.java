@@ -9,9 +9,9 @@ import com.weunite.api.admin.stats.dto.OpportunityCategoryWithSkillsDTO;
 import com.weunite.api.admin.stats.dto.OpportunitySkillDTO;
 import com.weunite.api.admin.stats.dto.PreviousMonthStatsDTO;
 import com.weunite.api.admin.stats.dto.UserTypeDataDTO;
-import com.weunite.api.opportunities.domain.Opportunity;
-import com.weunite.api.opportunities.domain.Skill;
 import com.weunite.api.opportunities.repository.OpportunityRepository;
+import com.weunite.api.opportunities.repository.OpportunitySkillCountProjection;
+import com.weunite.api.opportunities.repository.OpportunitySkillPairProjection;
 import com.weunite.api.posts.repository.PostRepository;
 import com.weunite.api.users.repository.UserRepository;
 import java.time.Instant;
@@ -20,14 +20,10 @@ import java.time.ZoneId;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -227,80 +223,48 @@ public class AdminStatsService {
   }
 
   private List<OpportunitySkillInsight> buildOpportunitySkillInsights() {
-    List<Opportunity> allOpportunities = opportunityRepository.findAll();
-    if (allOpportunities == null || allOpportunities.isEmpty()) {
+    List<OpportunitySkillCountProjection> skillCounts =
+        opportunityRepository.findOpportunitySkillCounts();
+    if (skillCounts == null || skillCounts.isEmpty()) {
       return List.of();
     }
 
-    Map<String, Long> skillCountMap = new HashMap<>();
-    Map<String, Map<String, Long>> relatedSkillCountMap = new HashMap<>();
+    Map<String, List<OpportunitySkillDTO>> relatedSkillsBySkill = buildRelatedSkillsLookup();
 
-    for (Opportunity opportunity : allOpportunities) {
-      Set<String> uniqueSkillNames = extractUniqueSkillNames(opportunity);
-      if (uniqueSkillNames.isEmpty()) {
+    return skillCounts.stream()
+        .map(
+            skillCount ->
+                new OpportunitySkillInsight(
+                    skillCount.getSkillName(),
+                    skillCount.getOpportunityCount(),
+                    relatedSkillsBySkill.getOrDefault(skillCount.getSkillName(), List.of())))
+        .collect(Collectors.toList());
+  }
+
+  private Map<String, List<OpportunitySkillDTO>> buildRelatedSkillsLookup() {
+    List<OpportunitySkillPairProjection> relatedSkillPairs =
+        opportunityRepository.findOpportunitySkillPairCounts();
+    if (relatedSkillPairs == null || relatedSkillPairs.isEmpty()) {
+      return Map.of();
+    }
+
+    Map<String, List<OpportunitySkillDTO>> relatedSkillsBySkill = new HashMap<>();
+
+    for (OpportunitySkillPairProjection relatedSkillPair : relatedSkillPairs) {
+      List<OpportunitySkillDTO> topRelatedSkills =
+          relatedSkillsBySkill.computeIfAbsent(
+              relatedSkillPair.getSkillName(), ignored -> new ArrayList<>());
+
+      if (topRelatedSkills.size() >= RELATED_SKILL_LIMIT) {
         continue;
       }
 
-      for (String skillName : uniqueSkillNames) {
-        skillCountMap.put(skillName, skillCountMap.getOrDefault(skillName, 0L) + 1);
-      }
-
-      for (String skillName : uniqueSkillNames) {
-        Map<String, Long> relatedSkillCounts =
-            relatedSkillCountMap.computeIfAbsent(skillName, ignored -> new HashMap<>());
-        for (String relatedSkillName : uniqueSkillNames) {
-          if (!skillName.equals(relatedSkillName)) {
-            relatedSkillCounts.put(
-                relatedSkillName, relatedSkillCounts.getOrDefault(relatedSkillName, 0L) + 1);
-          }
-        }
-      }
+      topRelatedSkills.add(
+          new OpportunitySkillDTO(
+              relatedSkillPair.getRelatedSkillName(), relatedSkillPair.getOpportunityCount()));
     }
 
-    Comparator<Map.Entry<String, Long>> byCountDescThenName =
-        Comparator.<Map.Entry<String, Long>, Long>comparing(
-                Map.Entry::getValue, Comparator.reverseOrder())
-            .thenComparing(Map.Entry::getKey);
-
-    return skillCountMap.entrySet().stream()
-        .sorted(byCountDescThenName)
-        .map(
-            entry ->
-                new OpportunitySkillInsight(
-                    entry.getKey(),
-                    entry.getValue(),
-                    getTopRelatedSkills(relatedSkillCountMap.get(entry.getKey()))))
-        .collect(Collectors.toList());
-  }
-
-  private Set<String> extractUniqueSkillNames(Opportunity opportunity) {
-    if (opportunity.getSkills() == null || opportunity.getSkills().isEmpty()) {
-      return Set.of();
-    }
-
-    return opportunity.getSkills().stream()
-        .map(Skill::getName)
-        .filter(Objects::nonNull)
-        .map(String::trim)
-        .filter(name -> !name.isEmpty())
-        .collect(Collectors.toCollection(HashSet::new));
-  }
-
-  private List<OpportunitySkillDTO> getTopRelatedSkills(Map<String, Long> relatedSkillCounts) {
-    if (relatedSkillCounts == null || relatedSkillCounts.isEmpty()) {
-      return List.of();
-    }
-
-    Comparator<Map.Entry<String, Long>> byCountDescThenName =
-        Comparator.<Map.Entry<String, Long>, Long>comparing(
-                Map.Entry::getValue, Comparator.reverseOrder())
-            .thenComparing(Map.Entry::getKey);
-
-    return relatedSkillCounts.entrySet().stream()
-        .sorted(byCountDescThenName)
-        .limit(RELATED_SKILL_LIMIT)
-        .map(entry -> new OpportunitySkillDTO(entry.getKey(), entry.getValue()))
-        .collect(Collectors.toList());
+    return relatedSkillsBySkill;
   }
 
   private int sanitizeMonths(int months) {

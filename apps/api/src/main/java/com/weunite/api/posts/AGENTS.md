@@ -39,6 +39,7 @@ This module owns posts, comments, likes, and reposts in `com.weunite.api.posts`.
 - Keep feed, comment, and like logic in services, not controllers.
 - Keep post/comment/like DTOs and mappings inside this module.
 - Preserve endpoint contracts unless explicitly requested.
+- Keep feed pagination database-backed; do not merge and paginate full post/repost result sets in memory.
 
 ## Validation
 

@@ -9,15 +9,15 @@ import com.weunite.api.posts.dto.PostDTO;
 import com.weunite.api.posts.dto.PostRequestDTO;
 import com.weunite.api.posts.exception.PostNotFoundException;
 import com.weunite.api.posts.mapper.PostMapper;
+import com.weunite.api.posts.repository.FeedItemProjection;
 import com.weunite.api.posts.repository.PostRepository;
 import com.weunite.api.posts.repository.RepostRepository;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.UserRepository;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,12 +95,9 @@ public class PostService {
   public List<PostDTO> getPosts(int page, int size) {
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(size, 1), 100);
-    int fetchSize = (safePage + 1) * safeSize;
-    PageRequest pageable = PageRequest.of(0, fetchSize);
-    List<Post> posts = postRepository.findFeedPosts(pageable).getContent();
-    List<Repost> reposts = repostRepository.findFeedReposts(pageable).getContent();
+    PageRequest pageable = PageRequest.of(safePage, safeSize);
 
-    return mergeFeed(posts, reposts, safePage, safeSize);
+    return mapFeedEntries(postRepository.findFeedEntries(pageable).getContent());
   }
 
   @Transactional(readOnly = true)
@@ -109,12 +106,9 @@ public class PostService {
 
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(size, 1), 100);
-    int fetchSize = (safePage + 1) * safeSize;
-    PageRequest pageable = PageRequest.of(0, fetchSize);
-    List<Post> posts = postRepository.findPostsByUserId(userId, pageable).getContent();
-    List<Repost> reposts = repostRepository.findByUserId(userId, pageable).getContent();
+    PageRequest pageable = PageRequest.of(safePage, safeSize);
 
-    return mergeFeed(posts, reposts, safePage, safeSize);
+    return mapFeedEntries(postRepository.findFeedEntriesByUserId(userId, pageable).getContent());
   }
 
   @Transactional
@@ -130,28 +124,52 @@ public class PostService {
     return postMapper.toResponseDTO("Publicação excluída com sucesso", post);
   }
 
-  private List<PostDTO> mergeFeed(List<Post> posts, List<Repost> reposts, int page, int size) {
-    List<FeedEntry> feedEntries = new ArrayList<>(posts.size() + reposts.size());
+  private List<PostDTO> mapFeedEntries(List<FeedItemProjection> feedEntries) {
+    if (feedEntries == null || feedEntries.isEmpty()) {
+      return List.of();
+    }
 
-    posts.forEach(
-        post ->
-            feedEntries.add(new FeedEntry(resolvePostTimestamp(post), postMapper.toPostDTO(post))));
-    reposts.forEach(
-        repost ->
-            feedEntries.add(
-                new FeedEntry(repost.getCreatedAt(), postMapper.toPostDTOFromRepost(repost))));
+    List<Long> postIds =
+        feedEntries.stream()
+            .filter(entry -> isPostEntry(entry.getEntryType()))
+            .map(FeedItemProjection::getPostId)
+            .distinct()
+            .toList();
+    List<Long> repostIds =
+        feedEntries.stream()
+            .filter(entry -> isRepostEntry(entry.getEntryType()))
+            .map(FeedItemProjection::getRepostId)
+            .distinct()
+            .toList();
 
-    feedEntries.sort(Comparator.comparing(FeedEntry::timestamp).reversed());
+    Map<Long, Post> postsById = new HashMap<>();
+    postRepository.findAllById(postIds).forEach(post -> postsById.put(post.getId(), post));
 
-    int fromIndex = Math.min(page * size, feedEntries.size());
-    int toIndex = Math.min(fromIndex + size, feedEntries.size());
+    Map<Long, Repost> repostsById = new HashMap<>();
+    repostRepository
+        .findAllById(repostIds)
+        .forEach(repost -> repostsById.put(repost.getId(), repost));
 
-    return feedEntries.subList(fromIndex, toIndex).stream().map(FeedEntry::post).toList();
+    return feedEntries.stream()
+        .map(
+            entry -> {
+              if (isPostEntry(entry.getEntryType())) {
+                Post post = postsById.get(entry.getPostId());
+                return post != null ? postMapper.toPostDTO(post) : null;
+              }
+
+              Repost repost = repostsById.get(entry.getRepostId());
+              return repost != null ? postMapper.toPostDTOFromRepost(repost) : null;
+            })
+        .filter(dto -> dto != null)
+        .toList();
   }
 
-  private Instant resolvePostTimestamp(Post post) {
-    return post.getUpdatedAt() != null ? post.getUpdatedAt() : post.getCreatedAt();
+  private boolean isPostEntry(String entryType) {
+    return "POST".equalsIgnoreCase(entryType);
   }
 
-  private record FeedEntry(Instant timestamp, PostDTO post) {}
+  private boolean isRepostEntry(String entryType) {
+    return "REPOST".equalsIgnoreCase(entryType);
+  }
 }

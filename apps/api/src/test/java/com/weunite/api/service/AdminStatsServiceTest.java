@@ -11,15 +11,13 @@ import com.weunite.api.admin.stats.dto.OpportunityByCategoryDTO;
 import com.weunite.api.admin.stats.dto.OpportunityCategoryWithSkillsDTO;
 import com.weunite.api.admin.stats.dto.OpportunitySkillDTO;
 import com.weunite.api.admin.stats.service.AdminStatsService;
-import com.weunite.api.opportunities.domain.Opportunity;
-import com.weunite.api.opportunities.domain.Skill;
 import com.weunite.api.opportunities.repository.OpportunityRepository;
+import com.weunite.api.opportunities.repository.OpportunitySkillCountProjection;
+import com.weunite.api.opportunities.repository.OpportunitySkillPairProjection;
 import com.weunite.api.posts.repository.PostRepository;
 import com.weunite.api.users.repository.UserRepository;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,12 +62,16 @@ class AdminStatsServiceTest {
   @DisplayName(
       "Should aggregate top opportunity skills with related skills for legacy stats endpoint")
   void getOpportunitiesWithSkillsSuccess() {
-    when(opportunityRepository.findAll())
+    when(opportunityRepository.findOpportunitySkillCounts())
+        .thenReturn(
+            List.of(skillCount("Java", 3L), skillCount("React", 1L), skillCount("Spring", 1L)));
+    when(opportunityRepository.findOpportunitySkillPairCounts())
         .thenReturn(
             List.of(
-                opportunityWithSkills("Java", "Spring"),
-                opportunityWithSkills("Java"),
-                opportunityWithSkills("Java", "React")));
+                skillPair("Java", "React", 1L),
+                skillPair("Java", "Spring", 1L),
+                skillPair("React", "Java", 1L),
+                skillPair("Spring", "Java", 1L)));
 
     List<OpportunityCategoryWithSkillsDTO> result = adminStatsService.getOpportunitiesWithSkills();
 
@@ -84,12 +86,10 @@ class AdminStatsServiceTest {
   @Test
   @DisplayName("Should return opportunity categories with percentage based on skill distribution")
   void getOpportunitiesByCategorySuccess() {
-    when(opportunityRepository.findAll())
+    when(opportunityRepository.findOpportunitySkillCounts())
         .thenReturn(
-            List.of(
-                opportunityWithSkills("Java", "Spring"),
-                opportunityWithSkills("Java"),
-                opportunityWithSkills("Java", "React")));
+            List.of(skillCount("Java", 3L), skillCount("React", 1L), skillCount("Spring", 1L)));
+    when(opportunityRepository.findOpportunitySkillPairCounts()).thenReturn(List.of());
 
     List<OpportunityByCategoryDTO> result = adminStatsService.getOpportunitiesByCategory();
 
@@ -103,9 +103,37 @@ class AdminStatsServiceTest {
     assertEquals(20.0, result.get(2).percentage());
   }
 
-  private Opportunity opportunityWithSkills(String... skillNames) {
-    Opportunity opportunity = new Opportunity();
-    opportunity.setSkills(Arrays.stream(skillNames).map(Skill::new).collect(Collectors.toSet()));
-    return opportunity;
+  private OpportunitySkillCountProjection skillCount(String skillName, Long opportunityCount) {
+    return new OpportunitySkillCountProjection() {
+      @Override
+      public String getSkillName() {
+        return skillName;
+      }
+
+      @Override
+      public Long getOpportunityCount() {
+        return opportunityCount;
+      }
+    };
+  }
+
+  private OpportunitySkillPairProjection skillPair(
+      String skillName, String relatedSkillName, Long opportunityCount) {
+    return new OpportunitySkillPairProjection() {
+      @Override
+      public String getSkillName() {
+        return skillName;
+      }
+
+      @Override
+      public String getRelatedSkillName() {
+        return relatedSkillName;
+      }
+
+      @Override
+      public Long getOpportunityCount() {
+        return opportunityCount;
+      }
+    };
   }
 }

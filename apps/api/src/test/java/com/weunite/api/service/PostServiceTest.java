@@ -13,6 +13,7 @@ import com.weunite.api.posts.dto.PostDTO;
 import com.weunite.api.posts.dto.PostRequestDTO;
 import com.weunite.api.posts.exception.PostNotFoundException;
 import com.weunite.api.posts.mapper.PostMapper;
+import com.weunite.api.posts.repository.FeedItemProjection;
 import com.weunite.api.posts.repository.PostRepository;
 import com.weunite.api.posts.repository.RepostRepository;
 import com.weunite.api.posts.service.PostService;
@@ -474,17 +475,43 @@ public class PostServiceTest {
             null,
             repost.getCreatedAt());
 
-    when(postRepository.findFeedPosts(any())).thenReturn(new PageImpl<>(List.of(post)));
-    when(repostRepository.findFeedReposts(any())).thenReturn(new PageImpl<>(List.of(repost)));
+    when(postRepository.findFeedEntries(any()))
+        .thenReturn(
+            new PageImpl<>(
+                List.of(
+                    feedEntry("REPOST", post.getId(), repost.getId()),
+                    feedEntry("POST", post.getId(), null))));
+    when(postRepository.findAllById(List.of(post.getId()))).thenReturn(List.of(post));
+    when(repostRepository.findAllById(List.of(repost.getId()))).thenReturn(List.of(repost));
     when(postMapper.toPostDTO(post)).thenReturn(originalPostDTO);
     when(postMapper.toPostDTOFromRepost(repost)).thenReturn(repostedPostDTO);
 
     List<PostDTO> result = postService.getPosts(0, 10);
 
     assertEquals(List.of(repostedPostDTO, originalPostDTO), result);
-    verify(postRepository).findFeedPosts(any());
-    verify(repostRepository).findFeedReposts(any());
+    verify(postRepository).findFeedEntries(any());
+    verify(postRepository).findAllById(List.of(post.getId()));
+    verify(repostRepository).findAllById(List.of(repost.getId()));
     verify(postMapper).toPostDTO(post);
     verify(postMapper).toPostDTOFromRepost(repost);
+  }
+
+  private FeedItemProjection feedEntry(String entryType, Long postId, Long repostId) {
+    return new FeedItemProjection() {
+      @Override
+      public Long getPostId() {
+        return postId;
+      }
+
+      @Override
+      public Long getRepostId() {
+        return repostId;
+      }
+
+      @Override
+      public String getEntryType() {
+        return entryType;
+      }
+    };
   }
 }

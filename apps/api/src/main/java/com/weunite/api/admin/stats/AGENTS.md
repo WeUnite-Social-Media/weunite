@@ -37,6 +37,7 @@ This module owns admin dashboard statistics in `com.weunite.api.admin.stats`.
 - Do not import moderation request DTOs or report moderation orchestration here.
 - Preserve existing `/api/admin/stats/**` contracts unless explicitly requested.
 - Keep dashboard stats DTOs compatible with current admin consumers; when a payload needs both bean getters and record-style accessors, preserve that compatibility in the DTO instead of reshaping controllers or services.
+- Push large opportunity-skill aggregations down to repository/database queries instead of scanning all opportunities in service memory.
 
 ## Validation
 

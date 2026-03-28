@@ -12,16 +12,103 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
   @Query(
       value =
-          "SELECT p FROM Post p WHERE p.deleted = false ORDER BY COALESCE(p.updatedAt, p.createdAt) DESC",
-      countQuery = "SELECT COUNT(p) FROM Post p WHERE p.deleted = false")
-  Page<Post> findFeedPosts(Pageable pageable);
+          """
+          SELECT
+            feed.post_id AS postId,
+            feed.repost_id AS repostId,
+            feed.entry_type AS entryType
+          FROM (
+            SELECT
+              p.id AS post_id,
+              CAST(NULL AS BIGINT) AS repost_id,
+              COALESCE(p.updated_at, p.created_at) AS feed_timestamp,
+              'POST' AS entry_type
+            FROM post p
+            WHERE p.deleted = false
+
+            UNION ALL
+
+            SELECT
+              r.post_id AS post_id,
+              r.id AS repost_id,
+              r.created_at AS feed_timestamp,
+              'REPOST' AS entry_type
+            FROM tb_post_repost r
+            JOIN post p ON p.id = r.post_id
+            WHERE p.deleted = false
+          ) feed
+          ORDER BY feed.feed_timestamp DESC, feed.post_id DESC, COALESCE(feed.repost_id, 0) DESC
+          """,
+      countQuery =
+          """
+          SELECT COUNT(*)
+          FROM (
+            SELECT p.id
+            FROM post p
+            WHERE p.deleted = false
+
+            UNION ALL
+
+            SELECT r.id
+            FROM tb_post_repost r
+            JOIN post p ON p.id = r.post_id
+            WHERE p.deleted = false
+          ) feed
+          """,
+      nativeQuery = true)
+  Page<FeedItemProjection> findFeedEntries(Pageable pageable);
 
   @Query(
       value =
-          "SELECT p FROM Post p WHERE p.user.id = :userId AND p.deleted = false"
-              + " ORDER BY COALESCE(p.updatedAt, p.createdAt) DESC",
-      countQuery = "SELECT COUNT(p) FROM Post p WHERE p.user.id = :userId AND p.deleted = false")
-  Page<Post> findPostsByUserId(@Param("userId") Long userId, Pageable pageable);
+          """
+          SELECT
+            feed.post_id AS postId,
+            feed.repost_id AS repostId,
+            feed.entry_type AS entryType
+          FROM (
+            SELECT
+              p.id AS post_id,
+              CAST(NULL AS BIGINT) AS repost_id,
+              COALESCE(p.updated_at, p.created_at) AS feed_timestamp,
+              'POST' AS entry_type
+            FROM post p
+            WHERE p.deleted = false
+              AND p.user_id = :userId
+
+            UNION ALL
+
+            SELECT
+              r.post_id AS post_id,
+              r.id AS repost_id,
+              r.created_at AS feed_timestamp,
+              'REPOST' AS entry_type
+            FROM tb_post_repost r
+            JOIN post p ON p.id = r.post_id
+            WHERE p.deleted = false
+              AND r.user_id = :userId
+          ) feed
+          ORDER BY feed.feed_timestamp DESC, feed.post_id DESC, COALESCE(feed.repost_id, 0) DESC
+          """,
+      countQuery =
+          """
+          SELECT COUNT(*)
+          FROM (
+            SELECT p.id
+            FROM post p
+            WHERE p.deleted = false
+              AND p.user_id = :userId
+
+            UNION ALL
+
+            SELECT r.id
+            FROM tb_post_repost r
+            JOIN post p ON p.id = r.post_id
+            WHERE p.deleted = false
+              AND r.user_id = :userId
+          ) feed
+          """,
+      nativeQuery = true)
+  Page<FeedItemProjection> findFeedEntriesByUserId(@Param("userId") Long userId, Pageable pageable);
 
   @Query("SELECT COUNT(l) FROM Like l WHERE l.post IS NOT NULL")
   Long countTotalLikes();

@@ -75,12 +75,6 @@ public class AdminReportsController {
     return ResponseEntity.ok(response);
   }
 
-  @PostMapping("/posts/{postId}/hide")
-  public ResponseEntity<ResponseDTO<PostDTO>> hidePost(@PathVariable Long postId) {
-    ResponseDTO<PostDTO> response = adminReportService.deletePostByAdmin(postId);
-    return ResponseEntity.ok(response);
-  }
-
   @PutMapping("/posts/{postId}/restore")
   public ResponseEntity<ResponseDTO<PostDTO>> restorePost(@PathVariable Long postId) {
     ResponseDTO<PostDTO> response = adminReportService.restorePostByAdmin(postId);

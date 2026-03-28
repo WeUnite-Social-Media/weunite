@@ -1,5 +1,6 @@
 package com.weunite.api.common.config;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -56,6 +57,7 @@ class DatabaseConfigTest {
         """);
 
     databaseConfig.normalizeLegacyUserBooleans(jdbcTemplate);
+    assertDoesNotThrow(() -> databaseConfig.normalizeLegacyUserBooleans(jdbcTemplate));
 
     User user = userRepository.findByUsername(LEGACY_USERNAME).orElseThrow();
 
