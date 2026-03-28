@@ -40,12 +40,6 @@ const adminMenuItems = [
 export function AdminSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuthStore();
-
-  const handleLogout = () => {
-    logout();
-    navigate("/auth/login");
-  };
 
   const isActiveRoute = (href: string) => {
     if (href === "/admin") {
@@ -83,10 +77,9 @@ export function AdminSidebar() {
         <Button
           variant="ghost"
           className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
-          onClick={handleLogout}
+          onClick={() => navigate("/home")}
         >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sair
+          Sair do Admin
         </Button>
       </div>
     </div>
