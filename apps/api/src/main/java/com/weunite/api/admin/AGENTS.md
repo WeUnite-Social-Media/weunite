@@ -25,11 +25,13 @@ This module owns admin-only backend operations in `com.weunite.api.admin`.
 
 - Keep admin endpoints separate from public feature endpoints.
 - Keep single-responsibility boundaries by use case folder:
-	- `stats/*` only for dashboard and admin metrics.
-	- `reports/*` only for report analysis/actions and content moderation operations.
-	- `moderation/*` only for account moderation actions (ban/suspend).
+  - `stats/*` only for dashboard and admin metrics.
+  - `reports/*` only for report analysis/actions and content moderation operations.
+  - `moderation/*` only for account moderation actions (ban/suspend).
 - Depend on reporting and other feature modules for data, not the other way around.
-- Avoid creating cross-use-case façade services that mix responsibilities.
+- Avoid creating cross-use-case facade services that mix responsibilities.
+- Name admin routes after the action they actually perform so clients and reviewers can infer behavior from the contract.
+- Keep admin-only comments and response copy ASCII-safe or valid UTF-8.
 
 ## Validation
 

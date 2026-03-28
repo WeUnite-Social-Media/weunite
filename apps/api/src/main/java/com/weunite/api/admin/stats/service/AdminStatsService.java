@@ -29,8 +29,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Servico responsavel por calcular estatisticas do dashboard admin. Lida com metricas gerais, dados
- * mensais e distribuicao de usuarios.
+ * Servico responsavel por calcular estatisticas do dashboard admin. Lida com metricas gerais,
+ * dados mensais e distribuicao de usuarios.
  */
 @Service
 public class AdminStatsService {
@@ -39,7 +39,6 @@ public class AdminStatsService {
   private static final int MAX_DASHBOARD_MONTHS = 12;
   private static final int TOP_SKILL_LIMIT = 5;
   private static final int RELATED_SKILL_LIMIT = 3;
-  private static final double PREVIOUS_MONTH_ENGAGEMENT_RATE_FACTOR = 0.95;
 
   private final PostRepository postRepository;
   private final OpportunityRepository opportunityRepository;
@@ -65,16 +64,7 @@ public class AdminStatsService {
   public AdminStatsDTO getAdminStats() {
     Instant now = Instant.now();
     Instant tenDaysAgo = now.minus(10, ChronoUnit.DAYS);
-
-    LocalDate today = LocalDate.now();
-    LocalDate startOfMonth = today.withDayOfMonth(1);
-    LocalDate startOfPreviousMonth = startOfMonth.minusMonths(1);
-    LocalDate endOfPreviousMonth = startOfMonth.minusDays(1);
-
-    Instant startOfLastMonth =
-        startOfPreviousMonth.atStartOfDay(ZoneId.systemDefault()).toInstant();
-    Instant endOfLastMonth =
-        endOfPreviousMonth.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant();
+    DateRange previousMonthWindow = buildMonthWindow(LocalDate.now().minusMonths(1));
 
     Long totalPosts = postRepository.count();
     Long totalOpportunities = opportunityRepository.count();
@@ -86,13 +76,28 @@ public class AdminStatsService {
         calculateEngagementRate(totalPosts, totalLikes, totalComments, activeUsers);
 
     Long previousMonthPosts =
-        postRepository.countPostsBetweenDates(startOfLastMonth, endOfLastMonth);
+        safeCount(
+            postRepository.countPostsBetweenDates(
+                previousMonthWindow.start(), previousMonthWindow.end()));
     Long previousMonthOpportunities =
-        opportunityRepository.countOpportunitiesBetweenDates(startOfLastMonth, endOfLastMonth);
-
-    Instant thirtyDaysAgo = now.minus(30, ChronoUnit.DAYS);
-    Long previousActiveUsers = userRepository.countActiveUsersByPostActivity(thirtyDaysAgo);
-    Double previousEngagementRate = engagementRate * PREVIOUS_MONTH_ENGAGEMENT_RATE_FACTOR;
+        safeCount(
+            opportunityRepository.countOpportunitiesBetweenDates(
+                previousMonthWindow.start(), previousMonthWindow.end()));
+    Long previousMonthLikes =
+        safeCount(
+            postRepository.countLikesBetweenDates(
+                previousMonthWindow.start(), previousMonthWindow.end()));
+    Long previousMonthComments =
+        safeCount(
+            postRepository.countCommentsBetweenDates(
+                previousMonthWindow.start(), previousMonthWindow.end()));
+    Long previousActiveUsers =
+        safeCount(
+            userRepository.countActiveUsersByPostActivityBetweenDates(
+                previousMonthWindow.start(), previousMonthWindow.end()));
+    Double previousEngagementRate =
+        calculateEngagementRate(
+            previousMonthPosts, previousMonthLikes, previousMonthComments, previousActiveUsers);
 
     PreviousMonthStatsDTO previousMonth =
         new PreviousMonthStatsDTO(
@@ -205,22 +210,33 @@ public class AdminStatsService {
 
     for (int i = safeMonths - 1; i >= 0; i--) {
       LocalDate targetMonth = today.minusMonths(i);
-      LocalDate startOfMonth = targetMonth.withDayOfMonth(1);
-      LocalDate endOfMonth = targetMonth.withDayOfMonth(targetMonth.lengthOfMonth());
-
-      Instant startInstant = startOfMonth.atStartOfDay(ZoneId.systemDefault()).toInstant();
-      Instant endInstant = endOfMonth.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant();
+      DateRange monthWindow = buildMonthWindow(targetMonth);
 
       monthlySnapshots.add(
           new MonthlySnapshot(
               formatMonthLabel(targetMonth),
-              safeCount(postRepository.countPostsBetweenDates(startInstant, endInstant)),
               safeCount(
-                  opportunityRepository.countOpportunitiesBetweenDates(startInstant, endInstant)),
-              safeCount(userRepository.countUsersCreatedBetweenDates(startInstant, endInstant))));
+                  postRepository.countPostsBetweenDates(
+                      monthWindow.start(), monthWindow.end())),
+              safeCount(
+                  opportunityRepository.countOpportunitiesBetweenDates(
+                      monthWindow.start(), monthWindow.end())),
+              safeCount(
+                  userRepository.countUsersCreatedBetweenDates(
+                      monthWindow.start(), monthWindow.end()))));
     }
 
     return monthlySnapshots;
+  }
+
+  private DateRange buildMonthWindow(LocalDate targetMonth) {
+    ZoneId zoneId = ZoneId.systemDefault();
+    LocalDate startOfMonth = targetMonth.withDayOfMonth(1);
+    LocalDate endOfMonth = targetMonth.withDayOfMonth(targetMonth.lengthOfMonth());
+
+    return new DateRange(
+        startOfMonth.atStartOfDay(zoneId).toInstant(),
+        endOfMonth.atTime(23, 59, 59).atZone(zoneId).toInstant());
   }
 
   private List<OpportunitySkillInsight> buildOpportunitySkillInsights() {
@@ -293,6 +309,8 @@ public class AdminStatsService {
   private Long safeCount(Long value) {
     return value != null ? value : 0L;
   }
+
+  private record DateRange(Instant start, Instant end) {}
 
   private record MonthlySnapshot(String month, Long posts, Long opportunities, Long users) {}
 

@@ -5,6 +5,7 @@ This repository uses `AGENTS.md` files as local operating notes for humans and c
 ## How to use this repo
 
 - Start at this file for project-wide context.
+- When working under `apps/`, `packages/`, `docs/`, or `infra/`, read that folder's local `AGENTS.md` before drilling into a specific child area.
 - When working inside an app, package, or owned feature area, read the nearest `AGENTS.md` too.
 - Treat the closest `AGENTS.md` as the source of truth for that scope.
 - Keep changes scoped. If a task only touches one app or package, avoid unrelated edits elsewhere.
@@ -29,6 +30,7 @@ This repository uses `AGENTS.md` files as local operating notes for humans and c
 - Shared JS and TS tooling belongs in `packages/eslint-config` and `packages/typescript-config`.
 - Stable docs belong in `docs`, not in app roots.
 - Temporary plans, session notes, and runtime logs belong in `tmp`, not in tracked docs.
+- Contributor-facing docs and setup examples must stay cross-platform and avoid machine-specific absolute paths.
 - When a directory has non-obvious boundaries or ownership, add a local `AGENTS.md`.
 
 ## Standard commands
@@ -57,6 +59,7 @@ This repository uses `AGENTS.md` files as local operating notes for humans and c
 ## Where AGENTS.md should exist
 
 - Keep one root `AGENTS.md` for repo-wide rules.
+- Keep local `AGENTS.md` files at top-level grouping folders with real ownership such as `apps`, `packages`, `docs`, and `infra`.
 - Keep one `AGENTS.md` at each app or package root.
 - Add deeper `AGENTS.md` files only for feature areas with real ownership, boundaries, or maintenance rules.
 - Do not add `AGENTS.md` files to technical implementation folders that are obvious or incidental, such as `controller`, `dto`, `mapper`, `repository`, or empty placeholder directories.

@@ -16,8 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * ServiÃ§o responsÃ¡vel pela moderaÃ§Ã£o de usuÃ¡rios. Lida com suspensÃµes e banimentos de
- * usuÃ¡rios.
+ * Servico responsavel pela moderacao de usuarios. Lida com suspensoes e banimentos de usuarios.
  */
 @Service
 public class AdminModerationService {
@@ -30,20 +29,20 @@ public class AdminModerationService {
     this.reportRepository = reportRepository;
   }
 
-  /** Bane um usuÃ¡rio permanentemente. Fecha TODAS as denÃºncias relacionadas ao usuÃ¡rio. */
+  /** Bane um usuario permanentemente. Fecha TODAS as denuncias relacionadas ao usuario. */
   @Transactional
   public ResponseDTO<String> banUser(BanUserRequestDTO request) {
     User user = userRepository.findById(request.userId()).orElseThrow(UserNotFoundException::new);
     Instant now = Instant.now();
 
-    // Marcar usuÃ¡rio como banido
+    // Marcar usuario como banido
     user.setBanned(true);
     user.setBannedAt(now);
     user.setBannedReason(request.reason());
     user.setBannedByAdminId(request.adminId());
     userRepository.save(user);
 
-    // Resolver todas as denÃºncias pendentes do usuÃ¡rio
+    // Resolver todas as denuncias pendentes do usuario
     List<Report> userReports = reportRepository.findPendingReportsByUser(user);
     userReports.forEach(
         report -> {
@@ -56,26 +55,26 @@ public class AdminModerationService {
     reportRepository.saveAll(userReports);
 
     return new ResponseDTO<>(
-        "UsuÃ¡rio banido com sucesso",
+        "Usuario banido com sucesso",
         String.format(
-            "UsuÃ¡rio @%s foi banido permanentemente. %d denÃºncias foram resolvidas.",
+            "Usuario @%s foi banido permanentemente. %d denuncias foram resolvidas.",
             user.getUsername(), userReports.size()));
   }
 
-  /** Suspende um usuÃ¡rio temporariamente. Fecha APENAS a denÃºncia especÃ­fica (se fornecida). */
+  /** Suspende um usuario temporariamente. Fecha APENAS a denuncia especifica (se fornecida). */
   @Transactional
   public ResponseDTO<String> suspendUser(SuspendUserRequestDTO request) {
     User user = userRepository.findById(request.userId()).orElseThrow(UserNotFoundException::new);
     Instant now = Instant.now();
 
-    // Marcar usuÃ¡rio como suspenso
+    // Marcar usuario como suspenso
     user.setSuspended(true);
     Instant suspendedUntil = now.plus(request.durationInDays(), ChronoUnit.DAYS);
     user.setSuspendedUntil(suspendedUntil);
     user.setSuspensionReason(request.reason());
     userRepository.save(user);
 
-    // Resolver apenas a denÃºncia especÃ­fica (se fornecida)
+    // Resolver apenas a denuncia especifica (se fornecida)
     if (request.reportId() != null) {
       Report report =
           reportRepository
@@ -89,9 +88,9 @@ public class AdminModerationService {
     }
 
     return new ResponseDTO<>(
-        "UsuÃ¡rio suspenso com sucesso",
+        "Usuario suspenso com sucesso",
         String.format(
-            "UsuÃ¡rio @%s foi suspenso por %d dia(s).",
+            "Usuario @%s foi suspenso por %d dia(s).",
             user.getUsername(), request.durationInDays()));
   }
 }

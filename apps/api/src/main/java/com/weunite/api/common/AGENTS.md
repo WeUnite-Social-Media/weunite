@@ -40,6 +40,7 @@ This module owns cross-cutting backend infrastructure in `com.weunite.api.common
 - Keep startup-time schema/data normalization idempotent across repeated boots; never rely on one-time DDL side effects.
 - Keep shared authenticated-actor helpers in `security/*` when controllers must validate that a
   path or query user id matches the JWT identity.
+- Default personal-data, report-review, notification, and admin routes to authenticated access in `SecurityConfig` unless a public contract is explicitly required.
 
 ## Validation
 

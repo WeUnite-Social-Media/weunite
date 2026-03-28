@@ -38,6 +38,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
       "SELECT COUNT(DISTINCT p.user.id) FROM Post p WHERE COALESCE(p.updatedAt, p.createdAt) >= :since")
   Long countActiveUsersByPostActivity(@Param("since") Instant since);
 
+  @Query(
+      "SELECT COUNT(DISTINCT p.user.id) FROM Post p WHERE COALESCE(p.updatedAt, p.createdAt) BETWEEN :startDate AND :endDate")
+  Long countActiveUsersByPostActivityBetweenDates(
+      @Param("startDate") Instant startDate, @Param("endDate") Instant endDate);
+
   @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt BETWEEN :startDate AND :endDate")
   Long countUsersCreatedBetweenDates(
       @Param("startDate") Instant startDate, @Param("endDate") Instant endDate);

@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.weunite.api.admin.stats.dto.DashboardActivityDTO;
+import com.weunite.api.admin.stats.dto.AdminStatsDTO;
 import com.weunite.api.admin.stats.dto.OpportunityByCategoryDTO;
 import com.weunite.api.admin.stats.dto.OpportunityCategoryWithSkillsDTO;
 import com.weunite.api.admin.stats.dto.OpportunitySkillDTO;
@@ -33,6 +34,36 @@ class AdminStatsServiceTest {
   @Mock private UserRepository userRepository;
 
   @InjectMocks private AdminStatsService adminStatsService;
+
+  @Test
+  @DisplayName("Should calculate previous month engagement from previous month data")
+  void getAdminStatsUsesPreviousMonthData() {
+    when(postRepository.count()).thenReturn(100L);
+    when(opportunityRepository.count()).thenReturn(25L);
+    when(userRepository.countActiveUsersByPostActivity(any(Instant.class))).thenReturn(5L);
+    when(postRepository.countTotalLikes()).thenReturn(50L);
+    when(postRepository.countTotalComments()).thenReturn(25L);
+    when(postRepository.countPostsBetweenDates(any(Instant.class), any(Instant.class)))
+        .thenReturn(10L);
+    when(opportunityRepository.countOpportunitiesBetweenDates(
+            any(Instant.class), any(Instant.class)))
+        .thenReturn(4L);
+    when(postRepository.countLikesBetweenDates(any(Instant.class), any(Instant.class)))
+        .thenReturn(12L);
+    when(postRepository.countCommentsBetweenDates(any(Instant.class), any(Instant.class)))
+        .thenReturn(8L);
+    when(userRepository.countActiveUsersByPostActivityBetweenDates(
+            any(Instant.class), any(Instant.class)))
+        .thenReturn(4L);
+
+    AdminStatsDTO result = adminStatsService.getAdminStats();
+
+    assertEquals(15.0, result.engagementRate(), 0.0001);
+    assertEquals(10L, result.previousMonth().posts());
+    assertEquals(4L, result.previousMonth().opportunities());
+    assertEquals(4L, result.previousMonth().activeUsers());
+    assertEquals(50.0, result.previousMonth().engagementRate(), 0.0001);
+  }
 
   @Test
   @DisplayName("Should return dashboard activity with monthly post, opportunity and user counts")

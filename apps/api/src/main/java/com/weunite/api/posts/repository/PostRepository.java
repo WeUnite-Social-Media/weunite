@@ -121,6 +121,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
   @Query("SELECT COUNT(c) FROM Comment c")
   Long countTotalComments();
 
+  @Query(
+      "SELECT COUNT(l) FROM Like l WHERE l.post IS NOT NULL AND l.createdAt BETWEEN :startDate AND :endDate")
+  Long countLikesBetweenDates(
+      @Param("startDate") Instant startDate, @Param("endDate") Instant endDate);
+
+  @Query("SELECT COUNT(c) FROM Comment c WHERE c.createdAt BETWEEN :startDate AND :endDate")
+  Long countCommentsBetweenDates(
+      @Param("startDate") Instant startDate, @Param("endDate") Instant endDate);
+
   @Query("SELECT COUNT(p) FROM Post p WHERE p.createdAt BETWEEN :startDate AND :endDate")
   Long countPostsBetweenDates(
       @Param("startDate") Instant startDate, @Param("endDate") Instant endDate);
