@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { ImageUp, Loader2, Pencil, Send } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useCreateConversation, useGetUserConversations } from "@/features/chat/state/useChat";
@@ -16,7 +16,13 @@ import {
   useGetFollowing,
 } from "@/features/profile/state/useFollow";
 import { Button } from "@/shared/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/shared/components/ui/tooltip";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
+import { useTheme } from "@/shared/providers/ThemeProvider";
 import { getInitials } from "@/shared/utils/getInitials";
 
 interface HeaderProfileProps {
@@ -25,6 +31,7 @@ interface HeaderProfileProps {
 
 export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const { user } = useAuthStore();
   const { data: profileUser } = useUserProfile(profileUsername);
   const setIsConversationOpen = useChatStore(
@@ -160,6 +167,50 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
   };
 
   const { isDesktop } = useBreakpoints();
+  const resolvedTheme = useMemo(() => {
+    if (theme === "system" && typeof window !== "undefined") {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+    }
+
+    return theme === "dark" ? "dark" : "light";
+  }, [theme]);
+
+  const isUsernameTruncated = Boolean(
+    !isDesktop &&
+      displayUser?.username &&
+      displayUser.username.length > 10,
+  );
+
+  const displayedUsername = isUsernameTruncated
+    ? `${displayUser?.username?.slice(0, 10)}...`
+    : displayUser?.username;
+
+  const renderUsername = () => {
+    if (!displayUser?.username) {
+      return null;
+    }
+
+    const usernameClass = isDesktop
+      ? "text-2xl font-medium text-primary"
+      : "cursor-default text-base text-primary";
+
+    if (!isUsernameTruncated) {
+      return <p className={usernameClass}>{displayUser.username}</p>;
+    }
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <p className={usernameClass}>{displayedUsername}</p>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" sideOffset={6}>
+          {displayUser.username}
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
 
   if (isDesktop) {
     return (
@@ -191,9 +242,11 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
 
         <div className="mx-auto w-[48em] px-4">
           <div className="group relative h-40">
-            <img
-              className="h-full w-full rounded-b-sm object-cover"
-              src={displayUser?.bannerImg || "/BannerDefaultWhite.png"}
+            <ProfileBanner
+              isOwnProfile={isOwnProfile}
+              resolvedTheme={resolvedTheme}
+              src={displayUser?.bannerImg}
+              rounded
             />
             {isOwnProfile && (
               <>
@@ -215,7 +268,7 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
               <div className="relative ml-[0.8em] flex">
                 <Avatar
                   className="mt-[-50px] h-27 w-27 rounded-full border-5 border-background bg-background"
-                  onClick={handleEditProfileOpen}
+                  onClick={isOwnProfile ? handleEditProfileOpen : undefined}
                 >
                   <AvatarImage
                     src={displayUser?.profileImg}
@@ -234,9 +287,7 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
               </div>
 
               <div className="ml-[0.5em] flex flex-col">
-                <p className="text-2xl font-medium text-primary">
-                  {displayUser?.username}
-                </p>
+                {renderUsername()}
                 <p className="text-xs text-[#a1a1a1]">{displayUser?.name}</p>
               </div>
 
@@ -297,10 +348,10 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
 
       <div className="mx-auto w-full md:max-w-[77vw]">
         <div className="group relative h-35">
-          <img
-            className="h-full w-full object-cover"
-            src={displayUser?.bannerImg || "/BannerDefaultWhite.png"}
-            alt="Banner do perfil"
+          <ProfileBanner
+            isOwnProfile={isOwnProfile}
+            resolvedTheme={resolvedTheme}
+            src={displayUser?.bannerImg}
           />
           {isOwnProfile && (
             <>
@@ -322,7 +373,7 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
             <div className="relative ml-[0.8em] flex">
               <Avatar
                 className="mt-[-50px] h-27 w-27 rounded-full border-5 border-background bg-background"
-                onClick={handleEditProfileOpen}
+                onClick={isOwnProfile ? handleEditProfileOpen : undefined}
               >
                 <AvatarImage
                   src={displayUser?.profileImg}
@@ -342,7 +393,7 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
             </div>
 
             <div className="ml-[0.5em] flex flex-col">
-              <p className="text-base text-primary">{displayUser?.username}</p>
+              {renderUsername()}
               <p className="text-xs text-[#a1a1a1]">{displayUser?.name}</p>
             </div>
 
@@ -371,5 +422,47 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
         </div>
       </div>
     </>
+  );
+}
+
+function ProfileBanner({
+  isOwnProfile,
+  resolvedTheme,
+  rounded = false,
+  src,
+}: {
+  isOwnProfile: boolean;
+  resolvedTheme: "dark" | "light";
+  rounded?: boolean;
+  src?: string;
+}) {
+  const roundedClass = rounded ? "rounded-b-sm" : "";
+
+  if (src) {
+    return (
+      <img
+        className={`h-full w-full object-cover ${roundedClass}`}
+        src={src}
+        alt="Banner do perfil"
+      />
+    );
+  }
+
+  const gradientClass =
+    resolvedTheme === "dark"
+      ? isOwnProfile
+        ? "from-slate-950 via-slate-900 to-emerald-900/70"
+        : "from-zinc-950 via-slate-900 to-slate-800"
+      : isOwnProfile
+        ? "from-lime-100 via-white to-emerald-100"
+        : "from-slate-200 via-white to-zinc-200";
+
+  return (
+    <div
+      aria-label="Banner padrao do perfil"
+      className={`h-full w-full bg-gradient-to-r ${gradientClass} ${roundedClass}`}
+    >
+      <div className="h-full w-full bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.18),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.14),transparent_35%)]" />
+    </div>
   );
 }
