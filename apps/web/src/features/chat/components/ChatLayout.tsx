@@ -31,6 +31,12 @@ export const ChatLayout = () => {
   const [conversationsWithUsers, setConversationsWithUsers] = useState<
     ConversationWithUser[]
   >([]);
+  const clearPendingConversationId = useChatStore(
+    (state) => state.clearPendingConversationId,
+  );
+  const pendingConversationId = useChatStore(
+    (state) => state.pendingConversationId,
+  );
   const setIsConversationOpen = useChatStore(
     (state) => state.setIsConversationOpen,
   );
@@ -163,10 +169,43 @@ export const ChatLayout = () => {
   }, [conversationsData, userId]);
 
   useEffect(() => {
-    if (!activeConversationId && conversationsWithUsers.length > 0) {
+    if (
+      !activeConversationId &&
+      conversationsWithUsers.length > 0 &&
+      !pendingConversationId
+    ) {
       setActiveConversationId(conversationsWithUsers[0].id);
     }
-  }, [activeConversationId, conversationsWithUsers]);
+  }, [activeConversationId, conversationsWithUsers, pendingConversationId]);
+
+  useEffect(() => {
+    if (!pendingConversationId) {
+      return;
+    }
+
+    const pendingConversation = conversationsWithUsers.find(
+      (conversation) => conversation.id === pendingConversationId,
+    );
+
+    if (!pendingConversation) {
+      return;
+    }
+
+    setActiveConversationId(pendingConversation.id);
+
+    if (maxLeftSideBar) {
+      setShowConversations(false);
+      setIsConversationOpen(true);
+    }
+
+    clearPendingConversationId();
+  }, [
+    clearPendingConversationId,
+    conversationsWithUsers,
+    maxLeftSideBar,
+    pendingConversationId,
+    setIsConversationOpen,
+  ]);
 
   // Limpa o estado quando não estiver mais no mobile ou ao desmontar o componente
   useEffect(() => {
