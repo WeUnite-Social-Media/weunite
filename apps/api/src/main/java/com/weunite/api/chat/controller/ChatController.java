@@ -55,7 +55,7 @@ public class ChatController {
   public ResponseEntity<Map<String, Object>> deleteMessage(
       @PathVariable Long messageId,
       @RequestParam Long userId,
-      @RequestParam(defaultValue = "false") boolean forEveryone) {
+      @RequestParam(defaultValue = "true") boolean forEveryone) {
     MessageDTO deletedMessage = messageService.deleteMessage(messageId, userId, forEveryone);
 
     Map<String, Object> deleteEvent =

@@ -40,7 +40,7 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
 1. Go to the repository root:
 
    ```powershell
-   cd C:\Users\mathe\Documents\Matheus\programming\weunite
+   cd /path/to/your/weunite-repository
    ```
 
 2. Install dependencies:

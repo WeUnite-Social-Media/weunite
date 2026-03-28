@@ -109,11 +109,12 @@ public class MessageService {
   public void markMessagesAsRead(Long conversationId, Long userId) {
     List<Message> unreadMessages =
         messageRepository.findUnreadMessagesByConversationAndUser(conversationId, userId);
+    Instant now = Instant.now();
 
     for (Message message : unreadMessages) {
       if (!message.isRead()) {
         message.setRead(true);
-        message.setReadAt(Instant.now());
+        message.setReadAt(now);
       }
     }
 
@@ -130,6 +131,10 @@ public class MessageService {
 
     if (!message.getSender().getId().equals(userId)) {
       throw new UnauthorizedException("Você não tem permissão para apagar esta mensagem");
+    }
+
+    if (!forEveryone) {
+      throw new BusinessRuleException("Excluir apenas para voce ainda nao e suportado");
     }
 
     if (!message.isDeleted()) {

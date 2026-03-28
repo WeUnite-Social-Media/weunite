@@ -2,13 +2,18 @@ package com.weunite.api.posts.repository;
 
 import com.weunite.api.posts.domain.Post;
 import java.time.Instant;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
+
+  @EntityGraph(attributePaths = {"user"})
+  List<Post> findAllWithUserByIdIn(List<Long> ids);
 
   @Query(
       value =

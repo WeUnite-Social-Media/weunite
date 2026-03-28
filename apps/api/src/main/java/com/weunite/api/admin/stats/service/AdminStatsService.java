@@ -39,6 +39,7 @@ public class AdminStatsService {
   private static final int MAX_DASHBOARD_MONTHS = 12;
   private static final int TOP_SKILL_LIMIT = 5;
   private static final int RELATED_SKILL_LIMIT = 3;
+  private static final double PREVIOUS_MONTH_ENGAGEMENT_RATE_FACTOR = 0.95;
 
   private final PostRepository postRepository;
   private final OpportunityRepository opportunityRepository;
@@ -91,7 +92,7 @@ public class AdminStatsService {
 
     Instant thirtyDaysAgo = now.minus(30, ChronoUnit.DAYS);
     Long previousActiveUsers = userRepository.countActiveUsersByPostActivity(thirtyDaysAgo);
-    Double previousEngagementRate = engagementRate * 0.95;
+    Double previousEngagementRate = engagementRate * PREVIOUS_MONTH_ENGAGEMENT_RATE_FACTOR;
 
     PreviousMonthStatsDTO previousMonth =
         new PreviousMonthStatsDTO(

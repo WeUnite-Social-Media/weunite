@@ -2,9 +2,12 @@ package com.weunite.api.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.weunite.api.chat.domain.Conversation;
@@ -15,6 +18,7 @@ import com.weunite.api.chat.mapper.MessageMapper;
 import com.weunite.api.chat.repository.ConversationRepository;
 import com.weunite.api.chat.repository.MessageRepository;
 import com.weunite.api.chat.service.MessageService;
+import com.weunite.api.common.exception.BusinessRuleException;
 import com.weunite.api.notifications.domain.NotificationType;
 import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.users.domain.User;
@@ -175,5 +179,32 @@ public class MessageServiceTest {
     assertEquals(expectedMessage, result);
     assertTrue(message.isDeleted());
     assertEquals("Mensagem apagada", message.getContent());
+  }
+
+  @Test
+  @DisplayName("Should reject sender-only delete when that mode is not supported")
+  void deleteMessageForSenderOnlyIsNotSupported() {
+    Long messageId = 1L;
+    Long userId = 10L;
+
+    User sender = new User();
+    sender.setId(userId);
+
+    Message message = new Message();
+    message.setId(messageId);
+    message.setSender(sender);
+    message.setContent("secret");
+    message.setType(Message.MessageType.TEXT);
+
+    when(messageRepository.findById(messageId)).thenReturn(Optional.of(message));
+
+    BusinessRuleException exception =
+        assertThrows(
+            BusinessRuleException.class,
+            () -> messageService.deleteMessage(messageId, userId, false));
+
+    assertEquals("Excluir apenas para voce ainda nao e suportado", exception.getMessage());
+    verify(messageRepository, never()).save(message);
+    verifyNoInteractions(messageMapper);
   }
 }

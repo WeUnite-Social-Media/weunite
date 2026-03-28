@@ -583,30 +583,22 @@ public class AdminReportService {
         reportRepository.findByEntityIdAndTypeAndStatus(
             entityId, reportType, Report.ReportStatus.RESOLVED);
 
-    pendingReports.forEach(
+    List<Report> allReports = new java.util.ArrayList<>();
+    allReports.addAll(pendingReports);
+    allReports.addAll(reviewedReports);
+    allReports.addAll(resolvedReports);
+
+    Instant now = Instant.now();
+    allReports.forEach(
         report -> {
           report.setStatus(Report.ReportStatus.RESOLVED);
           report.setActionTaken(Report.ActionTaken.NONE);
-          report.setResolvedAt(Instant.now());
-        });
-    reviewedReports.forEach(
-        report -> {
-          report.setStatus(Report.ReportStatus.RESOLVED);
-          report.setActionTaken(Report.ActionTaken.NONE);
-          report.setResolvedAt(Instant.now());
-        });
-    resolvedReports.forEach(
-        report -> {
-          report.setStatus(Report.ReportStatus.RESOLVED);
-          report.setActionTaken(Report.ActionTaken.NONE);
-          report.setResolvedAt(Instant.now());
+          report.setResolvedAt(now);
         });
 
-    reportRepository.saveAll(pendingReports);
-    reportRepository.saveAll(reviewedReports);
-    reportRepository.saveAll(resolvedReports);
+    reportRepository.saveAll(allReports);
 
-    int totalResolved = pendingReports.size() + reviewedReports.size() + resolvedReports.size();
+    int totalResolved = allReports.size();
 
     return new ResponseDTO<>(
         "Denúncias resolvidas com sucesso",
