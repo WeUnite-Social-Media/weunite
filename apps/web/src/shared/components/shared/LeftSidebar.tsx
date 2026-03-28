@@ -10,7 +10,7 @@ import {
   MessageCircleMore,
   Moon,
   Search as SearchIcon,
-  Settings,
+  Pencil,
   Shield,
   Sparkles,
   Sun,
@@ -357,9 +357,12 @@ export function LeftSidebar() {
                       <p>Refazer tour</p>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-gray-50">
-                      <Settings className="h-4 w-4 text-gray-500" />
-                      <p>Configurações</p>
+                    <DropdownMenuItem
+                      className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-gray-50"
+                      onClick={() => navigate("/profile?modal=edit-profile")}
+                    >
+                      <Pencil className="h-4 w-4 text-gray-500" />
+                      <p>Editar perfil</p>
                     </DropdownMenuItem>
                   </div>
 

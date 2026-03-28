@@ -6,6 +6,7 @@ import {
   Home,
   Link,
   MessageCircleMore,
+  Pencil,
   Sparkles,
   User,
 } from "lucide-react";
@@ -113,6 +114,13 @@ export function BottomSideBar() {
                 className="cursor-pointer text-third"
               >
                 Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => navigate("/profile?modal=edit-profile")}
+                className="cursor-pointer"
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Editar perfil
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={startOnboardingTour}

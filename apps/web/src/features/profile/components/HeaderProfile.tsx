@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { ImageUp, Loader2, Pencil, Send } from "lucide-react";
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useCreateConversation, useGetUserConversations } from "@/features/chat/state/useChat";
 import { useChatStore } from "@/features/chat/stores/useChatStore";
@@ -31,6 +31,7 @@ interface HeaderProfileProps {
 
 export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { theme } = useTheme();
   const { user } = useAuthStore();
   const { data: profileUser } = useUserProfile(profileUsername);
@@ -85,9 +86,42 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
   const [isFollowingOpen, setIsFollowingOpen] = useState(false);
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
   const [isEditBannerOpen, setIsEditBannerOpen] = useState(false);
+  const requestedModal = searchParams.get("modal");
+
+  const clearModalParam = () => {
+    if (!searchParams.has("modal")) {
+      return;
+    }
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("modal");
+    setSearchParams(nextSearchParams, { replace: true });
+  };
+
+  useEffect(() => {
+    if (!isOwnProfile) {
+      return;
+    }
+
+    if (requestedModal === "edit-profile") {
+      setIsEditProfileOpen(true);
+    }
+
+    if (requestedModal === "edit-banner") {
+      setIsEditBannerOpen(true);
+    }
+  }, [isOwnProfile, requestedModal]);
 
   const handleEditProfileOpen = () => {
     setIsEditProfileOpen(true);
+  };
+
+  const handleEditProfileChange = (open: boolean) => {
+    setIsEditProfileOpen(open);
+
+    if (!open && requestedModal === "edit-profile") {
+      clearModalParam();
+    }
   };
 
   const handleFollowingOpen = () => {
@@ -100,6 +134,14 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
 
   const handleBannerEdit = () => {
     setIsEditBannerOpen(true);
+  };
+
+  const handleEditBannerChange = (open: boolean) => {
+    setIsEditBannerOpen(open);
+
+    if (!open && requestedModal === "edit-banner") {
+      clearModalParam();
+    }
   };
 
   const handleChat = async () => {
@@ -218,14 +260,14 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
         {isOwnProfile && (
           <EditProfile
             isOpen={isEditProfileOpen}
-            onOpenChange={setIsEditProfileOpen}
+            onOpenChange={handleEditProfileChange}
           />
         )}
 
         {isOwnProfile && (
           <EditBanner
             isOpen={isEditBannerOpen}
-            onOpenChange={setIsEditBannerOpen}
+            onOpenChange={handleEditBannerChange}
           />
         )}
 
@@ -324,14 +366,14 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
       {isOwnProfile && (
         <EditProfile
           isOpen={isEditProfileOpen}
-          onOpenChange={setIsEditProfileOpen}
+          onOpenChange={handleEditProfileChange}
         />
       )}
 
       {isOwnProfile && (
         <EditBanner
           isOpen={isEditBannerOpen}
-          onOpenChange={setIsEditBannerOpen}
+          onOpenChange={handleEditBannerChange}
         />
       )}
 
