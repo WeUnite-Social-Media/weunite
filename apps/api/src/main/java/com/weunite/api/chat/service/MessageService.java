@@ -122,7 +122,7 @@ public class MessageService {
   }
 
   @Transactional
-  public MessageDTO deleteMessage(Long messageId, Long userId, boolean forEveryone) {
+  public MessageDTO deleteMessage(Long messageId, Long userId) {
     Message message =
         messageRepository
             .findById(messageId)
@@ -131,10 +131,6 @@ public class MessageService {
 
     if (!message.getSender().getId().equals(userId)) {
       throw new UnauthorizedException("Você não tem permissão para apagar esta mensagem");
-    }
-
-    if (!forEveryone) {
-      throw new BusinessRuleException("Excluir apenas para voce ainda nao e suportado");
     }
 
     if (!message.isDeleted()) {

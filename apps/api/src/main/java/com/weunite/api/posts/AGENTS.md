@@ -42,6 +42,8 @@ This module owns posts, comments, likes, and reposts in `com.weunite.api.posts`.
 - Keep feed pagination database-backed; do not merge and paginate full post/repost result sets in memory.
 - When materializing feed projections, preload the author/repost relations the mapper needs instead
   of relying on lazy loads inside the service loop.
+- For actor-owned mutations, validate the path or request user id against the authenticated JWT
+  before calling the service layer.
 
 ## Validation
 

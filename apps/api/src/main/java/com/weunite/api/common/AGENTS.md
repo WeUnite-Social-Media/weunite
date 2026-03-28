@@ -38,6 +38,8 @@ This module owns cross-cutting backend infrastructure in `com.weunite.api.common
 - Prefer extension/composition by feature modules over tight coupling.
 - Keep database bootstrap and legacy schema/data normalization in `config/*` when the fix is cross-cutting and must run before feature traffic.
 - Keep startup-time schema/data normalization idempotent across repeated boots; never rely on one-time DDL side effects.
+- Keep shared authenticated-actor helpers in `security/*` when controllers must validate that a
+  path or query user id matches the JWT identity.
 
 ## Validation
 

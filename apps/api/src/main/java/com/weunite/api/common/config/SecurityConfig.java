@@ -58,9 +58,9 @@ public class SecurityConfig {
 
                     // Posts endpoints
                     .requestMatchers(HttpMethod.POST, "/api/posts/create/{userId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.PUT, "/api/posts/update/{userId}/{postId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/posts/get/{postId}")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/posts/get")
@@ -68,13 +68,16 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/posts/get/user/{userId}")
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/posts/repost/{userId}/{postId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/api/posts/delete/{userId}/{postId}")
-                    .permitAll()
+                    .authenticated()
 
                     // Likes endpoints
                     .requestMatchers(HttpMethod.POST, "/api/likes/toggleLike/{userId}/{postId}")
-                    .permitAll()
+                    .authenticated()
+                    .requestMatchers(
+                        HttpMethod.POST, "/api/likes/toggleLikeComment/{userId}/{commentId}")
+                    .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/likes/get/{userId}")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/likes/get/{userId}/page")
@@ -82,15 +85,15 @@ public class SecurityConfig {
 
                     // Comments endpoints
                     .requestMatchers(HttpMethod.POST, "/api/comment/create")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/comment/get")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/comment/get/**")
                     .permitAll()
                     .requestMatchers(HttpMethod.PUT, "/api/comment/update/{userId}/{commentId}")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.DELETE, "/api/comment/delete/{userId}/{postId}")
-                    .permitAll()
+                    .authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/api/comment/delete/{userId}/{commentId}")
+                    .authenticated()
 
                     // Follow endpoints
                     .requestMatchers(HttpMethod.GET, "/api/follow/followers/{userId}")
@@ -196,11 +199,11 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.PUT, "/api/admin/reports/resolve/{entityId}/{type}")
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/messages/upload")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.PUT, "/api/messages/{messageId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/api/messages/{messageId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers("/ws/**")
                     .permitAll()
                     .anyRequest()

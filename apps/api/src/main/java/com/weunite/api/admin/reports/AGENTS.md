@@ -33,6 +33,8 @@ This module owns admin-side report analysis and moderation actions in `com.weuni
 - Keep report moderation orchestration in this use case folder.
 - Depend on `com.weunite.api.reports` for report domain/repository data.
 - Preserve existing `/api/admin/**` report routes unless explicitly requested.
+- Keep dismiss-style moderation actions idempotent and expose them as `PUT` routes when they map to
+  state transitions on existing report aggregates.
 
 ## Validation
 

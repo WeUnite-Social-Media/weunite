@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -18,7 +17,7 @@ import com.weunite.api.chat.mapper.MessageMapper;
 import com.weunite.api.chat.repository.ConversationRepository;
 import com.weunite.api.chat.repository.MessageRepository;
 import com.weunite.api.chat.service.MessageService;
-import com.weunite.api.common.exception.BusinessRuleException;
+import com.weunite.api.common.exception.UnauthorizedException;
 import com.weunite.api.notifications.domain.NotificationType;
 import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.users.domain.User;
@@ -174,7 +173,7 @@ public class MessageServiceTest {
     when(messageRepository.save(message)).thenReturn(message);
     when(messageMapper.toDTO(message)).thenReturn(expectedMessage);
 
-    MessageDTO result = messageService.deleteMessage(messageId, userId, true);
+    MessageDTO result = messageService.deleteMessage(messageId, userId);
 
     assertEquals(expectedMessage, result);
     assertTrue(message.isDeleted());
@@ -182,13 +181,12 @@ public class MessageServiceTest {
   }
 
   @Test
-  @DisplayName("Should reject sender-only delete when that mode is not supported")
-  void deleteMessageForSenderOnlyIsNotSupported() {
+  @DisplayName("Should reject delete when requester is not the sender")
+  void deleteMessageRejectsNonSender() {
     Long messageId = 1L;
-    Long userId = 10L;
 
     User sender = new User();
-    sender.setId(userId);
+    sender.setId(10L);
 
     Message message = new Message();
     message.setId(messageId);
@@ -198,13 +196,11 @@ public class MessageServiceTest {
 
     when(messageRepository.findById(messageId)).thenReturn(Optional.of(message));
 
-    BusinessRuleException exception =
+    UnauthorizedException exception =
         assertThrows(
-            BusinessRuleException.class,
-            () -> messageService.deleteMessage(messageId, userId, false));
+            UnauthorizedException.class, () -> messageService.deleteMessage(messageId, 20L));
 
-    assertEquals("Excluir apenas para voce ainda nao e suportado", exception.getMessage());
-    verify(messageRepository, never()).save(message);
+    assertTrue(exception.getMessage().contains("apagar esta mensagem"));
     verifyNoInteractions(messageMapper);
   }
 }

@@ -108,7 +108,7 @@ export const dismissReportRequest = async (
   reason?: string,
 ): Promise<ApiResponse<void>> => {
   try {
-    const response = await axios.post(`/admin/posts/${postId}/dismiss`, {
+    const response = await axios.put(`/admin/posts/${postId}/dismiss`, {
       reason,
     });
 

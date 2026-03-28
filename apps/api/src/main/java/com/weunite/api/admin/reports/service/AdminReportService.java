@@ -33,8 +33,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Serviço responsável pelo gerenciamento de reports/denúncias no painel admin. Lida com
- * visualização, análise e ações sobre reports de posts e oportunidades.
+ * ServiÃ§o responsÃ¡vel pelo gerenciamento de reports/denÃºncias no painel admin. Lida com
+ * visualizaÃ§Ã£o, anÃ¡lise e aÃ§Ãµes sobre reports de posts e oportunidades.
  */
 @Service
 public class AdminReportService {
@@ -88,6 +88,7 @@ public class AdminReportService {
   public List<ReportedPostDetailDTO> getReportedPostsDetails() {
     List<Object[]> results =
         reportRepository.findAllEntitiesWithReports(Report.ReportType.POST, REPORT_THRESHOLD);
+    Instant placeholderTimestamp = Instant.now();
 
     return results.stream()
         .map(
@@ -107,16 +108,16 @@ public class AdminReportService {
                 postDTO =
                     new PostDTO(
                         String.valueOf(postId),
-                        "Conteúdo removido permanentemente",
+                        "ConteÃºdo removido permanentemente",
                         null,
                         null,
                         List.of(),
                         List.of(),
-                        Instant.now(),
-                        Instant.now(),
+                        placeholderTimestamp,
+                        placeholderTimestamp,
                         new UserDTO(
                             "0",
-                            "Usuário Desconhecido",
+                            "UsuÃ¡rio Desconhecido",
                             "unknown",
                             "USER",
                             "",
@@ -124,8 +125,8 @@ public class AdminReportService {
                             "",
                             "",
                             false,
-                            Instant.now(),
-                            Instant.now()),
+                            placeholderTimestamp,
+                            placeholderTimestamp),
                         null,
                         null);
               }
@@ -175,7 +176,7 @@ public class AdminReportService {
   public ResponseDTO<PostDTO> deletePostByAdmin(Long postId) {
     Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
 
-    // Marcar todas as denúncias relacionadas como RESOLVED (pois o conteúdo foi removido)
+    // Marcar todas as denÃºncias relacionadas como RESOLVED (pois o conteÃºdo foi removido)
     List<Report> reports = reportRepository.findByEntityIdAndType(postId, Report.ReportType.POST);
     reports.forEach(
         report -> {
@@ -187,12 +188,13 @@ public class AdminReportService {
     post.setDeleted(true);
     postRepository.save(post);
 
-    return postMapper.toResponseDTO("Post excluído com sucesso pelo administrador", post);
+    return postMapper.toResponseDTO("Post excluÃ­do com sucesso pelo administrador", post);
   }
 
   @Transactional
   public ResponseDTO<PostDTO> restorePostByAdmin(Long postId) {
     Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+    Instant now = Instant.now();
 
     post.setDeleted(false);
     postRepository.save(post);
@@ -203,7 +205,7 @@ public class AdminReportService {
         report -> {
           report.setStatus(Report.ReportStatus.RESOLVED);
           report.setActionTaken(Report.ActionTaken.NONE);
-          report.setResolvedAt(Instant.now());
+          report.setResolvedAt(now);
         });
     reportRepository.saveAll(reports);
 
@@ -231,6 +233,7 @@ public class AdminReportService {
     List<Object[]> results =
         reportRepository.findAllEntitiesWithReports(
             Report.ReportType.OPPORTUNITY, REPORT_THRESHOLD);
+    Instant placeholderTimestamp = Instant.now();
 
     return results.stream()
         .map(
@@ -252,12 +255,12 @@ public class AdminReportService {
                     new OpportunityDTO(
                         opportunityId,
                         "Oportunidade removida permanentemente",
-                        "Conteúdo indisponível",
-                        "Localização indisponível",
+                        "ConteÃºdo indisponÃ­vel",
+                        "LocalizaÃ§Ã£o indisponÃ­vel",
                         null,
                         Set.of(),
-                        Instant.now(),
-                        Instant.now(),
+                        placeholderTimestamp,
+                        placeholderTimestamp,
                         new UserDTO(
                             "0",
                             "Empresa Desconhecida",
@@ -268,8 +271,8 @@ public class AdminReportService {
                             "",
                             "",
                             false,
-                            Instant.now(),
-                            Instant.now()),
+                            placeholderTimestamp,
+                            placeholderTimestamp),
                         0);
               }
 
@@ -327,7 +330,7 @@ public class AdminReportService {
             .findById(opportunityId)
             .orElseThrow(OpportunityNotFoundException::new);
 
-    // Marcar todas as denúncias relacionadas como RESOLVED (pois o conteúdo foi removido)
+    // Marcar todas as denÃºncias relacionadas como RESOLVED (pois o conteÃºdo foi removido)
     List<Report> reports =
         reportRepository.findByEntityIdAndType(opportunityId, Report.ReportType.OPPORTUNITY);
     reports.forEach(
@@ -341,7 +344,7 @@ public class AdminReportService {
     opportunityRepository.save(opportunity);
 
     return opportunityMapper.toResponseDTO(
-        "Oportunidade excluída com sucesso pelo administrador", opportunity);
+        "Oportunidade excluÃ­da com sucesso pelo administrador", opportunity);
   }
 
   @Transactional
@@ -350,6 +353,7 @@ public class AdminReportService {
         opportunityRepository
             .findById(opportunityId)
             .orElseThrow(OpportunityNotFoundException::new);
+    Instant now = Instant.now();
 
     opportunity.setDeleted(false);
     opportunityRepository.save(opportunity);
@@ -361,7 +365,7 @@ public class AdminReportService {
         report -> {
           report.setStatus(Report.ReportStatus.RESOLVED);
           report.setActionTaken(Report.ActionTaken.NONE);
-          report.setResolvedAt(Instant.now());
+          report.setResolvedAt(now);
         });
     reportRepository.saveAll(reports);
 
@@ -369,7 +373,7 @@ public class AdminReportService {
         "Oportunidade restaurada com sucesso pelo administrador", opportunity);
   }
 
-  // ========== Comentários Reportados ==========
+  // ========== ComentÃ¡rios Reportados ==========
 
   @Transactional(readOnly = true)
   public List<ReportSummaryDTO> getCommentsWithManyReports() {
@@ -388,6 +392,7 @@ public class AdminReportService {
   public List<ReportedCommentDetailDTO> getReportedCommentsDetails() {
     List<Object[]> results =
         reportRepository.findAllEntitiesWithReports(Report.ReportType.COMMENT, REPORT_THRESHOLD);
+    Instant placeholderTimestamp = Instant.now();
 
     return results.stream()
         .map(
@@ -403,13 +408,13 @@ public class AdminReportService {
               if (comment != null) {
                 commentDTO = commentMapper.toCommentDTO(comment);
               } else {
-                // Cria um DTO placeholder para comentário deletado permanentemente
+                // Cria um DTO placeholder para comentÃ¡rio deletado permanentemente
                 commentDTO =
                     new CommentDTO(
                         String.valueOf(commentId),
                         new UserDTO(
                             "0",
-                            "Usuário Desconhecido",
+                            "UsuÃ¡rio Desconhecido",
                             "unknown",
                             "USER",
                             "",
@@ -417,15 +422,15 @@ public class AdminReportService {
                             "",
                             "",
                             false,
-                            Instant.now(),
-                            Instant.now()),
+                            placeholderTimestamp,
+                            placeholderTimestamp),
                         null,
-                        "Comentário removido permanentemente",
+                        "ComentÃ¡rio removido permanentemente",
                         null,
                         null,
                         List.of(),
-                        Instant.now(),
-                        Instant.now());
+                        placeholderTimestamp,
+                        placeholderTimestamp);
               }
 
               List<ReportDTO> reportDTOs = reportMapper.toReportDTOList(allReports);
@@ -475,7 +480,7 @@ public class AdminReportService {
     Comment comment =
         commentRepository.findById(commentId).orElseThrow(CommentNotFoundException::new);
 
-    // Marcar todas as denúncias relacionadas como RESOLVED (pois o conteúdo foi removido)
+    // Marcar todas as denÃºncias relacionadas como RESOLVED (pois o conteÃºdo foi removido)
     List<Report> reports =
         reportRepository.findByEntityIdAndType(commentId, Report.ReportType.COMMENT);
     reports.forEach(
@@ -489,13 +494,14 @@ public class AdminReportService {
     commentRepository.save(comment);
 
     return commentMapper.toResponseDTO(
-        "Comentário excluído com sucesso pelo administrador", comment);
+        "ComentÃ¡rio excluÃ­do com sucesso pelo administrador", comment);
   }
 
   @Transactional
   public ResponseDTO<CommentDTO> restoreCommentByAdmin(Long commentId) {
     Comment comment =
         commentRepository.findById(commentId).orElseThrow(CommentNotFoundException::new);
+    Instant now = Instant.now();
 
     comment.setDeleted(false);
     commentRepository.save(comment);
@@ -507,46 +513,45 @@ public class AdminReportService {
         report -> {
           report.setStatus(Report.ReportStatus.RESOLVED);
           report.setActionTaken(Report.ActionTaken.NONE);
-          report.setResolvedAt(Instant.now());
+          report.setResolvedAt(now);
         });
     reportRepository.saveAll(reports);
 
     return commentMapper.toResponseDTO(
-        "Comentário restaurado com sucesso pelo administrador", comment);
+        "ComentÃ¡rio restaurado com sucesso pelo administrador", comment);
   }
 
-  // ========== Ações sobre Reports ==========
+  // ========== AÃ§Ãµes sobre Reports ==========
 
   @Transactional
   public ResponseDTO<String> dismissReports(Long entityId, String type) {
     Report.ReportType reportType = Report.ReportType.valueOf(type.toUpperCase());
-    List<Report> pendingReports =
+    List<Report> reportsToDismiss = new java.util.ArrayList<>();
+    reportsToDismiss.addAll(
         reportRepository.findByEntityIdAndTypeAndStatus(
-            entityId, reportType, Report.ReportStatus.PENDING);
-
-    List<Report> reviewedReports =
+            entityId, reportType, Report.ReportStatus.PENDING));
+    reportsToDismiss.addAll(
         reportRepository.findByEntityIdAndTypeAndStatus(
-            entityId, reportType, Report.ReportStatus.REVIEWED);
+            entityId, reportType, Report.ReportStatus.REVIEWED));
 
-    pendingReports.forEach(
+    if (reportsToDismiss.isEmpty()) {
+      return new ResponseDTO<>(
+          "Nenhuma denÃºncia para descartar", "0 denÃºncias foram descartadas");
+    }
+
+    Instant now = Instant.now();
+    reportsToDismiss.forEach(
         report -> {
           report.setStatus(Report.ReportStatus.RESOLVED);
           report.setActionTaken(Report.ActionTaken.NONE);
-          report.setResolvedAt(Instant.now());
-        });
-    reviewedReports.forEach(
-        report -> {
-          report.setStatus(Report.ReportStatus.RESOLVED);
-          report.setActionTaken(Report.ActionTaken.NONE);
-          report.setResolvedAt(Instant.now());
+          report.setResolvedAt(now);
         });
 
-    reportRepository.saveAll(pendingReports);
-    reportRepository.saveAll(reviewedReports);
+    reportRepository.saveAll(reportsToDismiss);
 
     return new ResponseDTO<>(
-        "Denúncias descartadas com sucesso",
-        (pendingReports.size() + reviewedReports.size()) + " denúncias foram descartadas");
+        "DenÃºncias descartadas com sucesso",
+        reportsToDismiss.size() + " denÃºncias foram descartadas");
   }
 
   @Transactional
@@ -555,55 +560,53 @@ public class AdminReportService {
     List<Report> reports =
         reportRepository.findByEntityIdAndTypeAndStatus(
             entityId, reportType, Report.ReportStatus.PENDING);
+    Instant now = Instant.now();
 
     reports.forEach(
         report -> {
           report.setStatus(Report.ReportStatus.REVIEWED);
-          report.setResolvedAt(Instant.now());
+          report.setResolvedAt(now);
         });
     reportRepository.saveAll(reports);
 
     return new ResponseDTO<>(
-        "Denúncias marcadas como em análise",
-        reports.size() + " denúncias foram marcadas como em análise");
+        "DenÃºncias marcadas como em anÃ¡lise",
+        reports.size() + " denÃºncias foram marcadas como em anÃ¡lise");
   }
 
   @Transactional
   public ResponseDTO<String> resolveReports(Long entityId, String type) {
     Report.ReportType reportType = Report.ReportType.valueOf(type.toUpperCase());
-    List<Report> pendingReports =
+    List<Report> reportsToResolve = new java.util.ArrayList<>();
+    reportsToResolve.addAll(
         reportRepository.findByEntityIdAndTypeAndStatus(
-            entityId, reportType, Report.ReportStatus.PENDING);
-
-    List<Report> reviewedReports =
+            entityId, reportType, Report.ReportStatus.PENDING));
+    reportsToResolve.addAll(
         reportRepository.findByEntityIdAndTypeAndStatus(
-            entityId, reportType, Report.ReportStatus.REVIEWED);
+            entityId, reportType, Report.ReportStatus.REVIEWED));
 
-    List<Report> resolvedReports =
-        reportRepository.findByEntityIdAndTypeAndStatus(
-            entityId, reportType, Report.ReportStatus.RESOLVED);
-
-    List<Report> allReports = new java.util.ArrayList<>();
-    allReports.addAll(pendingReports);
-    allReports.addAll(reviewedReports);
-    allReports.addAll(resolvedReports);
+    if (reportsToResolve.isEmpty()) {
+      return new ResponseDTO<>(
+          "Nenhuma denÃºncia para resolver",
+          "0 denÃºncias foram resolvidas e o conteÃºdo foi mantido");
+    }
 
     Instant now = Instant.now();
-    allReports.forEach(
+    reportsToResolve.forEach(
         report -> {
           report.setStatus(Report.ReportStatus.RESOLVED);
           report.setActionTaken(Report.ActionTaken.NONE);
           report.setResolvedAt(now);
         });
 
-    reportRepository.saveAll(allReports);
+    reportRepository.saveAll(reportsToResolve);
 
-    int totalResolved = allReports.size();
+    int totalResolved = reportsToResolve.size();
 
     return new ResponseDTO<>(
-        "Denúncias resolvidas com sucesso",
-        totalResolved + " denúncias foram resolvidas e o conteúdo foi mantido");
+        "DenÃºncias resolvidas com sucesso",
+        totalResolved + " denÃºncias foram resolvidas e o conteÃºdo foi mantido");
   }
 
-  // ========== Métodos Privados ==========
+  // ========== MÃ©todos Privados ==========
 }

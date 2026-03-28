@@ -482,7 +482,7 @@ public class PostServiceTest {
                     feedEntry("REPOST", post.getId(), repost.getId()),
                     feedEntry("POST", post.getId(), null))));
     when(postRepository.findAllWithUserByIdIn(List.of(post.getId()))).thenReturn(List.of(post));
-    when(repostRepository.findAllWithFeedContextByIdIn(List.of(repost.getId())))
+    when(repostRepository.findAllByIdWithFeedContext(List.of(repost.getId())))
         .thenReturn(List.of(repost));
     when(postMapper.toPostDTO(post)).thenReturn(originalPostDTO);
     when(postMapper.toPostDTOFromRepost(repost)).thenReturn(repostedPostDTO);
@@ -492,7 +492,7 @@ public class PostServiceTest {
     assertEquals(List.of(repostedPostDTO, originalPostDTO), result);
     verify(postRepository).findFeedEntries(any());
     verify(postRepository).findAllWithUserByIdIn(List.of(post.getId()));
-    verify(repostRepository).findAllWithFeedContextByIdIn(List.of(repost.getId()));
+    verify(repostRepository).findAllByIdWithFeedContext(List.of(repost.getId()));
     verify(postMapper).toPostDTO(post);
     verify(postMapper).toPostDTOFromRepost(repost);
   }

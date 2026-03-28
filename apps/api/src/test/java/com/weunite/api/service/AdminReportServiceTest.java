@@ -2,9 +2,12 @@ package com.weunite.api.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -26,6 +29,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -80,7 +84,7 @@ class AdminReportServiceTest {
   }
 
   @Test
-  @DisplayName("Should dismiss pending and reviewed reports for a post")
+  @DisplayName("Should dismiss pending and reviewed reports in a single batch")
   void dismissReportsSuccess() {
     Long postId = 20L;
 
@@ -112,8 +116,65 @@ class AdminReportServiceTest {
     assertEquals(Report.ActionTaken.NONE, pendingReport.getActionTaken());
     assertEquals(Report.ActionTaken.NONE, reviewedReport.getActionTaken());
     assertNotNull(pendingReport.getResolvedAt());
-    assertNotNull(reviewedReport.getResolvedAt());
-    verify(reportRepository).saveAll(pendingReports);
-    verify(reportRepository).saveAll(reviewedReports);
+    assertSame(pendingReport.getResolvedAt(), reviewedReport.getResolvedAt());
+
+    ArgumentCaptor<List<Report>> savedReportsCaptor = ArgumentCaptor.forClass(List.class);
+    verify(reportRepository).saveAll(savedReportsCaptor.capture());
+    assertEquals(2, savedReportsCaptor.getValue().size());
+  }
+
+  @Test
+  @DisplayName("Should resolve only pending and reviewed reports")
+  void resolveReportsIgnoresAlreadyResolvedEntries() {
+    Long postId = 30L;
+
+    Report pendingReport = new Report();
+    pendingReport.setStatus(Report.ReportStatus.PENDING);
+    pendingReport.setActionTaken(Report.ActionTaken.CONTENT_REMOVED);
+
+    Report reviewedReport = new Report();
+    reviewedReport.setStatus(Report.ReportStatus.REVIEWED);
+    reviewedReport.setActionTaken(Report.ActionTaken.CONTENT_REMOVED);
+
+    when(reportRepository.findByEntityIdAndTypeAndStatus(
+            postId, Report.ReportType.POST, Report.ReportStatus.PENDING))
+        .thenReturn(List.of(pendingReport));
+    when(reportRepository.findByEntityIdAndTypeAndStatus(
+            postId, Report.ReportType.POST, Report.ReportStatus.REVIEWED))
+        .thenReturn(List.of(reviewedReport));
+
+    ResponseDTO<String> result = adminReportService.resolveReports(postId, "POST");
+
+    assertTrue(result.data().contains("2"));
+    assertEquals(Report.ReportStatus.RESOLVED, pendingReport.getStatus());
+    assertEquals(Report.ReportStatus.RESOLVED, reviewedReport.getStatus());
+    assertEquals(Report.ActionTaken.NONE, pendingReport.getActionTaken());
+    assertEquals(Report.ActionTaken.NONE, reviewedReport.getActionTaken());
+
+    ArgumentCaptor<List<Report>> savedReportsCaptor = ArgumentCaptor.forClass(List.class);
+    verify(reportRepository).saveAll(savedReportsCaptor.capture());
+    assertEquals(2, savedReportsCaptor.getValue().size());
+    verify(reportRepository, never())
+        .findByEntityIdAndTypeAndStatus(
+            postId, Report.ReportType.POST, Report.ReportStatus.RESOLVED);
+  }
+
+  @Test
+  @DisplayName("Should return zero when there are no reports to resolve")
+  void resolveReportsWithoutEntriesReturnsZero() {
+    Long postId = 31L;
+
+    when(reportRepository.findByEntityIdAndTypeAndStatus(
+            postId, Report.ReportType.POST, Report.ReportStatus.PENDING))
+        .thenReturn(List.of());
+    when(reportRepository.findByEntityIdAndTypeAndStatus(
+            postId, Report.ReportType.POST, Report.ReportStatus.REVIEWED))
+        .thenReturn(List.of());
+
+    ResponseDTO<String> result = adminReportService.resolveReports(postId, "POST");
+
+    assertTrue(result.message().contains("resolver"));
+    assertTrue(result.data().contains("0"));
+    verify(reportRepository, never()).saveAll(anyList());
   }
 }

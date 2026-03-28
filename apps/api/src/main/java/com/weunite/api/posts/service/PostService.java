@@ -149,7 +149,7 @@ public class PostService {
 
     Map<Long, Repost> repostsById = new HashMap<>();
     repostRepository
-        .findAllWithFeedContextByIdIn(repostIds)
+        .findAllByIdWithFeedContext(repostIds)
         .forEach(repost -> repostsById.put(repost.getId(), repost));
 
     return feedEntries.stream()
