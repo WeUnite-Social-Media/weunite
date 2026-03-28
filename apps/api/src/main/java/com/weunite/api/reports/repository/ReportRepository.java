@@ -27,6 +27,8 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
   List<Report> findByEntityIdAndType(Long entityId, Report.ReportType type);
 
+  List<Report> findByEntityIdInAndType(List<Long> entityIds, Report.ReportType type);
+
   @Query(
       "SELECT r.entityId, r.type, COUNT(r) "
           + "FROM Report r "

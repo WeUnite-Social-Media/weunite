@@ -27,7 +27,9 @@ import com.weunite.api.reports.repository.ReportRepository;
 import com.weunite.api.users.dto.UserDTO;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,17 +90,18 @@ public class AdminReportService {
   public List<ReportedPostDetailDTO> getReportedPostsDetails() {
     List<Object[]> results =
         reportRepository.findAllEntitiesWithReports(Report.ReportType.POST, REPORT_THRESHOLD);
+    List<Long> postIds = extractEntityIds(results);
+    Map<Long, Post> postsById = indexById(postRepository.findAllById(postIds), Post::getId);
+    Map<Long, List<Report>> reportsByPostId =
+        groupReportsByEntityId(postIds, Report.ReportType.POST);
     Instant placeholderTimestamp = Instant.now();
 
     return results.stream()
         .map(
             result -> {
               Long postId = (Long) result[0];
-
-              Post post = postRepository.findById(postId).orElse(null);
-
-              List<Report> allReports =
-                  reportRepository.findByEntityIdAndType(postId, Report.ReportType.POST);
+              Post post = postsById.get(postId);
+              List<Report> allReports = reportsByPostId.getOrDefault(postId, List.of());
 
               PostDTO postDTO;
               if (post != null) {
@@ -132,24 +135,8 @@ public class AdminReportService {
               }
 
               List<ReportDTO> reportDTOs = reportMapper.toReportDTOList(allReports);
-
-              boolean hasPending =
-                  allReports.stream().anyMatch(r -> r.getStatus() == Report.ReportStatus.PENDING);
-              boolean hasReviewed =
-                  allReports.stream().anyMatch(r -> r.getStatus() == Report.ReportStatus.REVIEWED);
-
-              String status;
-              if (post != null && post.isDeleted()) {
-                status = "deleted";
-              } else if (post == null) {
-                status = "deleted";
-              } else if (hasPending) {
-                status = "pending";
-              } else if (hasReviewed) {
-                status = "reviewed";
-              } else {
-                status = "resolved";
-              }
+              String status =
+                  resolveReportedEntityStatus(post == null || post.isDeleted(), allReports);
 
               return new ReportedPostDetailDTO(
                   postDTO, reportDTOs, (long) allReports.size(), status);
@@ -233,18 +220,20 @@ public class AdminReportService {
     List<Object[]> results =
         reportRepository.findAllEntitiesWithReports(
             Report.ReportType.OPPORTUNITY, REPORT_THRESHOLD);
+    List<Long> opportunityIds = extractEntityIds(results);
+    Map<Long, Opportunity> opportunitiesById =
+        indexById(opportunityRepository.findAllById(opportunityIds), Opportunity::getId);
+    Map<Long, List<Report>> reportsByOpportunityId =
+        groupReportsByEntityId(opportunityIds, Report.ReportType.OPPORTUNITY);
     Instant placeholderTimestamp = Instant.now();
 
     return results.stream()
         .map(
             result -> {
               Long opportunityId = (Long) result[0];
-
-              Opportunity opportunity = opportunityRepository.findById(opportunityId).orElse(null);
-
+              Opportunity opportunity = opportunitiesById.get(opportunityId);
               List<Report> allReports =
-                  reportRepository.findByEntityIdAndType(
-                      opportunityId, Report.ReportType.OPPORTUNITY);
+                  reportsByOpportunityId.getOrDefault(opportunityId, List.of());
 
               OpportunityDTO opportunityDTO;
               if (opportunity != null) {
@@ -277,24 +266,9 @@ public class AdminReportService {
               }
 
               List<ReportDTO> reportDTOs = reportMapper.toReportDTOList(allReports);
-
-              boolean hasPending =
-                  allReports.stream().anyMatch(r -> r.getStatus() == Report.ReportStatus.PENDING);
-              boolean hasReviewed =
-                  allReports.stream().anyMatch(r -> r.getStatus() == Report.ReportStatus.REVIEWED);
-
-              String status;
-              if (opportunity != null && opportunity.isDeleted()) {
-                status = "deleted";
-              } else if (opportunity == null) {
-                status = "deleted";
-              } else if (hasPending) {
-                status = "pending";
-              } else if (hasReviewed) {
-                status = "reviewed";
-              } else {
-                status = "resolved";
-              }
+              String status =
+                  resolveReportedEntityStatus(
+                      opportunity == null || opportunity.isDeleted(), allReports);
 
               return new ReportedOpportunityDetailDTO(
                   opportunityDTO, reportDTOs, (long) allReports.size(), status);
@@ -392,17 +366,19 @@ public class AdminReportService {
   public List<ReportedCommentDetailDTO> getReportedCommentsDetails() {
     List<Object[]> results =
         reportRepository.findAllEntitiesWithReports(Report.ReportType.COMMENT, REPORT_THRESHOLD);
+    List<Long> commentIds = extractEntityIds(results);
+    Map<Long, Comment> commentsById =
+        indexById(commentRepository.findAllById(commentIds), Comment::getId);
+    Map<Long, List<Report>> reportsByCommentId =
+        groupReportsByEntityId(commentIds, Report.ReportType.COMMENT);
     Instant placeholderTimestamp = Instant.now();
 
     return results.stream()
         .map(
             result -> {
               Long commentId = (Long) result[0];
-
-              Comment comment = commentRepository.findById(commentId).orElse(null);
-
-              List<Report> allReports =
-                  reportRepository.findByEntityIdAndType(commentId, Report.ReportType.COMMENT);
+              Comment comment = commentsById.get(commentId);
+              List<Report> allReports = reportsByCommentId.getOrDefault(commentId, List.of());
 
               CommentDTO commentDTO;
               if (comment != null) {
@@ -434,24 +410,8 @@ public class AdminReportService {
               }
 
               List<ReportDTO> reportDTOs = reportMapper.toReportDTOList(allReports);
-
-              boolean hasPending =
-                  allReports.stream().anyMatch(r -> r.getStatus() == Report.ReportStatus.PENDING);
-              boolean hasReviewed =
-                  allReports.stream().anyMatch(r -> r.getStatus() == Report.ReportStatus.REVIEWED);
-
-              String status;
-              if (comment != null && comment.isDeleted()) {
-                status = "deleted";
-              } else if (comment == null) {
-                status = "deleted";
-              } else if (hasPending) {
-                status = "pending";
-              } else if (hasReviewed) {
-                status = "reviewed";
-              } else {
-                status = "resolved";
-              }
+              String status =
+                  resolveReportedEntityStatus(comment == null || comment.isDeleted(), allReports);
 
               return new ReportedCommentDetailDTO(
                   commentDTO, reportDTOs, (long) allReports.size(), status);
@@ -608,4 +568,42 @@ public class AdminReportService {
   }
 
   // ========== Metodos Privados ==========
+
+  private List<Long> extractEntityIds(List<Object[]> results) {
+    return results.stream().map(result -> (Long) result[0]).distinct().collect(Collectors.toList());
+  }
+
+  private Map<Long, List<Report>> groupReportsByEntityId(
+      List<Long> entityIds, Report.ReportType reportType) {
+    if (entityIds.isEmpty()) {
+      return Map.of();
+    }
+
+    return reportRepository.findByEntityIdInAndType(entityIds, reportType).stream()
+        .collect(Collectors.groupingBy(Report::getEntityId));
+  }
+
+  private <T> Map<Long, T> indexById(List<T> entities, Function<T, Long> idExtractor) {
+    return entities.stream().collect(Collectors.toMap(idExtractor, Function.identity()));
+  }
+
+  private String resolveReportedEntityStatus(boolean deleted, List<Report> reports) {
+    if (deleted) {
+      return "deleted";
+    }
+
+    boolean hasPending =
+        reports.stream().anyMatch(report -> report.getStatus() == Report.ReportStatus.PENDING);
+    if (hasPending) {
+      return "pending";
+    }
+
+    boolean hasReviewed =
+        reports.stream().anyMatch(report -> report.getStatus() == Report.ReportStatus.REVIEWED);
+    if (hasReviewed) {
+      return "reviewed";
+    }
+
+    return "resolved";
+  }
 }
