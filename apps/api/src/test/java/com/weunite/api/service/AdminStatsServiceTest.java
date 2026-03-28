@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.weunite.api.admin.stats.dto.DashboardActivityDTO;
 import com.weunite.api.admin.stats.dto.AdminStatsDTO;
+import com.weunite.api.admin.stats.dto.DashboardActivityDTO;
 import com.weunite.api.admin.stats.dto.OpportunityByCategoryDTO;
 import com.weunite.api.admin.stats.dto.OpportunityCategoryWithSkillsDTO;
 import com.weunite.api.admin.stats.dto.OpportunitySkillDTO;

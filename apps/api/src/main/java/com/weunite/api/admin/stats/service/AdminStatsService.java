@@ -29,8 +29,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Servico responsavel por calcular estatisticas do dashboard admin. Lida com metricas gerais,
- * dados mensais e distribuicao de usuarios.
+ * Servico responsavel por calcular estatisticas do dashboard admin. Lida com metricas gerais, dados
+ * mensais e distribuicao de usuarios.
  */
 @Service
 public class AdminStatsService {
@@ -216,8 +216,7 @@ public class AdminStatsService {
           new MonthlySnapshot(
               formatMonthLabel(targetMonth),
               safeCount(
-                  postRepository.countPostsBetweenDates(
-                      monthWindow.start(), monthWindow.end())),
+                  postRepository.countPostsBetweenDates(monthWindow.start(), monthWindow.end())),
               safeCount(
                   opportunityRepository.countOpportunitiesBetweenDates(
                       monthWindow.start(), monthWindow.end())),

@@ -15,9 +15,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Servico responsavel pela moderacao de usuarios. Lida com suspensoes e banimentos de usuarios.
- */
+/** Servico responsavel pela moderacao de usuarios. Lida com suspensoes e banimentos de usuarios. */
 @Service
 public class AdminModerationService {
 

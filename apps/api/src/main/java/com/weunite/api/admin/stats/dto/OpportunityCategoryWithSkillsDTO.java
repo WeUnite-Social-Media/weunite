@@ -1,4 +1,5 @@
 package com.weunite.api.admin.stats.dto;
+
 import java.util.List;
 
 public record OpportunityCategoryWithSkillsDTO(
