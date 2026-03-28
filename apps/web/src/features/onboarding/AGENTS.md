@@ -21,6 +21,7 @@ This feature owns first-login onboarding on the web client, including the intro 
 - `components/GuidedTourModal.tsx`
 - `hooks/useFirstLogin.ts`
 - `constants/tourSteps.ts`
+- `state/useOnboardingStore.ts`
 
 ## Validation
 

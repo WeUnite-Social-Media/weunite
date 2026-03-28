@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { FirstLoginModal } from "@/features/onboarding/components/FirstLoginModal";
 import { GuidedTourModal } from "@/features/onboarding/components/GuidedTourModal";
 import { ONBOARDING_STEPS } from "@/features/onboarding/constants/tourSteps";
 import { useFirstLogin } from "@/features/onboarding/hooks/useFirstLogin";
+import { useOnboardingStore } from "@/features/onboarding/state/useOnboardingStore";
 
 export function OnboardingController() {
   const navigate = useNavigate();
@@ -12,56 +13,73 @@ export function OnboardingController() {
   const { hasSeenOnboarding, isReady, markOnboardingSeen } = useFirstLogin(
     user?.id,
   );
-
-  const [isFirstLoginModalOpen, setIsFirstLoginModalOpen] = useState(false);
-  const [isTourOpen, setIsTourOpen] = useState(false);
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const currentStepIndex = useOnboardingStore((state) => state.currentStepIndex);
+  const isFirstLoginModalOpen = useOnboardingStore(
+    (state) => state.isFirstLoginModalOpen,
+  );
+  const isTourOpen = useOnboardingStore((state) => state.isTourOpen);
+  const closeFirstLoginModal = useOnboardingStore(
+    (state) => state.closeFirstLoginModal,
+  );
+  const closeTourUi = useOnboardingStore((state) => state.closeTour);
+  const openFirstLoginModal = useOnboardingStore(
+    (state) => state.openFirstLoginModal,
+  );
+  const openTourAtStep = useOnboardingStore((state) => state.openTourAtStep);
+  const resetUi = useOnboardingStore((state) => state.resetUi);
+  const startTour = useOnboardingStore((state) => state.startTour);
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id || !isReady) {
-      setIsFirstLoginModalOpen(false);
-      setIsTourOpen(false);
-      setCurrentStepIndex(0);
+      resetUi();
       return;
     }
 
-    if (!hasSeenOnboarding) {
-      setIsFirstLoginModalOpen(true);
+    if (!hasSeenOnboarding && !isFirstLoginModalOpen && !isTourOpen) {
+      openFirstLoginModal();
     }
-  }, [hasSeenOnboarding, isAuthenticated, isReady, user?.id]);
+  }, [
+    hasSeenOnboarding,
+    isAuthenticated,
+    isFirstLoginModalOpen,
+    isReady,
+    isTourOpen,
+    openFirstLoginModal,
+    resetUi,
+    user?.id,
+  ]);
 
-  const goToStep = useCallback(
-    (stepIndex: number) => {
-      const step = ONBOARDING_STEPS[stepIndex];
+  useEffect(() => {
+    if (!isTourOpen) {
+      return;
+    }
 
-      if (!step) {
-        return;
-      }
+    const step = ONBOARDING_STEPS[currentStepIndex];
 
-      setCurrentStepIndex(stepIndex);
-      navigate(step.route);
-    },
-    [navigate],
-  );
+    if (!step) {
+      closeTourUi();
+      navigate("/home");
+      return;
+    }
+
+    navigate(step.route);
+  }, [closeTourUi, currentStepIndex, isTourOpen, navigate]);
 
   const closeTour = useCallback(() => {
-    setIsTourOpen(false);
-    setCurrentStepIndex(0);
+    closeFirstLoginModal();
+    closeTourUi();
     navigate("/home");
-  }, [navigate]);
+  }, [closeFirstLoginModal, closeTourUi, navigate]);
 
   const handleSkipTour = useCallback(() => {
     markOnboardingSeen();
-    setIsFirstLoginModalOpen(false);
     closeTour();
   }, [closeTour, markOnboardingSeen]);
 
   const handleStartTour = useCallback(() => {
     markOnboardingSeen();
-    setIsFirstLoginModalOpen(false);
-    setIsTourOpen(true);
-    goToStep(0);
-  }, [goToStep, markOnboardingSeen]);
+    startTour();
+  }, [markOnboardingSeen, startTour]);
 
   const handleNextStep = useCallback(() => {
     const nextStepIndex = currentStepIndex + 1;
@@ -71,8 +89,8 @@ export function OnboardingController() {
       return;
     }
 
-    goToStep(nextStepIndex);
-  }, [closeTour, currentStepIndex, goToStep]);
+    openTourAtStep(nextStepIndex);
+  }, [closeTour, currentStepIndex, openTourAtStep]);
 
   const handlePreviousStep = useCallback(() => {
     const previousStepIndex = currentStepIndex - 1;
@@ -81,8 +99,8 @@ export function OnboardingController() {
       return;
     }
 
-    goToStep(previousStepIndex);
-  }, [currentStepIndex, goToStep]);
+    openTourAtStep(previousStepIndex);
+  }, [currentStepIndex, openTourAtStep]);
 
   if (!isAuthenticated || !user?.id || !isReady) {
     return null;

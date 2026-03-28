@@ -12,6 +12,7 @@ import {
   Search as SearchIcon,
   Settings,
   Shield,
+  Sparkles,
   Sun,
   User,
 } from "lucide-react";
@@ -46,6 +47,7 @@ import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { getInitials } from "@/shared/utils/getInitials";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { CreatePost } from "@/features/feed/components/post/CreatePost";
+import { useOnboardingStore } from "@/features/onboarding/state/useOnboardingStore";
 import { NotificationPanel } from "@/features/notifications/components/NotificationPanel";
 import { useGetUnreadCount } from "@/features/notifications/state/useNotifications";
 
@@ -77,6 +79,7 @@ export function LeftSidebar() {
   const navigate = useNavigate();
   const { isMobile, isSmallDesktop } = useBreakpoints();
   const previousDesktop = useRef(isSmallDesktop);
+  const startOnboardingTour = useOnboardingStore((state) => state.startTour);
 
   const { data: unreadCountResponse } = useGetUnreadCount(
     userId ? Number(userId) : 0,
@@ -345,6 +348,14 @@ export function LeftSidebar() {
                         <p>Painel Admin</p>
                       </DropdownMenuItem>
                     )}
+
+                    <DropdownMenuItem
+                      className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-gray-50"
+                      onClick={startOnboardingTour}
+                    >
+                      <Sparkles className="h-4 w-4 text-gray-500" />
+                      <p>Refazer tour</p>
+                    </DropdownMenuItem>
 
                     <DropdownMenuItem className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-gray-50">
                       <Settings className="h-4 w-4 text-gray-500" />

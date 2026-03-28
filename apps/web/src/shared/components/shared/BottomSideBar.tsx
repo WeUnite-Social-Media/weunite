@@ -1,7 +1,14 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useState } from "react";
-import { Home, Link, DiamondPlus, User, MessageCircleMore } from "lucide-react";
+import {
+  DiamondPlus,
+  Home,
+  Link,
+  MessageCircleMore,
+  Sparkles,
+  User,
+} from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
@@ -14,11 +21,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
+import { useOnboardingStore } from "@/features/onboarding/state/useOnboardingStore";
 
 export function BottomSideBar() {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
   const { logout, user } = useAuthStore();
+  const startOnboardingTour = useOnboardingStore((state) => state.startTour);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -104,6 +113,13 @@ export function BottomSideBar() {
                 className="cursor-pointer text-third"
               >
                 Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={startOnboardingTour}
+                className="cursor-pointer"
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                Refazer tour
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleLogout}
