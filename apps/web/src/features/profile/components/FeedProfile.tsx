@@ -67,7 +67,7 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
 
   return (
     <div className="mx-auto max-w-2xl xl:w-[48em]">
-      <div className="flex justify-center border-b border-primary/30">
+      <div className="flex justify-center border-b border-primary/30 ">
         <TabButton
           isActive={activeTab === "publicacoes"}
           onClick={() => setActiveTab("publicacoes")}
@@ -138,7 +138,9 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
               tone="error"
             />
           ) : comments.length > 0 ? (
-            comments.map((comment) => <Comment key={comment.id} comment={comment} />)
+            comments.map((comment) => (
+              <Comment key={comment.id} comment={comment} />
+            ))
           ) : (
             <ProfileSectionState
               icon={MessageSquareText}
@@ -183,7 +185,7 @@ function TabButton({
     <button
       type="button"
       aria-pressed={isActive}
-      className={`flex w-full justify-center border-b-2 py-2 text-sm transition-colors hover:text-primary ${
+      className={`flex w-full justify-center border-b-2 py-2 text-sm transition-colors hover:text-primary cursor-pointer ${
         isActive
           ? "border-primary text-primary"
           : "border-transparent text-muted-foreground"

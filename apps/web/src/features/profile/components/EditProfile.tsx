@@ -156,7 +156,8 @@ export default function EditProfile({
         <DialogHeader>
           <DialogTitle>Editar perfil</DialogTitle>
           <DialogDescription>
-            Atualize suas informacoes basicas e, se for atleta, complete suas caracteristicas.
+            Atualize suas informacoes basicas e, se for atleta, complete suas
+            caracteristicas.
           </DialogDescription>
         </DialogHeader>
 
@@ -188,7 +189,11 @@ export default function EditProfile({
                           >
                             <Avatar className="w-28 h-28 rounded-full">
                               <AvatarImage
-                                src={preview || user?.profileImg || "/placeholder.png"}
+                                src={
+                                  preview ||
+                                  user?.profileImg ||
+                                  "/placeholder.png"
+                                }
                                 alt="Foto de perfil"
                                 className="object-cover"
                               />
@@ -407,14 +412,15 @@ export default function EditProfile({
             </div>
 
             <DialogFooter className="flex flex-row-reverse gap-2 mt-4">
-              <Button type="submit" disabled={editProfile.isPending}>
-                {editProfile.isPending ? "Salvando..." : "Salvar"}
-              </Button>
               <DialogClose asChild>
                 <Button variant="outline" type="button">
                   Cancelar
                 </Button>
               </DialogClose>
+
+              <Button type="submit" disabled={editProfile.isPending}>
+                {editProfile.isPending ? "Salvando..." : "Salvar"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
