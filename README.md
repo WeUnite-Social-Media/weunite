@@ -51,7 +51,7 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
    cd /path/to/your/weunite-repository
    ```
 
-2. If `pnpm` is not available yet, enable Corepack and confirm the pinned version:
+2. If `pnpm` is not available yet, enable Corepack through as a root terminal and confirm the pinned version:
 
    ```powershell
    corepack enable
@@ -83,7 +83,6 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
 5. Fill in `apps/api/.env` and `apps/web/.env`.
 
    Minimum local values to review:
-
    - `apps/web/.env`: keep `VITE_API_URL=http://localhost:8080/api` for the default local API.
    - `apps/api/.env`: if you are using the default local setup, keep `DB_HOST=localhost`, `DB_PORT=5432`, `DB_NAME=weunite`, and `CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173`.
    - `apps/api/.env`: set `DB_USERNAME` and `DB_PASSWORD` to your local PostgreSQL credentials.
@@ -135,6 +134,7 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
    cp apps/api/.env.example apps/api/.env
    cp apps/web/.env.example apps/web/.env
    ```
+
 5. Start the bundled PostgreSQL container:
 
    ```powershell
