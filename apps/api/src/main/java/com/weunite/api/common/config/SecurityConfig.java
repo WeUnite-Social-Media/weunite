@@ -125,6 +125,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/opportunities/get")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/opportunities/skills")
+                    .permitAll()
 
                     // Subscriber endpoints
                     .requestMatchers(

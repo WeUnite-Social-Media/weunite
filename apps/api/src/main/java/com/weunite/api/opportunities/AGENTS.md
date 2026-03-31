@@ -19,6 +19,7 @@ This module owns opportunities, skills association, subscriptions, and saved opp
 ## Key entrypoints
 
 - `controller/OpportunityController.java`
+- `controller/SkillController.java`
 - `controller/SubscriberController.java`
 - `controller/SavedOpportunityController.java`
 - `service/OpportunityService.java`
@@ -48,4 +49,5 @@ This module owns opportunities, skills association, subscriptions, and saved opp
 ## Keep this file updated when
 
 - Opportunity/subscription/saved API contracts change.
+- Skills listing/search contracts change.
 - Skill, subscription, or saved-opportunity ownership moves across modules.

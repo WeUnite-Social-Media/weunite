@@ -2,6 +2,7 @@ import type {
   CreateOpportunity,
   Opportunity,
   SavedOpportunity,
+  Skill,
   Subscriber,
   UpdateOpportunity,
 } from "@/shared/types/opportunity.types";
@@ -189,6 +190,26 @@ export const getOpportunityRequest = async (opportunityId: number) => {
       data: null,
       message: null,
       error: error.response?.data?.message || "Erro ao carregar a oportunidade",
+    };
+  }
+};
+
+export const getAvailableSkillsRequest = async () => {
+  try {
+    const response = await axios.get("/opportunities/skills");
+    return {
+      success: true,
+      data: unwrapArrayResponse<Skill>(response.data),
+      message: "Habilidades carregadas com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao carregar habilidades",
     };
   }
 };
