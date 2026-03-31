@@ -6,9 +6,12 @@ import com.weunite.api.admin.moderation.dto.ReactivateUserRequestDTO;
 import com.weunite.api.admin.moderation.dto.SuspendUserRequestDTO;
 import com.weunite.api.admin.moderation.service.AdminModerationService;
 import com.weunite.api.common.response.ResponseDTO;
+import com.weunite.api.common.security.service.AuthenticatedUserService;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,9 +23,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminModerationController {
 
   private final AdminModerationService adminModerationService;
+  private final AuthenticatedUserService authenticatedUserService;
 
-  public AdminModerationController(AdminModerationService adminModerationService) {
+  public AdminModerationController(
+      AdminModerationService adminModerationService,
+      AuthenticatedUserService authenticatedUserService) {
     this.adminModerationService = adminModerationService;
+    this.authenticatedUserService = authenticatedUserService;
   }
 
   @GetMapping
@@ -33,21 +40,24 @@ public class AdminModerationController {
 
   @PostMapping("/ban")
   public ResponseEntity<ResponseDTO<String>> banUser(
-      @Valid @RequestBody BanUserRequestDTO request) {
-    ResponseDTO<String> response = adminModerationService.banUser(request);
+      @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody BanUserRequestDTO request) {
+    Long adminId = authenticatedUserService.requireAdminUserId(jwt);
+    ResponseDTO<String> response = adminModerationService.banUser(request, adminId);
     return ResponseEntity.ok(response);
   }
 
   @PostMapping("/suspend")
   public ResponseEntity<ResponseDTO<String>> suspendUser(
-      @Valid @RequestBody SuspendUserRequestDTO request) {
-    ResponseDTO<String> response = adminModerationService.suspendUser(request);
+      @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody SuspendUserRequestDTO request) {
+    Long adminId = authenticatedUserService.requireAdminUserId(jwt);
+    ResponseDTO<String> response = adminModerationService.suspendUser(request, adminId);
     return ResponseEntity.ok(response);
   }
 
   @PostMapping("/reactivate")
   public ResponseEntity<ResponseDTO<String>> reactivateUser(
-      @Valid @RequestBody ReactivateUserRequestDTO request) {
+      @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ReactivateUserRequestDTO request) {
+    authenticatedUserService.requireAdminUserId(jwt);
     ResponseDTO<String> response = adminModerationService.reactivateUser(request);
     return ResponseEntity.ok(response);
   }

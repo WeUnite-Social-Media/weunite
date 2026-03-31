@@ -3,7 +3,6 @@ package com.weunite.api.common.config;
 import com.weunite.api.users.domain.Role;
 import com.weunite.api.users.repository.RoleRepository;
 import java.util.List;
-import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -39,39 +38,6 @@ public class DatabaseConfig {
     if (normalizedRows > 0) {
       logger.warn("Normalized {} legacy tb_user rows with NULL {}.", normalizedRows, columnName);
     }
-
-    ColumnDefinition columnDefinition = loadColumnDefinition(jdbcTemplate, columnName);
-    if (!columnDefinition.hasFalseDefault()) {
-      jdbcTemplate.execute("ALTER TABLE tb_user ALTER COLUMN " + columnName + " SET DEFAULT FALSE");
-    }
-    if (columnDefinition.nullable()) {
-      jdbcTemplate.execute("ALTER TABLE tb_user ALTER COLUMN " + columnName + " SET NOT NULL");
-    }
-  }
-
-  private ColumnDefinition loadColumnDefinition(JdbcTemplate jdbcTemplate, String columnName) {
-    return jdbcTemplate.query(
-        """
-        SELECT is_nullable, column_default
-        FROM information_schema.columns
-        WHERE UPPER(table_name) = 'TB_USER'
-          AND UPPER(column_name) = ?
-        ORDER BY CASE WHEN UPPER(table_schema) = 'PUBLIC' THEN 0 ELSE 1 END
-        LIMIT 1
-        """,
-        resultSet -> {
-          if (!resultSet.next()) {
-            return new ColumnDefinition(true, false);
-          }
-
-          boolean nullable = "YES".equalsIgnoreCase(resultSet.getString("is_nullable"));
-          String columnDefault = resultSet.getString("column_default");
-          boolean hasFalseDefault =
-              columnDefault != null && columnDefault.toLowerCase(Locale.ROOT).contains("false");
-
-          return new ColumnDefinition(nullable, hasFalseDefault);
-        },
-        columnName.toUpperCase(Locale.ROOT));
   }
 
   private void seedRoles(RoleRepository roleRepository) {
@@ -83,6 +49,4 @@ public class DatabaseConfig {
       }
     }
   }
-
-  private record ColumnDefinition(boolean nullable, boolean hasFalseDefault) {}
 }

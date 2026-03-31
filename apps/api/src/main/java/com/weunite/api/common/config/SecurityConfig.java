@@ -1,13 +1,20 @@
 package com.weunite.api.common.config;
 
+import java.util.Collection;
+import java.util.Locale;
+import java.util.Map;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -171,7 +178,9 @@ public class SecurityConfig {
 
                     // Admin endpoints
                     .requestMatchers("/api/admin/**")
-                    .authenticated()
+                    .access(
+                        (authentication, context) ->
+                            new AuthorizationDecision(hasAdminRole(authentication.get())))
                     .requestMatchers(HttpMethod.POST, "/api/messages/upload")
                     .authenticated()
                     .requestMatchers(HttpMethod.PUT, "/api/messages/{messageId}")
@@ -188,5 +197,45 @@ public class SecurityConfig {
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
     return http.build();
+  }
+
+  private boolean hasAdminRole(Authentication authentication) {
+    if (authentication == null || !authentication.isAuthenticated()) {
+      return false;
+    }
+
+    Object roleClaim = null;
+
+    if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+      roleClaim = jwtAuthenticationToken.getToken().getClaim("role");
+    }
+
+    if (roleClaim == null && authentication.getPrincipal() instanceof Jwt jwt) {
+      roleClaim = jwt.getClaim("role");
+    }
+
+    return containsAdminRole(roleClaim);
+  }
+
+  private boolean containsAdminRole(Object roleClaim) {
+    if (roleClaim instanceof Collection<?> roles) {
+      return roles.stream().anyMatch(this::isAdminRoleEntry);
+    }
+
+    return isAdminRoleEntry(roleClaim);
+  }
+
+  private boolean isAdminRoleEntry(Object roleEntry) {
+    if (roleEntry instanceof Map<?, ?> roleMap) {
+      Object roleName = roleMap.get("name");
+      return roleName != null && "ADMIN".equalsIgnoreCase(roleName.toString());
+    }
+
+    if (roleEntry instanceof String roleName) {
+      return "ADMIN".equalsIgnoreCase(roleName)
+          || roleName.toUpperCase(Locale.ROOT).contains("ADMIN");
+    }
+
+    return false;
   }
 }

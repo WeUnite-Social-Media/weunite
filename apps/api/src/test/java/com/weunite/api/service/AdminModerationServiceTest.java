@@ -57,10 +57,17 @@ class AdminModerationServiceTest {
     pendingReport.setStatus(Report.ReportStatus.PENDING);
 
     when(userRepository.findById(10L)).thenReturn(Optional.of(user));
-    when(reportRepository.findPendingReportsByUser(user)).thenReturn(List.of(pendingReport));
+    when(
+            reportRepository.findOpenContentReportsByUserId(
+                10L,
+                List.of(Report.ReportStatus.PENDING, Report.ReportStatus.REVIEWED),
+                Report.ReportType.POST,
+                Report.ReportType.COMMENT,
+                Report.ReportType.OPPORTUNITY))
+        .thenReturn(List.of(pendingReport));
 
     ResponseDTO<String> result =
-        adminModerationService.banUser(new BanUserRequestDTO(10L, "spam", 99L));
+        adminModerationService.banUser(new BanUserRequestDTO(10L, "spam"), 99L);
 
     assertNotNull(result);
     assertTrue(user.isBanned());
@@ -121,7 +128,7 @@ class AdminModerationServiceTest {
             NotFoundResourceException.class,
             () ->
                 adminModerationService.suspendUser(
-                    new SuspendUserRequestDTO(20L, 7, "abuse", 777L, 99L)));
+                    new SuspendUserRequestDTO(20L, 7, "abuse", 777L), 99L));
 
     assertTrue(exception.getMessage().contains("Report"));
     assertTrue(user.isSuspended());
@@ -145,7 +152,7 @@ class AdminModerationServiceTest {
     when(userRepository.findById(30L)).thenReturn(Optional.of(user));
 
     ResponseDTO<String> result =
-        adminModerationService.reactivateUser(new ReactivateUserRequestDTO(30L, 99L));
+        adminModerationService.reactivateUser(new ReactivateUserRequestDTO(30L));
 
     assertNotNull(result);
     assertFalse(user.isBanned());

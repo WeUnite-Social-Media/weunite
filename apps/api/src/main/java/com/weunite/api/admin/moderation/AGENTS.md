@@ -36,6 +36,7 @@ This module owns account moderation actions in `com.weunite.api.admin.moderation
 - Keep request DTOs dedicated to moderation use cases.
 - Preserve existing `/api/admin/users/**` contracts unless explicitly requested.
 - Keep moderation service comments and response text ASCII-safe or valid UTF-8.
+- Derive the acting admin from authenticated JWT context instead of trusting request-body ids.
 
 ## Validation
 

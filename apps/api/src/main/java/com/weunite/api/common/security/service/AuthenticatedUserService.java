@@ -1,11 +1,20 @@
 package com.weunite.api.common.security.service;
 
 import com.weunite.api.common.exception.UnauthorizedException;
+import com.weunite.api.users.domain.Role;
+import com.weunite.api.users.domain.User;
+import com.weunite.api.users.repository.UserRepository;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthenticatedUserService {
+
+  private final UserRepository userRepository;
+
+  public AuthenticatedUserService(UserRepository userRepository) {
+    this.userRepository = userRepository;
+  }
 
   public Long requireMatchingUserId(Jwt jwt, Long requestedUserId) {
     Long authenticatedUserId = requireUserId(jwt);
@@ -38,6 +47,23 @@ public class AuthenticatedUserService {
     }
 
     throw new UnauthorizedException("Token sem identificador de usuario");
+  }
+
+  public Long requireAdminUserId(Jwt jwt) {
+    Long authenticatedUserId = requireUserId(jwt);
+    User user =
+        userRepository
+            .findById(authenticatedUserId)
+            .orElseThrow(() -> new UnauthorizedException("Usuario autenticado nao encontrado"));
+
+    boolean isAdmin =
+        user.getRole().stream().map(Role::getName).anyMatch("ADMIN"::equalsIgnoreCase);
+
+    if (!isAdmin) {
+      throw new UnauthorizedException("Acao restrita a administradores");
+    }
+
+    return authenticatedUserId;
   }
 
   private Long extractClaimAsLong(Jwt jwt, String claimName) {

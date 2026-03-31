@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Servico responsavel pela moderacao de usuarios. Lida com suspensoes e banimentos de usuarios. */
+/** Service responsible for account moderation workflows. */
 @Service
 public class AdminModerationService {
 
@@ -55,26 +55,31 @@ public class AdminModerationService {
         .toList();
   }
 
-  /** Bane um usuario permanentemente. Fecha TODAS as denuncias relacionadas ao usuario. */
+  /** Permanently bans a user and resolves open reports against the user's content. */
   @Transactional
-  public ResponseDTO<String> banUser(BanUserRequestDTO request) {
+  public ResponseDTO<String> banUser(BanUserRequestDTO request, Long adminId) {
     User user = userRepository.findById(request.userId()).orElseThrow(UserNotFoundException::new);
     Instant now = Instant.now();
 
-    // Marcar usuario como banido
     user.setBanned(true);
     user.setBannedAt(now);
     user.setBannedReason(request.reason());
-    user.setBannedByAdminId(request.adminId());
+    user.setBannedByAdminId(adminId);
     userRepository.save(user);
 
-    // Resolver todas as denuncias pendentes do usuario
-    List<Report> userReports = reportRepository.findPendingReportsByUser(user);
+    List<Report> userReports =
+        reportRepository.findOpenContentReportsByUserId(
+            user.getId(),
+            List.of(Report.ReportStatus.PENDING, Report.ReportStatus.REVIEWED),
+            Report.ReportType.POST,
+            Report.ReportType.COMMENT,
+            Report.ReportType.OPPORTUNITY);
+
     userReports.forEach(
         report -> {
           report.setStatus(Report.ReportStatus.RESOLVED);
           report.setActionTaken(Report.ActionTaken.USER_BANNED);
-          report.setResolvedByAdminId(request.adminId());
+          report.setResolvedByAdminId(adminId);
           report.setResolvedAt(now);
         });
 
@@ -87,28 +92,29 @@ public class AdminModerationService {
             user.getUsername(), userReports.size()));
   }
 
-  /** Suspende um usuario temporariamente. Fecha APENAS a denuncia especifica (se fornecida). */
+  /** Suspends a user temporarily and optionally resolves a specific related report. */
   @Transactional
-  public ResponseDTO<String> suspendUser(SuspendUserRequestDTO request) {
+  public ResponseDTO<String> suspendUser(SuspendUserRequestDTO request, Long adminId) {
     User user = userRepository.findById(request.userId()).orElseThrow(UserNotFoundException::new);
     Instant now = Instant.now();
 
-    // Marcar usuario como suspenso
     user.setSuspended(true);
     Instant suspendedUntil = now.plus(request.durationInDays(), ChronoUnit.DAYS);
     user.setSuspendedUntil(suspendedUntil);
     user.setSuspensionReason(request.reason());
     userRepository.save(user);
 
-    // Resolver apenas a denuncia especifica (se fornecida)
     if (request.reportId() != null) {
       Report report =
           reportRepository
               .findById(request.reportId())
               .orElseThrow(() -> new NotFoundResourceException("Report"));
+      if (!isReportAgainstUserContent(report, user.getId())) {
+        throw new NotFoundResourceException("Report");
+      }
       report.setStatus(Report.ReportStatus.RESOLVED);
       report.setActionTaken(Report.ActionTaken.USER_SUSPENDED);
-      report.setResolvedByAdminId(request.adminId());
+      report.setResolvedByAdminId(adminId);
       report.setResolvedAt(now);
       reportRepository.save(report);
     }
@@ -120,7 +126,7 @@ public class AdminModerationService {
             user.getUsername(), request.durationInDays()));
   }
 
-  /** Reativa um usuario banido ou suspenso. */
+  /** Reactivates a banned or suspended user. */
   @Transactional
   public ResponseDTO<String> reactivateUser(ReactivateUserRequestDTO request) {
     User user = userRepository.findById(request.userId()).orElseThrow(UserNotFoundException::new);
@@ -211,5 +217,14 @@ public class AdminModerationService {
 
   private Long safeCount(Long value) {
     return value != null ? value : 0L;
+  }
+
+  private boolean isReportAgainstUserContent(Report report, Long userId) {
+    return switch (report.getType()) {
+      case POST -> postRepository.existsByIdAndUserId(report.getEntityId(), userId);
+      case COMMENT -> commentRepository.existsByIdAndUserId(report.getEntityId(), userId);
+      case OPPORTUNITY ->
+          opportunityRepository.existsByIdAndCompanyId(report.getEntityId(), userId);
+    };
   }
 }

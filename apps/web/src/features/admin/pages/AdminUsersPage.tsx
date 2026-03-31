@@ -54,7 +54,10 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/shared/components/ui/avatar";
-import type { AdminUserStatus, AdminUserSummary } from "@/shared/types/admin.types";
+import type {
+  AdminUserStatus,
+  AdminUserSummary,
+} from "@/shared/types/admin.types";
 import { getInitials } from "@/shared/utils/getInitials";
 
 export function AdminUsersPage() {
@@ -144,23 +147,11 @@ export function AdminUsersPage() {
     (count, user) => count + user.pendingReportCount,
     0,
   );
-  const moderatedUsers = users.filter((user) => user.status !== "active").length;
-
-  const getCurrentAdminId = () => {
-    if (!adminId || Number.isNaN(adminId)) {
-      toast.error("Nao foi possivel identificar o administrador atual.");
-      return null;
-    }
-
-    return adminId;
-  };
+  const moderatedUsers = users.filter(
+    (user) => user.status !== "active",
+  ).length;
 
   const handleSuspend = async (user: AdminUserSummary) => {
-    const currentAdminId = getCurrentAdminId();
-    if (!currentAdminId) {
-      return;
-    }
-
     const rawDuration = window.prompt(
       `Por quantos dias deseja suspender @${user.username}?`,
       "7",
@@ -189,7 +180,6 @@ export function AdminUsersPage() {
     setActiveUserId(user.id);
     const response = await suspendAdminUserRequest({
       userId: user.id,
-      adminId: currentAdminId,
       durationInDays,
       reason: reasonInput.trim() || "Suspensao administrativa",
     });
@@ -205,11 +195,6 @@ export function AdminUsersPage() {
   };
 
   const handleBan = async (user: AdminUserSummary) => {
-    const currentAdminId = getCurrentAdminId();
-    if (!currentAdminId) {
-      return;
-    }
-
     const confirmed = window.confirm(
       `Tem certeza que deseja banir permanentemente @${user.username}?`,
     );
@@ -230,7 +215,6 @@ export function AdminUsersPage() {
     setActiveUserId(user.id);
     const response = await banAdminUserRequest({
       userId: user.id,
-      adminId: currentAdminId,
       reason: reasonInput.trim() || "Banimento administrativo",
     });
     setActiveUserId(null);
@@ -245,11 +229,6 @@ export function AdminUsersPage() {
   };
 
   const handleReactivate = async (user: AdminUserSummary) => {
-    const currentAdminId = getCurrentAdminId();
-    if (!currentAdminId) {
-      return;
-    }
-
     const confirmed = window.confirm(
       `Deseja reativar a conta de @${user.username}?`,
     );
@@ -261,7 +240,6 @@ export function AdminUsersPage() {
     setActiveUserId(user.id);
     const response = await reactivateAdminUserRequest({
       userId: user.id,
-      adminId: currentAdminId,
     });
     setActiveUserId(null);
 
@@ -307,7 +285,9 @@ export function AdminUsersPage() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Em moderacao</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Em moderacao
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{moderatedUsers}</div>
@@ -423,18 +403,21 @@ export function AdminUsersPage() {
                         <TableCell>
                           <div className="space-y-1">
                             {getStatusBadge(user.status)}
-                            {user.status === "suspended" && user.suspendedUntil ? (
+                            {user.status === "suspended" &&
+                            user.suspendedUntil ? (
                               <p className="text-xs text-muted-foreground">
                                 Ate{" "}
-                                {new Date(user.suspendedUntil).toLocaleDateString(
-                                  "pt-BR",
-                                )}
+                                {new Date(
+                                  user.suspendedUntil,
+                                ).toLocaleDateString("pt-BR")}
                               </p>
                             ) : null}
                             {user.status === "banned" && user.bannedAt ? (
                               <p className="text-xs text-muted-foreground">
                                 Desde{" "}
-                                {new Date(user.bannedAt).toLocaleDateString("pt-BR")}
+                                {new Date(user.bannedAt).toLocaleDateString(
+                                  "pt-BR",
+                                )}
                               </p>
                             ) : null}
                             {user.moderationReason ? (
@@ -474,7 +457,9 @@ export function AdminUsersPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                onClick={() => navigate(`/profile/${user.username}`)}
+                                onClick={() =>
+                                  navigate(`/profile/${user.username}`)
+                                }
                               >
                                 <Eye className="mr-2 h-4 w-4" />
                                 Visualizar perfil

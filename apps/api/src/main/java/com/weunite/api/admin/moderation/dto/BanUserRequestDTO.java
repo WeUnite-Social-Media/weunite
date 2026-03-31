@@ -1,3 +1,3 @@
 package com.weunite.api.admin.moderation.dto;
 
-public record BanUserRequestDTO(Long userId, String reason, Long adminId) {}
+public record BanUserRequestDTO(Long userId, String reason) {}

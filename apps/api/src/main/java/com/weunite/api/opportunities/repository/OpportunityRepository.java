@@ -14,9 +14,11 @@ public interface OpportunityRepository extends JpaRepository<Opportunity, Long> 
 
   List<Opportunity> findByCompanyId(Long userId);
 
+  boolean existsByIdAndCompanyId(Long opportunityId, Long companyId);
+
   Long countByCompanyIdAndDeletedFalse(Long companyId);
 
-  @Query("SELECT COUNT(o) FROM Opportunity o WHERE o.createdAt BETWEEN :startDate AND :endDate")
+  @Query("SELECT COUNT(o) FROM Opportunity o WHERE o.createdAt >= :startDate AND o.createdAt < :endDate")
   Long countOpportunitiesBetweenDates(
       @Param("startDate") Instant startDate, @Param("endDate") Instant endDate);
 

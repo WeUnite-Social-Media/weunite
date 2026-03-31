@@ -19,18 +19,15 @@ interface SuspendAdminUserRequest {
   durationInDays: number;
   reason?: string;
   reportId?: number | null;
-  adminId: number;
 }
 
 interface BanAdminUserRequest {
   userId: number;
   reason?: string;
-  adminId: number;
 }
 
 interface ReactivateAdminUserRequest {
   userId: number;
-  adminId: number;
 }
 
 export const getAdminUsersRequest = async (): Promise<

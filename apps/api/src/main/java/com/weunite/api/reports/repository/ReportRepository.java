@@ -1,7 +1,6 @@
 package com.weunite.api.reports.repository;
 
 import com.weunite.api.reports.domain.Report;
-import com.weunite.api.users.domain.User;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -41,9 +40,21 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
   @Query(
       "SELECT r FROM Report r "
-          + "WHERE r.reporter = :user AND r.status = 'PENDING' "
+          + "WHERE r.status IN :statuses AND ("
+          + "(r.type = :postType AND r.entityId IN ("
+          + "SELECT p.id FROM Post p WHERE p.user.id = :userId"
+          + ")) OR (r.type = :commentType AND r.entityId IN ("
+          + "SELECT c.id FROM Comment c WHERE c.user.id = :userId"
+          + ")) OR (r.type = :opportunityType AND r.entityId IN ("
+          + "SELECT o.id FROM Opportunity o WHERE o.company.id = :userId"
+          + "))) "
           + "ORDER BY r.createdAt DESC")
-  List<Report> findPendingReportsByUser(@Param("user") User user);
+  List<Report> findOpenContentReportsByUserId(
+      @Param("userId") Long userId,
+      @Param("statuses") List<Report.ReportStatus> statuses,
+      @Param("postType") Report.ReportType postType,
+      @Param("commentType") Report.ReportType commentType,
+      @Param("opportunityType") Report.ReportType opportunityType);
 
   @Query("SELECT r FROM Report r WHERE r.status = 'PENDING' ORDER BY r.createdAt DESC")
   List<Report> findAllPendingReports();

@@ -234,11 +234,11 @@ public class AdminStatsService {
   private DateRange buildMonthWindow(LocalDate targetMonth) {
     ZoneId zoneId = ZoneId.systemDefault();
     LocalDate startOfMonth = targetMonth.withDayOfMonth(1);
-    LocalDate endOfMonth = targetMonth.withDayOfMonth(targetMonth.lengthOfMonth());
+    LocalDate startOfNextMonth = startOfMonth.plusMonths(1);
 
     return new DateRange(
         startOfMonth.atStartOfDay(zoneId).toInstant(),
-        endOfMonth.atTime(23, 59, 59).atZone(zoneId).toInstant());
+        startOfNextMonth.atStartOfDay(zoneId).toInstant());
   }
 
   private List<OpportunitySkillInsight> buildOpportunitySkillInsights() {
