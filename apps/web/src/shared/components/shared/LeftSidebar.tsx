@@ -50,6 +50,7 @@ import { CreatePost } from "@/features/feed/components/post/CreatePost";
 import { useOnboardingStore } from "@/features/onboarding/state/useOnboardingStore";
 import { NotificationPanel } from "@/features/notifications/components/NotificationPanel";
 import { useGetUnreadCount } from "@/features/notifications/state/useNotifications";
+import { isAdminUser } from "@/shared/lib/isAdminUser";
 
 export function LeftSidebar() {
   const { state, setOpen } = useSidebar();
@@ -61,18 +62,7 @@ export function LeftSidebar() {
   const userId = user?.id;
   const initials = getInitials(user?.username);
 
-  const ADMIN_EMAILS = [
-    "admin@weunite.com",
-    "luiz@weunite.com",
-    "matheus@weunite.com",
-    "matheusoliveirale2007@gmail.com",
-    "manoel_jonathan@hotmail.com",
-  ];
-
-  const isAdmin =
-    user?.isAdmin ||
-    user?.role === "admin" ||
-    Boolean(user?.email && ADMIN_EMAILS.includes(user.email));
+  const isAdmin = isAdminUser(user);
 
   const { setTheme, theme } = useTheme();
   const themeIcon = theme === "dark" ? Sun : Moon;

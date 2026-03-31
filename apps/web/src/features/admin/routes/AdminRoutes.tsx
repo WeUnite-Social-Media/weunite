@@ -1,6 +1,6 @@
 import { Route, Routes } from "react-router-dom";
-import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { Navigate, Outlet } from "react-router-dom";
+import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { AdminDashboardPage } from "@/features/admin/pages/AdminDashboardPage";
 import { AdminUsersPage } from "@/features/admin/pages/AdminUsersPage";
 import { AdminReportsPage } from "@/features/admin/pages/AdminReportsPage";
@@ -8,34 +8,16 @@ import { ReportedCommentsPage } from "@/features/admin/pages/ReportedCommentsPag
 import { ReportedOpportunitiesPage } from "@/features/admin/pages/ReportedOpportunitiesPage";
 import { ReportedPostsPage } from "@/features/admin/pages/ReportedPostsPage";
 import { AdminModerationDemo } from "@/features/admin/pages/AdminModerationDemo";
-
-// Lista temporária de emails de administradores (até o backend estar pronto)
-const ADMIN_EMAILS = [
-  "admin@weunite.com",
-  "luiz@weunite.com",
-  "matheus@weunite.com",
-  "matheusoliveirale2007@gmail.com",
-  "manoel_jonathan@hotmail.com", // Email do usuário
-  // Adicione outros emails de admin conforme necessário
-];
+import { isAdminUser } from "@/shared/lib/isAdminUser";
 
 function AdminProtectedRoutes() {
   const { isAuthenticated, user } = useAuthStore();
 
-  // Verifica se o usuário está autenticado
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />;
   }
 
-  // Verifica se o usuário é administrador
-  // Por enquanto, usando email até o backend estar pronto
-  const isAdmin =
-    user?.isAdmin ||
-    user?.role === "admin" ||
-    Boolean(user?.email && ADMIN_EMAILS.includes(user.email));
-
-  if (!isAdmin) {
-    // Redireciona para home se não for admin
+  if (!isAdminUser(user)) {
     return <Navigate to="/" replace />;
   }
 
@@ -57,7 +39,6 @@ export function AdminRoutes() {
         />
         <Route path="/comments/reported" element={<ReportedCommentsPage />} />
         <Route path="/moderation-demo" element={<AdminModerationDemo />} />
-        {/* Adicionar outras rotas admin aqui */}
       </Route>
     </Routes>
   );
