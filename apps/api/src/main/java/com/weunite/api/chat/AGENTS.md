@@ -41,6 +41,8 @@ This module owns chat conversations, messages, and user chat presence in `com.we
   delete request the same way.
 - For conversation/message HTTP endpoints that receive a user id, validate that id against the JWT
   before delegating to services.
+- Derive websocket presence user ids from the authenticated websocket session instead of trusting
+  client-supplied payload ids.
 
 ## Validation
 

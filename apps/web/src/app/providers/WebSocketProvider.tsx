@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
@@ -13,8 +7,25 @@ import { AppWebSocketContext } from "@/app/providers/useAppWebSocket";
 
 type WebSocketPayload = string | object;
 
-const apiBaseUrl = import.meta.env.VITE_API_URL?.trim() || "/api";
-const webSocketUrl = apiBaseUrl.replace(/\/api\/?$/, "/ws");
+const resolveWebSocketUrl = () => {
+  const configuredWebSocketUrl = import.meta.env.VITE_WS_URL?.trim();
+  if (configuredWebSocketUrl) {
+    return configuredWebSocketUrl;
+  }
+
+  const apiBaseUrl = import.meta.env.VITE_API_URL?.trim();
+  if (!apiBaseUrl || apiBaseUrl === "/api") {
+    return "/ws";
+  }
+
+  try {
+    return new URL("/ws", apiBaseUrl).toString();
+  } catch {
+    return "/ws";
+  }
+};
+
+const webSocketUrl = resolveWebSocketUrl();
 
 export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const clientRef = useRef<Client | null>(null);
@@ -78,7 +89,6 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
             client.publish({
               destination: "/app/user.status",
               body: JSON.stringify({
-                userId: Number(userId),
                 status: "ONLINE",
               }),
             });
@@ -107,7 +117,6 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         client.publish({
           destination: "/app/user.status",
           body: JSON.stringify({
-            userId: Number(userId),
             status: "OFFLINE",
           }),
         });
