@@ -53,4 +53,21 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
   @Query("SELECT r FROM Report r WHERE r.status = :status ORDER BY r.createdAt DESC")
   List<Report> findAllReportsByStatus(@Param("status") Report.ReportStatus status);
+
+  @Query(
+      "SELECT COUNT(r) FROM Report r "
+          + "WHERE r.status = :status AND ("
+          + "(r.type = :postType AND r.entityId IN ("
+          + "SELECT p.id FROM Post p WHERE p.user.id = :userId AND p.deleted = false"
+          + ")) OR (r.type = :commentType AND r.entityId IN ("
+          + "SELECT c.id FROM Comment c WHERE c.user.id = :userId AND c.deleted = false"
+          + ")) OR (r.type = :opportunityType AND r.entityId IN ("
+          + "SELECT o.id FROM Opportunity o WHERE o.company.id = :userId AND o.deleted = false"
+          + ")))")
+  Long countPendingContentReportsByUserId(
+      @Param("userId") Long userId,
+      @Param("status") Report.ReportStatus status,
+      @Param("postType") Report.ReportType postType,
+      @Param("commentType") Report.ReportType commentType,
+      @Param("opportunityType") Report.ReportType opportunityType);
 }

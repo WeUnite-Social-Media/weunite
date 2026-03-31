@@ -6,9 +6,9 @@ This module owns account moderation actions in `com.weunite.api.admin.moderation
 
 ## Responsibilities
 
-- Expose admin endpoints for user ban/suspension.
+- Expose admin endpoints for user listing, reactivation, ban, and suspension.
 - Execute account moderation rules and related report resolution side-effects.
-- Keep moderation request DTOs and service logic.
+- Keep moderation request and summary DTOs plus service logic.
 
 ## Does not own
 
@@ -24,8 +24,10 @@ This module owns account moderation actions in `com.weunite.api.admin.moderation
 
 ## Core use cases
 
+- List users with moderation-ready summary data for the admin web.
 - Ban user permanently.
 - Suspend user for a time window.
+- Reactivate suspended or banned users.
 - Resolve related reports for moderation actions.
 
 ## Working rules
@@ -42,5 +44,6 @@ This module owns account moderation actions in `com.weunite.api.admin.moderation
 
 ## Keep this file updated when
 
-- Moderation endpoint contracts change.
+- Moderation or admin user endpoint contracts change.
+- User summary payloads or reactivation behavior change.
 - Ban/suspend ownership moves between modules.

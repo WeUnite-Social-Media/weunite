@@ -5,6 +5,7 @@ import com.weunite.api.opportunities.domain.Skill;
 import com.weunite.api.opportunities.dto.SkillDTO;
 import com.weunite.api.users.domain.Athlete;
 import com.weunite.api.users.domain.Company;
+import com.weunite.api.users.domain.Role;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.dto.CreateUserRequestDTO;
 import com.weunite.api.users.dto.UserDTO;
@@ -38,7 +39,7 @@ public interface UserMapper {
   @Mapping(target = "id", source = "user.id", resultType = String.class)
   @Mapping(target = "name", source = "user.name")
   @Mapping(target = "username", source = "user.username")
-  @Mapping(target = "role", expression = "java(user.getRole().iterator().next().getName())")
+  @Mapping(target = "role", expression = "java(mapPrimaryRole(user))")
   @Mapping(target = "bio", source = "user.bio")
   @Mapping(target = "email", source = "user.email")
   @Mapping(target = "profileImg", source = "user.profileImg")
@@ -92,6 +93,25 @@ public interface UserMapper {
     return skills.stream()
         .map(skill -> new SkillDTO(skill.getId(), skill.getName()))
         .collect(Collectors.toList());
+  }
+
+  default String mapPrimaryRole(User user) {
+    Set<String> roles =
+        user.getRole().stream().map(Role::getName).collect(Collectors.toSet());
+
+    if (roles.contains("ADMIN")) {
+      return "ADMIN";
+    }
+
+    if (roles.contains("COMPANY")) {
+      return "COMPANY";
+    }
+
+    if (roles.contains("ATHLETE")) {
+      return "ATHLETE";
+    }
+
+    return roles.stream().findFirst().orElse("BASIC");
   }
 
   default ResponseDTO<UserDTO> toResponseDTO(String message, User user) {

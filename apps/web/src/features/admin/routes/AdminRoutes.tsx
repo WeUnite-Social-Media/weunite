@@ -30,7 +30,9 @@ function AdminProtectedRoutes() {
   // Verifica se o usuário é administrador
   // Por enquanto, usando email até o backend estar pronto
   const isAdmin =
-    user?.isAdmin || (user?.email && ADMIN_EMAILS.includes(user.email));
+    user?.isAdmin ||
+    user?.role === "admin" ||
+    Boolean(user?.email && ADMIN_EMAILS.includes(user.email));
 
   if (!isAdmin) {
     // Redireciona para home se não for admin

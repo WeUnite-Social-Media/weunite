@@ -15,6 +15,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
   @EntityGraph(attributePaths = {"user"})
   List<Post> findAllWithUserByIdIn(List<Long> ids);
 
+  Long countByUserIdAndDeletedFalse(Long userId);
+
   @Query(
       value =
           """

@@ -5,4 +5,5 @@ import java.util.List;
 public record DashboardDataDTO(
     AdminStatsDTO stats,
     List<DashboardActivityDTO> monthlyActivity,
-    List<OpportunityByCategoryDTO> opportunitiesByCategory) {}
+    List<OpportunityByCategoryDTO> opportunitiesByCategory,
+    List<UserTypeDataDTO> userTypeData) {}

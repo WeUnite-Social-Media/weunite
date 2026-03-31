@@ -70,7 +70,9 @@ export function LeftSidebar() {
   ];
 
   const isAdmin =
-    user?.isAdmin || Boolean(user?.email && ADMIN_EMAILS.includes(user.email));
+    user?.isAdmin ||
+    user?.role === "admin" ||
+    Boolean(user?.email && ADMIN_EMAILS.includes(user.email));
 
   const { setTheme, theme } = useTheme();
   const themeIcon = theme === "dark" ? Sun : Moon;

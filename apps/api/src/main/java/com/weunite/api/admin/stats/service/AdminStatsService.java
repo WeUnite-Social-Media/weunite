@@ -56,7 +56,10 @@ public class AdminStatsService {
   @Transactional(readOnly = true)
   public DashboardDataDTO getDashboardData(int months) {
     return new DashboardDataDTO(
-        getAdminStats(), getDashboardActivity(months), getOpportunitiesByCategory());
+        getAdminStats(),
+        getDashboardActivity(months),
+        getOpportunitiesByCategory(),
+        getUserTypeData());
   }
 
   /** Calcula estatisticas gerais do dashboard */

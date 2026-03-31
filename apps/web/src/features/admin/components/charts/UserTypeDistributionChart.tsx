@@ -20,6 +20,8 @@ export function UserTypeDistributionChart({
   data,
   colors,
 }: UserTypeDistributionChartProps) {
+  const totalUsers = data.reduce((total, item) => total + item.value, 0);
+
   return (
     <Card className="hover:shadow-md transition-shadow duration-200">
       <CardHeader>
@@ -43,7 +45,7 @@ export function UserTypeDistributionChart({
               <Cell fill={colors.primary} />
               <Cell fill={colors.secondary} />
             </Pie>
-            <Tooltip content={<PieTooltip />} />
+            <Tooltip content={<PieTooltip total={totalUsers} />} />
           </PieChart>
         </ResponsiveContainer>
         <div className="flex justify-center gap-4 mt-4">

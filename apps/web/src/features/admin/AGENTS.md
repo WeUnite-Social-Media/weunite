@@ -27,6 +27,7 @@ This area owns the web admin and moderation surfaces in `src/features/admin`.
 - Keep admin-only concerns inside this feature.
 - Reuse `src/shared/components/ui` for primitives instead of duplicating base components.
 - Keep API-side moderation logic in `apps/api`.
+- Keep dashboard and user-management screens consuming `/api/admin/...` data instead of local mocks.
 
 ## Validation
 
@@ -38,3 +39,4 @@ This area owns the web admin and moderation surfaces in `src/features/admin`.
 - Admin routes change.
 - Moderation responsibilities shift between web and api.
 - Admin-specific API boundaries change.
+- Dashboard or user-management integration contracts change.
