@@ -57,8 +57,8 @@ public class AdminModerationController {
   @PostMapping("/reactivate")
   public ResponseEntity<ResponseDTO<String>> reactivateUser(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ReactivateUserRequestDTO request) {
-    authenticatedUserService.requireAdminUserId(jwt);
-    ResponseDTO<String> response = adminModerationService.reactivateUser(request);
+    Long adminId = authenticatedUserService.requireAdminUserId(jwt);
+    ResponseDTO<String> response = adminModerationService.reactivateUser(request, adminId);
     return ResponseEntity.ok(response);
   }
 }

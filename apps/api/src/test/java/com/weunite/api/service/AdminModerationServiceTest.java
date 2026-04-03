@@ -150,7 +150,7 @@ class AdminModerationServiceTest {
     when(userRepository.findById(30L)).thenReturn(Optional.of(user));
 
     ResponseDTO<String> result =
-        adminModerationService.reactivateUser(new ReactivateUserRequestDTO(30L));
+        adminModerationService.reactivateUser(new ReactivateUserRequestDTO(30L), 99L);
 
     assertNotNull(result);
     assertFalse(user.isBanned());

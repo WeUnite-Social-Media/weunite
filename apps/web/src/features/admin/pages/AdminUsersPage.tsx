@@ -69,6 +69,7 @@ export function AdminUsersPage() {
   const authUser = useAuthStore((state) => state.user);
   const navigate = useNavigate();
   const adminId = authUser?.id ? Number(authUser.id) : null;
+  const canModerateUsers = adminId !== null;
 
   const loadUsers = async () => {
     setIsLoading(true);
@@ -152,6 +153,11 @@ export function AdminUsersPage() {
   ).length;
 
   const handleSuspend = async (user: AdminUserSummary) => {
+    if (!canModerateUsers) {
+      toast.error("Nao foi possivel identificar o admin autenticado.");
+      return;
+    }
+
     const rawDuration = window.prompt(
       `Por quantos dias deseja suspender @${user.username}?`,
       "7",
@@ -195,6 +201,11 @@ export function AdminUsersPage() {
   };
 
   const handleBan = async (user: AdminUserSummary) => {
+    if (!canModerateUsers) {
+      toast.error("Nao foi possivel identificar o admin autenticado.");
+      return;
+    }
+
     const confirmed = window.confirm(
       `Tem certeza que deseja banir permanentemente @${user.username}?`,
     );
@@ -229,6 +240,11 @@ export function AdminUsersPage() {
   };
 
   const handleReactivate = async (user: AdminUserSummary) => {
+    if (!canModerateUsers) {
+      toast.error("Nao foi possivel identificar o admin autenticado.");
+      return;
+    }
+
     const confirmed = window.confirm(
       `Deseja reativar a conta de @${user.username}?`,
     );
@@ -379,6 +395,8 @@ export function AdminUsersPage() {
                   filteredUsers.map((user) => {
                     const isOwnUser = adminId === user.id;
                     const isActionLoading = activeUserId === user.id;
+                    const isModerationDisabled =
+                      isActionLoading || isOwnUser || !canModerateUsers;
 
                     return (
                       <TableRow key={user.id}>
@@ -446,7 +464,7 @@ export function AdminUsersPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                disabled={isActionLoading}
+                                disabled={isActionLoading || !canModerateUsers}
                               >
                                 {isActionLoading ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -469,7 +487,7 @@ export function AdminUsersPage() {
                                 <>
                                   <DropdownMenuItem
                                     className="text-orange-600"
-                                    disabled={isOwnUser}
+                                    disabled={isModerationDisabled}
                                     onClick={() => void handleSuspend(user)}
                                   >
                                     <UserX className="mr-2 h-4 w-4" />
@@ -477,7 +495,7 @@ export function AdminUsersPage() {
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     className="text-red-600"
-                                    disabled={isOwnUser}
+                                    disabled={isModerationDisabled}
                                     onClick={() => void handleBan(user)}
                                   >
                                     <Ban className="mr-2 h-4 w-4" />
@@ -488,7 +506,7 @@ export function AdminUsersPage() {
                                 <>
                                   <DropdownMenuItem
                                     className="text-green-600"
-                                    disabled={isOwnUser}
+                                    disabled={isModerationDisabled}
                                     onClick={() => void handleReactivate(user)}
                                   >
                                     <UserCheck className="mr-2 h-4 w-4" />
@@ -497,7 +515,7 @@ export function AdminUsersPage() {
                                   {user.status === "suspended" ? (
                                     <DropdownMenuItem
                                       className="text-red-600"
-                                      disabled={isOwnUser}
+                                      disabled={isModerationDisabled}
                                       onClick={() => void handleBan(user)}
                                     >
                                       <Ban className="mr-2 h-4 w-4" />

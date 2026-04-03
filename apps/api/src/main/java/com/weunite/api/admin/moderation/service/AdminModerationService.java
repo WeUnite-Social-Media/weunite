@@ -128,7 +128,7 @@ public class AdminModerationService {
 
   /** Reactivates a banned or suspended user. */
   @Transactional
-  public ResponseDTO<String> reactivateUser(ReactivateUserRequestDTO request) {
+  public ResponseDTO<String> reactivateUser(ReactivateUserRequestDTO request, Long adminId) {
     User user = userRepository.findById(request.userId()).orElseThrow(UserNotFoundException::new);
 
     user.setBanned(false);
