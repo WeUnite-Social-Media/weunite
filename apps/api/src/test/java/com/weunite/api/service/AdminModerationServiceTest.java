@@ -57,13 +57,12 @@ class AdminModerationServiceTest {
     pendingReport.setStatus(Report.ReportStatus.PENDING);
 
     when(userRepository.findById(10L)).thenReturn(Optional.of(user));
-    when(
-            reportRepository.findOpenContentReportsByUserId(
-                10L,
-                List.of(Report.ReportStatus.PENDING, Report.ReportStatus.REVIEWED),
-                Report.ReportType.POST,
-                Report.ReportType.COMMENT,
-                Report.ReportType.OPPORTUNITY))
+    when(reportRepository.findOpenContentReportsByUserId(
+            10L,
+            List.of(Report.ReportStatus.PENDING, Report.ReportStatus.REVIEWED),
+            Report.ReportType.POST,
+            Report.ReportType.COMMENT,
+            Report.ReportType.OPPORTUNITY))
         .thenReturn(List.of(pendingReport));
 
     ResponseDTO<String> result =
@@ -94,13 +93,12 @@ class AdminModerationServiceTest {
     when(postRepository.countByUserIdAndDeletedFalse(12L)).thenReturn(2L);
     when(commentRepository.countByUserIdAndDeletedFalse(12L)).thenReturn(3L);
     when(opportunityRepository.countByCompanyIdAndDeletedFalse(12L)).thenReturn(0L);
-    when(
-            reportRepository.countPendingContentReportsByUserId(
-                12L,
-                Report.ReportStatus.PENDING,
-                Report.ReportType.POST,
-                Report.ReportType.COMMENT,
-                Report.ReportType.OPPORTUNITY))
+    when(reportRepository.countPendingContentReportsByUserId(
+            12L,
+            Report.ReportStatus.PENDING,
+            Report.ReportType.POST,
+            Report.ReportType.COMMENT,
+            Report.ReportType.OPPORTUNITY))
         .thenReturn(4L);
 
     List<AdminUserSummaryDTO> result = adminModerationService.getUsersSummary();

@@ -96,8 +96,7 @@ public interface UserMapper {
   }
 
   default String mapPrimaryRole(User user) {
-    Set<String> roles =
-        user.getRole().stream().map(Role::getName).collect(Collectors.toSet());
+    Set<String> roles = user.getRole().stream().map(Role::getName).collect(Collectors.toSet());
 
     if (roles.contains("ADMIN")) {
       return "ADMIN";

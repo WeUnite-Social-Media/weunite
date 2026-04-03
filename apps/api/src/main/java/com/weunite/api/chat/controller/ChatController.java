@@ -57,8 +57,8 @@ public class ChatController {
   @DeleteMapping("/messages/{messageId}")
   @ResponseBody
   public ResponseEntity<Map<String, Object>> deleteMessage(
-      @AuthenticationPrincipal Jwt jwt, @PathVariable Long messageId, @RequestParam Long userId) {
-    Long authenticatedUserId = authenticatedUserService.requireMatchingUserId(jwt, userId);
+      @AuthenticationPrincipal Jwt jwt, @PathVariable Long messageId) {
+    Long authenticatedUserId = authenticatedUserService.requireUserId(jwt);
     MessageDTO deletedMessage = messageService.deleteMessage(messageId, authenticatedUserId);
 
     Map<String, Object> deleteEvent =

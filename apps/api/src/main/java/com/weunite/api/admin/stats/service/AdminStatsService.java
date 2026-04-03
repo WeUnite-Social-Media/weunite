@@ -39,6 +39,7 @@ public class AdminStatsService {
   private static final int MAX_DASHBOARD_MONTHS = 12;
   private static final int TOP_SKILL_LIMIT = 5;
   private static final int RELATED_SKILL_LIMIT = 3;
+  private static final ZoneId DEFAULT_ZONE_ID = ZoneId.of("America/Sao_Paulo");
 
   private final PostRepository postRepository;
   private final OpportunityRepository opportunityRepository;
@@ -232,13 +233,12 @@ public class AdminStatsService {
   }
 
   private DateRange buildMonthWindow(LocalDate targetMonth) {
-    ZoneId zoneId = ZoneId.systemDefault();
     LocalDate startOfMonth = targetMonth.withDayOfMonth(1);
     LocalDate startOfNextMonth = startOfMonth.plusMonths(1);
 
     return new DateRange(
-        startOfMonth.atStartOfDay(zoneId).toInstant(),
-        startOfNextMonth.atStartOfDay(zoneId).toInstant());
+        startOfMonth.atStartOfDay(DEFAULT_ZONE_ID).toInstant(),
+        startOfNextMonth.atStartOfDay(DEFAULT_ZONE_ID).toInstant());
   }
 
   private List<OpportunitySkillInsight> buildOpportunitySkillInsights() {

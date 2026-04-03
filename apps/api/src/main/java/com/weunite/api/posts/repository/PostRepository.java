@@ -130,7 +130,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
   Long countLikesBetweenDates(
       @Param("startDate") Instant startDate, @Param("endDate") Instant endDate);
 
-  @Query("SELECT COUNT(c) FROM Comment c WHERE c.createdAt >= :startDate AND c.createdAt < :endDate")
+  @Query(
+      "SELECT COUNT(c) FROM Comment c WHERE c.createdAt >= :startDate AND c.createdAt < :endDate")
   Long countCommentsBetweenDates(
       @Param("startDate") Instant startDate, @Param("endDate") Instant endDate);
 

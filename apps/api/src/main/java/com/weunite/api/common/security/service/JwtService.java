@@ -34,7 +34,9 @@ public class JwtService {
                 userClaims -> {
                   userClaims.put(
                       "role",
-                      user.getRole().stream().map(role -> role.getName()).collect(Collectors.toList()));
+                      user.getRole().stream()
+                          .map(role -> role.getName())
+                          .collect(Collectors.toList()));
                   userClaims.put("id", user.getId().toString());
                 })
             .issuedAt(now)

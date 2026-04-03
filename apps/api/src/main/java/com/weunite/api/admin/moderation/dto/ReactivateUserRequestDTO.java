@@ -1,3 +1,5 @@
 package com.weunite.api.admin.moderation.dto;
 
-public record ReactivateUserRequestDTO(Long userId) {}
+import jakarta.validation.constraints.NotNull;
+
+public record ReactivateUserRequestDTO(@NotNull Long userId) {}

@@ -1,7 +1,7 @@
 package com.weunite.api.admin.moderation.service;
 
-import com.weunite.api.admin.moderation.dto.BanUserRequestDTO;
 import com.weunite.api.admin.moderation.dto.AdminUserSummaryDTO;
+import com.weunite.api.admin.moderation.dto.BanUserRequestDTO;
 import com.weunite.api.admin.moderation.dto.ReactivateUserRequestDTO;
 import com.weunite.api.admin.moderation.dto.SuspendUserRequestDTO;
 import com.weunite.api.common.exception.NotFoundResourceException;
@@ -19,8 +19,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
-import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Service responsible for account moderation workflows. */
@@ -195,8 +195,7 @@ public class AdminModerationService {
   }
 
   private String extractRole(User user) {
-    boolean hasAdminRole =
-        user.getRole().stream().map(Role::getName).anyMatch("ADMIN"::equals);
+    boolean hasAdminRole = user.getRole().stream().map(Role::getName).anyMatch("ADMIN"::equals);
 
     if (hasAdminRole) {
       return "admin";

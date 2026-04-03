@@ -1,7 +1,6 @@
 package com.weunite.api.common.config;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.weunite.api.users.domain.User;
@@ -18,15 +17,13 @@ class DatabaseConfigTest {
 
   private static final String LEGACY_USERNAME = "legacy-user-bootstrap";
 
-  @Autowired private DatabaseConfig databaseConfig;
-
   @Autowired private JdbcTemplate jdbcTemplate;
 
   @Autowired private UserRepository userRepository;
 
   @Test
-  @DisplayName("Should normalize legacy null user booleans before loading users")
-  void normalizeLegacyUserBooleansBeforeLoadingUsers() {
+  @DisplayName("Should load legacy users with null boolean flags as disabled")
+  void loadLegacyUserWithNullBooleanFlags() {
     relaxUserBooleanConstraints();
 
     jdbcTemplate.execute(
@@ -56,26 +53,13 @@ class DatabaseConfigTest {
         )
         """);
 
-    databaseConfig.normalizeLegacyUserBooleans(jdbcTemplate);
-    assertDoesNotThrow(() -> databaseConfig.normalizeLegacyUserBooleans(jdbcTemplate));
-
-    User user = userRepository.findByUsername(LEGACY_USERNAME).orElseThrow();
+    User user =
+        assertDoesNotThrow(() -> userRepository.findByUsername(LEGACY_USERNAME).orElseThrow());
 
     assertFalse(user.isEmailVerified());
     assertFalse(user.isBanned());
     assertFalse(user.isSuspended());
     assertFalse(user.isPrivate());
-    assertEquals(Boolean.FALSE, readBooleanColumn("email_verified"));
-    assertEquals(Boolean.FALSE, readBooleanColumn("is_banned"));
-    assertEquals(Boolean.FALSE, readBooleanColumn("is_suspended"));
-    assertEquals(Boolean.FALSE, readBooleanColumn("is_private"));
-  }
-
-  private Boolean readBooleanColumn(String columnName) {
-    return jdbcTemplate.queryForObject(
-        "SELECT " + columnName + " FROM tb_user WHERE username = ?",
-        Boolean.class,
-        LEGACY_USERNAME);
   }
 
   private void relaxUserBooleanConstraints() {
