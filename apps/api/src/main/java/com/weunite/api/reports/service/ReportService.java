@@ -10,6 +10,7 @@ import com.weunite.api.users.domain.User;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.UserRepository;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,8 +48,19 @@ public class ReportService {
   }
 
   @Transactional(readOnly = true)
+  public List<ReportDTO> getAllReports() {
+    return reportMapper.toReportDTOList(reportRepository.findAllReports());
+  }
+
+  @Transactional(readOnly = true)
+  public List<ReportDTO> getAllReportsByStatus(String status) {
+    Report.ReportStatus reportStatus = Report.ReportStatus.valueOf(status.toUpperCase(Locale.ROOT));
+    return reportMapper.toReportDTOList(reportRepository.findAllReportsByStatus(reportStatus));
+  }
+
+  @Transactional(readOnly = true)
   public Long getReportCount(Long entityId, String type) {
-    Report.ReportType reportType = Report.ReportType.valueOf(type.toUpperCase());
+    Report.ReportType reportType = Report.ReportType.valueOf(type.toUpperCase(Locale.ROOT));
     return reportRepository.countByEntityIdAndTypeAndStatus(
         entityId, reportType, Report.ReportStatus.PENDING);
   }

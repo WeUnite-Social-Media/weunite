@@ -2,6 +2,8 @@ package com.weunite.api.posts.service;
 
 import com.weunite.api.common.exception.UnauthorizedException;
 import com.weunite.api.common.response.ResponseDTO;
+import com.weunite.api.notifications.domain.NotificationType;
+import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.posts.domain.Comment;
 import com.weunite.api.posts.domain.Post;
 import com.weunite.api.posts.dto.CommentDTO;
@@ -26,16 +28,19 @@ public class CommentService {
   private final CommentRepository commentRepository;
   private final PostRepository postRepository;
   private final CommentMapper commentMapper;
+  private final NotificationService notificationService;
 
   public CommentService(
       UserRepository userRepository,
       CommentRepository commentRepository,
       PostRepository postRepository,
-      CommentMapper commentMapper) {
+      CommentMapper commentMapper,
+      NotificationService notificationService) {
     this.userRepository = userRepository;
     this.commentRepository = commentRepository;
     this.postRepository = postRepository;
     this.commentMapper = commentMapper;
+    this.notificationService = notificationService;
   }
 
   @Transactional
@@ -48,6 +53,8 @@ public class CommentService {
     Comment newComment = new Comment(user, post, comment.text(), comment.image());
 
     commentRepository.save(newComment);
+    notificationService.createNotification(
+        post.getUser().getId(), NotificationType.POST_COMMENT, userId, postId, null);
 
     return commentMapper.toResponseDTO("Comentário criado com sucesso!", newComment);
   }

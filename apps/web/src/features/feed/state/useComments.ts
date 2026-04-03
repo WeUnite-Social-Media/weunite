@@ -1,8 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type {
-  CreateComment,
-  UpdateComment,
-} from "@/shared/types/comment.types";
+import { toast } from "sonner";
 import {
   createCommentRequest,
   deleteCommentRequest,
@@ -10,8 +7,11 @@ import {
   getCommentsUserId,
   updateCommentRequest,
 } from "@/features/feed/api/commentService";
-import { toast } from "sonner";
-import { postKeys } from "./usePosts";
+import { postKeys } from "@/features/feed/state/usePosts";
+import type {
+  CreateComment,
+  UpdateComment,
+} from "@/shared/types/comment.types";
 
 export const commentKeys = {
   all: ["comments"] as const,
@@ -56,7 +56,6 @@ export const useCreateComment = () => {
         toast.error(result.message || "Erro ao criar comentário.");
       }
     },
-
     onError: () => {
       toast.error("Erro inesperado ao criar comentário.");
     },
@@ -106,6 +105,7 @@ export const useGetComments = (postId: number) => {
     enabled: !!postId,
   });
 };
+
 export const useGetCommentsByUserId = (userId: number) => {
   return useQuery({
     queryKey: commentKeys.listByUser(userId),

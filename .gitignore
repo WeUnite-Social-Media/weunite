@@ -18,6 +18,7 @@ build
 
 # Java / Maven
 target/
+.m2/
 *.class
 *.jar
 *.war

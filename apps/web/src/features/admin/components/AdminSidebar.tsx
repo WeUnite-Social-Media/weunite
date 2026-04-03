@@ -1,3 +1,15 @@
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  AlertTriangle,
+  BarChart3,
+  Briefcase,
+  FileText,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Users,
+} from "lucide-react";
+import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { Button } from "@/shared/components/ui/button";
 import {
   Sheet,
@@ -7,75 +19,38 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/shared/components/ui/sheet";
-import {
-  BarChart3,
-  Users,
-  FileText,
-  Briefcase,
-  AlertTriangle,
-  Settings,
-  LogOut,
-  Menu,
-} from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 
 const adminMenuItems = [
-  {
-    title: "Dashboard",
-    href: "/admin",
-    icon: BarChart3,
-  },
-  {
-    title: "Posts",
-    href: "/admin/posts/reported",
-    icon: FileText,
-  },
+  { title: "Dashboard", href: "/admin", icon: BarChart3 },
+  { title: "Posts", href: "/admin/posts/reported", icon: FileText },
   {
     title: "Oportunidades",
-    href: "/admin/opportunities",
+    href: "/admin/opportunities/reported",
     icon: Briefcase,
   },
   {
-    title: "Usuários",
-    href: "/admin/users",
-    icon: Users,
+    title: "Comentários",
+    href: "/admin/comments/reported",
+    icon: MessageSquare,
   },
-  {
-    title: "Denúncias",
-    href: "/admin/reports",
-    icon: AlertTriangle,
-  },
-  {
-    title: "Configurações",
-    href: "/admin/settings",
-    icon: Settings,
-  },
+  { title: "Usuários", href: "/admin/users", icon: Users },
+  { title: "Denúncias", href: "/admin/reports", icon: AlertTriangle },
 ];
 
-/**
- * Barra lateral de navegação do painel administrativo (desktop)
- * Exibe menu de navegação e botão de logout
- */
 export function AdminSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuthStore();
-
-  const handleLogout = () => {
-    logout();
-    navigate("/auth/login");
-  };
 
   const isActiveRoute = (href: string) => {
     if (href === "/admin") {
       return location.pathname === href;
     }
+
     return location.pathname.startsWith(href);
   };
 
   return (
-    <div className="hidden md:flex h-screen w-64 flex-col fixed left-0 top-0 border-r bg-background">
+    <div className="fixed left-0 top-0 hidden h-screen w-64 flex-col border-r bg-background md:flex">
       <div className="flex h-16 items-center border-b px-6">
         <h1 className="text-xl font-bold">Admin Panel</h1>
         <span className="ml-2 text-sm text-muted-foreground">WeUnite</span>
@@ -101,21 +76,16 @@ export function AdminSidebar() {
       <div className="border-t p-4">
         <Button
           variant="ghost"
-          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-          onClick={handleLogout}
+          className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
+          onClick={() => navigate("/home")}
         >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sair
+          Sair do Admin
         </Button>
       </div>
     </div>
   );
 }
 
-/**
- * Barra lateral de navegação do painel administrativo (mobile)
- * Menu hamburguer responsivo para dispositivos móveis
- */
 export function AdminMobileSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -130,6 +100,7 @@ export function AdminMobileSidebar() {
     if (href === "/admin") {
       return location.pathname === href;
     }
+
     return location.pathname.startsWith(href);
   };
 
@@ -140,13 +111,14 @@ export function AdminMobileSidebar() {
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
+
       <SheetContent side="left" className="w-80">
         <SheetHeader>
           <SheetTitle>Admin Panel</SheetTitle>
           <SheetDescription>Painel administrativo da WeUnite</SheetDescription>
         </SheetHeader>
 
-        <nav className="flex flex-col space-y-2 mt-6">
+        <nav className="mt-6 flex flex-col space-y-2">
           {adminMenuItems.map((item) => {
             const Icon = item.icon;
             return (

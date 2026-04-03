@@ -42,6 +42,9 @@ public class Comment {
   @Column(length = 500)
   private String imageUrl;
 
+  @Column(nullable = false)
+  private boolean deleted;
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "post_id", nullable = false)
   @JsonBackReference

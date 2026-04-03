@@ -26,6 +26,8 @@ public class User {
     this.email = email;
     this.password = password;
     this.emailVerified = false;
+    this.isBanned = false;
+    this.isSuspended = false;
     this.isPrivate = false;
   }
 
@@ -51,14 +53,32 @@ public class User {
   private String password;
 
   @Column(nullable = false)
-  private boolean emailVerified;
+  private Boolean emailVerified;
+
+  @Column(nullable = false)
+  private Boolean isBanned;
+
+  @Column(nullable = false)
+  private Boolean isSuspended;
+
+  @Column private Instant bannedAt;
+
+  @Column(length = 500)
+  private String bannedReason;
+
+  @Column private Long bannedByAdminId;
+
+  @Column private Instant suspendedUntil;
+
+  @Column(length = 500)
+  private String suspensionReason;
 
   @Column private String verificationToken;
 
   @Column private Instant verificationTokenExpires;
 
   @Column(nullable = false)
-  private boolean isPrivate;
+  private Boolean isPrivate;
 
   @Column private String profileImg;
 
@@ -90,15 +110,65 @@ public class User {
 
   @PrePersist
   protected void onCreate() {
+    normalizeBooleanFlags();
     this.createdAt = Instant.now();
   }
 
   @PreUpdate
   protected void onUpdate() {
+    normalizeBooleanFlags();
     this.updatedAt = Instant.now();
   }
 
+  @PostLoad
+  protected void onLoad() {
+    normalizeBooleanFlags();
+  }
+
+  public boolean isEmailVerified() {
+    return Boolean.TRUE.equals(emailVerified);
+  }
+
+  public void setEmailVerified(Boolean emailVerified) {
+    this.emailVerified = defaultBoolean(emailVerified);
+  }
+
+  public boolean isBanned() {
+    return Boolean.TRUE.equals(isBanned);
+  }
+
+  public void setBanned(Boolean banned) {
+    this.isBanned = defaultBoolean(banned);
+  }
+
+  public boolean isSuspended() {
+    return Boolean.TRUE.equals(isSuspended);
+  }
+
+  public void setSuspended(Boolean suspended) {
+    this.isSuspended = defaultBoolean(suspended);
+  }
+
+  public boolean isPrivate() {
+    return Boolean.TRUE.equals(isPrivate);
+  }
+
   public void setVisibility(boolean isPrivate) {
-    this.isPrivate = isPrivate;
+    this.isPrivate = defaultBoolean(isPrivate);
+  }
+
+  public void setPrivate(Boolean isPrivate) {
+    this.isPrivate = defaultBoolean(isPrivate);
+  }
+
+  private void normalizeBooleanFlags() {
+    emailVerified = defaultBoolean(emailVerified);
+    isBanned = defaultBoolean(isBanned);
+    isSuspended = defaultBoolean(isSuspended);
+    isPrivate = defaultBoolean(isPrivate);
+  }
+
+  private Boolean defaultBoolean(Boolean value) {
+    return value != null ? value : Boolean.FALSE;
   }
 }

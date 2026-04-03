@@ -1,20 +1,28 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
-import { ImageUp, Pencil } from "lucide-react";
+import { ImageUp, Loader2, Pencil, Send } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
-import EditProfile from "./EditProfile";
-import EditBanner from "./EditBanner";
-import { useState } from "react";
-import Following from "./Following";
-import Followers from "./Followers";
-import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
-import { Button } from "@/shared/components/ui/button";
-import { Send } from "lucide-react";
-import { useUserProfile } from "@/features/profile/hooks/useUserProfile";
+import { useCreateConversation, useGetUserConversations } from "@/features/chat/state/useChat";
+import { useChatStore } from "@/features/chat/stores/useChatStore";
+import EditBanner from "@/features/profile/components/EditBanner";
+import EditProfile from "@/features/profile/components/EditProfile";
+import Followers from "@/features/profile/components/Followers";
+import Following from "@/features/profile/components/Following";
 import { useFollowAction } from "@/features/profile/hooks/useFollowAction";
+import { useUserProfile } from "@/features/profile/hooks/useUserProfile";
 import {
   useGetFollowers,
   useGetFollowing,
 } from "@/features/profile/state/useFollow";
+import { Button } from "@/shared/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/shared/components/ui/tooltip";
+import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
+import { useTheme } from "@/shared/providers/ThemeProvider";
 import { getInitials } from "@/shared/utils/getInitials";
 
 interface HeaderProfileProps {
@@ -22,14 +30,28 @@ interface HeaderProfileProps {
 }
 
 export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { theme } = useTheme();
   const { user } = useAuthStore();
   const { data: profileUser } = useUserProfile(profileUsername);
+  const setIsConversationOpen = useChatStore(
+    (state) => state.setIsConversationOpen,
+  );
+  const setPendingConversationId = useChatStore(
+    (state) => state.setPendingConversationId,
+  );
 
   const isOwnProfile = !profileUsername || profileUsername === user?.username;
   const displayUser = isOwnProfile ? user : profileUser;
+  const displayUserId = Number(displayUser?.id) || 0;
+  const currentUserId = Number(user?.id) || 0;
 
-  const { data: followersData } = useGetFollowers(Number(displayUser?.id));
-  const { data: followingData } = useGetFollowing(Number(displayUser?.id));
+  const { data: followersData } = useGetFollowers(displayUserId);
+  const { data: followingData } = useGetFollowing(displayUserId);
+  const { data: conversationsData } = useGetUserConversations(currentUserId);
+  const { mutateAsync: createConversation, isPending: isCreatingConversation } =
+    useCreateConversation();
 
   const followersCount =
     followersData?.success && followersData?.data?.data
@@ -64,10 +86,44 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
   const [isFollowingOpen, setIsFollowingOpen] = useState(false);
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
   const [isEditBannerOpen, setIsEditBannerOpen] = useState(false);
+  const requestedModal = searchParams.get("modal");
+
+  const clearModalParam = () => {
+    if (!searchParams.has("modal")) {
+      return;
+    }
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("modal");
+    setSearchParams(nextSearchParams, { replace: true });
+  };
+
+  useEffect(() => {
+    if (!isOwnProfile) {
+      return;
+    }
+
+    if (requestedModal === "edit-profile") {
+      setIsEditProfileOpen(true);
+    }
+
+    if (requestedModal === "edit-banner") {
+      setIsEditBannerOpen(true);
+    }
+  }, [isOwnProfile, requestedModal]);
 
   const handleEditProfileOpen = () => {
     setIsEditProfileOpen(true);
   };
+
+  const handleEditProfileChange = (open: boolean) => {
+    setIsEditProfileOpen(open);
+
+    if (!open && requestedModal === "edit-profile") {
+      clearModalParam();
+    }
+  };
+
   const handleFollowingOpen = () => {
     setIsFollowingOpen(true);
   };
@@ -80,7 +136,123 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
     setIsEditBannerOpen(true);
   };
 
+  const handleEditBannerChange = (open: boolean) => {
+    setIsEditBannerOpen(open);
+
+    if (!open && requestedModal === "edit-banner") {
+      clearModalParam();
+    }
+  };
+
+  const handleChat = async () => {
+    if (!currentUserId || !displayUserId || isOwnProfile) {
+      return;
+    }
+
+    const existingConversation = conversationsData?.data?.find(
+      (conversation) =>
+        conversation.participantIds.includes(displayUserId) &&
+        conversation.participantIds.length === 2,
+    );
+
+    if (existingConversation) {
+      setPendingConversationId(existingConversation.id);
+      setIsConversationOpen(true);
+      navigate("/chat");
+      return;
+    }
+
+    const result = await createConversation({
+      initiatorUserId: currentUserId,
+      participantIds: [currentUserId, displayUserId],
+    });
+
+    if (result.success && result.data) {
+      setPendingConversationId(result.data.id);
+      setIsConversationOpen(true);
+      navigate("/chat");
+    }
+  };
+
+  const renderProfileActions = () => {
+    if (isOwnProfile) {
+      return (
+        <Button
+          variant="outline"
+          className="flex items-center gap-2"
+          onClick={handleEditProfileOpen}
+        >
+          <Pencil className="h-4 w-4" />
+          Editar perfil
+        </Button>
+      );
+    }
+
+    return (
+      <div className="flex gap-3">
+        {renderFollowButton()}
+        <Button
+          variant="outline"
+          className="flex items-center gap-2"
+          onClick={handleChat}
+          disabled={isCreatingConversation}
+        >
+          {isCreatingConversation ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
+          {isCreatingConversation ? "Abrindo..." : "Conversar"}
+        </Button>
+      </div>
+    );
+  };
+
   const { isDesktop } = useBreakpoints();
+  const resolvedTheme = useMemo(() => {
+    if (theme === "system" && typeof window !== "undefined") {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+    }
+
+    return theme === "dark" ? "dark" : "light";
+  }, [theme]);
+
+  const isUsernameTruncated = Boolean(
+    !isDesktop &&
+      displayUser?.username &&
+      displayUser.username.length > 10,
+  );
+
+  const displayedUsername = isUsernameTruncated
+    ? `${displayUser?.username?.slice(0, 10)}...`
+    : displayUser?.username;
+
+  const renderUsername = () => {
+    if (!displayUser?.username) {
+      return null;
+    }
+
+    const usernameClass = isDesktop
+      ? "text-2xl font-medium text-primary"
+      : "cursor-default text-base text-primary";
+
+    if (!isUsernameTruncated) {
+      return <p className={usernameClass}>{displayUser.username}</p>;
+    }
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <p className={usernameClass}>{displayedUsername}</p>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" sideOffset={6}>
+          {displayUser.username}
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
 
   if (isDesktop) {
     return (
@@ -88,38 +260,40 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
         {isOwnProfile && (
           <EditProfile
             isOpen={isEditProfileOpen}
-            onOpenChange={setIsEditProfileOpen}
+            onOpenChange={handleEditProfileChange}
           />
         )}
 
         {isOwnProfile && (
           <EditBanner
             isOpen={isEditBannerOpen}
-            onOpenChange={setIsEditBannerOpen}
+            onOpenChange={handleEditBannerChange}
           />
         )}
 
         <Followers
           isOpen={isFollowersOpen}
           onOpenChange={setIsFollowersOpen}
-          userId={Number(displayUser?.id)}
+          userId={displayUserId}
         />
         <Following
           isOpen={isFollowingOpen}
           onOpenChange={setIsFollowingOpen}
-          userId={Number(displayUser?.id)}
+          userId={displayUserId}
         />
 
-        <div className="w-[48em] mx-auto px-4">
-          <div className="h-40 relative group ">
-            <img
-              className="w-full h-full object-cover rounded-b-sm"
-              src={displayUser?.bannerImg || "/BannerDefaultWhite.png"}
+        <div className="mx-auto w-[48em] px-4">
+          <div className="group relative h-40">
+            <ProfileBanner
+              isOwnProfile={isOwnProfile}
+              resolvedTheme={resolvedTheme}
+              src={displayUser?.bannerImg}
+              rounded
             />
             {isOwnProfile && (
               <>
                 <ImageUp
-                  className="absolute right-6 text-primary top-31 hover:cursor-pointer hover:scale-110 transition-transform z-10"
+                  className="absolute top-31 right-6 z-10 text-primary transition-transform hover:scale-110 hover:cursor-pointer"
                   onClick={handleBannerEdit}
                 />
 
@@ -131,57 +305,40 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
             )}
           </div>
 
-          <div className="flex flex-col w-full">
+          <div className="flex w-full flex-col">
             <div className="flex w-full">
-              <div className="relative flex ml-[0.8em]">
+              <div className="relative ml-[0.8em] flex">
                 <Avatar
-                  className="w-27 h-27 rounded-full border-5 border-background mt-[-50px] bg-background"
-                  onClick={handleEditProfileOpen}
+                  className="mt-[-50px] h-27 w-27 rounded-full border-5 border-background bg-background"
+                  onClick={isOwnProfile ? handleEditProfileOpen : undefined}
                 >
                   <AvatarImage
                     src={displayUser?.profileImg}
                     alt="Foto de perfil"
-                    className="w-full h-full rounded-full object-cover hover:cursor-pointer"
+                    className="h-full w-full rounded-full object-cover hover:cursor-pointer"
                   />
-                  <AvatarFallback className="w-full h-full flex items-center border-1 border-primary rounded-full justify-center text-primary text-5xl ">
+                  <AvatarFallback className="flex h-full w-full items-center justify-center rounded-full border-1 border-primary text-5xl text-primary">
                     {initials}
                   </AvatarFallback>
                   {isOwnProfile && (
-                    <div className="absolute bottom-2 right-0 bg-background rounded-full p-1 border border-primary shadow-sm">
-                      <Pencil className="h-4 w-4 text-primary cursor-pointer rotate-90" />
+                    <div className="absolute right-0 bottom-2 rounded-full border border-primary bg-background p-1 shadow-sm">
+                      <Pencil className="h-4 w-4 rotate-90 cursor-pointer text-primary" />
                     </div>
                   )}
                 </Avatar>
               </div>
 
-              <div className="flex flex-col ml-[0.5em]">
-                <p className="text-primary font-medium text-2xl">
-                  {displayUser?.username}
-                </p>
-                <p className="text-[#a1a1a1] text-xs">{displayUser?.name}</p>
+              <div className="ml-[0.5em] flex flex-col">
+                {renderUsername()}
+                <p className="text-xs text-[#a1a1a1]">{displayUser?.name}</p>
               </div>
 
-              <div className="ml-auto mr-4 mt-2 gap-3 flex">
-                {isOwnProfile ? (
-                  <Button variant="outline" className="flex items-center gap-2">
-                    Configurações
-                  </Button>
-                ) : (
-                  <div className="flex gap-3">
-                    {renderFollowButton()}
-                    <Button
-                      variant="outline"
-                      className="flex items-center gap-2"
-                    >
-                      <Send className="h-4 w-4" />
-                      Conversar
-                    </Button>
-                  </div>
-                )}
+              <div className="ml-auto mr-4 mt-2 flex gap-3">
+                {renderProfileActions()}
               </div>
             </div>
 
-            <div className="flex flex-row w-full pl-5 mt-1 gap-3 text-primary text-sm ">
+            <div className="mt-1 flex w-full flex-row gap-3 pl-5 text-sm text-primary">
               <div
                 className="flex flex-row items-center gap-1"
                 onClick={handleFollowingOpen}
@@ -209,39 +366,39 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
       {isOwnProfile && (
         <EditProfile
           isOpen={isEditProfileOpen}
-          onOpenChange={setIsEditProfileOpen}
+          onOpenChange={handleEditProfileChange}
         />
       )}
 
       {isOwnProfile && (
         <EditBanner
           isOpen={isEditBannerOpen}
-          onOpenChange={setIsEditBannerOpen}
+          onOpenChange={handleEditBannerChange}
         />
       )}
 
       <Followers
         isOpen={isFollowersOpen}
         onOpenChange={setIsFollowersOpen}
-        userId={Number(displayUser?.id)}
+        userId={displayUserId}
       />
       <Following
         isOpen={isFollowingOpen}
         onOpenChange={setIsFollowingOpen}
-        userId={Number(displayUser?.id)}
+        userId={displayUserId}
       />
 
-      <div className="w-full md:max-w-[77vw] mx-auto">
-        <div className="h-35 relative group">
-          <img
-            className="h-full w-full object-cover"
-            src={displayUser?.bannerImg || "/BannerDefaultWhite.png"}
-            alt="Banner do perfil"
+      <div className="mx-auto w-full md:max-w-[77vw]">
+        <div className="group relative h-35">
+          <ProfileBanner
+            isOwnProfile={isOwnProfile}
+            resolvedTheme={resolvedTheme}
+            src={displayUser?.bannerImg}
           />
           {isOwnProfile && (
             <>
               <ImageUp
-                className="absolute right-6 text-primary top-28 hover:cursor-pointer hover:scale-110 transition-transform z-10"
+                className="absolute top-28 right-6 z-10 text-primary transition-transform hover:scale-110 hover:cursor-pointer"
                 onClick={handleBannerEdit}
               />
 
@@ -253,53 +410,41 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
           )}
         </div>
 
-        <div className="flex flex-col w-full">
+        <div className="flex w-full flex-col">
           <div className="flex w-full">
-            <div className="relative flex ml-[0.8em]">
+            <div className="relative ml-[0.8em] flex">
               <Avatar
-                className="w-27 h-27 rounded-full border-5 border-background mt-[-50px] bg-background"
-                onClick={handleEditProfileOpen}
+                className="mt-[-50px] h-27 w-27 rounded-full border-5 border-background bg-background"
+                onClick={isOwnProfile ? handleEditProfileOpen : undefined}
               >
                 <AvatarImage
                   src={displayUser?.profileImg}
                   alt="Foto de perfil"
-                  className="w-full h-full rounded-full object-cover hover:cursor-pointer"
+                  className="h-full w-full rounded-full object-cover hover:cursor-pointer"
                 />
-                <AvatarFallback className="w-full h-full flex items-center border-1 border-primary rounded-full justify-center text-primary text-5xl ">
+                <AvatarFallback className="flex h-full w-full items-center justify-center rounded-full border-1 border-primary text-5xl text-primary">
                   {initials}
                 </AvatarFallback>
 
                 {isOwnProfile && (
-                  <div className="absolute bottom-2 right-0 bg-background rounded-full p-1 border border-primary shadow-sm">
-                    <Pencil className="h-4 w-4 text-primary cursor-pointer rotate-90" />
+                  <div className="absolute right-0 bottom-2 rounded-full border border-primary bg-background p-1 shadow-sm">
+                    <Pencil className="h-4 w-4 rotate-90 cursor-pointer text-primary" />
                   </div>
                 )}
               </Avatar>
             </div>
 
-            <div className="flex flex-col ml-[0.5em]">
-              <p className="text-primary text-base">{displayUser?.username}</p>
-              <p className="text-[#a1a1a1] text-xs">{displayUser?.name}</p>
+            <div className="ml-[0.5em] flex flex-col">
+              {renderUsername()}
+              <p className="text-xs text-[#a1a1a1]">{displayUser?.name}</p>
             </div>
 
-            <div className="ml-auto mr-4 mt-2 gap-3 flex">
-              {isOwnProfile ? (
-                <Button variant="outline" className="flex items-center gap-2">
-                  Configurações
-                </Button>
-              ) : (
-                <div className="flex gap-3">
-                  {renderFollowButton()}
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Send className="h-4 w-4" />
-                    Conversar
-                  </Button>
-                </div>
-              )}
+            <div className="ml-auto mr-4 mt-2 flex gap-3">
+              {renderProfileActions()}
             </div>
           </div>
 
-          <div className="flex flex-row w-full pl-5 mt-1 gap-3 text-primary text-sm ">
+          <div className="mt-1 flex w-full flex-row gap-3 pl-5 text-sm text-primary">
             <div
               className="flex flex-row items-center gap-1"
               onClick={handleFollowingOpen}
@@ -319,5 +464,47 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
         </div>
       </div>
     </>
+  );
+}
+
+function ProfileBanner({
+  isOwnProfile,
+  resolvedTheme,
+  rounded = false,
+  src,
+}: {
+  isOwnProfile: boolean;
+  resolvedTheme: "dark" | "light";
+  rounded?: boolean;
+  src?: string;
+}) {
+  const roundedClass = rounded ? "rounded-b-sm" : "";
+
+  if (src) {
+    return (
+      <img
+        className={`h-full w-full object-cover ${roundedClass}`}
+        src={src}
+        alt="Banner do perfil"
+      />
+    );
+  }
+
+  const gradientClass =
+    resolvedTheme === "dark"
+      ? isOwnProfile
+        ? "from-slate-950 via-slate-900 to-emerald-900/70"
+        : "from-zinc-950 via-slate-900 to-slate-800"
+      : isOwnProfile
+        ? "from-lime-100 via-white to-emerald-100"
+        : "from-slate-200 via-white to-zinc-200";
+
+  return (
+    <div
+      aria-label="Banner padrao do perfil"
+      className={`h-full w-full bg-gradient-to-r ${gradientClass} ${roundedClass}`}
+    >
+      <div className="h-full w-full bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.18),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.14),transparent_35%)]" />
+    </div>
   );
 }

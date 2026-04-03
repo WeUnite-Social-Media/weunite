@@ -4,15 +4,20 @@ import com.weunite.api.common.exception.UnauthorizedException;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.storage.service.CloudinaryService;
 import com.weunite.api.posts.domain.Post;
+import com.weunite.api.posts.domain.Repost;
 import com.weunite.api.posts.dto.PostDTO;
 import com.weunite.api.posts.dto.PostRequestDTO;
 import com.weunite.api.posts.exception.PostNotFoundException;
 import com.weunite.api.posts.mapper.PostMapper;
+import com.weunite.api.posts.repository.FeedItemProjection;
 import com.weunite.api.posts.repository.PostRepository;
+import com.weunite.api.posts.repository.RepostRepository;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.UserRepository;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,16 +30,19 @@ public class PostService {
   private final PostRepository postRepository;
   private final PostMapper postMapper;
   private final CloudinaryService cloudinaryService;
+  private final RepostRepository repostRepository;
 
   public PostService(
       UserRepository userRepository,
       PostRepository postRepository,
       PostMapper postMapper,
-      CloudinaryService cloudinaryService) {
+      CloudinaryService cloudinaryService,
+      RepostRepository repostRepository) {
     this.userRepository = userRepository;
     this.postRepository = postRepository;
     this.postMapper = postMapper;
     this.cloudinaryService = cloudinaryService;
+    this.repostRepository = repostRepository;
   }
 
   @Transactional
@@ -88,9 +96,8 @@ public class PostService {
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(size, 1), 100);
     PageRequest pageable = PageRequest.of(safePage, safeSize);
-    List<Post> posts = postRepository.findFeedPosts(pageable).getContent();
 
-    return postMapper.toPostDTOList(posts);
+    return mapFeedEntries(postRepository.findFeedEntries(pageable).getContent());
   }
 
   @Transactional(readOnly = true)
@@ -100,9 +107,8 @@ public class PostService {
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(size, 1), 100);
     PageRequest pageable = PageRequest.of(safePage, safeSize);
-    List<Post> posts = postRepository.findPostsByUserId(userId, pageable).getContent();
 
-    return postMapper.toPostDTOList(posts);
+    return mapFeedEntries(postRepository.findFeedEntriesByUserId(userId, pageable).getContent());
   }
 
   @Transactional
@@ -116,5 +122,56 @@ public class PostService {
     postRepository.delete(post);
 
     return postMapper.toResponseDTO("Publicação excluída com sucesso", post);
+  }
+
+  private List<PostDTO> mapFeedEntries(List<FeedItemProjection> feedEntries) {
+    if (feedEntries == null || feedEntries.isEmpty()) {
+      return List.of();
+    }
+
+    List<Long> postIds =
+        feedEntries.stream()
+            .filter(entry -> isPostEntry(entry.getEntryType()))
+            .map(FeedItemProjection::getPostId)
+            .distinct()
+            .toList();
+    List<Long> repostIds =
+        feedEntries.stream()
+            .filter(entry -> isRepostEntry(entry.getEntryType()))
+            .map(FeedItemProjection::getRepostId)
+            .distinct()
+            .toList();
+
+    Map<Long, Post> postsById = new HashMap<>();
+    postRepository
+        .findAllWithUserByIdIn(postIds)
+        .forEach(post -> postsById.put(post.getId(), post));
+
+    Map<Long, Repost> repostsById = new HashMap<>();
+    repostRepository
+        .findAllByIdWithFeedContext(repostIds)
+        .forEach(repost -> repostsById.put(repost.getId(), repost));
+
+    return feedEntries.stream()
+        .map(
+            entry -> {
+              if (isPostEntry(entry.getEntryType())) {
+                Post post = postsById.get(entry.getPostId());
+                return post != null ? postMapper.toPostDTO(post) : null;
+              }
+
+              Repost repost = repostsById.get(entry.getRepostId());
+              return repost != null ? postMapper.toPostDTOFromRepost(repost) : null;
+            })
+        .filter(dto -> dto != null)
+        .toList();
+  }
+
+  private boolean isPostEntry(String entryType) {
+    return "POST".equalsIgnoreCase(entryType);
+  }
+
+  private boolean isRepostEntry(String entryType) {
+    return "REPOST".equalsIgnoreCase(entryType);
   }
 }

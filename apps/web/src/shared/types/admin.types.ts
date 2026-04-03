@@ -44,6 +44,24 @@ export interface UserTypeData {
   value: number;
 }
 
+export type AdminUserStatus = "active" | "suspended" | "banned";
+
+export interface AdminUserSummary {
+  id: number;
+  name: string;
+  username: string;
+  email: string;
+  role: string;
+  profileImg?: string | null;
+  status: AdminUserStatus;
+  createdAt: string;
+  suspendedUntil?: string | null;
+  bannedAt?: string | null;
+  moderationReason?: string | null;
+  contentCount: number;
+  pendingReportCount: number;
+}
+
 export interface TooltipPayloadEntry {
   color?: string;
   name?: string;
@@ -83,6 +101,7 @@ export type {
   ModerationAction,
   ModerationResponse,
   Report,
+  ReportedComment,
   ReportedOpportunity,
   ReportedPost,
 } from "./report.types";

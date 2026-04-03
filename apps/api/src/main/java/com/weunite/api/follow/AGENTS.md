@@ -1,0 +1,42 @@
+# API Follow Agent Notes
+
+## Scope
+
+This module owns user follow relationships in `com.weunite.api.follow`.
+
+## Responsibilities
+
+- Expose follow/unfollow and follow listing endpoints.
+- Persist and query follow relationship domain data.
+
+## Does not own
+
+- User profile mutation outside follow relationships.
+- Feed ranking logic and notifications.
+
+## Key entrypoints
+
+- `controller/FollowController.java`
+- `service/FollowService.java`
+
+## Core use cases
+
+- Follow another user.
+- Unfollow a user.
+- Query followers/following views.
+
+## Working rules
+
+- Keep relationship business rules in service layer.
+- Keep follow DTOs and mappers inside this module.
+- Preserve follow endpoint contracts unless explicitly requested.
+
+## Validation
+
+- `pnpm --filter @weunite/api test`
+- `pnpm --filter @weunite/api build`
+
+## Keep this file updated when
+
+- Follow endpoints or relationship rules change.
+- Ownership boundaries with users/feed modules change.

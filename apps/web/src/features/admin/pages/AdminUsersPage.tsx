@@ -1,4 +1,24 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import {
+  Ban,
+  Eye,
+  Loader2,
+  MoreVertical,
+  RefreshCcw,
+  Search,
+  UserCheck,
+  UserX,
+} from "lucide-react";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
+import {
+  banAdminUserRequest,
+  getAdminUsersRequest,
+  reactivateAdminUserRequest,
+  suspendAdminUserRequest,
+} from "@/features/admin/api/admin/userManagementService";
+import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import {
   Card,
   CardContent,
@@ -23,69 +43,65 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
 import {
-  Search,
-  MoreVertical,
-  UserCheck,
-  UserX,
-  Shield,
-  Eye,
-} from "lucide-react";
-import { useState } from "react";
-
-// Mock data - substituir por dados reais da API
-const mockUsers = [
-  {
-    id: "1",
-    name: "João Silva",
-    email: "joao@email.com",
-    username: "joaosilva",
-    role: "athlete",
-    status: "active",
-    lastLogin: "2024-10-15",
-    postCount: 23,
-    reportCount: 0,
-  },
-  {
-    id: "2",
-    name: "Tech Solutions Ltd",
-    email: "contato@techsolutions.com",
-    username: "techsolutions",
-    role: "company",
-    status: "active",
-    lastLogin: "2024-10-14",
-    postCount: 15,
-    reportCount: 1,
-  },
-  {
-    id: "3",
-    name: "Maria Santos",
-    email: "maria@email.com",
-    username: "mariasantos",
-    role: "athlete",
-    status: "suspended",
-    lastLogin: "2024-10-10",
-    postCount: 8,
-    reportCount: 3,
-  },
-];
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/Select";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/shared/components/ui/avatar";
+import type {
+  AdminUserStatus,
+  AdminUserSummary,
+} from "@/shared/types/admin.types";
+import { getInitials } from "@/shared/utils/getInitials";
 
 export function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [users, setUsers] = useState<AdminUserSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeUserId, setActiveUserId] = useState<number | null>(null);
+  const authUser = useAuthStore((state) => state.user);
+  const navigate = useNavigate();
+  const adminId = authUser?.id ? Number(authUser.id) : null;
+  const canModerateUsers = adminId !== null;
 
-  const filteredUsers = mockUsers.filter((user) => {
+  const loadUsers = async () => {
+    setIsLoading(true);
+    const response = await getAdminUsersRequest();
+
+    if (response.success && response.data) {
+      setUsers(response.data);
+    } else {
+      toast.error(response.error || "Nao foi possivel carregar os usuarios.");
+    }
+
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    void loadUsers();
+  }, []);
+
+  const filteredUsers = users.filter((user) => {
+    const query = searchTerm.trim().toLowerCase();
     const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchTerm.toLowerCase());
-
+      !query ||
+      user.name.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query) ||
+      user.username.toLowerCase().includes(query);
     const matchesStatus =
       statusFilter === "all" || user.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: AdminUserStatus) => {
     switch (status) {
       case "active":
         return (
@@ -105,6 +121,14 @@ export function AdminUsersPage() {
   const getRoleBadge = (role: string) => {
     const normalizedRole = role?.toLowerCase().trim();
 
+    if (normalizedRole === "admin") {
+      return (
+        <Badge variant="outline" className="bg-amber-50 text-amber-700">
+          Admin
+        </Badge>
+      );
+    }
+
     if (normalizedRole === "company") {
       return (
         <Badge variant="outline" className="bg-blue-50 text-blue-700">
@@ -120,19 +144,190 @@ export function AdminUsersPage() {
     );
   };
 
+  const totalPendingReports = users.reduce(
+    (count, user) => count + user.pendingReportCount,
+    0,
+  );
+  const moderatedUsers = users.filter(
+    (user) => user.status !== "active",
+  ).length;
+
+  const handleSuspend = async (user: AdminUserSummary) => {
+    if (!canModerateUsers) {
+      toast.error("Nao foi possivel identificar o admin autenticado.");
+      return;
+    }
+
+    const rawDuration = window.prompt(
+      `Por quantos dias deseja suspender @${user.username}?`,
+      "7",
+    );
+
+    if (rawDuration === null) {
+      return;
+    }
+
+    const durationInDays = Number(rawDuration);
+
+    if (!Number.isFinite(durationInDays) || durationInDays <= 0) {
+      toast.error("Informe uma duracao valida em dias.");
+      return;
+    }
+
+    const reasonInput = window.prompt(
+      `Motivo da suspensao de @${user.username}?`,
+      "Suspensao administrativa",
+    );
+
+    if (reasonInput === null) {
+      return;
+    }
+
+    setActiveUserId(user.id);
+    const response = await suspendAdminUserRequest({
+      userId: user.id,
+      durationInDays,
+      reason: reasonInput.trim() || "Suspensao administrativa",
+    });
+    setActiveUserId(null);
+
+    if (response.success) {
+      toast.success(response.message || "Usuario suspenso com sucesso.");
+      void loadUsers();
+      return;
+    }
+
+    toast.error(response.error || "Nao foi possivel suspender o usuario.");
+  };
+
+  const handleBan = async (user: AdminUserSummary) => {
+    if (!canModerateUsers) {
+      toast.error("Nao foi possivel identificar o admin autenticado.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Tem certeza que deseja banir permanentemente @${user.username}?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const reasonInput = window.prompt(
+      `Motivo do banimento de @${user.username}?`,
+      "Banimento administrativo",
+    );
+
+    if (reasonInput === null) {
+      return;
+    }
+
+    setActiveUserId(user.id);
+    const response = await banAdminUserRequest({
+      userId: user.id,
+      reason: reasonInput.trim() || "Banimento administrativo",
+    });
+    setActiveUserId(null);
+
+    if (response.success) {
+      toast.success(response.message || "Usuario banido com sucesso.");
+      void loadUsers();
+      return;
+    }
+
+    toast.error(response.error || "Nao foi possivel banir o usuario.");
+  };
+
+  const handleReactivate = async (user: AdminUserSummary) => {
+    if (!canModerateUsers) {
+      toast.error("Nao foi possivel identificar o admin autenticado.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Deseja reativar a conta de @${user.username}?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setActiveUserId(user.id);
+    const response = await reactivateAdminUserRequest({
+      userId: user.id,
+    });
+    setActiveUserId(null);
+
+    if (response.success) {
+      toast.success(response.message || "Usuario reativado com sucesso.");
+      void loadUsers();
+      return;
+    }
+
+    toast.error(response.error || "Nao foi possivel reativar o usuario.");
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Usuários</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Usuarios</h1>
             <p className="text-muted-foreground">
-              Gerencie usuários da plataforma
+              Gerencie usuarios da plataforma com dados reais de moderacao.
             </p>
           </div>
+          <Button variant="outline" onClick={() => void loadUsers()}>
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            Atualizar
+          </Button>
         </div>
 
-        {/* Filtros */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">
+                Usuarios monitorados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{users.length}</div>
+              <p className="text-xs text-muted-foreground">
+                Contas disponiveis para administracao
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">
+                Em moderacao
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{moderatedUsers}</div>
+              <p className="text-xs text-muted-foreground">
+                Suspensos ou banidos no momento
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">
+                Denuncias pendentes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalPendingReports}</div>
+              <p className="text-xs text-muted-foreground">
+                Ligadas ao conteudo desses usuarios
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card>
           <CardHeader>
             <CardTitle>Filtros</CardTitle>
@@ -144,95 +339,198 @@ export function AdminUsersPage() {
                 <Input
                   placeholder="Buscar por nome, email ou username..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(event) => setSearchTerm(event.target.value)}
                   className="pl-10"
                 />
               </div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border rounded-md bg-background"
-              >
-                <option value="all">Todos os Status</option>
-                <option value="active">Ativo</option>
-                <option value="suspended">Suspenso</option>
-                <option value="banned">Banido</option>
-              </select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full md:w-[220px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="active">Ativo</SelectItem>
+                  <SelectItem value="suspended">Suspenso</SelectItem>
+                  <SelectItem value="banned">Banido</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
 
-        {/* Tabela de usuários */}
         <Card>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Usuário</TableHead>
+                  <TableHead>Usuario</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Último Login</TableHead>
-                  <TableHead>Posts</TableHead>
-                  <TableHead>Denúncias</TableHead>
-                  <TableHead className="w-[50px]">Ações</TableHead>
+                  <TableHead>Cadastro</TableHead>
+                  <TableHead>Conteudos</TableHead>
+                  <TableHead>Denuncias</TableHead>
+                  <TableHead className="w-[50px]">Acoes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{user.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          @{user.username} • {user.email}
-                        </div>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="py-8 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Carregando usuarios...</span>
                       </div>
                     </TableCell>
-                    <TableCell>{getRoleBadge(user.role)}</TableCell>
-                    <TableCell>{getStatusBadge(user.status)}</TableCell>
-                    <TableCell>
-                      {new Date(user.lastLogin).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>{user.postCount}</TableCell>
-                    <TableCell>
-                      {user.reportCount > 0 ? (
-                        <Badge variant="destructive">{user.reportCount}</Badge>
-                      ) : (
-                        user.reportCount
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Eye className="mr-2 h-4 w-4" />
-                            Visualizar Perfil
-                          </DropdownMenuItem>
-                          {user.status === "active" ? (
-                            <DropdownMenuItem className="text-orange-600">
-                              <UserX className="mr-2 h-4 w-4" />
-                              Suspender
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem className="text-green-600">
-                              <UserCheck className="mr-2 h-4 w-4" />
-                              Ativar
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem className="text-blue-600">
-                            <Shield className="mr-2 h-4 w-4" />
-                            Definir como Admin
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                  </TableRow>
+                ) : filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="py-8 text-center text-muted-foreground"
+                    >
+                      Nenhum usuario encontrado com os filtros atuais.
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredUsers.map((user) => {
+                    const isOwnUser = adminId === user.id;
+                    const isActionLoading = activeUserId === user.id;
+                    const isModerationDisabled =
+                      isActionLoading || isOwnUser || !canModerateUsers;
+
+                    return (
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={user.profileImg || undefined} />
+                              <AvatarFallback>
+                                {getInitials(user.name)}
+                              </AvatarFallback>
+                            </Avatar>
+
+                            <div>
+                              <div className="font-medium">{user.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                @{user.username} • {user.email}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getRoleBadge(user.role)}</TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            {getStatusBadge(user.status)}
+                            {user.status === "suspended" &&
+                            user.suspendedUntil ? (
+                              <p className="text-xs text-muted-foreground">
+                                Ate{" "}
+                                {new Date(
+                                  user.suspendedUntil,
+                                ).toLocaleDateString("pt-BR")}
+                              </p>
+                            ) : null}
+                            {user.status === "banned" && user.bannedAt ? (
+                              <p className="text-xs text-muted-foreground">
+                                Desde{" "}
+                                {new Date(user.bannedAt).toLocaleDateString(
+                                  "pt-BR",
+                                )}
+                              </p>
+                            ) : null}
+                            {user.moderationReason ? (
+                              <p className="max-w-xs truncate text-xs text-muted-foreground">
+                                {user.moderationReason}
+                              </p>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(user.createdAt).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell>{user.contentCount}</TableCell>
+                        <TableCell>
+                          {user.pendingReportCount > 0 ? (
+                            <Badge variant="destructive">
+                              {user.pendingReportCount}
+                            </Badge>
+                          ) : (
+                            user.pendingReportCount
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                disabled={isActionLoading || !canModerateUsers}
+                              >
+                                {isActionLoading ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <MoreVertical className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  navigate(`/profile/${user.username}`)
+                                }
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                Visualizar perfil
+                              </DropdownMenuItem>
+
+                              {user.status === "active" ? (
+                                <>
+                                  <DropdownMenuItem
+                                    className="text-orange-600"
+                                    disabled={isModerationDisabled}
+                                    onClick={() => void handleSuspend(user)}
+                                  >
+                                    <UserX className="mr-2 h-4 w-4" />
+                                    Suspender
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-red-600"
+                                    disabled={isModerationDisabled}
+                                    onClick={() => void handleBan(user)}
+                                  >
+                                    <Ban className="mr-2 h-4 w-4" />
+                                    Banir
+                                  </DropdownMenuItem>
+                                </>
+                              ) : (
+                                <>
+                                  <DropdownMenuItem
+                                    className="text-green-600"
+                                    disabled={isModerationDisabled}
+                                    onClick={() => void handleReactivate(user)}
+                                  >
+                                    <UserCheck className="mr-2 h-4 w-4" />
+                                    Reativar
+                                  </DropdownMenuItem>
+                                  {user.status === "suspended" ? (
+                                    <DropdownMenuItem
+                                      className="text-red-600"
+                                      disabled={isModerationDisabled}
+                                      onClick={() => void handleBan(user)}
+                                    >
+                                      <Ban className="mr-2 h-4 w-4" />
+                                      Banir
+                                    </DropdownMenuItem>
+                                  ) : null}
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           </CardContent>

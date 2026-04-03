@@ -11,14 +11,16 @@ public class DatabaseConfig {
 
   @Bean
   CommandLineRunner initDatabase(RoleRepository roleRepository) {
-    return args -> {
-      for (Role.Values roleValue : Role.Values.values()) {
-        if (roleRepository.findByName(roleValue.name()) == null) {
-          Role role = new Role();
-          role.setName(roleValue.name());
-          roleRepository.save(role);
-        }
+    return args -> seedRoles(roleRepository);
+  }
+
+  private void seedRoles(RoleRepository roleRepository) {
+    for (Role.Values roleValue : Role.Values.values()) {
+      if (roleRepository.findByName(roleValue.name()) == null) {
+        Role role = new Role();
+        role.setName(roleValue.name());
+        roleRepository.save(role);
       }
-    };
+    }
   }
 }

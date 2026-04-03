@@ -1,6 +1,8 @@
 package com.weunite.api.opportunities.service;
 
 import com.weunite.api.common.response.ResponseDTO;
+import com.weunite.api.notifications.domain.NotificationType;
+import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.opportunities.domain.Opportunity;
 import com.weunite.api.opportunities.domain.Subscriber;
 import com.weunite.api.opportunities.dto.SubscriberDTO;
@@ -22,16 +24,19 @@ public class SubscribersService {
   private final OpportunityRepository opportunityRepository;
   private final AthleteRepository athleteRepository;
   private final SubscribersMapper subscribersMapper;
+  private final NotificationService notificationService;
 
   public SubscribersService(
       SubscribersRepository subscribersRepository,
       OpportunityRepository opportunityRepository,
       AthleteRepository athleteRepository,
-      SubscribersMapper subscribersMapper) {
+      SubscribersMapper subscribersMapper,
+      NotificationService notificationService) {
     this.opportunityRepository = opportunityRepository;
     this.subscribersRepository = subscribersRepository;
     this.athleteRepository = athleteRepository;
     this.subscribersMapper = subscribersMapper;
+    this.notificationService = notificationService;
   }
 
   @Transactional
@@ -50,6 +55,12 @@ public class SubscribersService {
       Subscriber newSubscriber = new Subscriber(athlete, opportunity);
       opportunity.addSubscriber(newSubscriber);
       subscribersRepository.save(newSubscriber);
+      notificationService.createNotification(
+          opportunity.getCompany().getId(),
+          NotificationType.OPPORTUNITY_SUBSCRIPTION,
+          athleteId,
+          opportunityId,
+          null);
       return subscribersMapper.toResponseDTO("Inscrição criada com sucesso!", newSubscriber);
     }
 
@@ -66,6 +77,26 @@ public class SubscribersService {
     opportunityRepository.findById(opportunityId).orElseThrow(OpportunityNotFoundException::new);
 
     List<Subscriber> subscribers = subscribersRepository.findByOpportunityId(opportunityId);
+    return subscribersMapper.mapSubscribersToList(subscribers);
+  }
+
+  @Transactional(readOnly = true)
+  public boolean isSubscribed(Long athleteId, Long opportunityId) {
+    Athlete athlete = athleteRepository.findById(athleteId).orElseThrow(UserNotFoundException::new);
+
+    Opportunity opportunity =
+        opportunityRepository
+            .findById(opportunityId)
+            .orElseThrow(OpportunityNotFoundException::new);
+
+    return subscribersRepository.findByAthleteAndOpportunity(athlete, opportunity).isPresent();
+  }
+
+  @Transactional(readOnly = true)
+  public List<SubscriberDTO> getSubscribersByAthlete(Long athleteId) {
+    athleteRepository.findById(athleteId).orElseThrow(UserNotFoundException::new);
+
+    List<Subscriber> subscribers = subscribersRepository.findByAthleteId(athleteId);
     return subscribersMapper.mapSubscribersToList(subscribers);
   }
 }

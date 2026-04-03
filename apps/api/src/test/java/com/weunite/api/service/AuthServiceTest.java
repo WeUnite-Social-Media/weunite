@@ -9,6 +9,7 @@ import com.weunite.api.auth.exception.InvalidTokenException;
 import com.weunite.api.auth.exception.NotVerifiedEmailException;
 import com.weunite.api.auth.mapper.AuthMapper;
 import com.weunite.api.auth.service.AuthService;
+import com.weunite.api.common.exception.UnauthorizedException;
 import com.weunite.api.common.mail.service.EmailService;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.security.service.JwtService;
@@ -27,7 +28,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -128,7 +128,7 @@ class AuthServiceTest {
   }
 
   @Test
-  @DisplayName("Should throw BadCredentialsException when password is incorrect")
+  @DisplayName("Should throw UnauthorizedException when password is incorrect")
   void loginWithWrongPassword() {
     LoginRequestDTO loginRequest = new LoginRequestDTO("testuser", "wrongpassword");
 
@@ -140,8 +140,8 @@ class AuthServiceTest {
     when(userService.findUserEntityByUsername("testuser")).thenReturn(mockUser);
     when(passwordEncoder.matches("wrongpassword", "$2a$10$encodedPassword")).thenReturn(false);
 
-    BadCredentialsException exception =
-        assertThrows(BadCredentialsException.class, () -> authService.login(loginRequest));
+    UnauthorizedException exception =
+        assertThrows(UnauthorizedException.class, () -> authService.login(loginRequest));
 
     assertEquals("Usuário ou senha inválidos", exception.getMessage());
     verify(userService).findUserEntityByUsername("testuser");
@@ -166,6 +166,53 @@ class AuthServiceTest {
         assertThrows(NotVerifiedEmailException.class, () -> authService.login(loginRequest));
 
     assertEquals("Verifique seu email para fazer login", exception.getMessage());
+    verify(userService).findUserEntityByUsername("testuser");
+    verify(passwordEncoder).matches("password123", "$2a$10$encodedPassword");
+    verifyNoInteractions(jwtService, authMapper);
+  }
+
+  @Test
+  @DisplayName("Should throw UnauthorizedException when user is banned")
+  void loginWithBannedUser() {
+    LoginRequestDTO loginRequest = new LoginRequestDTO("testuser", "password123");
+
+    User mockUser = new User();
+    mockUser.setUsername("testuser");
+    mockUser.setPassword("$2a$10$encodedPassword");
+    mockUser.setEmailVerified(true);
+    mockUser.setBanned(true);
+
+    when(userService.findUserEntityByUsername("testuser")).thenReturn(mockUser);
+    when(passwordEncoder.matches("password123", "$2a$10$encodedPassword")).thenReturn(true);
+
+    UnauthorizedException exception =
+        assertThrows(UnauthorizedException.class, () -> authService.login(loginRequest));
+
+    assertEquals("Sua conta foi banida permanentemente da plataforma", exception.getMessage());
+    verify(userService).findUserEntityByUsername("testuser");
+    verify(passwordEncoder).matches("password123", "$2a$10$encodedPassword");
+    verifyNoInteractions(jwtService, authMapper);
+  }
+
+  @Test
+  @DisplayName("Should throw UnauthorizedException when user suspension is still active")
+  void loginWithSuspendedUser() {
+    LoginRequestDTO loginRequest = new LoginRequestDTO("testuser", "password123");
+
+    User mockUser = new User();
+    mockUser.setUsername("testuser");
+    mockUser.setPassword("$2a$10$encodedPassword");
+    mockUser.setEmailVerified(true);
+    mockUser.setSuspended(true);
+    mockUser.setSuspendedUntil(Instant.now().plusSeconds(3600));
+
+    when(userService.findUserEntityByUsername("testuser")).thenReturn(mockUser);
+    when(passwordEncoder.matches("password123", "$2a$10$encodedPassword")).thenReturn(true);
+
+    UnauthorizedException exception =
+        assertThrows(UnauthorizedException.class, () -> authService.login(loginRequest));
+
+    assertTrue(exception.getMessage().startsWith("Sua conta está suspensa até "));
     verify(userService).findUserEntityByUsername("testuser");
     verify(passwordEncoder).matches("password123", "$2a$10$encodedPassword");
     verifyNoInteractions(jwtService, authMapper);

@@ -10,6 +10,10 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
   List<Comment> findByPostId(Long postId);
 
+  boolean existsByIdAndUserId(Long commentId, Long userId);
+
+  Long countByUserIdAndDeletedFalse(Long userId);
+
   @Query(
       "SELECT c FROM Comment c WHERE c.user.id = :userId "
           + "ORDER BY COALESCE(c.updatedAt, c.createdAt) DESC")

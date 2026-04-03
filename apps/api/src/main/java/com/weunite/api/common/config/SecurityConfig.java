@@ -1,13 +1,20 @@
 package com.weunite.api.common.config;
 
+import java.util.Collection;
+import java.util.Locale;
+import java.util.Map;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -58,21 +65,26 @@ public class SecurityConfig {
 
                     // Posts endpoints
                     .requestMatchers(HttpMethod.POST, "/api/posts/create/{userId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.PUT, "/api/posts/update/{userId}/{postId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/posts/get/{postId}")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/posts/get")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/posts/get/user/{userId}")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/posts/repost/{userId}/{postId}")
+                    .authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/api/posts/delete/{userId}/{postId}")
-                    .permitAll()
+                    .authenticated()
 
                     // Likes endpoints
                     .requestMatchers(HttpMethod.POST, "/api/likes/toggleLike/{userId}/{postId}")
-                    .permitAll()
+                    .authenticated()
+                    .requestMatchers(
+                        HttpMethod.POST, "/api/likes/toggleLikeComment/{userId}/{commentId}")
+                    .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/likes/get/{userId}")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/likes/get/{userId}/page")
@@ -80,13 +92,15 @@ public class SecurityConfig {
 
                     // Comments endpoints
                     .requestMatchers(HttpMethod.POST, "/api/comment/create")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/comment/get")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/comment/get/**")
+                    .permitAll()
                     .requestMatchers(HttpMethod.PUT, "/api/comment/update/{userId}/{commentId}")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.DELETE, "/api/comment/delete/{userId}/{postId}")
-                    .permitAll()
+                    .authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/api/comment/delete/{userId}/{commentId}")
+                    .authenticated()
 
                     // Follow endpoints
                     .requestMatchers(HttpMethod.GET, "/api/follow/followers/{userId}")
@@ -114,39 +128,65 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/opportunities/get/{opportunityId}")
                     .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/opportunities/get/user/{userId}")
+                    .requestMatchers(HttpMethod.GET, "/api/opportunities/get/company/{companyId}")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/opportunities/get")
                     .permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/reports/create/{userId}")
+                    .requestMatchers(HttpMethod.GET, "/api/opportunities/skills")
                     .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/reports/pending")
+
+                    // Subscriber endpoints
+                    .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/subscriber/toggleSubscriber/{athleteId}/{opportunityId}")
                     .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/reports/count/{entityId}/{type}")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/admin/posts/reported")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/admin/posts/reported/details")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/admin/posts/reported/{postId}")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/admin/opportunities/reported")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/admin/opportunities/reported/details")
+                    .requestMatchers(HttpMethod.GET, "/api/subscriber/subscribers/{opportunityId}")
                     .permitAll()
                     .requestMatchers(
-                        HttpMethod.GET, "/api/admin/opportunities/reported/{opportunityId}")
+                        HttpMethod.GET, "/api/subscriber/isSubscribed/{athleteId}/{opportunityId}")
                     .permitAll()
-                    .requestMatchers(HttpMethod.DELETE, "/api/admin/posts/{postId}")
+                    .requestMatchers(HttpMethod.GET, "/api/subscriber/athlete/{athleteId}")
                     .permitAll()
-                    .requestMatchers(HttpMethod.DELETE, "/api/admin/opportunities/{opportunityId}")
+
+                    // Saved opportunities endpoints
+                    .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/saved-opportunities/toggle/{athleteId}/{opportunityId}")
                     .permitAll()
-                    .requestMatchers(HttpMethod.PUT, "/api/admin/reports/dismiss/{entityId}/{type}")
+                    .requestMatchers(HttpMethod.GET, "/api/saved-opportunities/athlete/{athleteId}")
                     .permitAll()
-                    .requestMatchers(HttpMethod.PUT, "/api/admin/reports/review/{entityId}/{type}")
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/saved-opportunities/isSaved/{athleteId}/{opportunityId}")
                     .permitAll()
-                    .requestMatchers(HttpMethod.PUT, "/api/admin/reports/resolve/{entityId}/{type}")
+
+                    // Notifications endpoints
+                    .requestMatchers("/api/notifications/**")
+                    .authenticated()
+
+                    // Report endpoints
+                    .requestMatchers(HttpMethod.POST, "/api/reports/create/{userId}")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.GET, "/api/reports/pending")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.GET, "/api/reports/all")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.GET, "/api/reports/status/{status}")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.GET, "/api/reports/count/{entityId}/{type}")
                     .permitAll()
+
+                    // Admin endpoints
+                    .requestMatchers("/api/admin/**")
+                    .access(
+                        (authentication, context) ->
+                            new AuthorizationDecision(hasAdminRole(authentication.get())))
+                    .requestMatchers(HttpMethod.POST, "/api/messages/upload")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/api/messages/{messageId}")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/api/messages/{messageId}")
+                    .authenticated()
                     .requestMatchers("/ws/**")
                     .permitAll()
                     .anyRequest()
@@ -157,5 +197,45 @@ public class SecurityConfig {
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
     return http.build();
+  }
+
+  private boolean hasAdminRole(Authentication authentication) {
+    if (authentication == null || !authentication.isAuthenticated()) {
+      return false;
+    }
+
+    Object roleClaim = null;
+
+    if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+      roleClaim = jwtAuthenticationToken.getToken().getClaim("role");
+    }
+
+    if (roleClaim == null && authentication.getPrincipal() instanceof Jwt jwt) {
+      roleClaim = jwt.getClaim("role");
+    }
+
+    return containsAdminRole(roleClaim);
+  }
+
+  private boolean containsAdminRole(Object roleClaim) {
+    if (roleClaim instanceof Collection<?> roles) {
+      return roles.stream().anyMatch(this::isAdminRoleEntry);
+    }
+
+    return isAdminRoleEntry(roleClaim);
+  }
+
+  private boolean isAdminRoleEntry(Object roleEntry) {
+    if (roleEntry instanceof Map<?, ?> roleMap) {
+      Object roleName = roleMap.get("name");
+      return roleName != null && "ADMIN".equalsIgnoreCase(roleName.toString());
+    }
+
+    if (roleEntry instanceof String roleName) {
+      return "ADMIN".equalsIgnoreCase(roleName)
+          || roleName.toUpperCase(Locale.ROOT).contains("ADMIN");
+    }
+
+    return false;
   }
 }

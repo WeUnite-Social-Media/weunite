@@ -46,8 +46,14 @@ public class Post {
   @Column(length = 500)
   private String imageUrl;
 
+  @Column(nullable = false)
+  private boolean deleted;
+
   @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private Set<Like> likes = new HashSet<>();
+
+  @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  private Set<Repost> reposts = new HashSet<>();
 
   @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   @JsonManagedReference
@@ -60,6 +66,15 @@ public class Post {
 
   public void removeLike(Like like) {
     this.likes.remove(like);
+  }
+
+  public void addRepost(Repost repost) {
+    this.reposts.add(repost);
+    repost.setPost(this);
+  }
+
+  public void removeRepost(Repost repost) {
+    this.reposts.remove(repost);
   }
 
   public void addComment(Comment comment) {

@@ -1,8 +1,4 @@
-import type {
-  CreatePost,
-  UpdatePost,
-  GetPost,
-} from "@/shared/types/post.types";
+import type { CreatePost, Post, UpdatePost } from "@/shared/types/post.types";
 import { instance as axios } from "@/shared/api/http";
 import { AxiosError } from "axios";
 
@@ -36,7 +32,7 @@ export const createPostRequest = async (data: CreatePost, userId: number) => {
     return {
       success: true,
       data: response.data,
-      message: response.data.message || "Publicação criada com sucesso!",
+      message: response.data.message || "Publicacao criada com sucesso!",
       error: null,
     };
   } catch (err) {
@@ -46,7 +42,7 @@ export const createPostRequest = async (data: CreatePost, userId: number) => {
       success: false,
       data: null,
       message: null,
-      error: error.response?.data?.message || "Erro ao criar publicação",
+      error: error.response?.data?.message || "Erro ao criar publicacao",
     };
   }
 };
@@ -77,7 +73,7 @@ export const updatePostRequest = async (
     return {
       success: true,
       data: response.data,
-      message: response.data.message || "Publicação atualizada com sucesso!",
+      message: response.data.message || "Publicacao atualizada com sucesso!",
       error: null,
     };
   } catch (err) {
@@ -87,19 +83,19 @@ export const updatePostRequest = async (
       success: false,
       data: null,
       message: null,
-      error: error.response?.data?.message || "Erro ao atualizar publicação",
+      error: error.response?.data?.message || "Erro ao atualizar publicacao",
     };
   }
 };
 
-export const getPostRequest = async (data: GetPost) => {
+export const getPostRequest = async (postId: number) => {
   try {
-    const response = await axios.post(`/post/get/${data}`);
+    const response = await axios.get(`/posts/get/${postId}`);
 
     return {
       success: true,
-      data: response.data,
-      message: response.data.message || "Publicação consultada com sucesso!",
+      data: response.data.data as Post,
+      message: response.data.message || "Publicacao consultada com sucesso!",
       error: null,
     };
   } catch (err) {
@@ -109,7 +105,7 @@ export const getPostRequest = async (data: GetPost) => {
       success: false,
       data: null,
       message: null,
-      error: error.response?.data?.message || "Erro ao consultar publicação",
+      error: error.response?.data?.message || "Erro ao consultar publicacao",
     };
   }
 };
@@ -129,7 +125,7 @@ export const getPostsRequest = async ({
     return {
       success: true,
       data: response.data,
-      message: response.data.message || "Publicações consultadas com sucesso!",
+      message: response.data.message || "Publicacoes consultadas com sucesso!",
       error: null,
     };
   } catch (err) {
@@ -139,7 +135,7 @@ export const getPostsRequest = async ({
       success: false,
       data: null,
       message: null,
-      error: error.response?.data?.message || "Erro ao consultar publicações",
+      error: error.response?.data?.message || "Erro ao consultar publicacoes",
     };
   }
 };
@@ -156,7 +152,7 @@ export const getPostsByUserRequest = async (userId: number) => {
     return {
       success: true,
       data: response.data,
-      message: response.data.message || "PublicaÃ§Ãµes consultadas com sucesso!",
+      message: response.data.message || "Publicacoes consultadas com sucesso!",
       error: null,
     };
   } catch (err) {
@@ -166,7 +162,7 @@ export const getPostsByUserRequest = async (userId: number) => {
       success: false,
       data: null,
       message: null,
-      error: error.response?.data?.message || "Erro ao consultar publicaÃ§Ãµes",
+      error: error.response?.data?.message || "Erro ao consultar publicacoes",
     };
   }
 };
@@ -177,7 +173,7 @@ export const deletePostRequest = async (userId: number, postId: number) => {
 
     return {
       success: true,
-      message: response.data.message || "Publicação deletada com sucesso!",
+      message: response.data.message || "Publicacao deletada com sucesso!",
       error: null,
     };
   } catch (err) {
@@ -187,7 +183,7 @@ export const deletePostRequest = async (userId: number, postId: number) => {
       success: false,
       data: null,
       message: null,
-      error: error.response?.data?.message || "Erro ao deletar publicação",
+      error: error.response?.data?.message || "Erro ao deletar publicacao",
     };
   }
 };

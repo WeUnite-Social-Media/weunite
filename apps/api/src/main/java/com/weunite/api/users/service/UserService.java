@@ -5,6 +5,10 @@ import com.weunite.api.auth.exception.InvalidTokenException;
 import com.weunite.api.common.exception.NotFoundResourceException;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.storage.service.CloudinaryService;
+import com.weunite.api.opportunities.domain.Skill;
+import com.weunite.api.opportunities.dto.SkillDTO;
+import com.weunite.api.opportunities.repository.SkillRepository;
+import com.weunite.api.users.domain.Athlete;
 import com.weunite.api.users.domain.Role;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.dto.CreateUserRequestDTO;
@@ -17,6 +21,7 @@ import com.weunite.api.users.repository.RoleRepository;
 import com.weunite.api.users.repository.UserRepository;
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,18 +40,21 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
   private final RoleRepository roleRepository;
   private final CloudinaryService cloudinaryService;
+  private final SkillRepository skillRepository;
 
   public UserService(
       UserRepository userRepository,
       UserMapper userMapper,
       PasswordEncoder passwordEncoder,
       RoleRepository roleRepository,
-      CloudinaryService cloudinaryService) {
+      CloudinaryService cloudinaryService,
+      SkillRepository skillRepository) {
     this.userRepository = userRepository;
     this.userMapper = userMapper;
     this.passwordEncoder = passwordEncoder;
     this.roleRepository = roleRepository;
     this.cloudinaryService = cloudinaryService;
+    this.skillRepository = skillRepository;
   }
 
   @Transactional
@@ -85,7 +93,7 @@ public class UserService {
 
     userRepository.delete(user);
 
-    return userMapper.toResponseDTO("Usuário deletado com sucesso", user);
+    return userMapper.toResponseDTO("Usuario deletado com sucesso", user);
   }
 
   @Transactional(isolation = Isolation.REPEATABLE_READ)
@@ -104,14 +112,14 @@ public class UserService {
   public ResponseDTO<UserDTO> getUser(Long id) {
     User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
 
-    return userMapper.toResponseDTO("Usuário encontrado com sucesso", user);
+    return userMapper.toResponseDTO("Usuario encontrado com sucesso", user);
   }
 
   @Transactional(readOnly = true)
   public ResponseDTO<UserDTO> getUser(String username) {
     User user = userRepository.findByUsername(username).orElseThrow(UserNotFoundException::new);
 
-    return userMapper.toResponseDTO("Usuário encontrado com sucesso", user);
+    return userMapper.toResponseDTO("Usuario encontrado com sucesso", user);
   }
 
   @Transactional
@@ -121,35 +129,89 @@ public class UserService {
       MultipartFile profileImage,
       MultipartFile bannerImage) {
     User user = findUserEntityByUsername(username);
+    String updatedUsername = valueOrCurrent(requestDTO.username(), user.getUsername());
 
-    if (userRepository.existsByUsername(requestDTO.username())) {
-
-      if (!user.getUsername().equals(requestDTO.username())) {
-        throw new UserAlreadyExistsException();
-      }
+    if (!user.getUsername().equals(updatedUsername)
+        && userRepository.existsByUsername(updatedUsername)) {
+      throw new UserAlreadyExistsException();
     }
 
-    user.setUsername(requestDTO.username());
-    user.setName(requestDTO.name());
-    user.setBio(requestDTO.bio());
+    user.setUsername(updatedUsername);
+    user.setName(valueOrCurrent(requestDTO.name(), user.getName()));
+    user.setBio(nullableOrCurrent(requestDTO.bio(), user.getBio()));
 
     if (requestDTO.isPrivate() != null) {
       user.setPrivate(requestDTO.isPrivate());
     }
 
     if (profileImage != null && !profileImage.isEmpty()) {
-      String imageUrl = cloudinaryService.uploadProfileImg(profileImage, username);
+      String imageUrl = cloudinaryService.uploadProfileImg(profileImage, user.getUsername());
       user.setProfileImg(imageUrl);
     }
 
     if (bannerImage != null && !bannerImage.isEmpty()) {
-      String bannerUrl = cloudinaryService.uploadBannerImg(bannerImage, username);
+      String bannerUrl = cloudinaryService.uploadBannerImg(bannerImage, user.getUsername());
       user.setBannerImg(bannerUrl);
+    }
+
+    if (user instanceof Athlete athlete) {
+      applyAthleteProfileUpdates(athlete, requestDTO);
     }
 
     userRepository.save(user);
 
-    return userMapper.toResponseDTO("Usuário atualizado com sucesso!", user);
+    return userMapper.toResponseDTO("Usuario atualizado com sucesso!", user);
+  }
+
+  private void applyAthleteProfileUpdates(Athlete athlete, UpdateUserRequestDTO requestDTO) {
+    athlete.setHeight(requestDTO.height());
+    athlete.setWeight(requestDTO.weight());
+    athlete.setFootDomain(blankToNull(requestDTO.footDomain()));
+    athlete.setPosition(blankToNull(requestDTO.position()));
+    athlete.setBirthDate(requestDTO.birthDate());
+
+    if (requestDTO.skills() != null) {
+      athlete.setSkills(resolveSkills(requestDTO.skills()));
+    }
+  }
+
+  private LinkedHashSet<Skill> resolveSkills(List<SkillDTO> requestedSkills) {
+    LinkedHashSet<Skill> resolvedSkills = new LinkedHashSet<>();
+
+    for (SkillDTO requestedSkill : requestedSkills) {
+      String skillName = blankToNull(requestedSkill.name());
+      if (skillName == null) {
+        continue;
+      }
+
+      Skill existingSkill = skillRepository.findByName(skillName);
+      if (existingSkill != null) {
+        resolvedSkills.add(existingSkill);
+        continue;
+      }
+
+      resolvedSkills.add(skillRepository.save(new Skill(skillName)));
+    }
+
+    return resolvedSkills;
+  }
+
+  private String valueOrCurrent(String value, String currentValue) {
+    String normalizedValue = blankToNull(value);
+    return normalizedValue != null ? normalizedValue : currentValue;
+  }
+
+  private String nullableOrCurrent(String value, String currentValue) {
+    return value != null ? blankToNull(value) : currentValue;
+  }
+
+  private String blankToNull(String value) {
+    if (value == null) {
+      return null;
+    }
+
+    String trimmedValue = value.trim();
+    return trimmedValue.isEmpty() ? null : trimmedValue;
   }
 
   @Transactional(readOnly = true)
@@ -207,6 +269,6 @@ public class UserService {
 
     List<User> users = userRepository.searchUsers(query.trim());
 
-    return userMapper.toSearchResponseDTO("Usuários encontrados com sucesso", users);
+    return userMapper.toSearchResponseDTO("Usuarios encontrados com sucesso", users);
   }
 }

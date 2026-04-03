@@ -9,7 +9,7 @@ interface ApiResponse<T> {
 }
 
 interface CreateReportRequest {
-  type: "POST" | "OPPORTUNITY";
+  type: "POST" | "OPPORTUNITY" | "COMMENT";
   entityId: number;
   reason: string;
 }

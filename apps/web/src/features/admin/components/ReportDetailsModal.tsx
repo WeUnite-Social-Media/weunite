@@ -12,15 +12,16 @@ import {
   AvatarImage,
 } from "@/shared/components/ui/avatar";
 import { Separator } from "@/shared/components/ui/separator";
-import { CheckCircle, XCircle, AlertTriangle, User } from "lucide-react";
-import type { Report } from "@/shared/types/admin.types";
+import { AlertTriangle, CheckCircle, User, XCircle } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
+import type { Report } from "@/shared/types/admin.types";
 import {
+  dismissReportsRequest,
   markReportsAsReviewedRequest,
   resolveReportsRequest,
-  dismissReportsRequest,
 } from "@/features/admin/api/adminService";
-import { useState } from "react";
+import { getReportReasonText } from "@/features/admin/utils/adminBadges";
 
 interface ReportDetailsModalProps {
   isOpen: boolean;
@@ -29,9 +30,6 @@ interface ReportDetailsModalProps {
   onActionComplete?: () => void;
 }
 
-/**
- * Modal de detalhes de denúncia para administradores
- */
 export function ReportDetailsModal({
   isOpen,
   onOpenChange,
@@ -40,12 +38,16 @@ export function ReportDetailsModal({
 }: ReportDetailsModalProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  if (!report) return null;
+  if (!report) {
+    return null;
+  }
 
   const getReportTarget = () => {
     if (
       report.entityId === undefined ||
-      (report.entityType !== "POST" && report.entityType !== "OPPORTUNITY")
+      (report.entityType !== "POST" &&
+        report.entityType !== "OPPORTUNITY" &&
+        report.entityType !== "COMMENT")
     ) {
       toast.error("Não foi possível identificar a entidade reportada.");
       return null;
@@ -57,105 +59,94 @@ export function ReportDetailsModal({
     };
   };
 
-  const getReasonText = (reason: string) => {
-    const reasonMap: Record<string, string> = {
-      spam: "Spam",
-      harassment: "Assédio",
-      inappropriate_content: "Conteúdo Inadequado",
-      fake_profile: "Perfil Falso",
-      fake_opportunity: "Oportunidade Falsa",
-      copyright_violation: "Violação de Direitos",
-      other: "Outros",
-    };
-    return reasonMap[reason] || reason;
-  };
-
   const handleResolve = async () => {
     const target = getReportTarget();
-    if (!target) return;
+    if (!target) {
+      return;
+    }
 
     setIsLoading(true);
     const response = await resolveReportsRequest(
       target.entityId,
       target.entityType,
     );
-
     setIsLoading(false);
 
     if (response.success) {
       toast.success(response.message || "Denúncia resolvida com sucesso!");
       onOpenChange(false);
       onActionComplete?.();
-    } else {
-      toast.error(response.error || "Erro ao resolver denúncia");
+      return;
     }
+
+    toast.error(response.error || "Erro ao resolver denúncia");
   };
 
   const handleReject = async () => {
     const target = getReportTarget();
-    if (!target) return;
+    if (!target) {
+      return;
+    }
 
     setIsLoading(true);
     const response = await dismissReportsRequest(
       target.entityId,
       target.entityType,
     );
-
     setIsLoading(false);
 
     if (response.success) {
       toast.success(response.message || "Denúncia rejeitada com sucesso!");
       onOpenChange(false);
       onActionComplete?.();
-    } else {
-      toast.error(response.error || "Erro ao rejeitar denúncia");
+      return;
     }
+
+    toast.error(response.error || "Erro ao rejeitar denúncia");
   };
 
   const handleAnalyze = async () => {
     const target = getReportTarget();
-    if (!target) return;
+    if (!target) {
+      return;
+    }
 
     setIsLoading(true);
     const response = await markReportsAsReviewedRequest(
       target.entityId,
       target.entityType,
     );
-
     setIsLoading(false);
 
     if (response.success) {
       toast.success(response.message || "Denúncia marcada como em análise!");
       onOpenChange(false);
       onActionComplete?.();
-    } else {
-      toast.error(response.error || "Erro ao marcar denúncia como em análise");
+      return;
     }
+
+    toast.error(response.error || "Erro ao marcar denúncia como em análise");
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[700px]">
         <DialogHeader className="space-y-3">
           <DialogTitle className="text-xl">Detalhes da Denúncia</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Revise as informações e tome as ações necessárias
+            Revise as informações e tome as ações necessárias.
           </p>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Informações da Denúncia */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Denunciante */}
             <div className="space-y-2">
               <h4 className="text-sm font-medium text-muted-foreground">
                 Denunciante
               </h4>
-              <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+              <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${report.reportedBy.username}`}
-                  />
+                  <AvatarImage src={report.reportedBy.profileImg} />
                   <AvatarFallback>
                     <User className="h-4 w-4" />
                   </AvatarFallback>
@@ -169,16 +160,13 @@ export function ReportDetailsModal({
               </div>
             </div>
 
-            {/* Denunciado */}
             <div className="space-y-2">
               <h4 className="text-sm font-medium text-muted-foreground">
                 Denunciado
               </h4>
-              <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+              <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${report.reportedUser.username}`}
-                  />
+                  <AvatarImage src={report.reportedUser.profileImg} />
                   <AvatarFallback>
                     <User className="h-4 w-4" />
                   </AvatarFallback>
@@ -195,51 +183,49 @@ export function ReportDetailsModal({
 
           <Separator />
 
-          {/* Motivo e Descrição */}
           <div className="space-y-4">
             <div>
-              <h4 className="text-sm font-medium mb-2">Motivo</h4>
+              <h4 className="mb-2 text-sm font-medium">Motivo</h4>
               <Badge variant="outline" className="text-sm">
-                {getReasonText(report.reason)}
+                {getReportReasonText(report.reason)}
               </Badge>
             </div>
 
             <div>
-              <h4 className="text-sm font-medium mb-2">Descrição</h4>
+              <h4 className="mb-2 text-sm font-medium">Descrição</h4>
               <div className="rounded-lg border border-border bg-muted/30 p-4">
                 <p className="text-sm">{report.description}</p>
               </div>
             </div>
 
             <div>
-              <h4 className="text-sm font-medium mb-2">Conteúdo Reportado</h4>
-              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-                {report.content && (
+              <h4 className="mb-2 text-sm font-medium">Conteúdo reportado</h4>
+              <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+                {report.content ? (
                   <p className="text-sm text-muted-foreground">
                     {report.content}
                   </p>
-                )}
-                {report.imageUrl && (
-                  <div className="rounded-lg overflow-hidden border border-border">
+                ) : null}
+                {report.imageUrl ? (
+                  <div className="overflow-hidden rounded-lg border border-border">
                     <img
                       src={report.imageUrl}
-                      alt="Conteúdo do post"
-                      className="w-full h-auto object-cover max-h-96"
+                      alt="Conteúdo reportado"
+                      className="max-h-96 h-auto w-full object-cover"
                     />
                   </div>
-                )}
-                {!report.content && !report.imageUrl && (
-                  <p className="text-sm text-muted-foreground italic">
+                ) : null}
+                {!report.content && !report.imageUrl ? (
+                  <p className="text-sm italic text-muted-foreground">
                     Nenhum conteúdo disponível
                   </p>
-                )}
+                ) : null}
               </div>
             </div>
           </div>
 
           <Separator />
 
-          {/* Informações Adicionais */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Data:</span>
@@ -255,38 +241,39 @@ export function ReportDetailsModal({
 
           <Separator />
 
-          {/* Ações */}
           <div>
-            <h4 className="text-sm font-medium mb-3">Ações de Moderação</h4>
+            <h4 className="mb-3 text-sm font-medium">Ações de moderação</h4>
             <div className="space-y-2">
-              {report.status === "pending" && (
+              {report.status === "pending" ? (
                 <Button
                   variant="outline"
-                  className="w-full justify-start gap-2 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:hover:bg-blue-950/20"
+                  className="w-full justify-start gap-2 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/20"
                   onClick={handleAnalyze}
                   disabled={isLoading}
                 >
                   <AlertTriangle className="h-4 w-4" />
-                  {isLoading ? "Processando..." : "Marcar como Em Análise"}
+                  {isLoading ? "Processando..." : "Marcar como em análise"}
                 </Button>
-              )}
+              ) : null}
+
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 hover:bg-green-50 hover:text-green-600 hover:border-green-200 dark:hover:bg-green-950/20"
+                className="w-full justify-start gap-2 hover:border-green-200 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-950/20"
                 onClick={handleResolve}
                 disabled={isLoading}
               >
                 <CheckCircle className="h-4 w-4" />
-                {isLoading ? "Processando..." : "Resolver Denúncia"}
+                {isLoading ? "Processando..." : "Resolver denúncia"}
               </Button>
+
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-950/20"
+                className="w-full justify-start gap-2 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20"
                 onClick={handleReject}
                 disabled={isLoading}
               >
                 <XCircle className="h-4 w-4" />
-                {isLoading ? "Processando..." : "Rejeitar Denúncia"}
+                {isLoading ? "Processando..." : "Rejeitar denúncia"}
               </Button>
             </div>
           </div>

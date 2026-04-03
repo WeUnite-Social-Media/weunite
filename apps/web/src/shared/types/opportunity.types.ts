@@ -7,8 +7,17 @@ export interface Skill {
 
 export interface Subscriber {
   id: number;
+  athlete?: User;
+  athleteId?: number;
+  opportunity?: Opportunity;
+  opportunityId?: number;
+}
+
+export interface SavedOpportunity {
+  id: number;
   athleteId: number;
-  opportunityId: number;
+  opportunity: Opportunity;
+  savedAt: string;
 }
 
 export interface CreateOpportunity {
@@ -24,7 +33,7 @@ export interface UpdateOpportunity {
   title?: string;
   description?: string;
   location?: string;
-  dateEnd?: Date;
+  dateEnd?: Date | string;
   skills?: Skill[];
 }
 
@@ -33,10 +42,11 @@ export interface Opportunity {
   title: string;
   description: string;
   location: string;
-  dateEnd: Date;
+  dateEnd: Date | string;
   skills?: Skill[];
   subscribers?: Subscriber[];
-  createdAt: Date;
-  updatedAt?: Date;
+  subscribersCount?: number;
+  createdAt: Date | string;
+  updatedAt?: Date | string | null;
   company?: User;
 }

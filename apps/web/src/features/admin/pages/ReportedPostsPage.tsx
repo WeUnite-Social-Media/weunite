@@ -1,15 +1,16 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { FileText, Flag, Heart, Image, Loader2, RotateCcw, Search } from "lucide-react";
+import { toast } from "sonner";
+import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { ReportDetailsModal } from "@/features/admin/components/ReportDetailsModal";
-import { Button } from "@/shared/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/components/ui/table";
-import { Badge } from "@/shared/components/ui/badge";
+  deletePostByAdminRequest,
+  dismissReportsRequest,
+  getReportedPostsDetailsRequest,
+  restorePostByAdminRequest,
+} from "@/features/admin/api/adminService";
+import { getReportStatusBadge } from "@/features/admin/utils/adminBadges";
+import { Button } from "@/shared/components/ui/button";
 import {
   Card,
   CardContent,
@@ -24,19 +25,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/Select";
-import { FileText, Flag, Heart, Search, Image, Loader2 } from "lucide-react";
-import type { Report, ReportedPost } from "@/shared/types/report.types";
-import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import {
-  getReportedPostsDetailsRequest,
-  deletePostByAdminRequest,
-  dismissReportsRequest,
-} from "@/features/admin/api/adminService";
-import { toast } from "sonner";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/shared/components/ui/table";
+import { Badge } from "@/shared/components/ui/badge";
+import type { Report, ReportedPost } from "@/shared/types/admin.types";
 
-/**
- * Página de gerenciamento de posts denunciados
- */
+function normalizeStatus(status: string): Report["status"] {
+  switch (status.toLowerCase()) {
+    case "reviewed":
+    case "under_review":
+      return "under_review";
+    case "dismissed":
+      return "dismissed";
+    case "deleted":
+      return "deleted";
+    case "hidden":
+      return "hidden";
+    case "pending":
+      return "pending";
+    default:
+      return "resolved";
+  }
+}
+
 export function ReportedPostsPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,10 +62,6 @@ export function ReportedPostsPage() {
   const [reportedPosts, setReportedPosts] = useState<ReportedPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadReportedPosts();
-  }, []);
-
   const loadReportedPosts = async () => {
     setIsLoading(true);
     const response = await getReportedPostsDetailsRequest();
@@ -56,152 +69,129 @@ export function ReportedPostsPage() {
     if (response.success && response.data) {
       setReportedPosts(response.data);
     } else {
-      console.error("Erro ao carregar posts denunciados:", response.error);
-      toast.error(
-        `Erro: ${response.error || "Não foi possível carregar os posts denunciados"}`,
-      );
+      toast.error(response.error || "Não foi possível carregar os posts denunciados.");
     }
+
     setIsLoading(false);
   };
 
-  const normalizeReportStatus = (status: string): Report["status"] => {
-    switch (status.toLowerCase()) {
-      case "reviewed":
-      case "under_review":
-        return "under_review";
-      case "dismissed":
-        return "dismissed";
-      case "resolved":
-        return "resolved";
-      case "pending":
-      default:
-        return "pending";
-    }
-  };
+  useEffect(() => {
+    void loadReportedPosts();
+  }, []);
 
-  const handleReviewPost = (reportedPost: ReportedPost) => {
-    // Pegar o primeiro report para exibir no modal
+  const handleReview = (reportedPost: ReportedPost) => {
     const firstReport = reportedPost.reports[0];
 
-    if (!firstReport) return;
+    if (!firstReport) {
+      return;
+    }
 
-    const report: Report = {
+    setSelectedReport({
       id: firstReport.id,
-      entityId: Number(reportedPost.post.id), // ID do post que foi denunciado
-      entityType: "POST", // Tipo da entidade
+      entityId: Number(reportedPost.post.id),
+      entityType: "POST",
       reportedBy: {
+        id: firstReport.reporter.id,
         name: firstReport.reporter.name,
         username: firstReport.reporter.username,
+        profileImg: firstReport.reporter.profileImg,
       },
       reportedUser: {
+        id: reportedPost.post.user.id,
         name: reportedPost.post.user.name,
         username: reportedPost.post.user.username,
+        profileImg: reportedPost.post.user.profileImg,
       },
       reason: firstReport.reason,
-      description: `Post denunciado por ${firstReport.reason}. Total de ${reportedPost.totalReports} denúncias.`,
-      status: normalizeReportStatus(firstReport.status),
+      description: `Post denunciado ${reportedPost.totalReports} vez(es).`,
+      status: normalizeStatus(reportedPost.status),
       createdAt: firstReport.createdAt,
       content: reportedPost.post.text,
       imageUrl: reportedPost.post.imageUrl || undefined,
-    };
-
-    setSelectedReport(report);
+    });
     setIsModalOpen(true);
   };
 
-  const handleDeletePost = async (postId: string) => {
-    const confirmed = window.confirm(
-      "Tem certeza que deseja deletar este post? Esta ação não pode ser desfeita.",
-    );
+  const handleDelete = async (postId: number) => {
+    const confirmed = window.confirm("Tem certeza que deseja deletar este post?");
+    if (!confirmed) {
+      return;
+    }
 
-    if (!confirmed) return;
-
-    const response = await deletePostByAdminRequest(Number(postId));
+    const response = await deletePostByAdminRequest(postId);
 
     if (response.success) {
       toast.success(response.message || "Post deletado com sucesso!");
-      loadReportedPosts(); // Recarrega a lista
-    } else {
-      toast.error(
-        `Erro: ${response.error || "Não foi possível deletar o post"}`,
-      );
+      void loadReportedPosts();
+      return;
     }
+
+    toast.error(response.error || "Erro ao deletar post");
   };
 
-  const handleDismissReports = async (postId: string) => {
-    const confirmed = window.confirm(
-      "Tem certeza que deseja descartar as denúncias deste post?",
-    );
+  const handleRestore = async (postId: number) => {
+    const response = await restorePostByAdminRequest(postId);
 
-    if (!confirmed) return;
+    if (response.success) {
+      toast.success(response.message || "Post restaurado com sucesso!");
+      void loadReportedPosts();
+      return;
+    }
 
-    const response = await dismissReportsRequest(Number(postId), "POST");
+    toast.error(response.error || "Erro ao restaurar post");
+  };
+
+  const handleDismiss = async (postId: number) => {
+    const response = await dismissReportsRequest(postId, "POST");
 
     if (response.success) {
       toast.success(response.message || "Denúncias descartadas com sucesso!");
-      loadReportedPosts(); // Recarrega a lista
-    } else {
-      toast.error(
-        `Erro: ${response.error || "Não foi possível descartar as denúncias"}`,
-      );
-    }
-  };
-
-  const getTimeAgoSimple = (date: string) => {
-    const hours = Math.floor(
-      (new Date().getTime() - new Date(date).getTime()) / (1000 * 60 * 60),
-    );
-
-    if (hours < 24) {
-      return `${hours} horas atrás`;
+      void loadReportedPosts();
+      return;
     }
 
-    const days = Math.floor(hours / 24);
-    return `${days} ${days === 1 ? "dia" : "dias"} atrás`;
+    toast.error(response.error || "Erro ao descartar denúncias");
   };
 
-  const filteredPosts = reportedPosts.filter((reportedPost) => {
-    const matchesSearch = searchQuery
-      ? reportedPost.post.text
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        reportedPost.post.user.name
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase())
-      : true;
-
+  const filteredPosts = reportedPosts.filter((item) => {
+    const normalizedStatus = normalizeStatus(item.status);
     const matchesStatus =
-      statusFilter === "all" || reportedPost.status === statusFilter;
+      statusFilter === "all" || normalizedStatus === statusFilter;
+    const query = searchQuery.trim().toLowerCase();
 
-    return matchesSearch && matchesStatus;
+    if (!query) {
+      return matchesStatus;
+    }
+
+    return (
+      matchesStatus &&
+      ((item.post.text || "").toLowerCase().includes(query) ||
+        item.post.user.name.toLowerCase().includes(query))
+    );
   });
 
   const totalReports = reportedPosts.reduce(
-    (acc, rp) => acc + rp.totalReports,
+    (count, item) => count + item.totalReports,
     0,
   );
-  const pendingPosts = reportedPosts.filter(
-    (rp) => rp.status === "pending",
+  const pendingCount = reportedPosts.filter(
+    (item) => normalizeStatus(item.status) === "pending",
   ).length;
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Cabeçalho */}
         <div>
           <h1 className="text-3xl font-bold">Posts Denunciados</h1>
           <p className="text-muted-foreground">
-            Gerencie e modere posts reportados pelos usuários
+            Revise e modere posts reportados pelos usuários.
           </p>
         </div>
 
-        {/* Cards de Estatísticas */}
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Posts Denunciados
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Posts denunciados</CardTitle>
               <Flag className="h-4 w-4 text-red-600" />
             </CardHeader>
             <CardContent>
@@ -216,7 +206,7 @@ export function ReportedPostsPage() {
               <FileText className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{pendingPosts}</div>
+              <div className="text-2xl font-bold">{pendingCount}</div>
               <p className="text-xs text-muted-foreground">
                 Aguardando revisão
               </p>
@@ -226,69 +216,64 @@ export function ReportedPostsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Total de Denúncias
+                Total de denúncias
               </CardTitle>
               <Heart className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalReports}</div>
-              <p className="text-xs text-muted-foreground">
-                Denúncias recebidas
-              </p>
+              <p className="text-xs text-muted-foreground">Recebidas</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Seção de Gerenciamento */}
         <Card>
           <CardHeader>
-            <CardTitle>Posts Denunciados</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Revise e tome ações sobre posts reportados pelos usuários
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Filtros */}
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <CardTitle>Gerenciar posts denunciados</CardTitle>
+            <div className="flex flex-col gap-4 pt-4 md:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar posts denunciados por autor ou conteúdo..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Buscar por autor ou conteúdo..."
                   className="pl-10"
                 />
               </div>
+
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <SelectValue placeholder="Todos os status" />
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="hidden">Oculto</SelectItem>
+                  <SelectItem value="under_review">Em análise</SelectItem>
+                  <SelectItem value="resolved">Resolvido</SelectItem>
+                  <SelectItem value="dismissed">Rejeitado</SelectItem>
                   <SelectItem value="deleted">Deletado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+          </CardHeader>
 
-            {/* Tabela de Posts */}
+          <CardContent>
             <div className="rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Conteúdo</TableHead>
                     <TableHead>Denúncias</TableHead>
-                    <TableHead>Engajamento</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={5} className="py-8 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           <span>Carregando posts denunciados...</span>
@@ -298,102 +283,80 @@ export function ReportedPostsPage() {
                   ) : filteredPosts.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={6}
-                        className="text-center py-8 text-muted-foreground"
+                        colSpan={5}
+                        className="py-8 text-center text-muted-foreground"
                       >
-                        Nenhum post denunciado no momento
+                        Nenhum post denunciado encontrado.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredPosts.map((reportedPost) => (
-                      <TableRow key={reportedPost.post.id}>
+                    filteredPosts.map((item) => (
+                      <TableRow key={item.post.id}>
                         <TableCell className="max-w-md">
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm">
-                                {reportedPost.post.user.name}
-                              </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {reportedPost.post.text}
+                            <p className="font-medium">{item.post.user.name}</p>
+                            <p className="truncate text-sm text-muted-foreground">
+                              {item.post.text}
                             </p>
-                            {reportedPost.post.imageUrl && (
+                            {item.post.imageUrl ? (
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Image className="h-3 w-3" />
                                 <span>Com mídia</span>
                               </div>
-                            )}
+                            ) : null}
                           </div>
                         </TableCell>
                         <TableCell>
                           <Badge variant="destructive" className="bg-red-600">
-                            {reportedPost.totalReports} denúncias
+                            {item.totalReports} denúncia
+                            {item.totalReports === 1 ? "" : "s"}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col gap-1 text-xs">
-                            <div className="flex items-center gap-1">
-                              <Heart className="h-3 w-3 text-red-500" />
-                              <span>
-                                {reportedPost.post.likes?.length || 0}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span>💬</span>
-                              <span>
-                                {reportedPost.post.comments?.length || 0}
-                              </span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={
-                              reportedPost.status === "pending"
-                                ? "border-yellow-500 text-yellow-600"
-                                : reportedPost.status === "hidden"
-                                  ? "border-orange-500 text-orange-600"
-                                  : "border-red-500 text-red-600"
-                            }
-                          >
-                            {reportedPost.status === "pending"
-                              ? "Pendente"
-                              : reportedPost.status === "hidden"
-                                ? "Oculto"
-                                : "Deletado"}
-                          </Badge>
+                          {getReportStatusBadge(normalizeStatus(item.status))}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {getTimeAgoSimple(reportedPost.post.createdAt)}
+                          {new Date(item.reports[0]?.createdAt).toLocaleDateString(
+                            "pt-BR",
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end">
+                          <div className="flex justify-end gap-2">
                             <Button
-                              variant="outline"
                               size="sm"
-                              onClick={() => handleReviewPost(reportedPost)}
+                              variant="outline"
+                              onClick={() => handleReview(item)}
                             >
                               Revisar
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleDismissReports(reportedPost.post.id)
-                              }
-                            >
-                              Descartar
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() =>
-                                handleDeletePost(reportedPost.post.id)
-                              }
-                            >
-                              Deletar
-                            </Button>
+
+                            {normalizeStatus(item.status) === "deleted" ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleRestore(Number(item.post.id))}
+                              >
+                                <RotateCcw className="mr-2 h-4 w-4" />
+                                Restaurar
+                              </Button>
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDismiss(Number(item.post.id))}
+                                >
+                                  Descartar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDelete(Number(item.post.id))}
+                                >
+                                  Deletar
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

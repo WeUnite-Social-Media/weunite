@@ -4,14 +4,14 @@ import type {
 } from "@/shared/types/admin.types";
 
 /**
- * Tooltip customizado para gráficos de linha e barra
- * Segue o padrão visual do shadcn/ui
+ * Tooltip customizado para graficos de linha e barra
+ * Segue o padrao visual do shadcn/ui
  */
 export function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (active && payload && payload.length) {
     return (
-      <div className="rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg">
-        <p className="font-medium text-foreground mb-1">{label}</p>
+      <div className="rounded-lg border bg-background/95 p-3 shadow-lg backdrop-blur-sm">
+        <p className="mb-1 font-medium text-foreground">{label}</p>
         {payload.map((entry: TooltipPayloadEntry, index: number) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {`${entry.name}: ${entry.value.toLocaleString()}`}
@@ -20,29 +20,35 @@ export function CustomTooltip({ active, payload, label }: TooltipProps) {
       </div>
     );
   }
+
   return null;
 }
 
 /**
- * Tooltip específico para gráfico de pizza
- * Mostra percentuais e formatação específica
+ * Tooltip especifico para grafico de pizza
+ * Mostra percentuais e formatacao especifica
  */
-export function PieTooltip({ active, payload }: TooltipProps) {
+export function PieTooltip({
+  active,
+  payload,
+  total = 0,
+}: TooltipProps & { total?: number }) {
   if (active && payload && payload.length) {
     const data = payload[0];
-    const totalUsers = 8500 + 3958; // TODO: Calcular dinamicamente
+    const safeTotal = total > 0 ? total : 1;
 
     return (
-      <div className="rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-lg">
-        <p className="font-medium text-foreground mb-1">{data.name}</p>
+      <div className="rounded-lg border bg-background/95 p-3 shadow-lg backdrop-blur-sm">
+        <p className="mb-1 font-medium text-foreground">{data.name}</p>
         <p className="text-sm text-muted-foreground">
-          {data.value.toLocaleString()} usuários
+          {data.value.toLocaleString()} usuarios
         </p>
         <p className="text-xs text-muted-foreground">
-          {((data.value / totalUsers) * 100).toFixed(1)}%
+          {((data.value / safeTotal) * 100).toFixed(1)}%
         </p>
       </div>
     );
   }
+
   return null;
 }

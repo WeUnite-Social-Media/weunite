@@ -1,3 +1,5 @@
+import type { UserTypeData } from "@/shared/types/admin.types";
+
 export interface DashboardStats {
   totalPosts: number;
   totalOpportunities: number;
@@ -28,4 +30,5 @@ export interface DashboardData {
   stats: DashboardStats;
   monthlyActivity: MonthlyActivity[];
   opportunitiesByCategory: OpportunityByCategory[];
+  userTypeData: UserTypeData[];
 }

@@ -3,16 +3,19 @@ package com.weunite.api.opportunities.mapper;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.opportunities.domain.Subscriber;
 import com.weunite.api.opportunities.dto.SubscriberDTO;
+import com.weunite.api.users.mapper.UserMapper;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-@Mapper(componentModel = "spring")
+@Mapper(
+    componentModel = "spring",
+    uses = {UserMapper.class, OpportunityMapper.class})
 public interface SubscribersMapper {
 
-  @Mapping(target = "id", source = "subscriber.id", resultType = String.class)
+  @Mapping(target = "id", source = "subscriber.id")
   @Mapping(target = "opportunity", source = "subscriber.opportunity")
   @Mapping(target = "athlete", source = "subscriber.athlete")
   SubscriberDTO toSubscriberDTO(Subscriber subscriber);

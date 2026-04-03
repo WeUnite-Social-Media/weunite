@@ -4,7 +4,7 @@ import { MessageList } from "@/features/chat/components/MessageList";
 import { MessageInput } from "@/features/chat/components/MessageInput";
 import { TypingIndicator } from "@/features/chat/components/TypingIndicator";
 import { triggerHapticFeedback } from "@/shared/utils/hapticFeedback";
-import { useWebSocket } from "@/features/chat/context/WebSocketContext";
+import { useWebSocket } from "@/features/chat/hooks/useWebSocket";
 import {
   useGetConversationMessages,
   useMarkMessagesAsRead,

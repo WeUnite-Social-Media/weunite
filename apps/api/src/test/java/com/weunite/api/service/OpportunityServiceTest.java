@@ -13,6 +13,7 @@ import com.weunite.api.opportunities.dto.OpportunityRequestDTO;
 import com.weunite.api.opportunities.exception.OpportunityNotFoundException;
 import com.weunite.api.opportunities.mapper.OpportunityMapper;
 import com.weunite.api.opportunities.repository.OpportunityRepository;
+import com.weunite.api.opportunities.repository.SavedOpportunityRepository;
 import com.weunite.api.opportunities.repository.SkillRepository;
 import com.weunite.api.opportunities.service.OpportunityService;
 import com.weunite.api.users.domain.Company;
@@ -41,6 +42,8 @@ public class OpportunityServiceTest {
   @Mock private SkillRepository skillRepository;
 
   @Mock private OpportunityRepository opportunityRepository;
+
+  @Mock private SavedOpportunityRepository savedOpportunityRepository;
 
   @Mock private OpportunityMapper opportunityMapper;
 
@@ -322,6 +325,7 @@ public class OpportunityServiceTest {
     assertNotNull(result.data());
 
     verify(opportunityRepository).findById(opportunityId);
+    verify(savedOpportunityRepository).deleteByOpportunityId(opportunityId);
     verify(opportunityRepository).delete(existingOpportunity);
     verify(opportunityMapper)
         .toResponseDTO(eq("Oportunidade deletada com sucesso!"), eq(existingOpportunity));

@@ -1,42 +1,48 @@
-import { Button } from "@/shared/components/ui/button";
-import { useAuthStore } from "@/features/auth/stores/useAuthStore";
-import { Building2, Bookmark } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { CreateOpportunity } from "@/features/opportunities/components/CreateOpportunity";
-import { useState } from "react";
+import { useAuthStore } from "@/features/auth/stores/useAuthStore";
+import { Button } from "@/shared/components/ui/button";
+import { Bookmark, Building2, UserCheck } from "lucide-react";
 
 export function HorizontalMenuOpportunity() {
   const { isAuthenticated, user } = useAuthStore();
   const navigate = useNavigate();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
-    <>
-      <div className="flex flex-row w-full h-full z-30 gap-2 pointer-events-auto justify-end pr-1 overflow-x-auto">
-        {user?.role === "company" && (
-          <Button
-            variant="outline"
-            onClick={() => navigate("/opportunity/my")}
-            className="w-[14em] justify-center text-xs h-[2em] bg-gradient-to-r from-third to-green-500 hover:from-green-500 hover:to-emerald-500 text-white shadow-md hover:shadow-lg transition-all duration-300"
-          >
-            <Building2 className="h-4 w-4 text-white" />
-            <span className="font-medium">Minhas Oportunidades</span>
-          </Button>
-        )}
-
+    <div className="flex w-full flex-row justify-end gap-2 overflow-x-auto pr-1 pt-[0.4em]">
+      {user?.role === "company" ? (
         <Button
           variant="outline"
-          onClick={() => navigate("/opportunity/saved")}
-          className="w-[14em] justify-center text-xs h-[2em] bg-gradient-to-r from-third to-green-500 hover:from-green-500 hover:to-emerald-500 text-white shadow-md hover:shadow-lg transition-all duration-300"
+          onClick={() => navigate("/opportunity/my-opportunities")}
+          className="min-w-[14em] flex-shrink-0 justify-center bg-gradient-to-r from-third to-green-500 text-xs text-white shadow-md transition-all duration-300 hover:from-green-500 hover:to-emerald-500 hover:shadow-lg"
         >
-          <Bookmark className="h-4 w-4 text-white" />
-          <span className="font-medium">Oportunidades Salvas</span>
+          <Building2 className="h-4 w-4 text-white" />
+          <span className="font-medium">Minhas oportunidades</span>
         </Button>
-      </div>
+      ) : null}
 
-      <CreateOpportunity open={isCreateOpen} onOpenChange={setIsCreateOpen} />
-    </>
+      {user?.role === "athlete" ? (
+        <>
+          <Button
+            onClick={() => navigate("/opportunity/my-opportunities")}
+            className="min-w-[14em] flex-shrink-0 justify-center bg-green-700 text-xs text-white shadow-md transition-all duration-300 hover:bg-green-800 hover:shadow-lg"
+          >
+            <UserCheck className="h-4 w-4 text-white" />
+            <span className="font-medium">Minhas candidaturas</span>
+          </Button>
+
+          <Button
+            onClick={() => navigate("/opportunity/saved")}
+            className="min-w-[14em] flex-shrink-0 justify-center bg-green-700 text-xs text-white shadow-md transition-all duration-300 hover:bg-green-800 hover:shadow-lg"
+          >
+            <Bookmark className="h-4 w-4 text-white" />
+            <span className="font-medium">Oportunidades salvas</span>
+          </Button>
+        </>
+      ) : null}
+    </div>
   );
 }

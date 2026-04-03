@@ -32,4 +32,17 @@ public class SubscriberController {
     List<SubscriberDTO> result = subscribersService.getSubscribersByOpportunity(opportunityId);
     return ResponseEntity.status(HttpStatus.OK).body(result);
   }
+
+  @GetMapping("/isSubscribed/{athleteId}/{opportunityId}")
+  public ResponseEntity<Boolean> isSubscribed(
+      @PathVariable Long athleteId, @PathVariable Long opportunityId) {
+    Boolean result = subscribersService.isSubscribed(athleteId, opportunityId);
+    return ResponseEntity.status(HttpStatus.OK).body(result);
+  }
+
+  @GetMapping("/athlete/{athleteId}")
+  public ResponseEntity<List<SubscriberDTO>> getSubscribersByAthlete(@PathVariable Long athleteId) {
+    List<SubscriberDTO> result = subscribersService.getSubscribersByAthlete(athleteId);
+    return ResponseEntity.status(HttpStatus.OK).body(result);
+  }
 }

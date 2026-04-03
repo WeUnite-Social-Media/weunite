@@ -15,13 +15,22 @@ public class Report {
 
   public enum ReportType {
     POST,
-    OPPORTUNITY
+    OPPORTUNITY,
+    COMMENT
   }
 
   public enum ReportStatus {
     PENDING,
     REVIEWED,
-    DISMISSED
+    DISMISSED,
+    RESOLVED
+  }
+
+  public enum ActionTaken {
+    NONE,
+    CONTENT_REMOVED,
+    USER_BANNED,
+    USER_SUSPENDED
   }
 
   public Report(User reporter, ReportType type, Long entityId, String reason) {
@@ -58,10 +67,19 @@ public class Report {
   @Column(nullable = false)
   private ReportStatus status;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private ActionTaken actionTaken;
+
+  @Column private Instant resolvedAt;
+
+  @Column private Long resolvedByAdminId;
+
   @PrePersist
   protected void onCreate() {
     this.createdAt = Instant.now();
     this.status = ReportStatus.PENDING;
+    this.actionTaken = ActionTaken.NONE;
   }
 
   @PreUpdate

@@ -24,7 +24,7 @@ import { toast } from "sonner";
 interface ReportModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  entityType: "POST" | "OPPORTUNITY";
+  entityType: "POST" | "OPPORTUNITY" | "COMMENT";
   entityId: number;
   entityTitle?: string;
 }
@@ -96,7 +96,12 @@ export function ReportModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            Denunciar {entityType === "POST" ? "Post" : "Oportunidade"}
+            Denunciar{" "}
+            {entityType === "POST"
+              ? "Post"
+              : entityType === "COMMENT"
+                ? "Comentario"
+                : "Oportunidade"}
           </DialogTitle>
           <DialogDescription>
             Sua denúncia será analisada pela nossa equipe. Use este recurso

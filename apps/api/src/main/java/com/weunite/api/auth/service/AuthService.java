@@ -1,23 +1,36 @@
 package com.weunite.api.auth.service;
 
-import com.weunite.api.auth.dto.*;
 import com.weunite.api.auth.dto.AuthDTO;
+import com.weunite.api.auth.dto.LoginRequestDTO;
+import com.weunite.api.auth.dto.ResetPasswordRequestDTO;
+import com.weunite.api.auth.dto.SendResetPasswordRequestDTO;
+import com.weunite.api.auth.dto.VerifyEmailRequestDTO;
+import com.weunite.api.auth.dto.VerifyResetTokenRequestDTO;
 import com.weunite.api.auth.exception.InvalidTokenException;
 import com.weunite.api.auth.exception.NotVerifiedEmailException;
 import com.weunite.api.auth.mapper.AuthMapper;
+import com.weunite.api.common.exception.UnauthorizedException;
 import com.weunite.api.common.mail.service.EmailService;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.security.service.JwtService;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.dto.CreateUserRequestDTO;
 import com.weunite.api.users.service.UserService;
-import org.springframework.security.authentication.BadCredentialsException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
+
+  private static final ZoneId BRAZIL_ZONE_ID = ZoneId.of("America/Sao_Paulo");
+  private static final Locale BRAZIL_LOCALE = new Locale("pt", "BR");
+  private static final DateTimeFormatter SUSPENSION_DATE_FORMATTER =
+      DateTimeFormatter.ofPattern("dd 'de' MMMM 'de' yyyy 'às' HH:mm", BRAZIL_LOCALE);
 
   private final UserService userService;
   private final PasswordEncoder passwordEncoder;
@@ -38,18 +51,19 @@ public class AuthService {
     this.emailService = emailService;
   }
 
-  @Transactional(readOnly = true)
+  @Transactional
   public ResponseDTO<AuthDTO> login(LoginRequestDTO requestDTO) {
-
     User user = userService.findUserEntityByUsername(requestDTO.username());
 
     if (!passwordEncoder.matches(requestDTO.password(), user.getPassword())) {
-      throw new BadCredentialsException("Usuário ou senha inválidos");
+      throw new UnauthorizedException("Usuário ou senha inválidos");
     }
 
     if (!user.isEmailVerified()) {
       throw new NotVerifiedEmailException("Verifique seu email para fazer login");
     }
+
+    ensureUserCanLogin(user);
 
     String jwtValue = jwtService.generateToken(user);
     Long expiresIn = jwtService.getDefaultTokenExpirationTime();
@@ -59,7 +73,6 @@ public class AuthService {
 
   @Transactional
   public ResponseDTO<AuthDTO> signUp(CreateUserRequestDTO requestDTO) {
-
     User newUser = userService.createUser(requestDTO);
 
     emailService.sendVerificationEmailAsync(requestDTO.email(), newUser.getVerificationToken());
@@ -69,7 +82,6 @@ public class AuthService {
 
   @Transactional
   public ResponseDTO<AuthDTO> verifyEmail(VerifyEmailRequestDTO requestDTO, String email) {
-
     User user = userService.findUserEntityByEmail(email);
 
     if (user.getVerificationToken() == null) {
@@ -126,5 +138,29 @@ public class AuthService {
 
     emailService.sendPasswordResetSuccessEmail(user.getEmail());
     return authMapper.toResponseDTO("Senha redefinida!");
+  }
+
+  private void ensureUserCanLogin(User user) {
+    if (user.isBanned()) {
+      throw new UnauthorizedException("Sua conta foi banida permanentemente da plataforma");
+    }
+
+    if (!user.isSuspended()) {
+      return;
+    }
+
+    Instant suspendedUntil = user.getSuspendedUntil();
+    if (suspendedUntil != null && Instant.now().isBefore(suspendedUntil)) {
+      throw new UnauthorizedException(
+          String.format("Sua conta está suspensa até %s", formatSuspensionDate(suspendedUntil)));
+    }
+
+    user.setSuspended(false);
+    user.setSuspendedUntil(null);
+    user.setSuspensionReason(null);
+  }
+
+  private String formatSuspensionDate(Instant suspendedUntil) {
+    return suspendedUntil.atZone(BRAZIL_ZONE_ID).format(SUSPENSION_DATE_FORMATTER);
   }
 }

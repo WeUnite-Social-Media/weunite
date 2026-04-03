@@ -2,6 +2,7 @@ package com.weunite.api.common.security.service;
 
 import com.weunite.api.users.domain.User;
 import java.time.Instant;
+import java.util.stream.Collectors;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +32,11 @@ public class JwtService {
             .subject(user.getUsername())
             .claims(
                 userClaims -> {
-                  userClaims.put("role", user.getRole());
+                  userClaims.put(
+                      "role",
+                      user.getRole().stream()
+                          .map(role -> role.getName())
+                          .collect(Collectors.toList()));
                   userClaims.put("id", user.getId().toString());
                 })
             .issuedAt(now)

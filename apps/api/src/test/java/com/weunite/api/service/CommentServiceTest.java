@@ -7,6 +7,8 @@ import static org.mockito.Mockito.*;
 import com.weunite.api.common.exception.UnauthorizedException;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.storage.service.CloudinaryService;
+import com.weunite.api.notifications.domain.NotificationType;
+import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.posts.domain.Comment;
 import com.weunite.api.posts.domain.Post;
 import com.weunite.api.posts.dto.CommentDTO;
@@ -47,6 +49,8 @@ public class CommentServiceTest {
 
   @Mock private CloudinaryService cloudinaryService;
 
+  @Mock private NotificationService notificationService;
+
   @InjectMocks private CommentService commentService;
 
   // CREATE COMMENT TESTS
@@ -62,9 +66,14 @@ public class CommentServiceTest {
     mockUser.setId(userId);
     mockUser.setUsername("testuser");
 
+    User postOwner = new User();
+    postOwner.setId(2L);
+    postOwner.setUsername("postowner");
+
     Post mockPost = new Post();
     mockPost.setId(postId);
     mockPost.setText("Test post");
+    mockPost.setUser(postOwner);
 
     Comment createdComment =
         new Comment(mockUser, mockPost, commentRequest.text(), commentRequest.image());
@@ -92,9 +101,12 @@ public class CommentServiceTest {
             null,
             new ArrayList<>(),
             new ArrayList<>(),
+            new ArrayList<>(),
             Instant.now(),
             null,
-            userDTO);
+            userDTO,
+            null,
+            null);
 
     CommentDTO commentDTO =
         new CommentDTO(
@@ -129,6 +141,8 @@ public class CommentServiceTest {
     verify(commentRepository).save(any(Comment.class));
     verify(commentMapper)
         .toResponseDTO(eq("Coment\u00E1rio criado com sucesso!"), any(Comment.class));
+    verify(notificationService)
+        .createNotification(postOwner.getId(), NotificationType.POST_COMMENT, userId, postId, null);
   }
 
   @Test

@@ -9,6 +9,7 @@ import com.weunite.api.opportunities.exception.SkillNotFoundException;
 import com.weunite.api.opportunities.mapper.SkillMapper;
 import com.weunite.api.opportunities.repository.SkillRepository;
 import java.util.List;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -42,6 +43,12 @@ public class SkillService {
     }
 
     return skillMapper.toResponseDTO("Habilidade encontrada com sucesso", skill);
+  }
+
+  public List<SkillDTO> getAllSkills() {
+    List<Skill> skills = skillRepository.findAll(Sort.by(Sort.Direction.ASC, "name"));
+
+    return skillMapper.toSkillDTOList(skills);
   }
 
   public List<SkillDTO> getSkillsAthlete(String username) {
