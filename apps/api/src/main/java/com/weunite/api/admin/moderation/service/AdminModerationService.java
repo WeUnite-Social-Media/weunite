@@ -17,8 +17,10 @@ import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.UserRepository;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,9 +51,18 @@ public class AdminModerationService {
   @Transactional(readOnly = true)
   public List<AdminUserSummaryDTO> getUsersSummary() {
     Instant now = Instant.now();
+    List<User> users = userRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
 
-    return userRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream()
-        .map(user -> toUserSummary(user, now))
+    if (users.isEmpty()) {
+      return List.of();
+    }
+
+    List<Long> userIds = users.stream().map(User::getId).toList();
+    Map<Long, Long> contentCounts = buildContentCounts(userIds);
+    Map<Long, Long> pendingReportCounts = buildPendingReportCounts(userIds);
+
+    return users.stream()
+        .map(user -> toUserSummary(user, now, contentCounts, pendingReportCounts))
         .toList();
   }
 
@@ -145,7 +156,11 @@ public class AdminModerationService {
         String.format("Usuario @%s voltou a ficar ativo.", user.getUsername()));
   }
 
-  private AdminUserSummaryDTO toUserSummary(User user, Instant now) {
+  private AdminUserSummaryDTO toUserSummary(
+      User user,
+      Instant now,
+      Map<Long, Long> contentCounts,
+      Map<Long, Long> pendingReportCounts) {
     Long userId = user.getId();
     String status = resolveStatus(user, now);
 
@@ -161,14 +176,8 @@ public class AdminModerationService {
         user.getSuspendedUntil(),
         user.getBannedAt(),
         resolveModerationReason(user, status),
-        calculateContentCount(userId),
-        safeCount(
-            reportRepository.countPendingContentReportsByUserId(
-                userId,
-                Report.ReportStatus.PENDING,
-                Report.ReportType.POST,
-                Report.ReportType.COMMENT,
-                Report.ReportType.OPPORTUNITY)));
+        contentCounts.getOrDefault(userId, 0L),
+        pendingReportCounts.getOrDefault(userId, 0L));
   }
 
   private String resolveStatus(User user, Instant now) {
@@ -208,10 +217,45 @@ public class AdminModerationService {
         .orElse("basic");
   }
 
-  private Long calculateContentCount(Long userId) {
-    return safeCount(postRepository.countByUserIdAndDeletedFalse(userId))
-        + safeCount(commentRepository.countByUserIdAndDeletedFalse(userId))
-        + safeCount(opportunityRepository.countByCompanyIdAndDeletedFalse(userId));
+  private Map<Long, Long> buildContentCounts(List<Long> userIds) {
+    Map<Long, Long> counts = new HashMap<>();
+    mergeCounts(counts, postRepository.countActivePostsByUserIds(userIds));
+    mergeCounts(counts, commentRepository.countActiveCommentsByUserIds(userIds));
+    mergeCounts(counts, opportunityRepository.countActiveOpportunitiesByCompanyIds(userIds));
+    return counts;
+  }
+
+  private Map<Long, Long> buildPendingReportCounts(List<Long> userIds) {
+    Map<Long, Long> counts = new HashMap<>();
+    mergeCounts(
+        counts,
+        reportRepository.countPendingPostReportsByUserIds(
+            userIds, Report.ReportStatus.PENDING, Report.ReportType.POST));
+    mergeCounts(
+        counts,
+        reportRepository.countPendingCommentReportsByUserIds(
+            userIds, Report.ReportStatus.PENDING, Report.ReportType.COMMENT));
+    mergeCounts(
+        counts,
+        reportRepository.countPendingOpportunityReportsByUserIds(
+            userIds, Report.ReportStatus.PENDING, Report.ReportType.OPPORTUNITY));
+    return counts;
+  }
+
+  private void mergeCounts(Map<Long, Long> target, List<Object[]> rows) {
+    for (Object[] row : rows) {
+      Long userId = asLong(row[0]);
+      Long count = safeCount(asLong(row[1]));
+      target.merge(userId, count, Long::sum);
+    }
+  }
+
+  private Long asLong(Object value) {
+    if (value instanceof Number number) {
+      return number.longValue();
+    }
+
+    throw new IllegalArgumentException("Expected numeric aggregation result");
   }
 
   private Long safeCount(Long value) {

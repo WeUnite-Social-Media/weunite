@@ -81,4 +81,34 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
       @Param("postType") Report.ReportType postType,
       @Param("commentType") Report.ReportType commentType,
       @Param("opportunityType") Report.ReportType opportunityType);
+
+  @Query(
+      "SELECT p.user.id, COUNT(r) FROM Report r, Post p "
+          + "WHERE r.status = :status AND r.type = :type "
+          + "AND r.entityId = p.id AND p.deleted = false AND p.user.id IN :userIds "
+          + "GROUP BY p.user.id")
+  List<Object[]> countPendingPostReportsByUserIds(
+      @Param("userIds") List<Long> userIds,
+      @Param("status") Report.ReportStatus status,
+      @Param("type") Report.ReportType type);
+
+  @Query(
+      "SELECT c.user.id, COUNT(r) FROM Report r, Comment c "
+          + "WHERE r.status = :status AND r.type = :type "
+          + "AND r.entityId = c.id AND c.deleted = false AND c.user.id IN :userIds "
+          + "GROUP BY c.user.id")
+  List<Object[]> countPendingCommentReportsByUserIds(
+      @Param("userIds") List<Long> userIds,
+      @Param("status") Report.ReportStatus status,
+      @Param("type") Report.ReportType type);
+
+  @Query(
+      "SELECT o.company.id, COUNT(r) FROM Report r, Opportunity o "
+          + "WHERE r.status = :status AND r.type = :type "
+          + "AND r.entityId = o.id AND o.deleted = false AND o.company.id IN :userIds "
+          + "GROUP BY o.company.id")
+  List<Object[]> countPendingOpportunityReportsByUserIds(
+      @Param("userIds") List<Long> userIds,
+      @Param("status") Report.ReportStatus status,
+      @Param("type") Report.ReportType type);
 }

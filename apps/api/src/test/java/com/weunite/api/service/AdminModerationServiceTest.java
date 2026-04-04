@@ -90,16 +90,21 @@ class AdminModerationServiceTest {
 
     when(userRepository.findAll(any(org.springframework.data.domain.Sort.class)))
         .thenReturn(List.of(user));
-    when(postRepository.countByUserIdAndDeletedFalse(12L)).thenReturn(2L);
-    when(commentRepository.countByUserIdAndDeletedFalse(12L)).thenReturn(3L);
-    when(opportunityRepository.countByCompanyIdAndDeletedFalse(12L)).thenReturn(0L);
-    when(reportRepository.countPendingContentReportsByUserId(
-            12L,
-            Report.ReportStatus.PENDING,
-            Report.ReportType.POST,
-            Report.ReportType.COMMENT,
-            Report.ReportType.OPPORTUNITY))
-        .thenReturn(4L);
+    when(postRepository.countActivePostsByUserIds(List.of(12L)))
+        .thenReturn(List.<Object[]>of(new Object[] {12L, 2L}));
+    when(commentRepository.countActiveCommentsByUserIds(List.of(12L)))
+        .thenReturn(List.<Object[]>of(new Object[] {12L, 3L}));
+    when(opportunityRepository.countActiveOpportunitiesByCompanyIds(List.of(12L)))
+        .thenReturn(List.of());
+    when(reportRepository.countPendingPostReportsByUserIds(
+            List.of(12L), Report.ReportStatus.PENDING, Report.ReportType.POST))
+        .thenReturn(List.<Object[]>of(new Object[] {12L, 1L}));
+    when(reportRepository.countPendingCommentReportsByUserIds(
+            List.of(12L), Report.ReportStatus.PENDING, Report.ReportType.COMMENT))
+        .thenReturn(List.<Object[]>of(new Object[] {12L, 2L}));
+    when(reportRepository.countPendingOpportunityReportsByUserIds(
+            List.of(12L), Report.ReportStatus.PENDING, Report.ReportType.OPPORTUNITY))
+        .thenReturn(List.<Object[]>of(new Object[] {12L, 1L}));
 
     List<AdminUserSummaryDTO> result = adminModerationService.getUsersSummary();
 

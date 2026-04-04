@@ -143,6 +143,24 @@ public class CloudinaryService {
     }
   }
 
+  public String uploadChatAttachment(MultipartFile file, Long conversationId, Long senderId) {
+    Map<String, Object> options =
+        Map.of(
+            "folder",
+            "chat/" + conversationId + "/" + senderId,
+            "tags",
+            "chat,attachment",
+            "resource_type",
+            "auto");
+
+    try {
+      Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), options);
+      return (String) uploadResult.get("secure_url");
+    } catch (IOException e) {
+      throw new RuntimeException("Erro ao fazer upload do anexo do chat", e);
+    }
+  }
+
   /** Get image URL with custom height while maintaining aspect ratio */
   public String getImageWithHeight(String publicId, int height) {
     return cloudinary

@@ -20,6 +20,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
   Long countByUserIdAndDeletedFalse(Long userId);
 
   @Query(
+      "SELECT p.user.id, COUNT(p) FROM Post p "
+          + "WHERE p.deleted = false AND p.user.id IN :userIds "
+          + "GROUP BY p.user.id")
+  List<Object[]> countActivePostsByUserIds(@Param("userIds") List<Long> userIds);
+
+  @Query(
       value =
           """
           SELECT

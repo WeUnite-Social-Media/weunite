@@ -5,14 +5,9 @@ import com.weunite.api.chat.dto.MessageDTO;
 import com.weunite.api.chat.dto.SendMessageRequestDTO;
 import com.weunite.api.chat.service.MessageService;
 import com.weunite.api.common.security.service.AuthenticatedUserService;
+import com.weunite.api.common.storage.service.CloudinaryService;
 import jakarta.validation.Valid;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -38,6 +33,7 @@ public class ChatController {
   private final MessageService messageService;
   private final SimpMessagingTemplate messagingTemplate;
   private final AuthenticatedUserService authenticatedUserService;
+  private final CloudinaryService cloudinaryService;
 
   @MessageMapping("/chat.sendMessage")
   public void sendMessage(@Payload @Valid SendMessageRequestDTO request) {
@@ -110,21 +106,10 @@ public class ChatController {
 
       if (file.getSize() > 10 * 1024 * 1024) {
         return ResponseEntity.badRequest()
-            .body(Map.of("error", "Arquivo muito grande. Máximo 10MB"));
+            .body(Map.of("error", "Arquivo muito grande. Maximo 10MB"));
       }
 
-      String extension = resolveExtension(file);
-      String filename = UUID.randomUUID().toString() + extension;
-
-      Path uploadPath = Paths.get("uploads");
-      if (!Files.exists(uploadPath)) {
-        Files.createDirectories(uploadPath);
-      }
-
-      Path filePath = uploadPath.resolve(filename);
-      Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-      String fileUrl = "/uploads/" + filename;
+      String fileUrl = cloudinaryService.uploadChatAttachment(file, conversationId, senderId);
       String contentType = file.getContentType();
       String fileType = contentType != null && contentType.startsWith("image/") ? "IMAGE" : "FILE";
 
@@ -132,47 +117,5 @@ public class ChatController {
     } catch (Exception e) {
       return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
     }
-  }
-
-  private String resolveExtension(MultipartFile file) {
-    String originalFilename = file.getOriginalFilename();
-
-    if (originalFilename != null) {
-      int lastDot = originalFilename.lastIndexOf('.');
-      if (lastDot >= 0 && lastDot < originalFilename.length() - 1) {
-        return originalFilename.substring(lastDot);
-      }
-    }
-
-    return inferExtensionFromContentType(file.getContentType());
-  }
-
-  private String inferExtensionFromContentType(String contentType) {
-    if (contentType == null || contentType.isBlank()) {
-      return ".bin";
-    }
-
-    String normalizedContentType = contentType.toLowerCase(Locale.ROOT);
-
-    if (normalizedContentType.equals("image/jpeg")) {
-      return ".jpg";
-    }
-    if (normalizedContentType.equals("image/png")) {
-      return ".png";
-    }
-    if (normalizedContentType.equals("image/gif")) {
-      return ".gif";
-    }
-    if (normalizedContentType.equals("image/webp")) {
-      return ".webp";
-    }
-    if (normalizedContentType.equals("application/pdf")) {
-      return ".pdf";
-    }
-    if (normalizedContentType.equals("text/plain")) {
-      return ".txt";
-    }
-
-    return ".bin";
   }
 }

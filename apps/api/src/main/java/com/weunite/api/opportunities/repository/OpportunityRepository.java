@@ -25,6 +25,12 @@ public interface OpportunityRepository extends JpaRepository<Opportunity, Long> 
   Long countByCompanyIdAndDeletedFalse(Long companyId);
 
   @Query(
+      "SELECT o.company.id, COUNT(o) FROM Opportunity o "
+          + "WHERE o.deleted = false AND o.company.id IN :companyIds "
+          + "GROUP BY o.company.id")
+  List<Object[]> countActiveOpportunitiesByCompanyIds(@Param("companyIds") List<Long> companyIds);
+
+  @Query(
       "SELECT COUNT(o) FROM Opportunity o WHERE o.createdAt >= :startDate AND o.createdAt < :endDate")
   Long countOpportunitiesBetweenDates(
       @Param("startDate") Instant startDate, @Param("endDate") Instant endDate);
