@@ -6,6 +6,7 @@ import type {
   Subscriber,
   UpdateOpportunity,
 } from "@/shared/types/opportunity.types";
+import { formatOpportunityDateForApi } from "@/features/opportunities/utils/opportunityDates";
 import { instance as axios } from "@/shared/api/http";
 import { AxiosError } from "axios";
 
@@ -44,7 +45,7 @@ export const createOpportunityRequest = async (
           title: data.title,
           description: data.description,
           location: data.location,
-          dateEnd: data.dateEnd.toISOString(),
+          dateEnd: formatOpportunityDateForApi(data.dateEnd),
           skills: data.skills,
         }),
       ],
@@ -86,9 +87,16 @@ export const updateOpportunityRequest = async (
   data: UpdateOpportunity,
 ) => {
   try {
+    const payload = {
+      ...data,
+      dateEnd: data.dateEnd
+        ? formatOpportunityDateForApi(data.dateEnd)
+        : undefined,
+    };
+
     const response = await axios.put(
       `/opportunities/update/${companyId}/${data.opportunityId}`,
-      data,
+      payload,
     );
     return {
       success: true,
@@ -218,7 +226,9 @@ export const getOpportunitySubscribersRequest = async (
   opportunityId: number,
 ) => {
   try {
-    const response = await axios.get(`/subscriber/subscribers/${opportunityId}`);
+    const response = await axios.get(
+      `/subscriber/subscribers/${opportunityId}`,
+    );
     const subscribers = unwrapArrayResponse<Subscriber>(response.data);
 
     return {
@@ -348,7 +358,9 @@ export const toggleSavedOpportunityRequest = async (
 
 export const getSavedOpportunitiesRequest = async (athleteId: number) => {
   try {
-    const response = await axios.get(`/saved-opportunities/athlete/${athleteId}`);
+    const response = await axios.get(
+      `/saved-opportunities/athlete/${athleteId}`,
+    );
     return {
       success: true,
       data: response.data as SavedOpportunity[],

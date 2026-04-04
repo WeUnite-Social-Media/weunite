@@ -4,7 +4,12 @@ import {
   useCheckIsSubscribed,
   useToggleSubscriber,
 } from "@/features/opportunities/state/useOpportunities";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import { isOpportunityExpired } from "@/features/opportunities/utils/opportunityDates";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/shared/components/ui/avatar";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -61,22 +66,16 @@ export default function OpportunityDetailModal({
   );
 
   const isSubscribed = isSubscribedData?.data ?? false;
-
-  const isExpired = (() => {
-    const deadline = new Date(opportunity.dateEnd);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    deadline.setHours(0, 0, 0, 0);
-    return deadline < today;
-  })();
+  const isExpired = isOpportunityExpired(opportunity.dateEnd);
+  const isSubscriptionClosed = !isSubscribed && isExpired;
 
   const handleToggleSubscribe = () => {
     if (!user?.id || !isAthlete || toggleSubscriber.isPending) {
       return;
     }
 
-    if (isExpired) {
-      toast.error("O prazo desta oportunidade já expirou.");
+    if (isSubscriptionClosed) {
+      toast.error("O prazo desta oportunidade ja expirou.");
       return;
     }
 
@@ -91,15 +90,30 @@ export default function OpportunityDetailModal({
     navigate(`/opportunity/${opportunity.id}/subscribers`);
   };
 
-  const opportunityDate = format(new Date(opportunity.dateEnd), "dd 'de' MMMM 'de' yyyy", {
-    locale: ptBR,
-  });
+  const opportunityDate = format(
+    new Date(opportunity.dateEnd),
+    "dd 'de' MMMM 'de' yyyy",
+    {
+      locale: ptBR,
+    },
+  );
+
+  const subscribeLabel = toggleSubscriber.isPending
+    ? "Processando..."
+    : isSubscribed
+      ? "Cancelar candidatura"
+      : isSubscriptionClosed
+        ? "Prazo encerrado"
+        : "Candidatar-se";
 
   const content = (
     <div className="space-y-6">
       <div className="flex items-start gap-4 rounded-xl border bg-muted/20 p-4">
         <Avatar className="h-12 w-12">
-          <AvatarImage src={opportunity.company?.profileImg} alt={companyName} />
+          <AvatarImage
+            src={opportunity.company?.profileImg}
+            alt={companyName}
+          />
           <AvatarFallback>{companyInitials}</AvatarFallback>
         </Avatar>
 
@@ -111,8 +125,8 @@ export default function OpportunityDetailModal({
             <span>{companyName}</span>
             {opportunity.createdAt ? (
               <>
-                <span>•</span>
-                <span>Publicado há {getTimeAgo(opportunity.createdAt)}</span>
+                <span>-</span>
+                <span>Publicado ha {getTimeAgo(opportunity.createdAt)}</span>
               </>
             ) : null}
           </div>
@@ -124,7 +138,7 @@ export default function OpportunityDetailModal({
           <div className="flex items-start gap-3 rounded-lg bg-muted/50 p-3">
             <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
             <div>
-              <p className="mb-1 text-xs text-muted-foreground">Localização</p>
+              <p className="mb-1 text-xs text-muted-foreground">Localizacao</p>
               <p className="text-sm font-medium">{opportunity.location}</p>
             </div>
           </div>
@@ -143,7 +157,8 @@ export default function OpportunityDetailModal({
           <div>
             <p className="mb-1 text-xs text-muted-foreground">Candidaturas</p>
             <p className="text-sm font-medium">
-              {subscribersCount} {subscribersCount === 1 ? "candidato" : "candidatos"}
+              {subscribersCount}{" "}
+              {subscribersCount === 1 ? "candidato" : "candidatos"}
             </p>
           </div>
         </div>
@@ -152,7 +167,7 @@ export default function OpportunityDetailModal({
       <div>
         <h4 className="mb-2 flex items-center gap-2 font-semibold">
           <Briefcase className="h-4 w-4" />
-          <span>Descrição</span>
+          <span>Descricao</span>
         </h4>
         <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
           {opportunity.description}
@@ -179,16 +194,12 @@ export default function OpportunityDetailModal({
         <div className="pt-2">
           <Button
             onClick={handleToggleSubscribe}
-            disabled={toggleSubscriber.isPending || isExpired}
+            disabled={toggleSubscriber.isPending || isSubscriptionClosed}
             className="w-full"
             size="lg"
             variant={isSubscribed ? "outline" : "default"}
           >
-            {toggleSubscriber.isPending
-              ? "Processando..."
-              : isSubscribed
-                ? "Cancelar candidatura"
-                : "Candidatar-se"}
+            {subscribeLabel}
           </Button>
         </div>
       ) : null}
@@ -215,7 +226,7 @@ export default function OpportunityDetailModal({
           <SheetHeader className="mb-6 text-left">
             <SheetTitle>Detalhes da oportunidade</SheetTitle>
             <SheetDescription>
-              Veja todas as informações sobre esta oportunidade.
+              Veja todas as informacoes sobre esta oportunidade.
             </SheetDescription>
           </SheetHeader>
           <div className="max-h-[calc(90vh-120px)] overflow-y-auto pr-2">
@@ -232,7 +243,7 @@ export default function OpportunityDetailModal({
         <DialogHeader>
           <DialogTitle>Detalhes da oportunidade</DialogTitle>
           <DialogDescription>
-            Veja todas as informações sobre esta oportunidade.
+            Veja todas as informacoes sobre esta oportunidade.
           </DialogDescription>
         </DialogHeader>
         {content}

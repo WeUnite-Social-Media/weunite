@@ -24,6 +24,7 @@ import {
   useCheckIsSubscribed,
   useToggleSubscriber,
 } from "@/features/opportunities/state/useOpportunities";
+import { isOpportunityExpired } from "@/features/opportunities/utils/opportunityDates";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { getTimeAgo } from "@/shared/hooks/useGetTimeAgo";
 import { getInitials } from "@/shared/utils/getInitials";
@@ -62,6 +63,8 @@ export function OpportunityDescription({
   );
 
   const isSubscribed = isSubscribedData?.data ?? false;
+  const isExpired = isOpportunityExpired(opportunity.dateEnd);
+  const isSubscriptionClosed = !isSubscribed && isExpired;
 
   const opportunityDate = new Date(opportunity.dateEnd).toLocaleDateString(
     "pt-BR",
@@ -72,21 +75,13 @@ export function OpportunityDescription({
     },
   );
 
-  const isExpired = (() => {
-    const deadline = new Date(opportunity.dateEnd);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    deadline.setHours(0, 0, 0, 0);
-    return deadline < today;
-  })();
-
   const handleApply = () => {
     if (!user?.id || !isAthlete || toggleSubscriber.isPending) {
       return;
     }
 
-    if (isExpired) {
-      toast.error("O prazo desta oportunidade já expirou.");
+    if (isSubscriptionClosed) {
+      toast.error("O prazo desta oportunidade ja expirou.");
       return;
     }
 
@@ -100,6 +95,22 @@ export function OpportunityDescription({
     onOpenChange?.(false);
     navigate(`/opportunity/${opportunity.id}/subscribers`);
   };
+
+  const subscribeLabel = toggleSubscriber.isPending
+    ? "Processando..."
+    : isSubscribed
+      ? "Cancelar candidatura"
+      : isSubscriptionClosed
+        ? "Prazo encerrado"
+        : "Candidatar-se";
+
+  const subscribeDetailLabel = toggleSubscriber.isPending
+    ? "Processando..."
+    : isSubscribed
+      ? "Cancelar candidatura"
+      : isSubscriptionClosed
+        ? "Prazo encerrado"
+        : "Candidatar-se para esta oportunidade";
 
   if (!commentDesktop) {
     return (
@@ -125,7 +136,8 @@ export function OpportunityDescription({
                 <div>
                   <h2 className="text-xl font-bold">{opportunity.title}</h2>
                   <p className="text-sm text-muted-foreground">
-                    {companyName} • Publicado há {getTimeAgo(opportunity.createdAt)}
+                    {companyName} - Publicado ha{" "}
+                    {getTimeAgo(opportunity.createdAt)}
                   </p>
                 </div>
               </div>
@@ -157,7 +169,7 @@ export function OpportunityDescription({
               ) : null}
 
               <div className="prose prose-sm max-w-none">
-                <h3 className="mb-2 text-lg font-semibold">Descrição</h3>
+                <h3 className="mb-2 text-lg font-semibold">Descricao</h3>
                 <p className="whitespace-pre-wrap">{opportunity.description}</p>
               </div>
             </div>
@@ -167,13 +179,9 @@ export function OpportunityDescription({
                 <Button
                   onClick={handleApply}
                   className="w-full"
-                  disabled={toggleSubscriber.isPending || isExpired}
+                  disabled={toggleSubscriber.isPending || isSubscriptionClosed}
                 >
-                  {toggleSubscriber.isPending
-                    ? "Processando..."
-                    : isSubscribed
-                      ? "Cancelar candidatura"
-                      : "Candidatar-se"}
+                  {subscribeLabel}
                 </Button>
               </div>
             ) : null}
@@ -212,7 +220,8 @@ export function OpportunityDescription({
               <div className="flex flex-col">
                 <h2 className="text-xl font-bold">{opportunity.title}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {companyName} • Publicado há {getTimeAgo(opportunity.createdAt)}
+                  {companyName} - Publicado ha{" "}
+                  {getTimeAgo(opportunity.createdAt)}
                 </p>
               </div>
             </div>
@@ -239,7 +248,7 @@ export function OpportunityDescription({
               {opportunity.skills?.length ? (
                 <div className="mb-6">
                   <h3 className="mb-3 text-lg font-semibold">
-                    Habilidades necessárias
+                    Habilidades necessarias
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {opportunity.skills.map((skill) => (
@@ -252,9 +261,11 @@ export function OpportunityDescription({
               ) : null}
 
               <div className="mb-6">
-                <h3 className="mb-3 text-lg font-semibold">Descrição</h3>
+                <h3 className="mb-3 text-lg font-semibold">Descricao</h3>
                 <div className="prose prose-sm max-w-none">
-                  <p className="whitespace-pre-wrap">{opportunity.description}</p>
+                  <p className="whitespace-pre-wrap">
+                    {opportunity.description}
+                  </p>
                 </div>
               </div>
             </div>
@@ -264,13 +275,9 @@ export function OpportunityDescription({
                 <Button
                   onClick={handleApply}
                   className="w-full"
-                  disabled={toggleSubscriber.isPending || isExpired}
+                  disabled={toggleSubscriber.isPending || isSubscriptionClosed}
                 >
-                  {toggleSubscriber.isPending
-                    ? "Processando..."
-                    : isSubscribed
-                      ? "Cancelar candidatura"
-                      : "Candidatar-se para esta oportunidade"}
+                  {subscribeDetailLabel}
                 </Button>
               </div>
             ) : null}

@@ -9,6 +9,7 @@ import {
   useToggleSavedOpportunity,
   useToggleSubscriber,
 } from "@/features/opportunities/state/useOpportunities";
+import { isOpportunityExpired } from "@/features/opportunities/utils/opportunityDates";
 import { OpportunityDescription } from "./DescriptionOpportunity";
 import { EditOpportunity } from "./EditOpportunity";
 import {
@@ -106,6 +107,8 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
   const isSubscribed = isSubscribedData?.data ?? false;
   const isSaved = isSavedData?.data ?? false;
+  const isExpired = isOpportunityExpired(opportunity.dateEnd);
+  const isSubscriptionClosed = !isSubscribed && isExpired;
 
   const handleCompanyClick = (event: MouseEvent) => {
     event.stopPropagation();
@@ -142,7 +145,12 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
   const handleApply = (event: MouseEvent) => {
     event.stopPropagation();
 
-    if (!user?.id || !isAthlete || toggleSubscriber.isPending) {
+    if (
+      !user?.id ||
+      !isAthlete ||
+      toggleSubscriber.isPending ||
+      isSubscriptionClosed
+    ) {
       return;
     }
 
@@ -168,6 +176,14 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
   const handleDropdownClick = (event: MouseEvent) => {
     event.stopPropagation();
   };
+
+  const subscribeLabel = toggleSubscriber.isPending
+    ? "Processando..."
+    : isSubscribed
+      ? "Cancelar candidatura"
+      : isSubscriptionClosed
+        ? "Prazo encerrado"
+        : "Candidatar-se";
 
   return (
     <>
@@ -196,7 +212,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
             >
               {opportunity.company?.username || companyName}
             </CardTitle>
-            <CardDescription className="text-xs">há {timeAgo}</CardDescription>
+            <CardDescription className="text-xs">ha {timeAgo}</CardDescription>
           </div>
 
           <div className="ml-auto flex items-center gap-2">
@@ -211,7 +227,9 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
                       <DropdownMenuItem
                         onClick={(event) => {
                           event.stopPropagation();
-                          navigate(`/opportunity/${opportunity.id}/subscribers`);
+                          navigate(
+                            `/opportunity/${opportunity.id}/subscribers`,
+                          );
                         }}
                         className="cursor-pointer"
                       >
@@ -252,8 +270,8 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Esta ação não pode ser desfeita. A oportunidade
-                              será removida permanentemente da plataforma.
+                              Esta acao nao pode ser desfeita. A oportunidade
+                              sera removida permanentemente da plataforma.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -328,7 +346,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
               <div className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
-                <span>Até {deadlineDate}</span>
+                <span>Ate {deadlineDate}</span>
               </div>
 
               <div className="flex items-center gap-1">
@@ -348,13 +366,9 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
                   variant="default"
                   className="rounded-full bg-third px-4 text-white hover:bg-third/90"
                   onClick={handleApply}
-                  disabled={toggleSubscriber.isPending}
+                  disabled={toggleSubscriber.isPending || isSubscriptionClosed}
                 >
-                  {toggleSubscriber.isPending
-                    ? "Processando..."
-                    : isSubscribed
-                      ? "Cancelar candidatura"
-                      : "Candidatar-se"}
+                  {subscribeLabel}
                 </Button>
               ) : null}
 
