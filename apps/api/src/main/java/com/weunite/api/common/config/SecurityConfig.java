@@ -119,13 +119,13 @@ public class SecurityConfig {
 
                     // Opportunities endpoints
                     .requestMatchers(HttpMethod.POST, "/api/opportunities/create/{userId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(
                         HttpMethod.PUT, "/api/opportunities/update/{userId}/{opportunityId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(
                         HttpMethod.DELETE, "/api/opportunities/delete/{userId}/{opportunityId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/opportunities/get/{opportunityId}")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/opportunities/get/company/{companyId}")
@@ -139,26 +139,26 @@ public class SecurityConfig {
                     .requestMatchers(
                         HttpMethod.POST,
                         "/api/subscriber/toggleSubscriber/{athleteId}/{opportunityId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/subscriber/subscribers/{opportunityId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(
                         HttpMethod.GET, "/api/subscriber/isSubscribed/{athleteId}/{opportunityId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/subscriber/athlete/{athleteId}")
-                    .permitAll()
+                    .authenticated()
 
                     // Saved opportunities endpoints
                     .requestMatchers(
                         HttpMethod.POST,
                         "/api/saved-opportunities/toggle/{athleteId}/{opportunityId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/saved-opportunities/athlete/{athleteId}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(
                         HttpMethod.GET,
                         "/api/saved-opportunities/isSaved/{athleteId}/{opportunityId}")
-                    .permitAll()
+                    .authenticated()
 
                     // Notifications endpoints
                     .requestMatchers("/api/notifications/**")

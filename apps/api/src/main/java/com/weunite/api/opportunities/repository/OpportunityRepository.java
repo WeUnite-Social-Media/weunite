@@ -3,16 +3,22 @@ package com.weunite.api.opportunities.repository;
 import com.weunite.api.opportunities.domain.Opportunity;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface OpportunityRepository extends JpaRepository<Opportunity, Long> {
 
-  @Query("SELECT o FROM Opportunity o ORDER BY COALESCE(o.updatedAt, o.createdAt) DESC")
-  List<Opportunity> findAllOrderedByCreationDate();
+  @Query(
+      "SELECT o FROM Opportunity o WHERE o.deleted = false ORDER BY COALESCE(o.updatedAt, o.createdAt) DESC")
+  List<Opportunity> findAllActiveOrderedByCreationDate();
 
-  List<Opportunity> findByCompanyId(Long userId);
+  @Query(
+      "SELECT o FROM Opportunity o WHERE o.company.id = :companyId AND o.deleted = false ORDER BY COALESCE(o.updatedAt, o.createdAt) DESC")
+  List<Opportunity> findActiveByCompanyId(@Param("companyId") Long companyId);
+
+  Optional<Opportunity> findByIdAndDeletedFalse(Long opportunityId);
 
   boolean existsByIdAndCompanyId(Long opportunityId, Long companyId);
 

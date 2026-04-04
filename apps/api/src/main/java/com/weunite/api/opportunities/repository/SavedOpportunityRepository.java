@@ -18,6 +18,7 @@ public interface SavedOpportunityRepository extends JpaRepository<SavedOpportuni
   @Query(
       "SELECT s FROM SavedOpportunity s "
           + "WHERE s.athlete.id = :athleteId "
+          + "AND s.opportunity.deleted = false "
           + "ORDER BY s.savedAt DESC")
   List<SavedOpportunity> findByAthleteIdOrderBySavedAtDesc(@Param("athleteId") Long athleteId);
 

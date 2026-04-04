@@ -1,6 +1,7 @@
 package com.weunite.api.opportunities.controller;
 
 import com.weunite.api.common.response.ResponseDTO;
+import com.weunite.api.common.security.service.AuthenticatedUserService;
 import com.weunite.api.opportunities.dto.OpportunityDTO;
 import com.weunite.api.opportunities.dto.OpportunityRequestDTO;
 import com.weunite.api.opportunities.service.OpportunityService;
@@ -8,6 +9,8 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,27 +20,35 @@ import org.springframework.web.bind.annotation.*;
 public class OpportunityController {
 
   private final OpportunityService opportunityService;
+  private final AuthenticatedUserService authenticatedUserService;
 
-  public OpportunityController(OpportunityService opportunityService) {
+  public OpportunityController(
+      OpportunityService opportunityService,
+      AuthenticatedUserService authenticatedUserService) {
     this.opportunityService = opportunityService;
+    this.authenticatedUserService = authenticatedUserService;
   }
 
   @PostMapping(value = "/create/{companyId}")
   public ResponseEntity<ResponseDTO<OpportunityDTO>> createOpportunity(
+      @AuthenticationPrincipal Jwt jwt,
       @PathVariable Long companyId,
       @RequestPart("opportunity") @Valid OpportunityRequestDTO opportunity) {
+    Long authenticatedUserId = authenticatedUserService.requireMatchingUserId(jwt, companyId);
     ResponseDTO<OpportunityDTO> createdOpportunity =
-        opportunityService.createOpportunity(companyId, opportunity);
+        opportunityService.createOpportunity(authenticatedUserId, opportunity);
     return ResponseEntity.status(HttpStatus.OK).body(createdOpportunity);
   }
 
   @PutMapping("/update/{companyId}/{opportunityId}")
   public ResponseEntity<ResponseDTO<OpportunityDTO>> updateOpportunity(
+      @AuthenticationPrincipal Jwt jwt,
       @PathVariable Long companyId,
       @PathVariable Long opportunityId,
-      @RequestBody @Valid OpportunityDTO opportunity) {
+      @RequestBody @Valid OpportunityRequestDTO opportunity) {
+    Long authenticatedUserId = authenticatedUserService.requireMatchingUserId(jwt, companyId);
     ResponseDTO<OpportunityDTO> updatedOpportunity =
-        opportunityService.updateOpportunity(companyId, opportunityId, opportunity);
+        opportunityService.updateOpportunity(authenticatedUserId, opportunityId, opportunity);
     return ResponseEntity.status(HttpStatus.OK).body(updatedOpportunity);
   }
 
@@ -63,9 +74,12 @@ public class OpportunityController {
 
   @DeleteMapping("/delete/{companyId}/{opportunityId}")
   public ResponseEntity<ResponseDTO<OpportunityDTO>> deleteOpportunity(
-      @PathVariable Long companyId, @PathVariable Long opportunityId) {
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long companyId,
+      @PathVariable Long opportunityId) {
+    Long authenticatedUserId = authenticatedUserService.requireMatchingUserId(jwt, companyId);
     ResponseDTO<OpportunityDTO> opportunity =
-        opportunityService.deleteOpportunity(companyId, opportunityId);
+        opportunityService.deleteOpportunity(authenticatedUserId, opportunityId);
     return ResponseEntity.status(HttpStatus.OK).body(opportunity);
   }
 }

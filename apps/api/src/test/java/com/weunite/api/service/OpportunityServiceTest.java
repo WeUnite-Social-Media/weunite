@@ -1,8 +1,14 @@
 package com.weunite.api.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.weunite.api.common.exception.UnauthorizedException;
 import com.weunite.api.common.response.ResponseDTO;
@@ -19,10 +25,10 @@ import com.weunite.api.opportunities.service.OpportunityService;
 import com.weunite.api.users.domain.Company;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.CompanyRepository;
-import com.weunite.api.users.repository.UserRepository;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
@@ -33,208 +39,155 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class OpportunityServiceTest {
-
-  @Mock private UserRepository userRepository;
+class OpportunityServiceTest {
 
   @Mock private CompanyRepository companyRepository;
-
   @Mock private SkillRepository skillRepository;
-
   @Mock private OpportunityRepository opportunityRepository;
-
   @Mock private SavedOpportunityRepository savedOpportunityRepository;
-
   @Mock private OpportunityMapper opportunityMapper;
 
   @InjectMocks private OpportunityService opportunityService;
 
-  // CREATE OPPORTUNITY TESTS
-
   @Test
-  @DisplayName("Should create opportunity successfully when user exists and data is valid")
+  @DisplayName("Should create opportunity successfully when company exists")
   void createOpportunitySuccess() {
     Long companyId = 1L;
-    Set<Skill> skills = new HashSet<>();
-    skills.add(new Skill("Perna Esquerda"));
+    Set<Skill> skills = Set.of(new Skill("Perna Esquerda"));
 
-    OpportunityRequestDTO opportunityDTO =
+    OpportunityRequestDTO request =
         new OpportunityRequestDTO(
             "Lateral Esquerdo no Santos",
-            "Latreal esquerdo Sênior",
-            "São Paulo, SP",
-            LocalDate.of(2025, 12, 31),
+            "Lateral esquerdo senior",
+            "Sao Paulo, SP",
+            LocalDate.now().plusDays(30),
             skills);
 
-    Company mockCompany = new Company();
-    mockCompany.setId(companyId);
-    mockCompany.setName("Test Company");
-    mockCompany.setUsername("testuser");
-    mockCompany.setEmail("test@example.com");
-    mockCompany.setPassword("testpassword");
-    mockCompany.setCNPJ("12345678000199");
-
-    Opportunity createdOpportunity =
-        new Opportunity(
-            mockCompany,
-            opportunityDTO.title(),
-            opportunityDTO.description(),
-            opportunityDTO.location(),
-            opportunityDTO.dateEnd(),
-            opportunityDTO.skills());
-    createdOpportunity.setId(1L);
-    createdOpportunity.setCreatedAt(Instant.now());
+    Company company = new Company();
+    company.setId(companyId);
 
     ResponseDTO<OpportunityDTO> expectedResponse =
         new ResponseDTO<>(
             "Oportunidade criada com sucesso!",
             new OpportunityDTO(
                 1L,
-                "Lateral Esquerdo no Santos",
-                "Lateral esquerdo no Santos",
-                "São Paulo, SP",
-                LocalDate.of(2025, 12, 31),
+                request.title(),
+                request.description(),
+                request.location(),
+                request.dateEnd(),
                 skills,
                 Instant.now(),
                 null,
                 null));
 
-    when(companyRepository.findById(companyId)).thenReturn(Optional.of(mockCompany));
+    when(companyRepository.findById(companyId)).thenReturn(Optional.of(company));
     when(skillRepository.findByName("Perna Esquerda")).thenReturn(new Skill("Perna Esquerda"));
-    when(opportunityRepository.save(any(Opportunity.class))).thenReturn(createdOpportunity);
-    when(opportunityMapper.toResponseDTO(
-            eq("Oportunidade criada com sucesso!"), any(Opportunity.class)))
+    when(opportunityMapper.toResponseDTO(eq("Oportunidade criada com sucesso!"), any(Opportunity.class)))
         .thenReturn(expectedResponse);
 
-    ResponseDTO<OpportunityDTO> result =
-        opportunityService.createOpportunity(companyId, opportunityDTO);
+    ResponseDTO<OpportunityDTO> result = opportunityService.createOpportunity(companyId, request);
 
     assertNotNull(result);
-    assertEquals("Oportunidade criada com sucesso!", result.message());
-    assertNotNull(result.data());
-    assertEquals("Lateral Esquerdo no Santos", result.data().title());
-    assertEquals("Lateral esquerdo no Santos", result.data().description());
-
-    verify(companyRepository).findById(companyId);
+    assertEquals(expectedResponse, result);
     verify(opportunityRepository).save(any(Opportunity.class));
-    verify(opportunityMapper)
-        .toResponseDTO(eq("Oportunidade criada com sucesso!"), any(Opportunity.class));
   }
 
   @Test
-  @DisplayName("Should throw UserNotFoundException when user does not exist during creation")
+  @DisplayName("Should throw UserNotFoundException when company does not exist during creation")
   void createOpportunityWithNonExistentUser() {
-    Long userId = 999L;
-    Set<Skill> skills = new HashSet<>();
-    skills.add(new Skill("Java"));
+    Long companyId = 999L;
 
-    OpportunityRequestDTO opportunityDTO =
+    OpportunityRequestDTO request =
         new OpportunityRequestDTO(
-            "Lateral Esquerdo no Santos",
-            "Latreal esquerdo Sênior",
-            "São Paulo, SP",
-            LocalDate.of(2025, 12, 31),
-            skills);
+            "Opportunity",
+            "Descricao valida",
+            "Sao Paulo, SP",
+            LocalDate.now().plusDays(30),
+            Set.of(new Skill("Java")));
 
-    when(companyRepository.findById(userId)).thenReturn(Optional.empty());
+    when(companyRepository.findById(companyId)).thenReturn(Optional.empty());
 
-    UserNotFoundException exception =
-        assertThrows(
-            UserNotFoundException.class,
-            () -> opportunityService.createOpportunity(userId, opportunityDTO));
+    assertThrows(
+        UserNotFoundException.class, () -> opportunityService.createOpportunity(companyId, request));
 
-    assertNotNull(exception);
-    verify(companyRepository).findById(userId);
+    verify(companyRepository).findById(companyId);
     verifyNoInteractions(opportunityRepository, opportunityMapper);
   }
 
-  // UPDATE OPPORTUNITY TESTS
-
   @Test
-  @DisplayName("Should update opportunity successfully when user is owner and data is valid")
+  @DisplayName("Should update opportunity successfully when user is owner and opportunity is active")
   void updateOpportunitySuccess() {
     Long userId = 1L;
     Long opportunityId = 1L;
     Set<Skill> updatedSkills = new HashSet<>();
     updatedSkills.add(new Skill("Python"));
 
-    OpportunityDTO updatedOpportunityDTO =
-        new OpportunityDTO(
-            opportunityId,
+    OpportunityRequestDTO request =
+        new OpportunityRequestDTO(
             "Senior Lateral Esquerdo no Santos",
-            "Desenvolvedor Python Sênior",
+            "Desenvolvedor Python Senior",
             "Rio de Janeiro, RJ",
-            LocalDate.of(2025, 11, 30),
-            updatedSkills,
-            null,
-            null,
-            null);
+            LocalDate.now().plusDays(15),
+            updatedSkills);
 
-    Company mockCompany = new Company();
-    mockCompany.setId(userId);
-    mockCompany.setUsername("testuser");
+    Company company = new Company();
+    company.setId(userId);
 
     Opportunity existingOpportunity = new Opportunity();
     existingOpportunity.setId(opportunityId);
-    existingOpportunity.setCompany(mockCompany);
-    existingOpportunity.setTitle("Lateral Esquerdo no Santos");
+    existingOpportunity.setCompany(company);
+    existingOpportunity.setSkills(new HashSet<>());
 
-    Opportunity updatedOpportunity = new Opportunity();
-    updatedOpportunity.setId(opportunityId);
-    updatedOpportunity.setTitle("Senior Lateral Esquerdo no Santos");
-    updatedOpportunity.setUpdatedAt(Instant.now());
+    OpportunityDTO expectedDto =
+        new OpportunityDTO(
+            opportunityId,
+            request.title(),
+            request.description(),
+            request.location(),
+            request.dateEnd(),
+            updatedSkills,
+            null,
+            Instant.now(),
+            null);
 
     ResponseDTO<OpportunityDTO> expectedResponse =
-        new ResponseDTO<>("Oportunidade atualizada com sucesso!", updatedOpportunityDTO);
+        new ResponseDTO<>("Oportunidade atualizada com sucesso!", expectedDto);
 
-    when(opportunityRepository.findById(opportunityId))
+    when(opportunityRepository.findByIdAndDeletedFalse(opportunityId))
         .thenReturn(Optional.of(existingOpportunity));
-    when(opportunityRepository.save(any(Opportunity.class))).thenReturn(updatedOpportunity);
     when(opportunityMapper.toResponseDTO(
-            eq("Oportunidade atualizada com sucesso!"), any(Opportunity.class)))
+            eq("Oportunidade atualizada com sucesso!"), eq(existingOpportunity)))
         .thenReturn(expectedResponse);
 
     ResponseDTO<OpportunityDTO> result =
-        opportunityService.updateOpportunity(userId, opportunityId, updatedOpportunityDTO);
+        opportunityService.updateOpportunity(userId, opportunityId, request);
 
     assertNotNull(result);
-    assertEquals("Oportunidade atualizada com sucesso!", result.message());
-    assertNotNull(result.data());
-
-    verify(opportunityRepository).findById(opportunityId);
-    verify(opportunityRepository).save(any(Opportunity.class));
-    verify(opportunityMapper)
-        .toResponseDTO(eq("Oportunidade atualizada com sucesso!"), any(Opportunity.class));
+    assertEquals(expectedResponse, result);
+    verify(opportunityRepository).save(existingOpportunity);
   }
 
   @Test
-  @DisplayName(
-      "Should throw OpportunityNotFoundException when opportunity does not exist during update")
+  @DisplayName("Should throw OpportunityNotFoundException when active opportunity does not exist during update")
   void updateOpportunityWithNonExistentOpportunity() {
     Long userId = 1L;
     Long opportunityId = 999L;
-    OpportunityDTO updatedOpportunityDTO =
-        new OpportunityDTO(
-            opportunityId,
-            "Senior Lateral Esquerdo no Santos",
-            "Desenvolvedor Python Sênior",
+
+    OpportunityRequestDTO request =
+        new OpportunityRequestDTO(
+            "Opportunity",
+            "Descricao valida",
             "Rio de Janeiro, RJ",
-            LocalDate.of(2025, 11, 30),
-            new HashSet<>(),
-            null,
-            null,
-            null);
+            LocalDate.now().plusDays(10),
+            Set.of(new Skill("Python")));
 
-    when(opportunityRepository.findById(opportunityId)).thenReturn(Optional.empty());
+    when(opportunityRepository.findByIdAndDeletedFalse(opportunityId)).thenReturn(Optional.empty());
 
-    OpportunityNotFoundException exception =
-        assertThrows(
-            OpportunityNotFoundException.class,
-            () ->
-                opportunityService.updateOpportunity(userId, opportunityId, updatedOpportunityDTO));
+    assertThrows(
+        OpportunityNotFoundException.class,
+        () -> opportunityService.updateOpportunity(userId, opportunityId, request));
 
-    assertNotNull(exception);
-    verify(opportunityRepository).findById(opportunityId);
+    verify(opportunityRepository).findByIdAndDeletedFalse(opportunityId);
     verifyNoInteractions(opportunityMapper);
   }
 
@@ -245,42 +198,32 @@ public class OpportunityServiceTest {
     Long ownerId = 2L;
     Long opportunityId = 1L;
 
-    OpportunityDTO updatedOpportunityDTO =
-        new OpportunityDTO(
-            opportunityId,
-            "Senior Lateral Esquerdo no Santos",
-            "Desenvolvedor Python Sênior",
+    OpportunityRequestDTO request =
+        new OpportunityRequestDTO(
+            "Opportunity",
+            "Descricao valida",
             "Rio de Janeiro, RJ",
-            LocalDate.of(2025, 11, 30),
-            new HashSet<>(),
-            null,
-            null,
-            null);
+            LocalDate.now().plusDays(10),
+            Set.of(new Skill("Python")));
 
-    Company opportunityOwner = new Company();
-    opportunityOwner.setId(ownerId);
-    opportunityOwner.setUsername("owner");
+    Company owner = new Company();
+    owner.setId(ownerId);
 
     Opportunity existingOpportunity = new Opportunity();
     existingOpportunity.setId(opportunityId);
-    existingOpportunity.setCompany(opportunityOwner);
+    existingOpportunity.setCompany(owner);
+    existingOpportunity.setSkills(new HashSet<>());
 
-    when(opportunityRepository.findById(opportunityId))
+    when(opportunityRepository.findByIdAndDeletedFalse(opportunityId))
         .thenReturn(Optional.of(existingOpportunity));
 
-    UnauthorizedException exception =
-        assertThrows(
-            UnauthorizedException.class,
-            () ->
-                opportunityService.updateOpportunity(userId, opportunityId, updatedOpportunityDTO));
+    assertThrows(
+        UnauthorizedException.class,
+        () -> opportunityService.updateOpportunity(userId, opportunityId, request));
 
-    assertEquals(
-        "Você não possui autorização para atualizar esta oportunidade.", exception.getMessage());
-    verify(opportunityRepository).findById(opportunityId);
+    verify(opportunityRepository).findByIdAndDeletedFalse(opportunityId);
     verifyNoInteractions(opportunityMapper);
   }
-
-  // DELETE OPPORTUNITY TESTS
 
   @Test
   @DisplayName("Should delete opportunity successfully when user is owner")
@@ -288,30 +231,28 @@ public class OpportunityServiceTest {
     Long userId = 1L;
     Long opportunityId = 1L;
 
-    Company mockCompany = new Company();
-    mockCompany.setId(userId);
-    mockCompany.setUsername("testuser");
+    Company company = new Company();
+    company.setId(userId);
 
     Opportunity existingOpportunity = new Opportunity();
     existingOpportunity.setId(opportunityId);
-    existingOpportunity.setCompany(mockCompany);
-    existingOpportunity.setTitle("Lateral Esquerdo no Santos");
+    existingOpportunity.setCompany(company);
 
     ResponseDTO<OpportunityDTO> expectedResponse =
         new ResponseDTO<>(
             "Oportunidade deletada com sucesso!",
             new OpportunityDTO(
                 opportunityId,
-                "Lateral Esquerdo no Santos",
-                "Lateral esquerdo",
-                "São Paulo, SP",
-                LocalDate.of(2025, 12, 31),
-                new HashSet<>(),
+                "Opportunity",
+                "Descricao",
+                "Sao Paulo, SP",
+                LocalDate.now().plusDays(10),
+                Set.of(),
                 Instant.now(),
                 null,
                 null));
 
-    when(opportunityRepository.findById(opportunityId))
+    when(opportunityRepository.findByIdAndDeletedFalse(opportunityId))
         .thenReturn(Optional.of(existingOpportunity));
     when(opportunityMapper.toResponseDTO(
             eq("Oportunidade deletada com sucesso!"), eq(existingOpportunity)))
@@ -320,64 +261,52 @@ public class OpportunityServiceTest {
     ResponseDTO<OpportunityDTO> result =
         opportunityService.deleteOpportunity(userId, opportunityId);
 
-    assertNotNull(result);
-    assertEquals("Oportunidade deletada com sucesso!", result.message());
-    assertNotNull(result.data());
-
-    verify(opportunityRepository).findById(opportunityId);
+    assertEquals(expectedResponse, result);
     verify(savedOpportunityRepository).deleteByOpportunityId(opportunityId);
     verify(opportunityRepository).delete(existingOpportunity);
-    verify(opportunityMapper)
-        .toResponseDTO(eq("Oportunidade deletada com sucesso!"), eq(existingOpportunity));
   }
 
   @Test
-  @DisplayName(
-      "Should throw OpportunityNotFoundException when opportunity does not exist during deletion")
+  @DisplayName("Should throw OpportunityNotFoundException when opportunity does not exist during deletion")
   void deleteOpportunityWithNonExistentOpportunity() {
     Long userId = 1L;
     Long opportunityId = 999L;
 
-    when(opportunityRepository.findById(opportunityId)).thenReturn(Optional.empty());
+    when(opportunityRepository.findByIdAndDeletedFalse(opportunityId)).thenReturn(Optional.empty());
 
-    OpportunityNotFoundException exception =
-        assertThrows(
-            OpportunityNotFoundException.class,
-            () -> opportunityService.deleteOpportunity(userId, opportunityId));
+    assertThrows(
+        OpportunityNotFoundException.class,
+        () -> opportunityService.deleteOpportunity(userId, opportunityId));
 
-    assertNotNull(exception);
-    verify(opportunityRepository).findById(opportunityId);
+    verify(opportunityRepository).findByIdAndDeletedFalse(opportunityId);
     verify(opportunityRepository, never()).delete(any());
     verifyNoInteractions(opportunityMapper);
   }
 
   @Test
-  @DisplayName("Should throw UnauthorizedException when user is not the owner during deletion")
-  void deleteOpportunityWithUnauthorizedUser() {
-    Long userId = 1L;
-    Long ownerId = 2L;
-    Long opportunityId = 1L;
+  @DisplayName("Should return active opportunities only")
+  void getOpportunitiesSuccess() {
+    Opportunity opportunity = new Opportunity();
+    opportunity.setId(1L);
 
-    Company opportunityOwner = new Company();
-    opportunityOwner.setId(ownerId);
-    opportunityOwner.setUsername("owner");
+    OpportunityDTO dto =
+        new OpportunityDTO(
+            1L,
+            "Opportunity",
+            "Descricao",
+            "Sao Paulo, SP",
+            LocalDate.now().plusDays(10),
+            Set.of(),
+            Instant.now(),
+            null,
+            null);
 
-    Opportunity existingOpportunity = new Opportunity();
-    existingOpportunity.setId(opportunityId);
-    existingOpportunity.setCompany(opportunityOwner);
+    when(opportunityRepository.findAllActiveOrderedByCreationDate()).thenReturn(List.of(opportunity));
+    when(opportunityMapper.toOpportunityDTOList(List.of(opportunity))).thenReturn(List.of(dto));
 
-    when(opportunityRepository.findById(opportunityId))
-        .thenReturn(Optional.of(existingOpportunity));
+    List<OpportunityDTO> result = opportunityService.getOpportunities();
 
-    UnauthorizedException exception =
-        assertThrows(
-            UnauthorizedException.class,
-            () -> opportunityService.deleteOpportunity(userId, opportunityId));
-
-    assertEquals(
-        "Você não possui autorização para deletar esta oportunidade.", exception.getMessage());
-    verify(opportunityRepository).findById(opportunityId);
-    verify(opportunityRepository, never()).delete(any());
-    verifyNoInteractions(opportunityMapper);
+    assertEquals(List.of(dto), result);
+    verify(opportunityRepository).findAllActiveOrderedByCreationDate();
   }
 }

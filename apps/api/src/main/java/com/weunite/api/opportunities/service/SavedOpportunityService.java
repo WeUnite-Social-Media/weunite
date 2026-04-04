@@ -37,8 +37,8 @@ public class SavedOpportunityService {
   @Transactional
   public ResponseDTO<SavedOpportunityDTO> toggleSavedOpportunity(
       Long athleteId, Long opportunityId) {
-    athleteRepository.findById(athleteId).orElseThrow(UserNotFoundException::new);
-    opportunityRepository.findById(opportunityId).orElseThrow(OpportunityNotFoundException::new);
+    Athlete athlete = athleteRepository.findById(athleteId).orElseThrow(UserNotFoundException::new);
+    Opportunity opportunity = getActiveOpportunity(opportunityId);
 
     return savedOpportunityRepository
         .findByAthleteIdAndOpportunityId(athleteId, opportunityId)
@@ -48,7 +48,7 @@ public class SavedOpportunityService {
               return new ResponseDTO<SavedOpportunityDTO>(
                   "Oportunidade removida dos salvos com sucesso!", null);
             })
-        .orElseGet(() -> createSavedOpportunity(athleteId, opportunityId));
+        .orElseGet(() -> createSavedOpportunity(athlete, opportunity));
   }
 
   @Transactional(readOnly = true)
@@ -63,22 +63,22 @@ public class SavedOpportunityService {
   @Transactional(readOnly = true)
   public boolean isSaved(Long athleteId, Long opportunityId) {
     athleteRepository.findById(athleteId).orElseThrow(UserNotFoundException::new);
-    opportunityRepository.findById(opportunityId).orElseThrow(OpportunityNotFoundException::new);
+    getActiveOpportunity(opportunityId);
     return savedOpportunityRepository.existsByAthleteIdAndOpportunityId(athleteId, opportunityId);
   }
 
   private ResponseDTO<SavedOpportunityDTO> createSavedOpportunity(
-      Long athleteId, Long opportunityId) {
-    Athlete athlete = athleteRepository.findById(athleteId).orElseThrow(UserNotFoundException::new);
-    Opportunity opportunity =
-        opportunityRepository
-            .findById(opportunityId)
-            .orElseThrow(OpportunityNotFoundException::new);
-
+      Athlete athlete, Opportunity opportunity) {
     SavedOpportunity savedOpportunity = new SavedOpportunity(athlete, opportunity);
     SavedOpportunity saved = savedOpportunityRepository.save(savedOpportunity);
 
     return new ResponseDTO<>(
         "Oportunidade salva com sucesso!", savedOpportunityMapper.toDTO(saved));
+  }
+
+  private Opportunity getActiveOpportunity(Long opportunityId) {
+    return opportunityRepository
+        .findByIdAndDeletedFalse(opportunityId)
+        .orElseThrow(OpportunityNotFoundException::new);
   }
 }

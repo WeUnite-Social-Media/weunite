@@ -34,18 +34,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SavedOpportunityServiceTest {
 
   @Mock private SavedOpportunityRepository savedOpportunityRepository;
-
   @Mock private OpportunityRepository opportunityRepository;
-
   @Mock private AthleteRepository athleteRepository;
-
   @Mock private SavedOpportunityMapper savedOpportunityMapper;
 
   @InjectMocks private SavedOpportunityService savedOpportunityService;
 
   @Test
-  @DisplayName("Should save an opportunity when it is not already saved")
-  void toggleSavedOpportunity_SaveSuccess() {
+  @DisplayName("Should save an active opportunity when it is not already saved")
+  void toggleSavedOpportunitySaveSuccess() {
     Long athleteId = 1L;
     Long opportunityId = 2L;
 
@@ -67,7 +64,7 @@ class SavedOpportunityServiceTest {
                 "Opportunity",
                 "Description",
                 "Location",
-                LocalDate.of(2026, 1, 1),
+                LocalDate.now().plusDays(10),
                 Set.of(),
                 Instant.now(),
                 null,
@@ -77,7 +74,8 @@ class SavedOpportunityServiceTest {
     when(savedOpportunityRepository.findByAthleteIdAndOpportunityId(athleteId, opportunityId))
         .thenReturn(Optional.empty());
     when(athleteRepository.findById(athleteId)).thenReturn(Optional.of(athlete));
-    when(opportunityRepository.findById(opportunityId)).thenReturn(Optional.of(opportunity));
+    when(opportunityRepository.findByIdAndDeletedFalse(opportunityId))
+        .thenReturn(Optional.of(opportunity));
     when(savedOpportunityRepository.save(any(SavedOpportunity.class))).thenReturn(savedOpportunity);
     when(savedOpportunityMapper.toDTO(savedOpportunity)).thenReturn(savedOpportunityDTO);
 
@@ -92,7 +90,7 @@ class SavedOpportunityServiceTest {
 
   @Test
   @DisplayName("Should remove an opportunity from saved list when it already exists")
-  void toggleSavedOpportunity_RemoveSuccess() {
+  void toggleSavedOpportunityRemoveSuccess() {
     Long athleteId = 1L;
     Long opportunityId = 2L;
 
@@ -108,7 +106,8 @@ class SavedOpportunityServiceTest {
     when(savedOpportunityRepository.findByAthleteIdAndOpportunityId(athleteId, opportunityId))
         .thenReturn(Optional.of(existingSavedOpportunity));
     when(athleteRepository.findById(athleteId)).thenReturn(Optional.of(athlete));
-    when(opportunityRepository.findById(opportunityId)).thenReturn(Optional.of(opportunity));
+    when(opportunityRepository.findByIdAndDeletedFalse(opportunityId))
+        .thenReturn(Optional.of(opportunity));
 
     ResponseDTO<SavedOpportunityDTO> result =
         savedOpportunityService.toggleSavedOpportunity(athleteId, opportunityId);
@@ -120,7 +119,7 @@ class SavedOpportunityServiceTest {
 
   @Test
   @DisplayName("Should list saved opportunities for an athlete")
-  void getSavedOpportunitiesByAthlete_Success() {
+  void getSavedOpportunitiesByAthleteSuccess() {
     Long athleteId = 1L;
 
     Athlete athlete = new Athlete();
@@ -139,12 +138,11 @@ class SavedOpportunityServiceTest {
         savedOpportunityService.getSavedOpportunitiesByAthlete(athleteId);
 
     assertEquals(List.of(savedOpportunityDTO), result);
-    verify(savedOpportunityRepository).findByAthleteIdOrderBySavedAtDesc(athleteId);
   }
 
   @Test
   @DisplayName("Should check whether an opportunity is saved")
-  void isSaved_Success() {
+  void isSavedSuccess() {
     Long athleteId = 1L;
     Long opportunityId = 2L;
 
@@ -155,7 +153,8 @@ class SavedOpportunityServiceTest {
     opportunity.setId(opportunityId);
 
     when(athleteRepository.findById(athleteId)).thenReturn(Optional.of(athlete));
-    when(opportunityRepository.findById(opportunityId)).thenReturn(Optional.of(opportunity));
+    when(opportunityRepository.findByIdAndDeletedFalse(opportunityId))
+        .thenReturn(Optional.of(opportunity));
     when(savedOpportunityRepository.existsByAthleteIdAndOpportunityId(athleteId, opportunityId))
         .thenReturn(false);
 
