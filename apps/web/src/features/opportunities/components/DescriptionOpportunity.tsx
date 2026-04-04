@@ -112,6 +112,12 @@ export function OpportunityDescription({
         ? "Prazo encerrado"
         : "Candidatar-se para esta oportunidade";
 
+  const subscribeButtonVariant = isSubscriptionClosed
+    ? "secondary"
+    : isSubscribed
+      ? "destructive"
+      : "default";
+
   if (!commentDesktop) {
     return (
       <Drawer open={isOpen} onOpenChange={onOpenChange}>
@@ -180,6 +186,7 @@ export function OpportunityDescription({
                   onClick={handleApply}
                   className="w-full"
                   disabled={toggleSubscriber.isPending || isSubscriptionClosed}
+                  variant={subscribeButtonVariant}
                 >
                   {subscribeLabel}
                 </Button>
@@ -276,6 +283,7 @@ export function OpportunityDescription({
                   onClick={handleApply}
                   className="w-full"
                   disabled={toggleSubscriber.isPending || isSubscriptionClosed}
+                  variant={subscribeButtonVariant}
                 >
                   {subscribeDetailLabel}
                 </Button>

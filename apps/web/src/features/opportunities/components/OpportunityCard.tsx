@@ -185,6 +185,12 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
         ? "Prazo encerrado"
         : "Candidatar-se";
 
+  const subscribeButtonVariant = isSubscriptionClosed
+    ? "secondary"
+    : isSubscribed
+      ? "destructive"
+      : "default";
+
   return (
     <>
       <Card
@@ -363,8 +369,12 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
               {!isOwner && isAthlete ? (
                 <Button
                   size="sm"
-                  variant="default"
-                  className="rounded-full bg-third px-4 text-white hover:bg-third/90"
+                  variant={subscribeButtonVariant}
+                  className={
+                    subscribeButtonVariant === "default"
+                      ? "rounded-full bg-third px-4 text-white hover:bg-third/90"
+                      : "rounded-full px-4"
+                  }
                   onClick={handleApply}
                   disabled={toggleSubscriber.isPending || isSubscriptionClosed}
                 >

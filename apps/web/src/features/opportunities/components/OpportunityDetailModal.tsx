@@ -106,6 +106,12 @@ export default function OpportunityDetailModal({
         ? "Prazo encerrado"
         : "Candidatar-se";
 
+  const subscribeButtonVariant = isSubscriptionClosed
+    ? "secondary"
+    : isSubscribed
+      ? "destructive"
+      : "default";
+
   const content = (
     <div className="space-y-6">
       <div className="flex items-start gap-4 rounded-xl border bg-muted/20 p-4">
@@ -197,7 +203,7 @@ export default function OpportunityDetailModal({
             disabled={toggleSubscriber.isPending || isSubscriptionClosed}
             className="w-full"
             size="lg"
-            variant={isSubscribed ? "outline" : "default"}
+            variant={subscribeButtonVariant}
           >
             {subscribeLabel}
           </Button>
