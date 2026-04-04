@@ -82,7 +82,8 @@ class OpportunityServiceTest {
 
     when(companyRepository.findById(companyId)).thenReturn(Optional.of(company));
     when(skillRepository.findByName("Perna Esquerda")).thenReturn(new Skill("Perna Esquerda"));
-    when(opportunityMapper.toResponseDTO(eq("Oportunidade criada com sucesso!"), any(Opportunity.class)))
+    when(opportunityMapper.toResponseDTO(
+            eq("Oportunidade criada com sucesso!"), any(Opportunity.class)))
         .thenReturn(expectedResponse);
 
     ResponseDTO<OpportunityDTO> result = opportunityService.createOpportunity(companyId, request);
@@ -108,14 +109,16 @@ class OpportunityServiceTest {
     when(companyRepository.findById(companyId)).thenReturn(Optional.empty());
 
     assertThrows(
-        UserNotFoundException.class, () -> opportunityService.createOpportunity(companyId, request));
+        UserNotFoundException.class,
+        () -> opportunityService.createOpportunity(companyId, request));
 
     verify(companyRepository).findById(companyId);
     verifyNoInteractions(opportunityRepository, opportunityMapper);
   }
 
   @Test
-  @DisplayName("Should update opportunity successfully when user is owner and opportunity is active")
+  @DisplayName(
+      "Should update opportunity successfully when user is owner and opportunity is active")
   void updateOpportunitySuccess() {
     Long userId = 1L;
     Long opportunityId = 1L;
@@ -168,7 +171,8 @@ class OpportunityServiceTest {
   }
 
   @Test
-  @DisplayName("Should throw OpportunityNotFoundException when active opportunity does not exist during update")
+  @DisplayName(
+      "Should throw OpportunityNotFoundException when active opportunity does not exist during update")
   void updateOpportunityWithNonExistentOpportunity() {
     Long userId = 1L;
     Long opportunityId = 999L;
@@ -267,7 +271,8 @@ class OpportunityServiceTest {
   }
 
   @Test
-  @DisplayName("Should throw OpportunityNotFoundException when opportunity does not exist during deletion")
+  @DisplayName(
+      "Should throw OpportunityNotFoundException when opportunity does not exist during deletion")
   void deleteOpportunityWithNonExistentOpportunity() {
     Long userId = 1L;
     Long opportunityId = 999L;
@@ -301,7 +306,8 @@ class OpportunityServiceTest {
             null,
             null);
 
-    when(opportunityRepository.findAllActiveOrderedByCreationDate()).thenReturn(List.of(opportunity));
+    when(opportunityRepository.findAllActiveOrderedByCreationDate())
+        .thenReturn(List.of(opportunity));
     when(opportunityMapper.toOpportunityDTOList(List.of(opportunity))).thenReturn(List.of(dto));
 
     List<OpportunityDTO> result = opportunityService.getOpportunities();

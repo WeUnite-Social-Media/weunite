@@ -50,12 +50,18 @@ class SecurityConfigTest {
   @Test
   @DisplayName("Should require authentication for private opportunity state endpoints")
   void privateOpportunityStateEndpointsRequireAuthentication() throws Exception {
-    mockMvc.perform(post("/api/subscriber/toggleSubscriber/1/2")).andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(post("/api/subscriber/toggleSubscriber/1/2"))
+        .andExpect(status().isUnauthorized());
     mockMvc.perform(get("/api/subscriber/subscribers/2")).andExpect(status().isUnauthorized());
     mockMvc.perform(get("/api/subscriber/isSubscribed/1/2")).andExpect(status().isUnauthorized());
     mockMvc.perform(get("/api/subscriber/athlete/1")).andExpect(status().isUnauthorized());
-    mockMvc.perform(post("/api/saved-opportunities/toggle/1/2")).andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(post("/api/saved-opportunities/toggle/1/2"))
+        .andExpect(status().isUnauthorized());
     mockMvc.perform(get("/api/saved-opportunities/athlete/1")).andExpect(status().isUnauthorized());
-    mockMvc.perform(get("/api/saved-opportunities/isSaved/1/2")).andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(get("/api/saved-opportunities/isSaved/1/2"))
+        .andExpect(status().isUnauthorized());
   }
 }

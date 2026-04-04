@@ -23,8 +23,7 @@ public class OpportunityController {
   private final AuthenticatedUserService authenticatedUserService;
 
   public OpportunityController(
-      OpportunityService opportunityService,
-      AuthenticatedUserService authenticatedUserService) {
+      OpportunityService opportunityService, AuthenticatedUserService authenticatedUserService) {
     this.opportunityService = opportunityService;
     this.authenticatedUserService = authenticatedUserService;
   }

@@ -190,8 +190,7 @@ class SubscriberServiceTest {
   void toggleSubscriberAthleteNotFoundThrowsException() {
     when(athleteRepository.findById(999L)).thenReturn(Optional.empty());
 
-    assertThrows(
-        UserNotFoundException.class, () -> subscribersService.toggleSubscriber(999L, 1L));
+    assertThrows(UserNotFoundException.class, () -> subscribersService.toggleSubscriber(999L, 1L));
 
     verifyNoInteractions(opportunityRepository, subscribersRepository, subscribersMapper);
   }
@@ -206,8 +205,7 @@ class SubscriberServiceTest {
     when(opportunityRepository.findByIdAndDeletedFalse(999L)).thenReturn(Optional.empty());
 
     assertThrows(
-        OpportunityNotFoundException.class,
-        () -> subscribersService.toggleSubscriber(1L, 999L));
+        OpportunityNotFoundException.class, () -> subscribersService.toggleSubscriber(1L, 999L));
   }
 
   @Test
