@@ -1,0 +1,8 @@
+{
+  "extends": "./base.json",
+  "compilerOptions": {
+    "target": "ES2021",
+    "jsx": "react-jsx",
+    "types": ["node", "react", "react-native"]
+  }
+}

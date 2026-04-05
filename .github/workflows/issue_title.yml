@@ -1,0 +1,27 @@
+name: Adicionar Numero Automatico ao Titulo da Issue
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  update-title:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Atualizar titulo da issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          # Formata o numero da issue com 3 digitos (ex: 001, 025, 142)
+          FORMATTED_NUMBER=$(printf "%03d" $ISSUE_NUMBER)
+
+          # Cria o novo titulo no formato: #025 Titulo Original
+          NEW_TITLE="#$FORMATTED_NUMBER $ISSUE_TITLE"
+
+          # Usa o GitHub CLI disponivel nas Actions para editar o titulo
+          gh issue edit $ISSUE_NUMBER --repo $REPOSITORY --title "$NEW_TITLE"

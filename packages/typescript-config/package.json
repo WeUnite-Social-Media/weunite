@@ -1,0 +1,24 @@
+{
+  "name": "@weunite/typescript-config",
+  "private": true,
+  "version": "0.0.0",
+  "exports": {
+    "./base.json": "./base.json",
+    "./library.json": "./library.json",
+    "./react-app.json": "./react-app.json",
+    "./expo.json": "./expo.json"
+  },
+  "files": [
+    "base.json",
+    "library.json",
+    "react-app.json",
+    "expo.json"
+  ],
+  "scripts": {
+    "lint": "node -e \"console.log('TypeScript config package does not lint itself')\"",
+    "typecheck": "node -e \"console.log('No typecheck for config package')\"",
+    "test": "node -e \"console.log('No tests configured for @weunite/typescript-config yet')\"",
+    "build": "node -e \"console.log('No build step for @weunite/typescript-config')\"",
+    "format": "pnpm exec prettier --check ."
+  }
+}

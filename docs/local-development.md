@@ -1,0 +1,113 @@
+# Local Development
+
+## Prerequisites
+
+- Node.js 22 LTS
+- pnpm 10
+- Java 17
+- PostgreSQL 15+ local, or Docker Desktop / compatible Docker runtime
+
+## Install
+
+```bash
+pnpm install
+```
+
+Run the workspace scripts from the repository root (`weunite/`).
+
+If you are inside `apps/api` or `apps/web`, go back first:
+
+- Windows PowerShell: `cd ..\..`
+- macOS/Linux: `cd ../..`
+
+## Environment files
+
+- Web: `apps/web/.env.example`
+- API: `apps/api/.env.example`
+- Mobile: `apps/mobile/.env.example`
+
+## Local workflow with native PostgreSQL
+
+1. Install and start PostgreSQL locally.
+
+2. Create the local database:
+
+```bash
+createdb weunite
+```
+
+Alternative with `psql`:
+
+```bash
+psql -U postgres -c "CREATE DATABASE weunite;"
+```
+
+3. Copy the example env files and fill them in:
+
+```powershell
+Copy-Item apps/api/.env.example apps/api/.env
+Copy-Item apps/web/.env.example apps/web/.env
+```
+
+Alternative on macOS/Linux:
+
+```bash
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
+```
+
+4. Run the local preflight:
+
+```bash
+pnpm dev:infra:local
+```
+
+5. Start web and api together:
+
+```bash
+pnpm dev
+```
+
+6. Start mobile separately when needed:
+
+```bash
+pnpm dev:mobile
+```
+
+`pnpm dev:infra:local` validates:
+
+- `apps/api/.env` and `apps/web/.env`
+- required API env vars
+- base64 RSA JWT keys
+- TCP connectivity to PostgreSQL using `DB_HOST` / `DB_PORT`
+
+## Local workflow with Docker
+
+1. Start the bundled PostgreSQL container:
+
+```bash
+pnpm dev:infra
+```
+
+2. Start web and api:
+
+```bash
+pnpm dev
+```
+
+## Validation
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+API-only checks:
+
+```bash
+pnpm --filter @weunite/api lint
+pnpm --filter @weunite/api test
+pnpm --filter @weunite/api build
+```

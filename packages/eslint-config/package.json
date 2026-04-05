@@ -1,0 +1,25 @@
+{
+  "name": "@weunite/eslint-config",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./base": "./base.js",
+    "./react": "./react.js"
+  },
+  "peerDependencies": {
+    "@eslint/js": "^9.25.0",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "typescript-eslint": "^8.30.1"
+  },
+  "scripts": {
+    "lint": "node -e \"console.log('Lint config package does not lint itself')\"",
+    "typecheck": "node -e \"console.log('No typecheck for config package')\"",
+    "test": "node -e \"console.log('No tests configured for @weunite/eslint-config yet')\"",
+    "build": "node -e \"console.log('No build step for @weunite/eslint-config')\"",
+    "format": "pnpm exec prettier --check ."
+  }
+}

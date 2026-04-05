@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "WeUnite Mobile",
+    "slug": "weunite-mobile",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"]
+  }
+}

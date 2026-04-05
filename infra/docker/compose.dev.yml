@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:15
+    container_name: weunite-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: weunite
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - weunite_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  weunite_postgres_data:
