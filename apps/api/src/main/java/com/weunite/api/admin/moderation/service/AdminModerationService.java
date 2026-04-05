@@ -157,10 +157,7 @@ public class AdminModerationService {
   }
 
   private AdminUserSummaryDTO toUserSummary(
-      User user,
-      Instant now,
-      Map<Long, Long> contentCounts,
-      Map<Long, Long> pendingReportCounts) {
+      User user, Instant now, Map<Long, Long> contentCounts, Map<Long, Long> pendingReportCounts) {
     Long userId = user.getId();
     String status = resolveStatus(user, now);
 

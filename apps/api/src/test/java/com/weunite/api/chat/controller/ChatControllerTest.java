@@ -56,8 +56,7 @@ class ChatControllerTest {
   @DisplayName("Should reject empty chat uploads before calling Cloudinary")
   void uploadFileRejectsEmptyFile() {
     Jwt jwt = mock(Jwt.class);
-    MockMultipartFile file =
-        new MockMultipartFile("file", "empty.txt", "text/plain", new byte[0]);
+    MockMultipartFile file = new MockMultipartFile("file", "empty.txt", "text/plain", new byte[0]);
 
     when(authenticatedUserService.requireMatchingUserId(jwt, 5L)).thenReturn(5L);
 

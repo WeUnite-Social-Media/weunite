@@ -22,7 +22,8 @@ public class UserStatusService {
   public UserStatusDTO updateUserStatus(Long userId, String status) {
     UserPresence userPresence = new UserPresence(userId, normalizeStatus(status));
     UserPresence savedPresence = userPresenceRepository.save(userPresence);
-    return new UserStatusDTO(savedPresence.getUserId(), savedPresence.getStatus(), savedPresence.getUpdatedAt());
+    return new UserStatusDTO(
+        savedPresence.getUserId(), savedPresence.getStatus(), savedPresence.getUpdatedAt());
   }
 
   @Transactional(readOnly = true)

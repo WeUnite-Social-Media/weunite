@@ -21,8 +21,7 @@ public class UserPresence {
     this.status = status;
   }
 
-  @Id
-  private Long userId;
+  @Id private Long userId;
 
   @Column(nullable = false, length = 20)
   private String status;
