@@ -80,6 +80,9 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
     opportunity.company?.name || opportunity.company?.username || "";
   const initials = getInitials(companyName);
   const timeAgo = getTimeAgo(opportunity.createdAt);
+  const updatedTimeAgo = opportunity.updatedAt
+    ? getTimeAgo(opportunity.updatedAt)
+    : null;
   const deadlineDate = new Date(opportunity.dateEnd).toLocaleDateString(
     "pt-BR",
     {
@@ -218,7 +221,12 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
             >
               {opportunity.company?.username || companyName}
             </CardTitle>
-            <CardDescription className="text-xs">ha {timeAgo}</CardDescription>
+            <CardDescription className="text-xs">
+              ha {timeAgo}
+              {updatedTimeAgo && updatedTimeAgo !== timeAgo ? (
+                <span>{` · Atualizado há ${updatedTimeAgo}`}</span>
+              ) : null}
+            </CardDescription>
           </div>
 
           <div className="ml-auto flex items-center gap-2">

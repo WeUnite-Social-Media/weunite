@@ -1,11 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { ExternalLink, Loader2, Mail, Users } from "lucide-react";
 import { useGetOpportunitySubscribers } from "@/features/opportunities/state/useOpportunities";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/shared/components/ui/avatar";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { getInitials } from "@/shared/utils/getInitials";
 import type { Subscriber } from "@/shared/types/opportunity.types";
+import type { User } from "@/shared/types/user.types";
+import { useState } from "react";
+import ProfilePreview from "@/features/profile/components/ProfilePreview";
 
 interface OpportunitySubscribersProps {
   opportunityId?: number;
@@ -21,6 +28,9 @@ export function OpportunitySubscribers({
     opportunityId || 0,
     Boolean(opportunityId) && !subscribersProp,
   );
+
+  const [selectedAthlete, setSelectedAthlete] = useState<User | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const subscribers = Array.isArray(subscribersProp)
     ? subscribersProp
@@ -88,7 +98,10 @@ export function OpportunitySubscribers({
 
               <Button
                 variant="outline"
-                onClick={() => navigate(athleteProfilePath)}
+                onClick={() => {
+                  setSelectedAthlete(athlete ?? null);
+                  setIsPreviewOpen(true);
+                }}
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Ver perfil
@@ -97,6 +110,15 @@ export function OpportunitySubscribers({
           </Card>
         );
       })}
+
+      <ProfilePreview
+        athlete={selectedAthlete}
+        isOpen={isPreviewOpen}
+        onOpenChange={(open) => {
+          setIsPreviewOpen(open);
+          if (!open) setSelectedAthlete(null);
+        }}
+      />
     </div>
   );
 }

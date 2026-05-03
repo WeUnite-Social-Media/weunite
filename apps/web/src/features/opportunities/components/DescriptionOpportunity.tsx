@@ -144,6 +144,10 @@ export function OpportunityDescription({
                   <p className="text-sm text-muted-foreground">
                     {companyName} - Publicado ha{" "}
                     {getTimeAgo(opportunity.createdAt)}
+                    {opportunity.updatedAt &&
+                    opportunity.updatedAt !== opportunity.createdAt ? (
+                      <span>{` · Atualizado há ${getTimeAgo(opportunity.updatedAt)}`}</span>
+                    ) : null}
                   </p>
                 </div>
               </div>
@@ -229,6 +233,10 @@ export function OpportunityDescription({
                 <p className="text-sm text-muted-foreground">
                   {companyName} - Publicado ha{" "}
                   {getTimeAgo(opportunity.createdAt)}
+                  {opportunity.updatedAt &&
+                  opportunity.updatedAt !== opportunity.createdAt ? (
+                    <span>{` · Atualizado há ${getTimeAgo(opportunity.updatedAt)}`}</span>
+                  ) : null}
                 </p>
               </div>
             </div>

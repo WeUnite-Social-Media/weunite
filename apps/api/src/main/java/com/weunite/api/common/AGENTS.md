@@ -18,6 +18,7 @@ This module owns cross-cutting backend infrastructure in `com.weunite.api.common
 ## Key entrypoints
 
 - `config/*`
+- `persistence/*`
 - `security/*`
 - `handler/*`
 - `validation/*`
@@ -37,6 +38,7 @@ This module owns cross-cutting backend infrastructure in `com.weunite.api.common
 - Do not move feature-specific DTOs/services into `common`.
 - Prefer extension/composition by feature modules over tight coupling.
 - Keep database bootstrap and legacy schema/data normalization in `config/*` when the fix is cross-cutting and must run before feature traffic.
+- Keep shared JPA persistence primitives such as auditable mapped superclasses in `persistence/*`.
 - Keep runtime bootstrap limited to data normalization; route schema DDL through versioned database migrations instead of `CommandLineRunner`.
 - Keep startup-time schema/data normalization idempotent across repeated boots; never rely on one-time DDL side effects.
 - Keep shared authenticated-actor helpers in `security/*` when controllers must validate that a
