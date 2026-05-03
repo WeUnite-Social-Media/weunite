@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Avatar,
@@ -11,7 +10,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/shared/components/ui/dialog";
 import { Badge } from "@/shared/components/ui/badge";
@@ -90,10 +88,14 @@ export default function ProfilePreview({
     <Dialog open={Boolean(isOpen)} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[30em] md:max-w-[36em]">
         <DialogHeader>
-          <DialogTitle>{athlete.name || "Atleta"}</DialogTitle>
-          <DialogDescription>
-            Visualização do perfil — somente leitura
-          </DialogDescription>
+          <DialogTitle className="flex flex-wrap gap-2">
+            {athlete.name || "Atleta"} -
+            {athlete.skills?.map((s) => (
+              <Badge key={s.id} variant="secondary">
+                {s.name}
+              </Badge>
+            ))}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="flex gap-4 py-4">
@@ -111,14 +113,6 @@ export default function ProfilePreview({
               <p className="mt-2 whitespace-pre-wrap text-sm">{athlete.bio}</p>
             ) : null}
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              {athlete.skills?.map((s) => (
-                <Badge key={s.id} variant="secondary">
-                  {s.name}
-                </Badge>
-              ))}
-            </div>
-
             <div className="mt-3 text-sm text-muted-foreground">
               {athlete.position ? <div>Posição: {athlete.position}</div> : null}
               {athlete.height ? <div>Altura: {athlete.height} m</div> : null}
@@ -127,12 +121,13 @@ export default function ProfilePreview({
           </div>
         </div>
 
-        <DialogFooter>
-          <div className="flex w-full gap-2">
-            <Button variant="outline" onClick={() => onOpenChange?.(false)}>
-              Fechar
-            </Button>
-            <Button onClick={handleChat} disabled={isCreatingConversation}>
+        <DialogFooter className="flex w-full justify-end">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:justify-end">
+            <Button
+              onClick={handleChat}
+              disabled={isCreatingConversation}
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
               {isCreatingConversation ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -146,7 +141,8 @@ export default function ProfilePreview({
               )}
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
+              className="border-border bg-transparent text-foreground hover:bg-muted hover:text-foreground"
               onClick={() => {
                 onOpenChange?.(false);
                 navigate(
