@@ -27,6 +27,7 @@ import {
 } from "@/features/feed/state/useComments";
 import type { Comment as CommentType } from "@/shared/types/comment.types";
 import { getInitials } from "@/shared/utils/getInitials";
+import { useEffect, useRef } from "react";
 
 const COMMENT_LIMIT = 500;
 
@@ -34,14 +35,17 @@ interface CommentsProps {
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   post: PostType;
+  targetCommentId?: number | null;
 }
 
 export default function Comments({
   isOpen,
   onOpenChange,
   post,
+  targetCommentId,
 }: CommentsProps) {
   const [commentText, setCommentText] = useState("");
+  const commentListRef = useRef<HTMLDivElement | null>(null);
 
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -58,6 +62,22 @@ export default function Comments({
 
   const comments = (data?.data || []) as CommentType[];
   const createComment = useCreateComment();
+
+  useEffect(() => {
+    if (!isOpen || !targetCommentId || comments.length === 0) {
+      return;
+    }
+
+    const commentElement = document.getElementById(
+      `comment-${targetCommentId}`,
+    );
+
+    if (!commentElement) {
+      return;
+    }
+
+    commentElement.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [comments.length, isOpen, targetCommentId]);
 
   const handleCreateComment = () => {
     if (!user || !commentText.trim()) return;
@@ -112,7 +132,9 @@ export default function Comments({
       );
     }
 
-    return comments.map((comment) => <Comment key={comment.id} comment={comment} />);
+    return comments.map((comment) => (
+      <Comment key={comment.id} comment={comment} />
+    ));
   };
 
   if (!commentDesktop) {
@@ -181,7 +203,9 @@ export default function Comments({
               </div>
             </div>
 
-            <div className="w-full max-w-[45em] p-2">{renderCommentsList()}</div>
+            <div ref={commentListRef} className="w-full max-w-[45em] p-2">
+              {renderCommentsList()}
+            </div>
           </div>
         </DrawerContent>
       </Drawer>
@@ -210,7 +234,9 @@ export default function Comments({
             </div>
           ) : null}
 
-          <div className={`${post.imageUrl ? "w-1/2" : "w-full"} flex flex-col`}>
+          <div
+            className={`${post.imageUrl ? "w-1/2" : "w-full"} flex flex-col`}
+          >
             <div className="z-2 flex gap-2 border-b bg-card p-4">
               <Avatar
                 className="hover:cursor-pointer"
@@ -234,7 +260,10 @@ export default function Comments({
               </div>
             </div>
 
-            <div className="custom-scrollbar flex-1 max-h-[66vh] overflow-y-auto p-4">
+            <div
+              ref={commentListRef}
+              className="custom-scrollbar flex-1 max-h-[66vh] overflow-y-auto p-4"
+            >
               <div className="space-y-4">{renderCommentsList()}</div>
             </div>
 

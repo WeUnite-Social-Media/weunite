@@ -53,6 +53,12 @@ public class CommentController {
     return ResponseEntity.status(HttpStatus.OK).body(comments);
   }
 
+  @GetMapping("/get/detail/{commentId}")
+  public ResponseEntity<ResponseDTO<CommentDTO>> getCommentById(@PathVariable Long commentId) {
+    CommentDTO comment = commentService.getCommentById(commentId);
+    return ResponseEntity.status(HttpStatus.OK).body(new ResponseDTO<>("Comentário consultado com sucesso!", comment));
+  }
+
   @PutMapping("/update/{userId}/{commentId}")
   public ResponseEntity<ResponseDTO<CommentDTO>> updatePost(
       @AuthenticationPrincipal Jwt jwt,

@@ -54,7 +54,7 @@ public class CommentService {
 
     commentRepository.save(newComment);
     notificationService.createNotification(
-        post.getUser().getId(), NotificationType.POST_COMMENT, userId, postId, null);
+      post.getUser().getId(), NotificationType.POST_COMMENT, userId, newComment.getId(), null);
 
     return commentMapper.toResponseDTO("Comentário criado com sucesso!", newComment);
   }
@@ -78,11 +78,17 @@ public class CommentService {
     return commentMapper.mapCommentsToList(comments);
   }
 
+  @Transactional(readOnly = true)
+  public CommentDTO getCommentById(Long commentId) {
+    Comment comment =
+        commentRepository.findById(commentId).orElseThrow(CommentNotFoundException::new);
+
+    return commentMapper.toCommentDTO(comment);
+  }
+
   @Transactional
   public ResponseDTO<CommentDTO> updateComment(
       Long userId, Long commentId, CommentRequestDTO updatedComment, MultipartFile image) {
-    User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-
     Comment existingComment =
         commentRepository.findById(commentId).orElseThrow(CommentNotFoundException::new);
 

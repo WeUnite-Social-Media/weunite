@@ -140,7 +140,10 @@ export default function Comment({ comment }: { comment: Comment }) {
         entityTitle={comment.text?.substring(0, 50) || "Comentário"}
       />
 
-      <Card className="mx-auto w-full max-w-[42em] border-0 border-b border-foreground/30 rounded-none bg-red shadow-none">
+      <Card
+        id={`comment-${comment.id}`}
+        className="mx-auto w-full max-w-[42em] rounded-none border-0 border-b border-foreground/30 bg-red shadow-none"
+      >
         <CardHeader className="mb-[0.5em] flex flex-row items-center gap-2">
           <Avatar
             className="h-[2.8em] w-[2.8em] hover:cursor-pointer"
@@ -246,11 +249,11 @@ export default function Comment({ comment }: { comment: Comment }) {
           </DropdownMenu>
         </CardHeader>
 
-        <CardContent className="mt-[-18px]">
-          <p className="whitespace-pre-wrap break-words">{comment.text}</p>
+        <CardContent className="-mt-4.5">
+          <p className="whitespace-pre-wrap wrap-break-word">{comment.text}</p>
         </CardContent>
 
-        <CardFooter className="mt-[-20px] flex flex-col">
+        <CardFooter className="-mt-5 flex flex-col">
           <div className="mb-3 flex w-full justify-between">
             <span className="text-sm text-muted-foreground">
               {likesCount} curtidas • {comment.comments.length || 0} comentários

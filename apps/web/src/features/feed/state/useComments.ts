@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import {
   createCommentRequest,
   deleteCommentRequest,
+  getCommentByIdRequest,
   getCommentsPostRequest,
   getCommentsUserId,
   updateCommentRequest,
@@ -16,12 +17,15 @@ import type {
 export const commentKeys = {
   all: ["comments"] as const,
   lists: () => [...commentKeys.all, "list"] as const,
+  detail: () => [...commentKeys.all, "detail"] as const,
   listByPost: (postId: number) =>
     [...commentKeys.lists(), "post", postId] as const,
   listByUser: (userId: number) =>
     [...commentKeys.lists(), "user", userId] as const,
   listByComment: (commentId: number) =>
     [...commentKeys.lists(), "comment", commentId] as const,
+  detailById: (commentId: number) =>
+    [...commentKeys.detail(), commentId] as const,
 };
 
 export const useCreateComment = () => {
@@ -114,6 +118,14 @@ export const useGetCommentsByUserId = (userId: number) => {
     enabled: !!userId,
   });
 };
+
+export const commentDetailQueryOptions = (commentId: number) => ({
+  queryKey: commentKeys.detailById(commentId),
+  queryFn: () => getCommentByIdRequest(commentId),
+  staleTime: 5 * 60 * 1000,
+  retry: 2,
+  enabled: commentId > 0,
+});
 
 export const useDeleteComment = () => {
   const queryClient = useQueryClient();
