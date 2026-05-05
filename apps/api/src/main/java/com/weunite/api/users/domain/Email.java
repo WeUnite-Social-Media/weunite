@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Email {
 
-  @Column(name = "email", nullable = false, unique = true, length = 50)
+  @Column(name = "email", nullable = false, unique = true, length = 254)
   private String value;
 
   public Email(String value) {
