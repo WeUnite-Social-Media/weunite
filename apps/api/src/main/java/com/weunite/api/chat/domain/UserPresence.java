@@ -18,13 +18,13 @@ public class UserPresence {
 
   public UserPresence(Long userId, String status) {
     this.userId = userId;
-    this.status = status;
+    this.status = UserStatus.from(status);
   }
 
   @Id private Long userId;
 
   @Column(nullable = false, length = 20)
-  private String status;
+  private UserStatus status = UserStatus.OFFLINE;
 
   @Column(nullable = false)
   private LocalDateTime updatedAt;
@@ -33,5 +33,13 @@ public class UserPresence {
   @PreUpdate
   protected void updateTimestamp() {
     this.updatedAt = LocalDateTime.now();
+  }
+
+  public String getStatusValue() {
+    return status.name();
+  }
+
+  public void setStatus(String status) {
+    this.status = UserStatus.from(status);
   }
 }
