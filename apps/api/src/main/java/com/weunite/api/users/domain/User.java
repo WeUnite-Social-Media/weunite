@@ -24,7 +24,6 @@ public class User {
     this.name = name;
     this.username = username;
     this.accountCredentials = new AccountCredentials(email, password);
-    setEmailVerified(false);
     this.isBanned = false;
     this.isSuspended = false;
     this.isPrivate = false;
