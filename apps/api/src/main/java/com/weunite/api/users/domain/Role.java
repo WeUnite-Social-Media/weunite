@@ -9,7 +9,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "tb_role")
+@Table(name = "tb_role", uniqueConstraints = @UniqueConstraint(columnNames = "name"))
 @NoArgsConstructor
 @AllArgsConstructor
 public class Role {

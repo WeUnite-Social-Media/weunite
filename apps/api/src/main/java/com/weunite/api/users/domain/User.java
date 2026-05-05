@@ -23,9 +23,8 @@ public class User {
   public User(String name, String username, String email, String password) {
     this.name = name;
     this.username = username;
-    this.email = email;
-    this.password = password;
-    this.emailVerified = false;
+    this.accountCredentials = new AccountCredentials(email, password);
+    setEmailVerified(false);
     this.isBanned = false;
     this.isSuspended = false;
     this.isPrivate = false;
@@ -46,14 +45,7 @@ public class User {
   @Column(nullable = false, unique = true, length = 30)
   private String username;
 
-  @Column(nullable = false, unique = true, length = 50)
-  private String email;
-
-  @Column(nullable = false)
-  private String password;
-
-  @Column(nullable = false)
-  private Boolean emailVerified;
+  @Embedded private AccountCredentials accountCredentials = new AccountCredentials();
 
   @Column(nullable = false)
   private Boolean isBanned;
@@ -72,10 +64,6 @@ public class User {
 
   @Column(length = 500)
   private String suspensionReason;
-
-  @Column private String verificationToken;
-
-  @Column private Instant verificationTokenExpires;
 
   @Column(nullable = false)
   private Boolean isPrivate;
@@ -126,11 +114,43 @@ public class User {
   }
 
   public boolean isEmailVerified() {
-    return Boolean.TRUE.equals(emailVerified);
+    return getAccountCredentials().isEmailVerified();
   }
 
   public void setEmailVerified(Boolean emailVerified) {
-    this.emailVerified = defaultBoolean(emailVerified);
+    getAccountCredentials().setEmailVerified(emailVerified);
+  }
+
+  public String getEmail() {
+    return getAccountCredentials().getEmailValue();
+  }
+
+  public void setEmail(String email) {
+    getAccountCredentials().setEmail(email);
+  }
+
+  public String getPassword() {
+    return getAccountCredentials().getPassword();
+  }
+
+  public void setPassword(String password) {
+    getAccountCredentials().setPassword(password);
+  }
+
+  public String getVerificationToken() {
+    return getAccountCredentials().getVerificationToken();
+  }
+
+  public void setVerificationToken(String verificationToken) {
+    getAccountCredentials().setVerificationToken(verificationToken);
+  }
+
+  public Instant getVerificationTokenExpires() {
+    return getAccountCredentials().getVerificationTokenExpires();
+  }
+
+  public void setVerificationTokenExpires(Instant verificationTokenExpires) {
+    getAccountCredentials().setVerificationTokenExpires(verificationTokenExpires);
   }
 
   public boolean isBanned() {
@@ -162,10 +182,18 @@ public class User {
   }
 
   private void normalizeBooleanFlags() {
-    emailVerified = defaultBoolean(emailVerified);
+    getAccountCredentials().normalizeFlags();
     isBanned = defaultBoolean(isBanned);
     isSuspended = defaultBoolean(isSuspended);
     isPrivate = defaultBoolean(isPrivate);
+  }
+
+  public AccountCredentials getAccountCredentials() {
+    if (accountCredentials == null) {
+      accountCredentials = new AccountCredentials();
+    }
+
+    return accountCredentials;
   }
 
   private Boolean defaultBoolean(Boolean value) {

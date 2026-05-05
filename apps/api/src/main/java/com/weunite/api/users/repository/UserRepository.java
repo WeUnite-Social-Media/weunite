@@ -15,23 +15,29 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   Optional<User> findByUsername(String username);
 
-  Optional<User> findByEmail(String email);
+  @Query("SELECT u FROM User u WHERE u.accountCredentials.email.value = :email")
+  Optional<User> findByEmail(@Param("email") String email);
 
-  Optional<User> findByVerificationToken(String verificationToken);
+  @Query("SELECT u FROM User u WHERE u.accountCredentials.verificationToken = :verificationToken")
+  Optional<User> findByVerificationToken(@Param("verificationToken") String verificationToken);
 
-  boolean existsByUsernameOrEmail(String username, String email);
+  @Query(
+      "SELECT COUNT(u) > 0 FROM User u "
+          + "WHERE u.username = :username OR u.accountCredentials.email.value = :email")
+  boolean existsByUsernameOrEmail(@Param("username") String username, @Param("email") String email);
 
   boolean existsByUsername(String username);
 
-  boolean existsByEmail(String email);
+  @Query("SELECT COUNT(u) > 0 FROM User u WHERE u.accountCredentials.email.value = :email")
+  boolean existsByEmail(@Param("email") String email);
 
   @Query(
-      "SELECT u FROM User u WHERE LOWER(u.name) LIKE LOWER(CONCAT('%', :name, '%')) AND u.emailVerified = true")
+      "SELECT u FROM User u WHERE LOWER(u.name) LIKE LOWER(CONCAT('%', :name, '%')) AND u.accountCredentials.emailVerified = true")
   List<User> findByNameContainingIgnoreCaseAndEmailVerifiedTrue(
       @Param("name") String name, Pageable pageable);
 
   @Query(
-      "SELECT u FROM User u WHERE (LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%'))) AND u.emailVerified = true")
+      "SELECT u FROM User u WHERE (LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.accountCredentials.email.value) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%'))) AND u.accountCredentials.emailVerified = true")
   List<User> searchUsers(@Param("query") String query);
 
   @Query(
