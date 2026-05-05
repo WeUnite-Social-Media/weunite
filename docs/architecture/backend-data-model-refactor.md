@@ -4,6 +4,8 @@
 
 Refactor the API data model behind the current feature modules so the backend can scale without moving business rules out of `apps/api` or breaking existing web/mobile HTTP contracts.
 
+This work tracks project architecture issue `#6` and its class-focused sub-issues.
+
 The target architecture keeps the current module ownership:
 
 - `users`: account, profile, role, athlete, and company models.
@@ -43,15 +45,29 @@ The current backend already follows the repository's module-by-feature direction
 
 The refactor should preserve the class-diagram concepts already represented in the backend:
 
-- Identity: `User`, `Role`, `Athlete`, and `Company`.
+- Identity and access: `AccountCredentials`, `Email`, `Role`, `User`, `Athlete`, and `Company`.
 - Social graph: `Follow`.
 - Feed: `Post`, `Comment`, `Like`, and `Repost`.
 - Opportunities: `Opportunity`, `Skill`, `Subscriber`, and `SavedOpportunity`.
-- Communication: `Conversation`, `Message`, and `UserPresence`.
+- Communication: `Conversation`, `Message`, `UserStatus`, and persisted presence state.
 - Platform events: `Notification`.
 - Trust and safety: `Report` plus admin moderation/statistics services.
 
 The persistence shape can change, but these concepts should remain visible in the API domain model and DTO contracts unless the product model changes.
+
+## Issue Mapping
+
+The first wave should reference the class issues below:
+
+- `#6`: architecture parent issue for the class refactor.
+- `#8`: `AccountCredentials`, currently represented inside `User` as email, password, verification token, reset token, and token expiry state.
+- `#9`: `Email`, currently represented as a validated user field plus `common.mail` delivery infrastructure.
+- `#10`: `Role`, currently represented by `users.domain.Role` and seeded by `DatabaseConfig`.
+- `#11`: `UserStatus`, currently exposed as `UserStatusDTO`/`UserStatusService` and persisted as `UserPresence`.
+- `#12`: `User`, the account and shared profile aggregate root.
+- `#13`: `Athlete`, currently modeled as a `User` subtype with athlete-specific profile fields and skills.
+- `#14`: `Company`, currently modeled as a `User` subtype with company-specific profile fields and opportunities.
+- `#15`: `Post`, the feed content aggregate root.
 
 ## Target Model Direction
 
@@ -65,9 +81,11 @@ The persistence shape can change, but these concepts should remain visible in th
 ### Users
 
 1. Keep `User` as the account aggregate root for authentication, identity, moderation status, privacy, and common profile fields.
-2. Move athlete-only and company-only fields into profile tables or explicit one-to-one profile entities owned by `users`.
-3. Keep role assignments explicit through `tb_user_roles`, but remove eager loading where services can fetch roles intentionally.
-4. Keep `Athlete` and `Company` API behavior stable through DTO/mappers during migration.
+2. Introduce `AccountCredentials` as the explicit owner of login email, password hash, verification/reset tokens, and credential lifecycle timestamps.
+3. Treat `Email` as a value object or embeddable identity value, not as the mail-delivery service.
+4. Keep role assignments explicit through `tb_user_roles`, but move role seed data into migrations and remove eager loading where services can fetch roles intentionally.
+5. Move athlete-only and company-only fields into profile tables or explicit one-to-one profile entities owned by `users`.
+6. Keep `Athlete` and `Company` API behavior stable through DTO/mappers during migration.
 
 ### Posts
 
@@ -96,6 +114,7 @@ The persistence shape can change, but these concepts should remain visible in th
 2. Avoid eager participant/sender loading in default entity mappings; fetch exactly what each endpoint needs.
 3. Keep message deletion/edit/read semantics explicit in the domain model.
 4. Keep websocket identity derived from authenticated session state.
+5. Keep `UserStatus` as the API/domain concept for availability and decide whether the persisted class remains `UserPresence` or is renamed during the refactor.
 
 ### Notifications
 
