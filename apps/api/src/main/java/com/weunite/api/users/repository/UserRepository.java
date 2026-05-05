@@ -37,7 +37,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
       @Param("name") String name, Pageable pageable);
 
   @Query(
-      "SELECT u FROM User u WHERE (LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.accountCredentials.email.value) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%'))) AND u.accountCredentials.emailVerified = true")
+      "SELECT u FROM User u WHERE (LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) OR u.accountCredentials.email.value LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%'))) AND u.accountCredentials.emailVerified = true")
   List<User> searchUsers(@Param("query") String query);
 
   @Query(
