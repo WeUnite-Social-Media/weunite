@@ -109,11 +109,7 @@ public class Opportunity {
       inverseJoinColumns = @JoinColumn(name = "skills_id"))
   private Set<Skill> skills = new HashSet<>();
 
-  @OneToMany(
-      mappedBy = "opportunity",
-      cascade = CascadeType.ALL,
-      orphanRemoval = true,
-      fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "opportunity", fetch = FetchType.LAZY)
   private Set<Subscriber> subscribers = new HashSet<>();
 
   @ManyToOne

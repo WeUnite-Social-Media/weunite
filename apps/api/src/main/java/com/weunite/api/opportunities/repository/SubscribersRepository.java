@@ -16,6 +16,8 @@ public interface SubscribersRepository extends JpaRepository<Subscriber, Long> {
 
   List<Subscriber> findByAthleteIdAndOpportunityDeletedFalse(Long athleteId);
 
+  int deleteByOpportunityId(Long opportunityId);
+
   @EntityGraph(
       attributePaths = {
         "athlete",

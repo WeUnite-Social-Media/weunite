@@ -89,6 +89,32 @@ class OpportunityRelationshipPersistenceTest {
   }
 
   @Test
+  @DisplayName(
+      "Should keep subscription lifecycle repository-owned when opportunity collections change")
+  void keepOpportunitySubscriptionLifecycleRepositoryOwned() {
+    Athlete athlete =
+        athleteRepository.save(
+            new Athlete(
+                "Opportunity Owned Athlete",
+                "opportunity_owned_athlete",
+                "opportunity_owned@example.com",
+                "p"));
+    Opportunity opportunity = opportunityRepository.save(buildOpportunity());
+    subscribersRepository.saveAndFlush(new Subscriber(athlete, opportunity));
+
+    entityManager.clear();
+
+    Opportunity reloadedOpportunity =
+        opportunityRepository.findById(opportunity.getId()).orElseThrow();
+    reloadedOpportunity.getSubscribers().clear();
+    opportunityRepository.saveAndFlush(reloadedOpportunity);
+
+    entityManager.clear();
+
+    assertEquals(1, subscribersRepository.count());
+  }
+
+  @Test
   @DisplayName("Should preload opportunity read-model associations explicitly")
   void preloadOpportunityReadModelAssociations() {
     Role companyRole = roleRepository.save(new Role(null, "COMPANY"));
