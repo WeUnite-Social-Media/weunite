@@ -1,5 +1,6 @@
 package com.weunite.api.opportunities.domain;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,6 +65,27 @@ class OpportunityRelationshipPersistenceTest {
     assertThrows(
         DataIntegrityViolationException.class,
         () -> savedOpportunityRepository.saveAndFlush(new SavedOpportunity(athlete, opportunity)));
+  }
+
+  @Test
+  @DisplayName(
+      "Should keep subscription lifecycle repository-owned when athlete collections change")
+  void keepSubscriptionLifecycleRepositoryOwned() {
+    Athlete athlete =
+        athleteRepository.save(
+            new Athlete("Owned Athlete", "owned_athlete", "owned@example.com", "p"));
+    Opportunity opportunity = opportunityRepository.save(buildOpportunity());
+    subscribersRepository.saveAndFlush(new Subscriber(athlete, opportunity));
+
+    entityManager.clear();
+
+    Athlete reloadedAthlete = athleteRepository.findById(athlete.getId()).orElseThrow();
+    reloadedAthlete.getSubscriptions().clear();
+    athleteRepository.saveAndFlush(reloadedAthlete);
+
+    entityManager.clear();
+
+    assertEquals(1, subscribersRepository.count());
   }
 
   @Test

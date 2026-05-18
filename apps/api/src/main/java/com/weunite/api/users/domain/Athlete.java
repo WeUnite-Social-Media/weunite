@@ -40,10 +40,6 @@ public class Athlete extends User {
       inverseJoinColumns = @JoinColumn(name = "skill_id"))
   private Set<Skill> skills = new HashSet<>();
 
-  @OneToMany(
-      mappedBy = "athlete",
-      cascade = CascadeType.ALL,
-      orphanRemoval = true,
-      fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "athlete", fetch = FetchType.LAZY)
   private Set<Subscriber> subscriptions = new HashSet<>();
 }

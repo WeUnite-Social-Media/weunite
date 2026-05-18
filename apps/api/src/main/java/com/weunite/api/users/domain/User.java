@@ -82,10 +82,10 @@ public class User {
       inverseJoinColumns = @JoinColumn(name = "role_id"))
   private Set<Role> role = new HashSet<>();
 
-  @OneToMany(mappedBy = "followed", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "followed")
   private Set<Follow> followers = new HashSet<>();
 
-  @OneToMany(mappedBy = "follower", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "follower")
   private Set<Follow> following = new HashSet<>();
 
   @OneToMany(
