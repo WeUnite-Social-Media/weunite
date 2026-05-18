@@ -1,5 +1,8 @@
 package com.weunite.api.common.persistence;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import com.weunite.api.users.domain.Role;
 import com.weunite.api.users.repository.RoleRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +22,8 @@ class MigrationBaselineTest {
   @Test
   @DisplayName("Should build a schema Hibernate can validate from the Flyway baseline")
   void validateBaselineSchema() {
-    roleRepository.findByName("BASIC");
+    for (Role.Values role : Role.Values.values()) {
+      assertNotNull(roleRepository.findByName(role.name()));
+    }
   }
 }

@@ -39,7 +39,7 @@ The current backend already follows the repository's module-by-feature direction
 - Reports point to reported content with `(type, entityId)` instead of typed associations or a stable target abstraction.
 - Notifications store scalar actor/recipient IDs and actor snapshots, which is acceptable for notification history, but needs clear ownership and indexing.
 - `Subscriber`, `SavedOpportunity`, `Like`, `Repost`, and follow relationships should be treated as first-class join entities with uniqueness, timestamps, and repository-owned queries.
-- Schema ownership still depends on `ddl-auto=update`, while `DatabaseConfig` seeds roles at runtime.
+- Schema ownership still depends on `ddl-auto=update`, while role seed data has moved into migrations.
 
 ## Class Diagram Surface
 
@@ -62,7 +62,7 @@ The first wave should reference the class issues below:
 - `#6`: architecture parent issue for the class refactor.
 - `#8`: `AccountCredentials`, currently represented inside `User` as email, password, verification token, reset token, and token expiry state.
 - `#9`: `Email`, currently represented as a validated user field plus `common.mail` delivery infrastructure.
-- `#10`: `Role`, currently represented by `users.domain.Role` and seeded by `DatabaseConfig`.
+- `#10`: `Role`, represented by `users.domain.Role` with seed data owned by migrations.
 - `#11`: `UserStatus`, currently exposed as `UserStatusDTO`/`UserStatusService` and persisted as `UserPresence`.
 - `#12`: `User`, the account and shared profile aggregate root.
 - `#13`: `Athlete`, currently modeled as a `User` subtype with athlete-specific profile fields and skills.
@@ -83,7 +83,7 @@ The first wave should reference the class issues below:
 1. Keep `User` as the account aggregate root for authentication, identity, moderation status, privacy, and common profile fields.
 2. Introduce `AccountCredentials` as the explicit owner of login email, password hash, verification/reset tokens, and credential lifecycle timestamps.
 3. Treat `Email` as a value object or embeddable identity value, not as the mail-delivery service.
-4. Keep role assignments explicit through `tb_user_roles`, but move role seed data into migrations and remove eager loading where services can fetch roles intentionally.
+4. Keep role assignments explicit through `tb_user_roles`; role seed data now lives in migrations, and eager loading should be removed where services can fetch roles intentionally.
 5. Move athlete-only and company-only fields into profile tables or explicit one-to-one profile entities owned by `users`.
 6. Keep `Athlete` and `Company` API behavior stable through DTO/mappers during migration.
 
