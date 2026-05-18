@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,11 +16,22 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   Optional<User> findByUsername(String username);
 
+  @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.role WHERE u.username = :username")
+  Optional<User> findByUsernameWithRoles(@Param("username") String username);
+
   @Query("SELECT u FROM User u WHERE u.accountCredentials.email.value = :email")
   Optional<User> findByEmail(@Param("email") String email);
 
+  @Query(
+      "SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.role "
+          + "WHERE u.accountCredentials.email.value = :email")
+  Optional<User> findByEmailWithRoles(@Param("email") String email);
+
   @Query("SELECT u FROM User u WHERE u.accountCredentials.verificationToken = :verificationToken")
   Optional<User> findByVerificationToken(@Param("verificationToken") String verificationToken);
+
+  @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.role WHERE u.id = :id")
+  Optional<User> findByIdWithRoles(@Param("id") Long id);
 
   @Query(
       "SELECT COUNT(u) > 0 FROM User u "
@@ -39,6 +51,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
   @Query(
       "SELECT u FROM User u WHERE (LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) OR u.accountCredentials.email.value LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%'))) AND u.accountCredentials.emailVerified = true")
   List<User> searchUsers(@Param("query") String query);
+
+  @Query(
+      "SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.role "
+          + "WHERE (LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) "
+          + "OR u.accountCredentials.email.value LIKE LOWER(CONCAT('%', :query, '%')) "
+          + "OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%'))) "
+          + "AND u.accountCredentials.emailVerified = true")
+  List<User> searchUsersWithRoles(@Param("query") String query);
+
+  @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.role")
+  List<User> findAllWithRoles(Sort sort);
 
   @Query(
       "SELECT COUNT(DISTINCT p.user.id) FROM Post p WHERE COALESCE(p.updatedAt, p.createdAt) >= :since")

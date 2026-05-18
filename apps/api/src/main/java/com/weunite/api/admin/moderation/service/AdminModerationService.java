@@ -51,7 +51,7 @@ public class AdminModerationService {
   @Transactional(readOnly = true)
   public List<AdminUserSummaryDTO> getUsersSummary() {
     Instant now = Instant.now();
-    List<User> users = userRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    List<User> users = userRepository.findAllWithRoles(Sort.by(Sort.Direction.DESC, "createdAt"));
 
     if (users.isEmpty()) {
       return List.of();

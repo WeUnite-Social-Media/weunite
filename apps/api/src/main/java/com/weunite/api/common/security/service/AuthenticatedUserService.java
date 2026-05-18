@@ -53,7 +53,7 @@ public class AuthenticatedUserService {
     Long authenticatedUserId = requireUserId(jwt);
     User user =
         userRepository
-            .findById(authenticatedUserId)
+            .findByIdWithRoles(authenticatedUserId)
             .orElseThrow(() -> new UnauthorizedException("Usuario autenticado nao encontrado"));
 
     boolean isAdmin =

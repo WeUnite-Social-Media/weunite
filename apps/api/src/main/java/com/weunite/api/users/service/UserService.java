@@ -87,7 +87,9 @@ public class UserService {
   @Transactional(isolation = Isolation.REPEATABLE_READ)
   public ResponseDTO<UserDTO> deleteUser(String username) {
     User user =
-        userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException());
+        userRepository
+            .findByUsernameWithRoles(username)
+            .orElseThrow(() -> new UserNotFoundException());
 
     user.getRole().clear();
 
@@ -110,14 +112,15 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public ResponseDTO<UserDTO> getUser(Long id) {
-    User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
+    User user = userRepository.findByIdWithRoles(id).orElseThrow(UserNotFoundException::new);
 
     return userMapper.toResponseDTO("Usuario encontrado com sucesso", user);
   }
 
   @Transactional(readOnly = true)
   public ResponseDTO<UserDTO> getUser(String username) {
-    User user = userRepository.findByUsername(username).orElseThrow(UserNotFoundException::new);
+    User user =
+        userRepository.findByUsernameWithRoles(username).orElseThrow(UserNotFoundException::new);
 
     return userMapper.toResponseDTO("Usuario encontrado com sucesso", user);
   }
@@ -216,7 +219,7 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public User findUserEntityByUsername(String username) {
-    return userRepository.findByUsername(username).orElseThrow(UserNotFoundException::new);
+    return userRepository.findByUsernameWithRoles(username).orElseThrow(UserNotFoundException::new);
   }
 
   @Transactional(readOnly = true)
@@ -226,7 +229,7 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public User findUserEntityByEmail(String email) {
-    return userRepository.findByEmail(email).orElseThrow(UserNotFoundException::new);
+    return userRepository.findByEmailWithRoles(email).orElseThrow(UserNotFoundException::new);
   }
 
   @Transactional(readOnly = true)
@@ -267,7 +270,7 @@ public class UserService {
   @Transactional(readOnly = true)
   public ResponseDTO<List<UserDTO>> searchUsers(String query) {
 
-    List<User> users = userRepository.searchUsers(query.trim());
+    List<User> users = userRepository.searchUsersWithRoles(query.trim());
 
     return userMapper.toSearchResponseDTO("Usuarios encontrados com sucesso", users);
   }

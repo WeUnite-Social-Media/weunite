@@ -76,7 +76,7 @@ class AuthenticatedUserServiceTest {
     user.setId(15L);
     user.setRole(java.util.Set.of(new Role(4L, "ATHLETE")));
 
-    when(userRepository.findById(15L)).thenReturn(Optional.of(user));
+    when(userRepository.findByIdWithRoles(15L)).thenReturn(Optional.of(user));
 
     UnauthorizedException exception =
         assertThrows(

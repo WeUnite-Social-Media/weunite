@@ -75,7 +75,7 @@ public class User {
   private String bio;
 
   @Column(nullable = false)
-  @ManyToMany(fetch = FetchType.EAGER)
+  @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
       name = "tb_user_roles",
       joinColumns = @JoinColumn(name = "user_id"),
