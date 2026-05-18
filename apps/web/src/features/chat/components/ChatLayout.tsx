@@ -36,9 +36,6 @@ export const ChatLayout = () => {
     (state) => state.clearPendingConversationId,
   );
   const pendingMessageId = useChatStore((state) => state.pendingMessageId);
-  const clearPendingMessageId = useChatStore(
-    (state) => state.clearPendingMessageId,
-  );
   const pendingConversationId = useChatStore(
     (state) => state.pendingConversationId,
   );
@@ -253,7 +250,6 @@ export const ChatLayout = () => {
               onBack={handleBack}
               isMobile={true}
               pendingMessageId={pendingMessageId}
-              clearPendingMessageId={clearPendingMessageId}
             />
           ) : (
             <div className="flex h-full items-center justify-center p-4">
@@ -278,7 +274,6 @@ export const ChatLayout = () => {
               onBack={handleBack}
               isMobile={false}
               pendingMessageId={pendingMessageId}
-              clearPendingMessageId={clearPendingMessageId}
             />
           ) : (
             <div className="flex-1 flex items-center justify-center p-4">

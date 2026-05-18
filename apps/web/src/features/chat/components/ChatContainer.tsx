@@ -28,7 +28,6 @@ interface ChatContainerProps {
   onBack?: () => void;
   isMobile?: boolean;
   pendingMessageId?: number | null;
-  clearPendingMessageId?: () => void;
 }
 
 export const ChatContainer = ({
@@ -36,7 +35,6 @@ export const ChatContainer = ({
   onBack,
   isMobile = false,
   pendingMessageId,
-  clearPendingMessageId,
 }: ChatContainerProps) => {
   const userId = useAuthStore((state) => state.user?.id);
   const [isOtherTyping] = useState(false);

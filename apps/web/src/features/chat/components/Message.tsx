@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, FileText, Download, Play, Pause } from "lucide-react";
 import { ImageModal } from "@/features/chat/components/ImageModal";
+import { resolveMediaBaseUrl } from "@/shared/utils/resolveMediaBaseUrl";
 
 interface MessageType {
   id: number;
@@ -20,6 +21,7 @@ export const Message = ({ message }: MessageProps) => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
+  const mediaBaseUrl = resolveMediaBaseUrl();
 
   const isImageUrl = (text: string) => {
     return text.match(/\.(jpg|jpeg|png|gif|webp)$/i);
@@ -52,7 +54,7 @@ export const Message = ({ message }: MessageProps) => {
 
   const renderContent = () => {
     if (isFileUrl(message.text)) {
-      const fullUrl = `http://localhost:8080${message.text}`;
+      const fullUrl = `${mediaBaseUrl}${message.text}`;
 
       if (isImageUrl(message.text)) {
         return (
