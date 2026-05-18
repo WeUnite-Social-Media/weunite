@@ -91,7 +91,8 @@ The first wave should reference the class issues below:
 
 1. Keep `Post`, `Comment`, `Like`, and `Repost` in the posts module.
 2. Make soft-delete semantics consistent for posts and comments.
-3. Treat likes and reposts as independent interaction entities with database uniqueness and timestamps.
+3. Treat post likes and reposts as independent interaction entities with database uniqueness,
+   timestamps, and explicit repository-owned cleanup.
 4. Keep feed pagination database-backed through projections that fetch required author/repost data explicitly.
 5. Avoid serializing entities directly; remove Jackson cycle annotations once DTO boundaries cover responses.
 
