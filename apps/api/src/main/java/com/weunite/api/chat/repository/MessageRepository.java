@@ -3,6 +3,7 @@ package com.weunite.api.chat.repository;
 import com.weunite.api.chat.domain.Message;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,4 +30,16 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
   @Query("SELECT m FROM Message m JOIN FETCH m.sender WHERE m.id = :messageId")
   Optional<Message> findByIdWithSender(@Param("messageId") Long messageId);
+
+  @Query(
+      "SELECT DISTINCT m FROM Message m "
+          + "JOIN FETCH m.sender "
+          + "JOIN m.conversation c "
+          + "JOIN c.participants p "
+          + "WHERE p.id = :userId "
+          + "AND m.deleted = false "
+          + "AND LOWER(m.content) LIKE LOWER(CONCAT('%', :query, '%')) "
+          + "ORDER BY m.createdAt DESC")
+  List<Message> searchMessagesByContentForUser(
+      @Param("userId") Long userId, @Param("query") String query, Pageable pageable);
 }

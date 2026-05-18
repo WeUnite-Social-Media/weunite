@@ -17,6 +17,7 @@ import com.weunite.api.users.repository.UserRepository;
 import java.time.Instant;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -102,6 +103,24 @@ public class MessageService {
 
     List<Message> messages =
         messageRepository.findByConversationIdWithSenderOrderByCreatedAtAsc(conversationId);
+    return messageMapper.toDTOList(messages);
+  }
+
+  @Transactional(readOnly = true)
+  public List<MessageDTO> searchMessages(Long userId, String query) {
+    if (!userRepository.existsById(userId)) {
+      throw new NotFoundResourceException("User not found with id: " + userId);
+    }
+
+    String normalizedQuery = query == null ? "" : query.trim();
+
+    if (normalizedQuery.isEmpty()) {
+      return List.of();
+    }
+
+    List<Message> messages =
+        messageRepository.searchMessagesByContentForUser(
+            userId, normalizedQuery, PageRequest.of(0, 10));
     return messageMapper.toDTOList(messages);
   }
 

@@ -104,6 +104,33 @@ export const getConversationMessagesRequest = async (
   }
 };
 
+export const searchMessagesRequest = async (userId: number, query: string) => {
+  try {
+    const response = await axios.get(
+      `/conversations/messages/search/${userId}`,
+      {
+        params: { query },
+      },
+    );
+
+    return {
+      success: true,
+      data: response.data as Message[],
+      message: "Mensagens encontradas com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao buscar mensagens",
+    };
+  }
+};
+
 export const markMessagesAsReadRequest = async (
   conversationId: number,
   userId: number,
