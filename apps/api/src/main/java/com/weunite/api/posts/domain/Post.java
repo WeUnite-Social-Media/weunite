@@ -49,10 +49,10 @@ public class Post {
   @Column(nullable = false)
   private boolean deleted;
 
-  @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "post", fetch = FetchType.LAZY)
   private Set<Like> likes = new HashSet<>();
 
-  @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "post", fetch = FetchType.LAZY)
   private Set<Repost> reposts = new HashSet<>();
 
   @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
