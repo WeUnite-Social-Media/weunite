@@ -70,6 +70,19 @@ class MigrationBaselineTest {
         likeIndexNames.contains("IDX_POST_LIKE_COMMENT_ID"));
   }
 
+  @Test
+  @DisplayName("Should create athlete and company profile tables for the split migration")
+  void createProfileTables() {
+    Set<String> tableNames =
+        Set.copyOf(
+            jdbcTemplate.queryForList(
+                "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC'",
+                String.class));
+
+    org.junit.jupiter.api.Assertions.assertTrue(tableNames.contains("ATHLETE_PROFILE"));
+    org.junit.jupiter.api.Assertions.assertTrue(tableNames.contains("COMPANY_PROFILE"));
+  }
+
   private Set<String> getIndexNames(String tableName) {
     return Set.copyOf(
         jdbcTemplate.queryForList(

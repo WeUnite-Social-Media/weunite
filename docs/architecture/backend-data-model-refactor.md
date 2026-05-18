@@ -149,8 +149,9 @@ The first wave should reference the class issues below:
 
 ### Phase 3: User Profile Split
 
-- Introduce athlete and company profile tables.
-- Backfill profile data from the current single user table.
+- Introduce athlete and company profile tables while keeping the current single-table subtype model
+  available during the compatibility step.
+- Backfill profile data from the current single user table before moving repositories or mappers.
 - Update repositories and mappers while preserving existing DTO responses.
 - Keep auth and profile reads aligned through the shared user profile contract.
 
