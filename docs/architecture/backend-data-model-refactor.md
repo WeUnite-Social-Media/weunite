@@ -120,7 +120,7 @@ The first wave should reference the class issues below:
 
 1. Keep notifications as delivery records, not as the source of business decisions.
 2. Retain actor snapshots for historical display.
-3. Add indexes around recipient, read state, creation time, type, actor, and related entity when migrations are introduced.
+3. Keep notification indexes around recipient/read state, recipient/creation time, type, actor, and related entity aligned with migration-owned schema changes.
 4. Keep notification trigger decisions in the owning feature service.
 
 ### Reports And Admin
