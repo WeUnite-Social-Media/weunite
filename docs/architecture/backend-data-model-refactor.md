@@ -141,7 +141,7 @@ The first wave should reference the class issues below:
 
 ### Phase 2: Relationship Hardening
 
-- Add missing unique constraints and indexes for relationship tables.
+- Add missing unique constraints and query indexes for relationship tables.
 - Make relationship entities explicit where they are currently only join mechanics.
 - Remove unnecessary eager fetches and replace them with repository queries or entity graphs.
 - Tighten cascade/orphan-removal rules to match aggregate ownership.

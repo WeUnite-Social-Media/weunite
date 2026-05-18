@@ -50,4 +50,31 @@ class MigrationBaselineTest {
                 "IDX_NOTIFICATION_ACTOR_ID",
                 "IDX_NOTIFICATION_RELATED_ENTITY_ID")));
   }
+
+  @Test
+  @DisplayName("Should create relationship query indexes from Flyway migrations")
+  void createRelationshipQueryIndexes() {
+    Set<String> followIndexNames = getIndexNames("FOLLOW");
+    Set<String> subscriberIndexNames = getIndexNames("SUBSCRIBER");
+    Set<String> savedOpportunityIndexNames = getIndexNames("SAVED_OPPORTUNITIES");
+    Set<String> likeIndexNames = getIndexNames("TB_POST_LIKE");
+
+    org.junit.jupiter.api.Assertions.assertTrue(
+        followIndexNames.containsAll(
+            Set.of("IDX_FOLLOW_FOLLOWED_STATUS", "IDX_FOLLOW_FOLLOWER_STATUS")));
+    org.junit.jupiter.api.Assertions.assertTrue(
+        subscriberIndexNames.contains("IDX_SUBSCRIBER_OPPORTUNITY_ID"));
+    org.junit.jupiter.api.Assertions.assertTrue(
+        savedOpportunityIndexNames.contains("IDX_SAVED_OPPORTUNITIES_ATHLETE_SAVED_AT"));
+    org.junit.jupiter.api.Assertions.assertTrue(
+        likeIndexNames.contains("IDX_POST_LIKE_COMMENT_ID"));
+  }
+
+  private Set<String> getIndexNames(String tableName) {
+    return Set.copyOf(
+        jdbcTemplate.queryForList(
+            "SELECT INDEX_NAME FROM INFORMATION_SCHEMA.INDEXES WHERE TABLE_NAME = ?",
+            String.class,
+            tableName));
+  }
 }
