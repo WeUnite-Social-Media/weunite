@@ -20,7 +20,7 @@ public class Conversation {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @ManyToMany(fetch = FetchType.EAGER)
+  @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
       name = "tb_conversation_participants",
       joinColumns = @JoinColumn(name = "conversation_id"),

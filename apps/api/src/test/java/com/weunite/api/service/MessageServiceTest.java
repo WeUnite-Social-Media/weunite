@@ -85,7 +85,8 @@ public class MessageServiceTest {
             false,
             null);
 
-    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+    when(conversationRepository.findByIdWithParticipants(conversationId))
+        .thenReturn(Optional.of(conversation));
     when(userRepository.findById(senderId)).thenReturn(Optional.of(sender));
     when(messageRepository.save(any(Message.class))).thenReturn(savedMessage);
     when(conversationRepository.save(conversation)).thenReturn(conversation);
@@ -128,7 +129,7 @@ public class MessageServiceTest {
             true,
             Instant.now());
 
-    when(messageRepository.findById(messageId)).thenReturn(Optional.of(message));
+    when(messageRepository.findByIdWithSender(messageId)).thenReturn(Optional.of(message));
     when(messageRepository.save(message)).thenReturn(message);
     when(messageMapper.toDTO(message)).thenReturn(expectedMessage);
 
@@ -169,7 +170,7 @@ public class MessageServiceTest {
             false,
             null);
 
-    when(messageRepository.findById(messageId)).thenReturn(Optional.of(message));
+    when(messageRepository.findByIdWithSender(messageId)).thenReturn(Optional.of(message));
     when(messageRepository.save(message)).thenReturn(message);
     when(messageMapper.toDTO(message)).thenReturn(expectedMessage);
 
@@ -194,7 +195,7 @@ public class MessageServiceTest {
     message.setContent("secret");
     message.setType(Message.MessageType.TEXT);
 
-    when(messageRepository.findById(messageId)).thenReturn(Optional.of(message));
+    when(messageRepository.findByIdWithSender(messageId)).thenReturn(Optional.of(message));
 
     UnauthorizedException exception =
         assertThrows(
