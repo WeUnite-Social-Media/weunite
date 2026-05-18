@@ -306,13 +306,13 @@ class OpportunityServiceTest {
             null,
             null);
 
-    when(opportunityRepository.findAllActiveOrderedByCreationDate())
+    when(opportunityRepository.findAllActiveForReadModelOrderedByCreationDate())
         .thenReturn(List.of(opportunity));
     when(opportunityMapper.toOpportunityDTOList(List.of(opportunity))).thenReturn(List.of(dto));
 
     List<OpportunityDTO> result = opportunityService.getOpportunities();
 
     assertEquals(List.of(dto), result);
-    verify(opportunityRepository).findAllActiveOrderedByCreationDate();
+    verify(opportunityRepository).findAllActiveForReadModelOrderedByCreationDate();
   }
 }

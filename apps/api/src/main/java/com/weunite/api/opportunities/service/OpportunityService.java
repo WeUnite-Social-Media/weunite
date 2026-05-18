@@ -138,7 +138,7 @@ public class OpportunityService {
   public ResponseDTO<OpportunityDTO> getOpportunity(Long opportunityId) {
     Opportunity opportunity =
         opportunityRepository
-            .findByIdAndDeletedFalse(opportunityId)
+            .findReadModelByIdAndDeletedFalse(opportunityId)
             .orElseThrow(OpportunityNotFoundException::new);
 
     return opportunityMapper.toResponseDTO("Oportunidade encontrada com sucesso!", opportunity);
@@ -146,7 +146,8 @@ public class OpportunityService {
 
   @Transactional
   public List<OpportunityDTO> getOpportunities() {
-    List<Opportunity> opportunities = opportunityRepository.findAllActiveOrderedByCreationDate();
+    List<Opportunity> opportunities =
+        opportunityRepository.findAllActiveForReadModelOrderedByCreationDate();
     return opportunityMapper.toOpportunityDTOList(opportunities);
   }
 
@@ -154,7 +155,7 @@ public class OpportunityService {
   public List<OpportunityDTO> getOpportunitiesByCompanyId(Long userId) {
     companyRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
-    List<Opportunity> opportunities = opportunityRepository.findActiveByCompanyId(userId);
+    List<Opportunity> opportunities = opportunityRepository.findActiveReadModelsByCompanyId(userId);
     return opportunityMapper.toOpportunityDTOList(opportunities);
   }
 

@@ -4,6 +4,7 @@ import com.weunite.api.opportunities.domain.Opportunity;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,11 +15,24 @@ public interface OpportunityRepository extends JpaRepository<Opportunity, Long> 
       "SELECT o FROM Opportunity o WHERE o.deleted = false ORDER BY COALESCE(o.updatedAt, o.createdAt) DESC")
   List<Opportunity> findAllActiveOrderedByCreationDate();
 
+  @EntityGraph(attributePaths = {"company", "company.role", "skills", "subscribers"})
+  @Query(
+      "SELECT o FROM Opportunity o WHERE o.deleted = false ORDER BY COALESCE(o.updatedAt, o.createdAt) DESC")
+  List<Opportunity> findAllActiveForReadModelOrderedByCreationDate();
+
   @Query(
       "SELECT o FROM Opportunity o WHERE o.company.id = :companyId AND o.deleted = false ORDER BY COALESCE(o.updatedAt, o.createdAt) DESC")
   List<Opportunity> findActiveByCompanyId(@Param("companyId") Long companyId);
 
+  @EntityGraph(attributePaths = {"company", "company.role", "skills", "subscribers"})
+  @Query(
+      "SELECT o FROM Opportunity o WHERE o.company.id = :companyId AND o.deleted = false ORDER BY COALESCE(o.updatedAt, o.createdAt) DESC")
+  List<Opportunity> findActiveReadModelsByCompanyId(@Param("companyId") Long companyId);
+
   Optional<Opportunity> findByIdAndDeletedFalse(Long opportunityId);
+
+  @EntityGraph(attributePaths = {"company", "company.role", "skills", "subscribers"})
+  Optional<Opportunity> findReadModelByIdAndDeletedFalse(Long opportunityId);
 
   boolean existsByIdAndCompanyId(Long opportunityId, Long companyId);
 
