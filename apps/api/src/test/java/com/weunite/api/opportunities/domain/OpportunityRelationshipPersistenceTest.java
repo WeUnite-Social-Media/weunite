@@ -98,6 +98,58 @@ class OpportunityRelationshipPersistenceTest {
     assertTrue(persistenceUnitUtil.isLoaded(readModel, "subscribers"));
   }
 
+  @Test
+  @DisplayName("Should preload saved-opportunity read-model associations explicitly")
+  void preloadSavedOpportunityReadModelAssociations() {
+    Opportunity opportunity = opportunityRepository.saveAndFlush(buildOpportunity());
+    Athlete athlete =
+        athleteRepository.saveAndFlush(
+            new Athlete("Saved Reader", "saved_reader", "saved_reader@example.com", "p"));
+    savedOpportunityRepository.saveAndFlush(new SavedOpportunity(athlete, opportunity));
+
+    entityManager.clear();
+
+    SavedOpportunity readModel =
+        savedOpportunityRepository
+            .findReadModelsByAthleteIdOrderBySavedAtDesc(athlete.getId())
+            .get(0);
+    var persistenceUnitUtil = entityManager.getEntityManagerFactory().getPersistenceUnitUtil();
+
+    assertTrue(persistenceUnitUtil.isLoaded(readModel, "opportunity"));
+    assertTrue(persistenceUnitUtil.isLoaded(readModel.getOpportunity(), "company"));
+    assertTrue(persistenceUnitUtil.isLoaded(readModel.getOpportunity().getCompany(), "role"));
+    assertTrue(persistenceUnitUtil.isLoaded(readModel.getOpportunity(), "skills"));
+    assertTrue(persistenceUnitUtil.isLoaded(readModel.getOpportunity(), "subscribers"));
+  }
+
+  @Test
+  @DisplayName("Should preload subscriber read-model associations explicitly")
+  void preloadSubscriberReadModelAssociations() {
+    Role athleteRole = roleRepository.save(new Role(null, "ATHLETE"));
+    Athlete athlete =
+        new Athlete("Subscriber Reader", "subscriber_reader", "subscriber_reader@example.com", "p");
+    athlete.setRole(Set.of(athleteRole));
+    athleteRepository.save(athlete);
+
+    Opportunity opportunity = opportunityRepository.saveAndFlush(buildOpportunity());
+    subscribersRepository.saveAndFlush(new Subscriber(athlete, opportunity));
+
+    entityManager.clear();
+
+    Subscriber readModel =
+        subscribersRepository.findReadModelsByOpportunityId(opportunity.getId()).get(0);
+    var persistenceUnitUtil = entityManager.getEntityManagerFactory().getPersistenceUnitUtil();
+
+    assertTrue(persistenceUnitUtil.isLoaded(readModel, "athlete"));
+    assertTrue(persistenceUnitUtil.isLoaded(readModel.getAthlete(), "role"));
+    assertTrue(persistenceUnitUtil.isLoaded(readModel.getAthlete(), "skills"));
+    assertTrue(persistenceUnitUtil.isLoaded(readModel, "opportunity"));
+    assertTrue(persistenceUnitUtil.isLoaded(readModel.getOpportunity(), "company"));
+    assertTrue(persistenceUnitUtil.isLoaded(readModel.getOpportunity().getCompany(), "role"));
+    assertTrue(persistenceUnitUtil.isLoaded(readModel.getOpportunity(), "skills"));
+    assertTrue(persistenceUnitUtil.isLoaded(readModel.getOpportunity(), "subscribers"));
+  }
+
   private Opportunity buildOpportunity() {
     Company company =
         companyRepository.save(new Company("Company", "company", "c@example.com", "p"));

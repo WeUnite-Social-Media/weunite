@@ -234,7 +234,8 @@ class SubscriberServiceTest {
 
     when(opportunityRepository.findByIdAndDeletedFalse(opportunityId))
         .thenReturn(Optional.of(opportunity));
-    when(subscribersRepository.findByOpportunityId(opportunityId)).thenReturn(List.of(subscriber));
+    when(subscribersRepository.findReadModelsByOpportunityId(opportunityId))
+        .thenReturn(List.of(subscriber));
     when(subscribersMapper.mapSubscribersToList(List.of(subscriber)))
         .thenReturn(List.of(subscriberDTO));
 
@@ -265,7 +266,7 @@ class SubscriberServiceTest {
         UnauthorizedException.class,
         () -> subscribersService.getSubscribersByOpportunity(requesterId, opportunityId));
 
-    verify(subscribersRepository, never()).findByOpportunityId(opportunityId);
+    verify(subscribersRepository, never()).findReadModelsByOpportunityId(opportunityId);
   }
 
   @Test
@@ -313,7 +314,7 @@ class SubscriberServiceTest {
         new SubscriberDTO(5L, buildAthleteDTO(athlete), buildOpportunityDTO(opportunity));
 
     when(athleteRepository.findById(athleteId)).thenReturn(Optional.of(athlete));
-    when(subscribersRepository.findByAthleteIdAndOpportunityDeletedFalse(athleteId))
+    when(subscribersRepository.findReadModelsByAthleteIdAndOpportunityDeletedFalse(athleteId))
         .thenReturn(List.of(subscriber));
     when(subscribersMapper.mapSubscribersToList(List.of(subscriber)))
         .thenReturn(List.of(subscriberDTO));

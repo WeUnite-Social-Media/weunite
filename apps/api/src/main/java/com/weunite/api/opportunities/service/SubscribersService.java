@@ -82,7 +82,8 @@ public class SubscribersService {
           "Voce nao possui autorizacao para visualizar os inscritos desta oportunidade.");
     }
 
-    List<Subscriber> subscribers = subscribersRepository.findByOpportunityId(opportunityId);
+    List<Subscriber> subscribers =
+        subscribersRepository.findReadModelsByOpportunityId(opportunityId);
     return subscribersMapper.mapSubscribersToList(subscribers);
   }
 
@@ -99,7 +100,7 @@ public class SubscribersService {
     athleteRepository.findById(athleteId).orElseThrow(UserNotFoundException::new);
 
     List<Subscriber> subscribers =
-        subscribersRepository.findByAthleteIdAndOpportunityDeletedFalse(athleteId);
+        subscribersRepository.findReadModelsByAthleteIdAndOpportunityDeletedFalse(athleteId);
     return subscribersMapper.mapSubscribersToList(subscribers);
   }
 

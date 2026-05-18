@@ -40,7 +40,7 @@ This module owns opportunities, skills association, subscriptions, and saved opp
 - Keep opportunity domain/repository/mapper logic within this module.
 - Preserve existing HTTP contracts unless explicitly requested.
 - Keep `OpportunityDTO` as the read model for web/mobile/admin opportunity responses, including derived subscriber totals when available.
-- Keep opportunity read-model fetch plans repository-owned so DTO mapping does not rely on lazy-load side effects.
+- Keep opportunity and relationship read-model fetch plans repository-owned so DTO mapping does not rely on lazy-load side effects.
 
 ## Validation
 

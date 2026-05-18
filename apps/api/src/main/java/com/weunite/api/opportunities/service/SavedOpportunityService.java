@@ -55,7 +55,9 @@ public class SavedOpportunityService {
   public List<SavedOpportunityDTO> getSavedOpportunitiesByAthlete(Long athleteId) {
     athleteRepository.findById(athleteId).orElseThrow(UserNotFoundException::new);
 
-    return savedOpportunityRepository.findByAthleteIdOrderBySavedAtDesc(athleteId).stream()
+    return savedOpportunityRepository
+        .findReadModelsByAthleteIdOrderBySavedAtDesc(athleteId)
+        .stream()
         .map(savedOpportunityMapper::toDTO)
         .toList();
   }

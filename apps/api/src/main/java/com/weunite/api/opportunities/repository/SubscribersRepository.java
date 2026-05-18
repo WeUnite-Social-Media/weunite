@@ -5,6 +5,7 @@ import com.weunite.api.opportunities.domain.Subscriber;
 import com.weunite.api.users.domain.Athlete;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SubscribersRepository extends JpaRepository<Subscriber, Long> {
@@ -14,4 +15,30 @@ public interface SubscribersRepository extends JpaRepository<Subscriber, Long> {
   List<Subscriber> findByOpportunityId(Long opportunityId);
 
   List<Subscriber> findByAthleteIdAndOpportunityDeletedFalse(Long athleteId);
+
+  @EntityGraph(
+      attributePaths = {
+        "athlete",
+        "athlete.role",
+        "athlete.skills",
+        "opportunity",
+        "opportunity.company",
+        "opportunity.company.role",
+        "opportunity.skills",
+        "opportunity.subscribers"
+      })
+  List<Subscriber> findReadModelsByOpportunityId(Long opportunityId);
+
+  @EntityGraph(
+      attributePaths = {
+        "athlete",
+        "athlete.role",
+        "athlete.skills",
+        "opportunity",
+        "opportunity.company",
+        "opportunity.company.role",
+        "opportunity.skills",
+        "opportunity.subscribers"
+      })
+  List<Subscriber> findReadModelsByAthleteIdAndOpportunityDeletedFalse(Long athleteId);
 }
