@@ -159,6 +159,8 @@ The first wave should reference the class issues below:
 - Fetch split athlete/company profile entities through user read-model queries that map profile DTOs.
 - Route athlete profile updates through a profile-specific service boundary while keeping compatibility
   mirroring in the domain model.
+- Add profile-owned repositories so split profile persistence and lookup can move off user-only access
+  paths incrementally.
 - Update repositories and mappers while preserving existing DTO responses.
 - Keep auth and profile reads aligned through the shared user profile contract.
 

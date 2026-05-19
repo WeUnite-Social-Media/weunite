@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.weunite.api.users.repository.AthleteProfileRepository;
+import com.weunite.api.users.repository.CompanyProfileRepository;
 import com.weunite.api.users.repository.RoleRepository;
 import com.weunite.api.users.repository.UserRepository;
 import jakarta.persistence.EntityManager;
@@ -24,6 +26,10 @@ class UserIdentityPersistenceTest {
   @Autowired private UserRepository userRepository;
 
   @Autowired private RoleRepository roleRepository;
+
+  @Autowired private AthleteProfileRepository athleteProfileRepository;
+
+  @Autowired private CompanyProfileRepository companyProfileRepository;
 
   @Autowired private EntityManager entityManager;
 
@@ -81,6 +87,9 @@ class UserIdentityPersistenceTest {
     assertEquals("RIGHT", reloadedAthlete.getProfile().getFootDomain());
     assertEquals("FORWARD", reloadedAthlete.getProfile().getPosition());
     assertEquals(LocalDate.of(2000, 1, 2), reloadedAthlete.getProfile().getBirthDate());
+    assertEquals(
+        "12345678901",
+        athleteProfileRepository.findById(savedAthlete.getId()).orElseThrow().getCPF());
   }
 
   @Test
@@ -99,6 +108,9 @@ class UserIdentityPersistenceTest {
     assertNotNull(reloadedCompany.getProfile());
     assertEquals(savedCompany.getId(), reloadedCompany.getProfile().getUserId());
     assertEquals("12345678000199", reloadedCompany.getProfile().getCNPJ());
+    assertEquals(
+        "12345678000199",
+        companyProfileRepository.findById(savedCompany.getId()).orElseThrow().getCNPJ());
   }
 
   @Test

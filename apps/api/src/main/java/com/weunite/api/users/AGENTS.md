@@ -21,6 +21,8 @@ This module owns user account and profile domain flows in `com.weunite.api.users
 - `controller/UserController.java`
 - `service/UserService.java`
 - `service/AthleteProfileService.java`
+- `repository/AthleteProfileRepository.java`
+- `repository/CompanyProfileRepository.java`
 
 ## Core use cases
 
@@ -40,6 +42,8 @@ This module owns user account and profile domain flows in `com.weunite.api.users
   are intentionally moved off the current single-table subtype model.
 - Keep athlete/company profile writes mirrored between current subtype fields and explicit profile
   entities until reads fully move to the profile tables.
+- Use profile repositories for direct split-profile persistence or lookup instead of hiding all profile
+  access behind `UserRepository`.
 - Keep roles lazy by default and use repository-owned role fetch plans for auth, admin, and DTO flows that need them.
 - Keep cross-module relationship collections as read views unless users truly own the child lifecycle.
 

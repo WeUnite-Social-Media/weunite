@@ -5,6 +5,7 @@ import com.weunite.api.opportunities.dto.SkillDTO;
 import com.weunite.api.opportunities.repository.SkillRepository;
 import com.weunite.api.users.domain.Athlete;
 import com.weunite.api.users.dto.UpdateUserRequestDTO;
+import com.weunite.api.users.repository.AthleteProfileRepository;
 import java.util.LinkedHashSet;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -13,9 +14,12 @@ import org.springframework.stereotype.Service;
 public class AthleteProfileService {
 
   private final SkillRepository skillRepository;
+  private final AthleteProfileRepository athleteProfileRepository;
 
-  public AthleteProfileService(SkillRepository skillRepository) {
+  public AthleteProfileService(
+      SkillRepository skillRepository, AthleteProfileRepository athleteProfileRepository) {
     this.skillRepository = skillRepository;
+    this.athleteProfileRepository = athleteProfileRepository;
   }
 
   public void applyProfileUpdates(Athlete athlete, UpdateUserRequestDTO requestDTO) {
@@ -28,6 +32,8 @@ public class AthleteProfileService {
     if (requestDTO.skills() != null) {
       athlete.setSkills(resolveSkills(requestDTO.skills()));
     }
+
+    athleteProfileRepository.save(athlete.ensureProfile());
   }
 
   private LinkedHashSet<Skill> resolveSkills(List<SkillDTO> requestedSkills) {
