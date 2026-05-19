@@ -16,21 +16,34 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   Optional<User> findByUsername(String username);
 
-  @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.role WHERE u.username = :username")
+  @Query(
+      "SELECT DISTINCT u FROM User u "
+          + "LEFT JOIN FETCH u.role "
+          + "LEFT JOIN FETCH TREAT(u AS Athlete).profile "
+          + "LEFT JOIN FETCH TREAT(u AS Company).profile "
+          + "WHERE u.username = :username")
   Optional<User> findByUsernameWithRoles(@Param("username") String username);
 
   @Query("SELECT u FROM User u WHERE u.accountCredentials.email.value = :email")
   Optional<User> findByEmail(@Param("email") String email);
 
   @Query(
-      "SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.role "
+      "SELECT DISTINCT u FROM User u "
+          + "LEFT JOIN FETCH u.role "
+          + "LEFT JOIN FETCH TREAT(u AS Athlete).profile "
+          + "LEFT JOIN FETCH TREAT(u AS Company).profile "
           + "WHERE u.accountCredentials.email.value = :email")
   Optional<User> findByEmailWithRoles(@Param("email") String email);
 
   @Query("SELECT u FROM User u WHERE u.accountCredentials.verificationToken = :verificationToken")
   Optional<User> findByVerificationToken(@Param("verificationToken") String verificationToken);
 
-  @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.role WHERE u.id = :id")
+  @Query(
+      "SELECT DISTINCT u FROM User u "
+          + "LEFT JOIN FETCH u.role "
+          + "LEFT JOIN FETCH TREAT(u AS Athlete).profile "
+          + "LEFT JOIN FETCH TREAT(u AS Company).profile "
+          + "WHERE u.id = :id")
   Optional<User> findByIdWithRoles(@Param("id") Long id);
 
   @Query(
@@ -53,14 +66,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
   List<User> searchUsers(@Param("query") String query);
 
   @Query(
-      "SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.role "
+      "SELECT DISTINCT u FROM User u "
+          + "LEFT JOIN FETCH u.role "
+          + "LEFT JOIN FETCH TREAT(u AS Athlete).profile "
+          + "LEFT JOIN FETCH TREAT(u AS Company).profile "
           + "WHERE (LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) "
           + "OR u.accountCredentials.email.value LIKE LOWER(CONCAT('%', :query, '%')) "
           + "OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%'))) "
           + "AND u.accountCredentials.emailVerified = true")
   List<User> searchUsersWithRoles(@Param("query") String query);
 
-  @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.role")
+  @Query(
+      "SELECT DISTINCT u FROM User u "
+          + "LEFT JOIN FETCH u.role "
+          + "LEFT JOIN FETCH TREAT(u AS Athlete).profile "
+          + "LEFT JOIN FETCH TREAT(u AS Company).profile")
   List<User> findAllWithRoles(Sort sort);
 
   @Query(

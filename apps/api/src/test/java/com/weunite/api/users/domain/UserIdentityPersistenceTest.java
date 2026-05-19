@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.weunite.api.users.repository.RoleRepository;
 import com.weunite.api.users.repository.UserRepository;
@@ -97,6 +98,62 @@ class UserIdentityPersistenceTest {
 
     assertNotNull(reloadedCompany.getProfile());
     assertEquals(savedCompany.getId(), reloadedCompany.getProfile().getUserId());
+    assertEquals("12345678000199", reloadedCompany.getProfile().getCNPJ());
+  }
+
+  @Test
+  @DisplayName("Should fetch athlete profile with role-owned user read model")
+  void fetchAthleteProfileWithUserReadModel() {
+    Athlete athlete =
+        new Athlete(
+            "Fetched Profile Athlete",
+            "fetched_profile_athlete",
+            "fetched-profile-athlete@example.com",
+            "p");
+    athlete.setHeight(1.84);
+    athlete.setWeight(80.5);
+
+    userRepository.saveAndFlush(athlete);
+
+    entityManager.clear();
+
+    Athlete reloadedAthlete =
+        (Athlete) userRepository.findByUsernameWithRoles("fetched_profile_athlete").orElseThrow();
+
+    assertTrue(
+        entityManager
+            .getEntityManagerFactory()
+            .getPersistenceUnitUtil()
+            .isLoaded(reloadedAthlete, "profile"));
+    assertNotNull(reloadedAthlete.getProfile());
+    assertEquals(1.84, reloadedAthlete.getProfile().getHeight());
+    assertEquals(80.5, reloadedAthlete.getProfile().getWeight());
+  }
+
+  @Test
+  @DisplayName("Should fetch company profile with role-owned user read model")
+  void fetchCompanyProfileWithUserReadModel() {
+    Company company =
+        new Company(
+            "Fetched Profile Company",
+            "fetched_profile_company",
+            "fetched-profile-company@example.com",
+            "p");
+    company.setCNPJ("12345678000199");
+
+    userRepository.saveAndFlush(company);
+
+    entityManager.clear();
+
+    Company reloadedCompany =
+        (Company) userRepository.findByUsernameWithRoles("fetched_profile_company").orElseThrow();
+
+    assertTrue(
+        entityManager
+            .getEntityManagerFactory()
+            .getPersistenceUnitUtil()
+            .isLoaded(reloadedCompany, "profile"));
+    assertNotNull(reloadedCompany.getProfile());
     assertEquals("12345678000199", reloadedCompany.getProfile().getCNPJ());
   }
 }

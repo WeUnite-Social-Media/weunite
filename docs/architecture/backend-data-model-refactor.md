@@ -156,6 +156,7 @@ The first wave should reference the class issues below:
   compatibility subtype fields.
 - Prefer explicit athlete profile entities in user DTO mapping while keeping legacy subtype fields as
   compatibility fallback.
+- Fetch split athlete/company profile entities through user read-model queries that map profile DTOs.
 - Update repositories and mappers while preserving existing DTO responses.
 - Keep auth and profile reads aligned through the shared user profile contract.
 
