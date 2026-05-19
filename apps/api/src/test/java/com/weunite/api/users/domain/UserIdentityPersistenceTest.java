@@ -7,18 +7,24 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.weunite.api.users.repository.RoleRepository;
 import com.weunite.api.users.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import java.time.LocalDate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.context.TestPropertySource;
 
 @DataJpaTest
+@TestPropertySource(properties = "spring.jpa.hibernate.ddl-auto=create-drop")
 class UserIdentityPersistenceTest {
 
   @Autowired private UserRepository userRepository;
 
   @Autowired private RoleRepository roleRepository;
+
+  @Autowired private EntityManager entityManager;
 
   @Test
   @DisplayName("Should persist user credentials through explicit account credentials")
@@ -46,5 +52,51 @@ class UserIdentityPersistenceTest {
     assertThrows(
         DataIntegrityViolationException.class,
         () -> roleRepository.saveAndFlush(new Role(null, "ATHLETE")));
+  }
+
+  @Test
+  @DisplayName("Should persist athlete profile through explicit profile table")
+  void persistAthleteProfile() {
+    Athlete athlete =
+        new Athlete("Profile Athlete", "profile_athlete", "profile-athlete@example.com", "p");
+    athlete.setCPF("12345678901");
+    athlete.setHeight(1.83);
+    athlete.setWeight(79.5);
+    athlete.setFootDomain("RIGHT");
+    athlete.setPosition("FORWARD");
+    athlete.setBirthDate(LocalDate.of(2000, 1, 2));
+
+    Athlete savedAthlete = userRepository.saveAndFlush(athlete);
+
+    entityManager.clear();
+
+    Athlete reloadedAthlete = (Athlete) userRepository.findById(savedAthlete.getId()).orElseThrow();
+
+    assertNotNull(reloadedAthlete.getProfile());
+    assertEquals(savedAthlete.getId(), reloadedAthlete.getProfile().getUserId());
+    assertEquals("12345678901", reloadedAthlete.getProfile().getCPF());
+    assertEquals(1.83, reloadedAthlete.getProfile().getHeight());
+    assertEquals(79.5, reloadedAthlete.getProfile().getWeight());
+    assertEquals("RIGHT", reloadedAthlete.getProfile().getFootDomain());
+    assertEquals("FORWARD", reloadedAthlete.getProfile().getPosition());
+    assertEquals(LocalDate.of(2000, 1, 2), reloadedAthlete.getProfile().getBirthDate());
+  }
+
+  @Test
+  @DisplayName("Should persist company profile through explicit profile table")
+  void persistCompanyProfile() {
+    Company company =
+        new Company("Profile Company", "profile_company", "profile-company@example.com", "p");
+    company.setCNPJ("12345678000199");
+
+    Company savedCompany = userRepository.saveAndFlush(company);
+
+    entityManager.clear();
+
+    Company reloadedCompany = (Company) userRepository.findById(savedCompany.getId()).orElseThrow();
+
+    assertNotNull(reloadedCompany.getProfile());
+    assertEquals(savedCompany.getId(), reloadedCompany.getProfile().getUserId());
+    assertEquals("12345678000199", reloadedCompany.getProfile().getCNPJ());
   }
 }

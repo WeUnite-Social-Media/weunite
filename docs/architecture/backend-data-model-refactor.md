@@ -152,6 +152,8 @@ The first wave should reference the class issues below:
 - Introduce athlete and company profile tables while keeping the current single-table subtype model
   available during the compatibility step.
 - Backfill profile data from the current single user table before moving repositories or mappers.
+- Mirror writes into explicit athlete/company profile entities while existing DTO reads still use the
+  compatibility subtype fields.
 - Update repositories and mappers while preserving existing DTO responses.
 - Keep auth and profile reads aligned through the shared user profile contract.
 

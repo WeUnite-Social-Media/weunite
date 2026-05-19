@@ -6,9 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Setter
 @Getter
 @NoArgsConstructor
 @Entity
@@ -20,10 +18,48 @@ public class Company extends User {
 
   @Column private String CNPJ;
 
+  @OneToOne(
+      mappedBy = "user",
+      cascade = CascadeType.ALL,
+      orphanRemoval = true,
+      fetch = FetchType.LAZY)
+  private CompanyProfile profile;
+
   @OneToMany(
       mappedBy = "company",
       cascade = CascadeType.ALL,
       orphanRemoval = true,
       fetch = FetchType.LAZY)
   private Set<Opportunity> opportunities = new HashSet<>();
+
+  @PrePersist
+  protected void ensureProfileBeforePersist() {
+    ensureProfile();
+  }
+
+  public void setCNPJ(String CNPJ) {
+    this.CNPJ = CNPJ;
+    ensureProfile().setCNPJ(CNPJ);
+  }
+
+  public void setOpportunities(Set<Opportunity> opportunities) {
+    this.opportunities = opportunities;
+  }
+
+  public void setProfile(CompanyProfile profile) {
+    this.profile = profile;
+    if (profile != null) {
+      profile.setUser(this);
+      this.CNPJ = profile.getCNPJ();
+    }
+  }
+
+  public CompanyProfile ensureProfile() {
+    if (profile == null) {
+      profile = new CompanyProfile(this);
+      profile.setCNPJ(CNPJ);
+    }
+
+    return profile;
+  }
 }

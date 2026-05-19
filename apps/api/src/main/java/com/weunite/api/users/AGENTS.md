@@ -35,6 +35,8 @@ This module owns user account and profile domain flows in `com.weunite.api.users
 - Keep athlete-specific profile characteristics and skills in the shared user profile contract so auth and profile reads stay aligned.
 - Keep the in-progress athlete/company profile split backward-compatible until DTOs and repositories
   are intentionally moved off the current single-table subtype model.
+- Keep athlete/company profile writes mirrored between current subtype fields and explicit profile
+  entities until reads fully move to the profile tables.
 - Keep roles lazy by default and use repository-owned role fetch plans for auth, admin, and DTO flows that need them.
 - Keep cross-module relationship collections as read views unless users truly own the child lifecycle.
 
