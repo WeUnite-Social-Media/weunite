@@ -20,6 +20,7 @@ This module owns user account and profile domain flows in `com.weunite.api.users
 
 - `controller/UserController.java`
 - `service/UserService.java`
+- `service/AthleteProfileService.java`
 
 ## Core use cases
 
@@ -30,6 +31,8 @@ This module owns user account and profile domain flows in `com.weunite.api.users
 ## Working rules
 
 - Keep profile business rules in service layer.
+- Keep athlete-specific profile update rules in `AthleteProfileService` while the profile split is
+  migrating.
 - Keep user DTOs, repositories, and mappers in this module.
 - Preserve user API contracts unless explicitly requested.
 - Keep athlete-specific profile characteristics and skills in the shared user profile contract so auth and profile reads stay aligned.
