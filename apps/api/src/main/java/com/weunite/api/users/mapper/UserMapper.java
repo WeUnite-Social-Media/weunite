@@ -4,6 +4,7 @@ import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.opportunities.domain.Skill;
 import com.weunite.api.opportunities.dto.SkillDTO;
 import com.weunite.api.users.domain.Athlete;
+import com.weunite.api.users.domain.AthleteProfile;
 import com.weunite.api.users.domain.Company;
 import com.weunite.api.users.domain.Role;
 import com.weunite.api.users.domain.User;
@@ -58,23 +59,48 @@ public interface UserMapper {
   List<UserDTO> toUserDTOList(List<User> users);
 
   default Double mapHeight(User user) {
-    return user instanceof Athlete athlete ? athlete.getHeight() : null;
+    if (!(user instanceof Athlete athlete)) {
+      return null;
+    }
+
+    AthleteProfile profile = athlete.getProfile();
+    return profile != null ? profile.getHeight() : athlete.getHeight();
   }
 
   default Double mapWeight(User user) {
-    return user instanceof Athlete athlete ? athlete.getWeight() : null;
+    if (!(user instanceof Athlete athlete)) {
+      return null;
+    }
+
+    AthleteProfile profile = athlete.getProfile();
+    return profile != null ? profile.getWeight() : athlete.getWeight();
   }
 
   default String mapFootDomain(User user) {
-    return user instanceof Athlete athlete ? athlete.getFootDomain() : null;
+    if (!(user instanceof Athlete athlete)) {
+      return null;
+    }
+
+    AthleteProfile profile = athlete.getProfile();
+    return profile != null ? profile.getFootDomain() : athlete.getFootDomain();
   }
 
   default String mapPosition(User user) {
-    return user instanceof Athlete athlete ? athlete.getPosition() : null;
+    if (!(user instanceof Athlete athlete)) {
+      return null;
+    }
+
+    AthleteProfile profile = athlete.getProfile();
+    return profile != null ? profile.getPosition() : athlete.getPosition();
   }
 
   default LocalDate mapBirthDate(User user) {
-    return user instanceof Athlete athlete ? athlete.getBirthDate() : null;
+    if (!(user instanceof Athlete athlete)) {
+      return null;
+    }
+
+    AthleteProfile profile = athlete.getProfile();
+    return profile != null ? profile.getBirthDate() : athlete.getBirthDate();
   }
 
   default List<SkillDTO> mapSkills(User user) {
