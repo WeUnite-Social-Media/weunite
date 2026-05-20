@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class AthleteProfileServiceTest {
@@ -101,5 +102,48 @@ class AthleteProfileServiceTest {
     verify(skillRepository).findByName("Balance");
     verify(skillRepository, never()).findByName(" ");
     verify(athleteProfileRepository).save(any(AthleteProfile.class));
+  }
+
+  @Test
+  @DisplayName("Should prefer split profile values when resolving athlete profile reads")
+  void resolveProfileReadsFromSplitProfile() {
+    Athlete athlete = new Athlete();
+    AthleteProfile profile = new AthleteProfile(athlete);
+    profile.setHeight(1.91);
+    profile.setWeight(86.4);
+    profile.setFootDomain("LEFT");
+    profile.setPosition("MIDFIELDER");
+    profile.setBirthDate(LocalDate.of(1998, 5, 19));
+
+    athlete.setProfile(profile);
+    ReflectionTestUtils.setField(athlete, "height", 1.7);
+    ReflectionTestUtils.setField(athlete, "weight", 70.0);
+    ReflectionTestUtils.setField(athlete, "footDomain", "RIGHT");
+    ReflectionTestUtils.setField(athlete, "position", "DEFENDER");
+    ReflectionTestUtils.setField(athlete, "birthDate", LocalDate.of(2001, 1, 1));
+
+    assertEquals(1.91, athleteProfileService.resolveHeight(athlete));
+    assertEquals(86.4, athleteProfileService.resolveWeight(athlete));
+    assertEquals("LEFT", athleteProfileService.resolveFootDomain(athlete));
+    assertEquals("MIDFIELDER", athleteProfileService.resolvePosition(athlete));
+    assertEquals(LocalDate.of(1998, 5, 19), athleteProfileService.resolveBirthDate(athlete));
+  }
+
+  @Test
+  @DisplayName("Should fall back to legacy subtype fields when split profile is missing")
+  void resolveProfileReadsFromLegacySubtypeWhenSplitProfileIsMissing() {
+    Athlete athlete = new Athlete();
+    ReflectionTestUtils.setField(athlete, "height", 1.82);
+    ReflectionTestUtils.setField(athlete, "weight", 78.2);
+    ReflectionTestUtils.setField(athlete, "footDomain", "RIGHT");
+    ReflectionTestUtils.setField(athlete, "position", "FORWARD");
+    ReflectionTestUtils.setField(athlete, "birthDate", LocalDate.of(2000, 7, 10));
+
+    assertNull(athlete.getProfile());
+    assertEquals(1.82, athleteProfileService.resolveHeight(athlete));
+    assertEquals(78.2, athleteProfileService.resolveWeight(athlete));
+    assertEquals("RIGHT", athleteProfileService.resolveFootDomain(athlete));
+    assertEquals("FORWARD", athleteProfileService.resolvePosition(athlete));
+    assertEquals(LocalDate.of(2000, 7, 10), athleteProfileService.resolveBirthDate(athlete));
   }
 }

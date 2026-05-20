@@ -4,23 +4,26 @@ import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.opportunities.domain.Skill;
 import com.weunite.api.opportunities.dto.SkillDTO;
 import com.weunite.api.users.domain.Athlete;
-import com.weunite.api.users.domain.AthleteProfile;
 import com.weunite.api.users.domain.Company;
 import com.weunite.api.users.domain.Role;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.dto.CreateUserRequestDTO;
 import com.weunite.api.users.dto.UserDTO;
+import com.weunite.api.users.service.AthleteProfileService;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring")
-public interface UserMapper {
+public abstract class UserMapper {
 
-  default User toEntity(CreateUserRequestDTO dto) {
+  @Autowired protected AthleteProfileService athleteProfileService;
+
+  public User toEntity(CreateUserRequestDTO dto) {
     String role = dto.role().toUpperCase();
 
     User user =
@@ -54,56 +57,51 @@ public interface UserMapper {
   @Mapping(target = "position", expression = "java(mapPosition(user))")
   @Mapping(target = "birthDate", expression = "java(mapBirthDate(user))")
   @Mapping(target = "skills", expression = "java(mapSkills(user))")
-  UserDTO toUserDTO(User user);
+  public abstract UserDTO toUserDTO(User user);
 
-  List<UserDTO> toUserDTOList(List<User> users);
+  public abstract List<UserDTO> toUserDTOList(List<User> users);
 
-  default Double mapHeight(User user) {
+  public Double mapHeight(User user) {
     if (!(user instanceof Athlete athlete)) {
       return null;
     }
 
-    AthleteProfile profile = athlete.getProfile();
-    return profile != null ? profile.getHeight() : athlete.getHeight();
+    return athleteProfileService.resolveHeight(athlete);
   }
 
-  default Double mapWeight(User user) {
+  public Double mapWeight(User user) {
     if (!(user instanceof Athlete athlete)) {
       return null;
     }
 
-    AthleteProfile profile = athlete.getProfile();
-    return profile != null ? profile.getWeight() : athlete.getWeight();
+    return athleteProfileService.resolveWeight(athlete);
   }
 
-  default String mapFootDomain(User user) {
+  public String mapFootDomain(User user) {
     if (!(user instanceof Athlete athlete)) {
       return null;
     }
 
-    AthleteProfile profile = athlete.getProfile();
-    return profile != null ? profile.getFootDomain() : athlete.getFootDomain();
+    return athleteProfileService.resolveFootDomain(athlete);
   }
 
-  default String mapPosition(User user) {
+  public String mapPosition(User user) {
     if (!(user instanceof Athlete athlete)) {
       return null;
     }
 
-    AthleteProfile profile = athlete.getProfile();
-    return profile != null ? profile.getPosition() : athlete.getPosition();
+    return athleteProfileService.resolvePosition(athlete);
   }
 
-  default LocalDate mapBirthDate(User user) {
+  public LocalDate mapBirthDate(User user) {
     if (!(user instanceof Athlete athlete)) {
       return null;
     }
 
-    AthleteProfile profile = athlete.getProfile();
-    return profile != null ? profile.getBirthDate() : athlete.getBirthDate();
+    return athleteProfileService.resolveBirthDate(athlete);
   }
 
-  default List<SkillDTO> mapSkills(User user) {
+  public List<SkillDTO> mapSkills(User user) {
     if (!(user instanceof Athlete athlete)) {
       return List.of();
     }
@@ -111,7 +109,7 @@ public interface UserMapper {
     return toSkillDTOList(athlete.getSkills());
   }
 
-  default List<SkillDTO> toSkillDTOList(Set<Skill> skills) {
+  public List<SkillDTO> toSkillDTOList(Set<Skill> skills) {
     if (skills == null || skills.isEmpty()) {
       return List.of();
     }
@@ -121,7 +119,7 @@ public interface UserMapper {
         .collect(Collectors.toList());
   }
 
-  default String mapPrimaryRole(User user) {
+  public String mapPrimaryRole(User user) {
     Set<String> roles = user.getRole().stream().map(Role::getName).collect(Collectors.toSet());
 
     if (roles.contains("ADMIN")) {
@@ -139,12 +137,12 @@ public interface UserMapper {
     return roles.stream().findFirst().orElse("BASIC");
   }
 
-  default ResponseDTO<UserDTO> toResponseDTO(String message, User user) {
+  public ResponseDTO<UserDTO> toResponseDTO(String message, User user) {
     UserDTO userDTO = toUserDTO(user);
     return new ResponseDTO<>(message, userDTO);
   }
 
-  default ResponseDTO<List<UserDTO>> toSearchResponseDTO(String message, List<User> users) {
+  public ResponseDTO<List<UserDTO>> toSearchResponseDTO(String message, List<User> users) {
     List<UserDTO> userDTOs = toUserDTOList(users);
     return new ResponseDTO<>(message, userDTOs);
   }

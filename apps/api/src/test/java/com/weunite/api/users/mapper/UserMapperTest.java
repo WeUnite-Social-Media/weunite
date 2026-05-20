@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.weunite.api.users.domain.Athlete;
 import com.weunite.api.users.domain.AthleteProfile;
+import com.weunite.api.users.service.AthleteProfileService;
 import java.time.LocalDate;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -14,6 +16,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 class UserMapperTest {
 
   private final UserMapper mapper = Mappers.getMapper(UserMapper.class);
+
+  @BeforeEach
+  void setUp() {
+    ReflectionTestUtils.setField(
+        mapper, "athleteProfileService", new AthleteProfileService(null, null));
+  }
 
   @Test
   @DisplayName("Should prefer split athlete profile values when mapping user profile fields")

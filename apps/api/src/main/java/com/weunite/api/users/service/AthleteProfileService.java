@@ -4,8 +4,10 @@ import com.weunite.api.opportunities.domain.Skill;
 import com.weunite.api.opportunities.dto.SkillDTO;
 import com.weunite.api.opportunities.repository.SkillRepository;
 import com.weunite.api.users.domain.Athlete;
+import com.weunite.api.users.domain.AthleteProfile;
 import com.weunite.api.users.dto.UpdateUserRequestDTO;
 import com.weunite.api.users.repository.AthleteProfileRepository;
+import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,31 @@ public class AthleteProfileService {
     }
 
     athleteProfileRepository.save(athlete.ensureProfile());
+  }
+
+  public Double resolveHeight(Athlete athlete) {
+    AthleteProfile profile = athlete.getProfile();
+    return profile != null ? profile.getHeight() : athlete.getHeight();
+  }
+
+  public Double resolveWeight(Athlete athlete) {
+    AthleteProfile profile = athlete.getProfile();
+    return profile != null ? profile.getWeight() : athlete.getWeight();
+  }
+
+  public String resolveFootDomain(Athlete athlete) {
+    AthleteProfile profile = athlete.getProfile();
+    return profile != null ? profile.getFootDomain() : athlete.getFootDomain();
+  }
+
+  public String resolvePosition(Athlete athlete) {
+    AthleteProfile profile = athlete.getProfile();
+    return profile != null ? profile.getPosition() : athlete.getPosition();
+  }
+
+  public LocalDate resolveBirthDate(Athlete athlete) {
+    AthleteProfile profile = athlete.getProfile();
+    return profile != null ? profile.getBirthDate() : athlete.getBirthDate();
   }
 
   private LinkedHashSet<Skill> resolveSkills(List<SkillDTO> requestedSkills) {

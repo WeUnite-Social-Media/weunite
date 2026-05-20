@@ -35,6 +35,8 @@ This module owns user account and profile domain flows in `com.weunite.api.users
 - Keep profile business rules in service layer.
 - Keep athlete-specific profile update rules in `AthleteProfileService` while the profile split is
   migrating.
+- Keep athlete profile read compatibility/fallback rules in `AthleteProfileService`, not in DTO
+  mappers.
 - Keep user DTOs, repositories, and mappers in this module.
 - Preserve user API contracts unless explicitly requested.
 - Keep athlete-specific profile characteristics and skills in the shared user profile contract so auth and profile reads stay aligned.
