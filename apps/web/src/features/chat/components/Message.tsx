@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, FileText, Download, Play, Pause } from "lucide-react";
 import { ImageModal } from "@/features/chat/components/ImageModal";
+import { resolveMediaBaseUrl } from "@/shared/utils/resolveMediaBaseUrl";
 
 interface MessageType {
   id: number;
@@ -12,6 +13,7 @@ interface MessageType {
 
 interface MessageProps {
   message: MessageType;
+  highlighted?: boolean;
 }
 
 export const Message = ({ message }: MessageProps) => {
@@ -19,6 +21,7 @@ export const Message = ({ message }: MessageProps) => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
+  const mediaBaseUrl = resolveMediaBaseUrl();
 
   const isImageUrl = (text: string) => {
     return text.match(/\.(jpg|jpeg|png|gif|webp)$/i);
@@ -51,12 +54,12 @@ export const Message = ({ message }: MessageProps) => {
 
   const renderContent = () => {
     if (isFileUrl(message.text)) {
-      const fullUrl = `http://localhost:8080${message.text}`;
+      const fullUrl = `${mediaBaseUrl}${message.text}`;
 
       if (isImageUrl(message.text)) {
         return (
           <>
-            <div className="w-[240px] md:w-[280px] h-[240px] md:h-[280px]">
+            <div className="w-60 md:w-70 h-60 md:h-70">
               <img
                 src={fullUrl}
                 alt="Imagem enviada"
@@ -74,7 +77,7 @@ export const Message = ({ message }: MessageProps) => {
         );
       } else if (isAudioUrl(message.text)) {
         return (
-          <div className="flex items-center gap-3 min-w-[200px]">
+          <div className="flex items-center gap-3 min-w-50">
             <button
               onClick={handleAudioPlayPause}
               className="p-2 rounded-full hover:bg-opacity-80 transition-colors"
@@ -116,7 +119,9 @@ export const Message = ({ message }: MessageProps) => {
     }
 
     return (
-      <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
+      <p className="text-sm whitespace-pre-wrap wrap-break-word">
+        {message.text}
+      </p>
     );
   };
 

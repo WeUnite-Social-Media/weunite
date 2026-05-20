@@ -62,6 +62,14 @@ public class ConversationController {
     return ResponseEntity.ok(messages);
   }
 
+  @GetMapping("/messages/search/{userId}")
+  public ResponseEntity<List<MessageDTO>> searchMessages(
+      @AuthenticationPrincipal Jwt jwt, @PathVariable Long userId, @RequestParam String query) {
+    authenticatedUserService.requireMatchingUserId(jwt, userId);
+    List<MessageDTO> messages = messageService.searchMessages(userId, query);
+    return ResponseEntity.ok(messages);
+  }
+
   @PutMapping("/{conversationId}/read/{userId}")
   public ResponseEntity<Void> markMessagesAsRead(
       @AuthenticationPrincipal Jwt jwt,

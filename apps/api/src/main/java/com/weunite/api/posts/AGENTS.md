@@ -44,6 +44,10 @@ This module owns posts, comments, likes, and reposts in `com.weunite.api.posts`.
   of relying on lazy loads inside the service loop.
 - For actor-owned mutations, validate the path or request user id against the authenticated JWT
   before calling the service layer.
+- Keep post-like/repost lifecycle repository-owned; post-side interaction collections are read
+  views, not aggregate owners.
+- Keep comment-thread cleanup comment-owned; deleting a comment subtree may cascade through nested
+  comments and their likes.
 
 ## Validation
 

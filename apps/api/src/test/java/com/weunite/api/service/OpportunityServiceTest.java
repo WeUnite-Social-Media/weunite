@@ -21,6 +21,7 @@ import com.weunite.api.opportunities.mapper.OpportunityMapper;
 import com.weunite.api.opportunities.repository.OpportunityRepository;
 import com.weunite.api.opportunities.repository.SavedOpportunityRepository;
 import com.weunite.api.opportunities.repository.SkillRepository;
+import com.weunite.api.opportunities.repository.SubscribersRepository;
 import com.weunite.api.opportunities.service.OpportunityService;
 import com.weunite.api.users.domain.Company;
 import com.weunite.api.users.exception.UserNotFoundException;
@@ -45,6 +46,7 @@ class OpportunityServiceTest {
   @Mock private SkillRepository skillRepository;
   @Mock private OpportunityRepository opportunityRepository;
   @Mock private SavedOpportunityRepository savedOpportunityRepository;
+  @Mock private SubscribersRepository subscribersRepository;
   @Mock private OpportunityMapper opportunityMapper;
 
   @InjectMocks private OpportunityService opportunityService;
@@ -267,6 +269,7 @@ class OpportunityServiceTest {
 
     assertEquals(expectedResponse, result);
     verify(savedOpportunityRepository).deleteByOpportunityId(opportunityId);
+    verify(subscribersRepository).deleteByOpportunityId(opportunityId);
     verify(opportunityRepository).delete(existingOpportunity);
   }
 
@@ -306,13 +309,13 @@ class OpportunityServiceTest {
             null,
             null);
 
-    when(opportunityRepository.findAllActiveOrderedByCreationDate())
+    when(opportunityRepository.findAllActiveForReadModelOrderedByCreationDate())
         .thenReturn(List.of(opportunity));
     when(opportunityMapper.toOpportunityDTOList(List.of(opportunity))).thenReturn(List.of(dto));
 
     List<OpportunityDTO> result = opportunityService.getOpportunities();
 
     assertEquals(List.of(dto), result);
-    verify(opportunityRepository).findAllActiveOrderedByCreationDate();
+    verify(opportunityRepository).findAllActiveForReadModelOrderedByCreationDate();
   }
 }

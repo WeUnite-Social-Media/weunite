@@ -1,6 +1,7 @@
 package com.weunite.api.chat.service;
 
 import com.weunite.api.chat.domain.UserPresence;
+import com.weunite.api.chat.domain.UserStatus;
 import com.weunite.api.chat.dto.UserStatusDTO;
 import com.weunite.api.chat.repository.UserPresenceRepository;
 import com.weunite.api.common.exception.UnauthorizedException;
@@ -20,10 +21,10 @@ public class UserStatusService {
 
   @Transactional
   public UserStatusDTO updateUserStatus(Long userId, String status) {
-    UserPresence userPresence = new UserPresence(userId, normalizeStatus(status));
+    UserPresence userPresence = new UserPresence(userId, UserStatus.from(status).name());
     UserPresence savedPresence = userPresenceRepository.save(userPresence);
     return new UserStatusDTO(
-        savedPresence.getUserId(), savedPresence.getStatus(), savedPresence.getUpdatedAt());
+        savedPresence.getUserId(), savedPresence.getStatusValue(), savedPresence.getUpdatedAt());
   }
 
   @Transactional(readOnly = true)
@@ -33,7 +34,7 @@ public class UserStatusService {
         .map(
             presence ->
                 new UserStatusDTO(
-                    presence.getUserId(), presence.getStatus(), presence.getUpdatedAt()))
+                    presence.getUserId(), presence.getStatusValue(), presence.getUpdatedAt()))
         .orElse(new UserStatusDTO(userId, "OFFLINE", LocalDateTime.now()));
   }
 
@@ -56,17 +57,5 @@ public class UserStatusService {
     }
 
     throw new UnauthorizedException("Usuario autenticado nao encontrado na sessao websocket");
-  }
-
-  private String normalizeStatus(String status) {
-    if (status == null) {
-      return "OFFLINE";
-    }
-
-    return switch (status.trim().toUpperCase()) {
-      case "ONLINE" -> "ONLINE";
-      case "OFFLINE" -> "OFFLINE";
-      default -> "OFFLINE";
-    };
   }
 }

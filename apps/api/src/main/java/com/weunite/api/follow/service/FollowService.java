@@ -1,5 +1,6 @@
 package com.weunite.api.follow.service;
 
+import com.weunite.api.common.exception.BusinessRuleException;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.follow.domain.Follow;
 import com.weunite.api.follow.dto.FollowDTO;
@@ -60,6 +61,9 @@ public class FollowService {
 
   @Transactional
   public ResponseDTO<FollowDTO> followAndUnfollow(Long followerId, Long followedId) {
+    if (followerId.equals(followedId)) {
+      throw new BusinessRuleException("Nao e permitido seguir a si mesmo");
+    }
 
     User follower = userRepository.findById(followerId).orElseThrow(UserNotFoundException::new);
 

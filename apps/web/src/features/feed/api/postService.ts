@@ -2,7 +2,7 @@ import type { CreatePost, Post, UpdatePost } from "@/shared/types/post.types";
 import { instance as axios } from "@/shared/api/http";
 import { AxiosError } from "axios";
 
-export const FEED_POSTS_PAGE_SIZE = 20;
+export const FEED_POSTS_PAGE_SIZE = 10;
 
 interface GetPostsRequestParams {
   page?: number;

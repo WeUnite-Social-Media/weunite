@@ -20,6 +20,9 @@ This module owns user account and profile domain flows in `com.weunite.api.users
 
 - `controller/UserController.java`
 - `service/UserService.java`
+- `service/AthleteProfileService.java`
+- `repository/AthleteProfileRepository.java`
+- `repository/CompanyProfileRepository.java`
 
 ## Core use cases
 
@@ -30,9 +33,21 @@ This module owns user account and profile domain flows in `com.weunite.api.users
 ## Working rules
 
 - Keep profile business rules in service layer.
+- Keep athlete-specific profile update rules in `AthleteProfileService` while the profile split is
+  migrating.
+- Keep athlete profile read compatibility/fallback rules in `AthleteProfileService`, not in DTO
+  mappers.
 - Keep user DTOs, repositories, and mappers in this module.
 - Preserve user API contracts unless explicitly requested.
 - Keep athlete-specific profile characteristics and skills in the shared user profile contract so auth and profile reads stay aligned.
+- Keep the in-progress athlete/company profile split backward-compatible until DTOs and repositories
+  are intentionally moved off the current single-table subtype model.
+- Keep athlete/company profile writes mirrored between current subtype fields and explicit profile
+  entities until reads fully move to the profile tables.
+- Use profile repositories for direct split-profile persistence or lookup instead of hiding all profile
+  access behind `UserRepository`.
+- Keep roles lazy by default and use repository-owned role fetch plans for auth, admin, and DTO flows that need them.
+- Keep cross-module relationship collections as read views unless users truly own the child lifecycle.
 
 ## Validation
 

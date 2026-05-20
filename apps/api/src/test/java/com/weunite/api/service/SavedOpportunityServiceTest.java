@@ -130,7 +130,7 @@ class SavedOpportunityServiceTest {
         new SavedOpportunityDTO(1L, athleteId, null, Instant.now());
 
     when(athleteRepository.findById(athleteId)).thenReturn(Optional.of(athlete));
-    when(savedOpportunityRepository.findByAthleteIdOrderBySavedAtDesc(athleteId))
+    when(savedOpportunityRepository.findReadModelsByAthleteIdOrderBySavedAtDesc(athleteId))
         .thenReturn(List.of(savedOpportunity));
     when(savedOpportunityMapper.toDTO(savedOpportunity)).thenReturn(savedOpportunityDTO);
 

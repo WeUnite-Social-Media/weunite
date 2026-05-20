@@ -8,6 +8,7 @@ import { useChatStore } from "@/features/chat/stores/useChatStore";
 import { getUserById } from "@/features/profile/api/userService";
 import type { User } from "@/shared/types/user.types";
 import { formatMessagePreview } from "@/shared/utils/formatMessagePreview";
+import { formatBrazilTime } from "@/shared/utils/formatBrazilTime";
 
 interface ConversationWithUser {
   id: number;
@@ -34,6 +35,7 @@ export const ChatLayout = () => {
   const clearPendingConversationId = useChatStore(
     (state) => state.clearPendingConversationId,
   );
+  const pendingMessageId = useChatStore((state) => state.pendingMessageId);
   const pendingConversationId = useChatStore(
     (state) => state.pendingConversationId,
   );
@@ -74,13 +76,7 @@ export const ChatLayout = () => {
                   conv.lastMessage?.content || "",
                 ),
                 time: conv.lastMessage
-                  ? new Date(conv.lastMessage.createdAt).toLocaleTimeString(
-                      [],
-                      {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      },
-                    )
+                  ? formatBrazilTime(conv.lastMessage.createdAt)
                   : "",
                 unread: conv.unreadCount,
                 online: false,
@@ -117,13 +113,7 @@ export const ChatLayout = () => {
                     conv.lastMessage?.content || "",
                   ),
                   time: conv.lastMessage
-                    ? new Date(conv.lastMessage.createdAt).toLocaleTimeString(
-                        [],
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
-                      )
+                    ? formatBrazilTime(conv.lastMessage.createdAt)
                     : "",
                   unread: conv.unreadCount,
                   online: false,
@@ -147,10 +137,7 @@ export const ChatLayout = () => {
                 conv.lastMessage?.content || "",
               ),
               time: conv.lastMessage
-                ? new Date(conv.lastMessage.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
+                ? formatBrazilTime(conv.lastMessage.createdAt)
                 : "",
               unread: conv.unreadCount,
               online: false,
@@ -262,6 +249,7 @@ export const ChatLayout = () => {
               activeConversation={activeConversation}
               onBack={handleBack}
               isMobile={true}
+              pendingMessageId={pendingMessageId}
             />
           ) : (
             <div className="flex h-full items-center justify-center p-4">
@@ -285,6 +273,7 @@ export const ChatLayout = () => {
               activeConversation={activeConversation}
               onBack={handleBack}
               isMobile={false}
+              pendingMessageId={pendingMessageId}
             />
           ) : (
             <div className="flex-1 flex items-center justify-center p-4">

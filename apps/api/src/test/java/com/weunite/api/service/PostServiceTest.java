@@ -14,6 +14,7 @@ import com.weunite.api.posts.dto.PostRequestDTO;
 import com.weunite.api.posts.exception.PostNotFoundException;
 import com.weunite.api.posts.mapper.PostMapper;
 import com.weunite.api.posts.repository.FeedItemProjection;
+import com.weunite.api.posts.repository.LikeRepository;
 import com.weunite.api.posts.repository.PostRepository;
 import com.weunite.api.posts.repository.RepostRepository;
 import com.weunite.api.posts.service.PostService;
@@ -40,6 +41,8 @@ public class PostServiceTest {
   @Mock private UserRepository userRepository;
 
   @Mock private PostRepository postRepository;
+
+  @Mock private LikeRepository likeRepository;
 
   @Mock private RepostRepository repostRepository;
 
@@ -378,6 +381,8 @@ public class PostServiceTest {
     assertNotNull(result.data());
 
     verify(postRepository).findById(postId);
+    verify(likeRepository).deleteByPostId(postId);
+    verify(repostRepository).deleteByPostId(postId);
     verify(postRepository).delete(existingPost);
     verify(postMapper).toResponseDTO(eq("Publicação excluída com sucesso"), eq(existingPost));
   }

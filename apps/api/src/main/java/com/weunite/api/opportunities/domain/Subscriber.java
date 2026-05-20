@@ -10,6 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"athlete_id", "opportunity_id"}))
 public class Subscriber {
   public Subscriber(Athlete athlete, Opportunity opportunity) {
     this.athlete = athlete;
@@ -21,7 +22,7 @@ public class Subscriber {
   Long id;
 
   @ManyToOne
-  @JoinColumn(name = "opportunity_id")
+  @JoinColumn(name = "opportunity_id", nullable = false)
   private Opportunity opportunity;
 
   @ManyToOne

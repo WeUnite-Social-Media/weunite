@@ -12,6 +12,7 @@ import com.weunite.api.opportunities.mapper.OpportunityMapper;
 import com.weunite.api.opportunities.repository.OpportunityRepository;
 import com.weunite.api.opportunities.repository.SavedOpportunityRepository;
 import com.weunite.api.opportunities.repository.SkillRepository;
+import com.weunite.api.opportunities.repository.SubscribersRepository;
 import com.weunite.api.users.domain.Company;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.CompanyRepository;
@@ -27,6 +28,7 @@ public class OpportunityService {
   private final CompanyRepository companyRepository;
   private final OpportunityRepository opportunityRepository;
   private final SavedOpportunityRepository savedOpportunityRepository;
+  private final SubscribersRepository subscribersRepository;
   private final OpportunityMapper opportunityMapper;
   private final SkillRepository skillRepository;
 
@@ -34,11 +36,13 @@ public class OpportunityService {
       CompanyRepository companyRepository,
       OpportunityRepository opportunityRepository,
       SavedOpportunityRepository savedOpportunityRepository,
+      SubscribersRepository subscribersRepository,
       OpportunityMapper opportunityMapper,
       SkillRepository skillRepository) {
     this.companyRepository = companyRepository;
     this.opportunityRepository = opportunityRepository;
     this.savedOpportunityRepository = savedOpportunityRepository;
+    this.subscribersRepository = subscribersRepository;
     this.opportunityMapper = opportunityMapper;
     this.skillRepository = skillRepository;
   }
@@ -128,6 +132,7 @@ public class OpportunityService {
     }
 
     savedOpportunityRepository.deleteByOpportunityId(opportunityId);
+    subscribersRepository.deleteByOpportunityId(opportunityId);
     opportunityRepository.delete(existingOpportunity);
 
     return opportunityMapper.toResponseDTO(
@@ -138,7 +143,7 @@ public class OpportunityService {
   public ResponseDTO<OpportunityDTO> getOpportunity(Long opportunityId) {
     Opportunity opportunity =
         opportunityRepository
-            .findByIdAndDeletedFalse(opportunityId)
+            .findReadModelByIdAndDeletedFalse(opportunityId)
             .orElseThrow(OpportunityNotFoundException::new);
 
     return opportunityMapper.toResponseDTO("Oportunidade encontrada com sucesso!", opportunity);
@@ -146,7 +151,8 @@ public class OpportunityService {
 
   @Transactional
   public List<OpportunityDTO> getOpportunities() {
-    List<Opportunity> opportunities = opportunityRepository.findAllActiveOrderedByCreationDate();
+    List<Opportunity> opportunities =
+        opportunityRepository.findAllActiveForReadModelOrderedByCreationDate();
     return opportunityMapper.toOpportunityDTOList(opportunities);
   }
 
@@ -154,7 +160,7 @@ public class OpportunityService {
   public List<OpportunityDTO> getOpportunitiesByCompanyId(Long userId) {
     companyRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
-    List<Opportunity> opportunities = opportunityRepository.findActiveByCompanyId(userId);
+    List<Opportunity> opportunities = opportunityRepository.findActiveReadModelsByCompanyId(userId);
     return opportunityMapper.toOpportunityDTOList(opportunities);
   }
 

@@ -12,12 +12,21 @@ import org.springframework.stereotype.Repository;
 public interface ConversationRepository extends JpaRepository<Conversation, Long> {
 
   @Query(
-      "SELECT c FROM Conversation c JOIN c.participants p WHERE p.id = :userId ORDER BY c.updatedAt DESC")
+      "SELECT DISTINCT c FROM Conversation c "
+          + "JOIN c.participants p "
+          + "JOIN FETCH c.participants "
+          + "WHERE p.id = :userId ORDER BY c.updatedAt DESC")
   List<Conversation> findAllByUserId(@Param("userId") Long userId);
 
   @Query(
-      "SELECT c FROM Conversation c JOIN c.participants p1 JOIN c.participants p2 "
+      "SELECT DISTINCT c FROM Conversation c "
+          + "JOIN FETCH c.participants participants "
+          + "JOIN c.participants p1 "
+          + "JOIN c.participants p2 "
           + "WHERE p1.id = :userId1 AND p2.id = :userId2 AND SIZE(c.participants) = 2")
   Optional<Conversation> findConversationBetweenTwoUsers(
       @Param("userId1") Long userId1, @Param("userId2") Long userId2);
+
+  @Query("SELECT c FROM Conversation c JOIN FETCH c.participants WHERE c.id = :conversationId")
+  Optional<Conversation> findByIdWithParticipants(@Param("conversationId") Long conversationId);
 }

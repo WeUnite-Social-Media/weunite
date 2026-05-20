@@ -21,4 +21,6 @@ public interface LikeRepository extends JpaRepository<Like, Long> {
   Page<Like> findByUser(User user, Pageable pageable);
 
   Set<Like> findByComment(Comment comment);
+
+  void deleteByPostId(Long postId);
 }

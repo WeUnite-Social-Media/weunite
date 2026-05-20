@@ -88,7 +88,7 @@ class AdminModerationServiceTest {
     user.setSuspended(true);
     user.setRole(java.util.Set.of(new Role(4L, "ATHLETE")));
 
-    when(userRepository.findAll(any(org.springframework.data.domain.Sort.class)))
+    when(userRepository.findAllWithRoles(any(org.springframework.data.domain.Sort.class)))
         .thenReturn(List.of(user));
     when(postRepository.countActivePostsByUserIds(List.of(12L)))
         .thenReturn(List.<Object[]>of(new Object[] {12L, 2L}));

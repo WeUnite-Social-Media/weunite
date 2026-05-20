@@ -68,7 +68,7 @@ public class PostController {
 
   @GetMapping("/get")
   public ResponseEntity<List<PostDTO>> getPosts(
-      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
     List<PostDTO> posts = postService.getPosts(page, size);
     return ResponseEntity.status(HttpStatus.OK).body(posts);
   }

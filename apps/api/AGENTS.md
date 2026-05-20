@@ -21,6 +21,7 @@ This package owns the Spring Boot backend in `apps/api`.
 - `src/main/java/com/weunite/api/WeuniteAuthApplication.java`: Spring Boot bootstrap.
 - `src/main/java/com/weunite/api/common/*`: shared backend infrastructure.
 - `src/main/java/com/weunite/api/*`: feature modules.
+- `src/main/resources/db/migration/*`: versioned database migrations.
 - `src/main/resources/application.properties`: runtime configuration.
 - `pom.xml`: Java build and plugin setup.
 

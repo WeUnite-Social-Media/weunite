@@ -10,6 +10,7 @@ import com.weunite.api.posts.dto.PostRequestDTO;
 import com.weunite.api.posts.exception.PostNotFoundException;
 import com.weunite.api.posts.mapper.PostMapper;
 import com.weunite.api.posts.repository.FeedItemProjection;
+import com.weunite.api.posts.repository.LikeRepository;
 import com.weunite.api.posts.repository.PostRepository;
 import com.weunite.api.posts.repository.RepostRepository;
 import com.weunite.api.users.domain.User;
@@ -30,6 +31,7 @@ public class PostService {
   private final PostRepository postRepository;
   private final PostMapper postMapper;
   private final CloudinaryService cloudinaryService;
+  private final LikeRepository likeRepository;
   private final RepostRepository repostRepository;
 
   public PostService(
@@ -37,11 +39,13 @@ public class PostService {
       PostRepository postRepository,
       PostMapper postMapper,
       CloudinaryService cloudinaryService,
+      LikeRepository likeRepository,
       RepostRepository repostRepository) {
     this.userRepository = userRepository;
     this.postRepository = postRepository;
     this.postMapper = postMapper;
     this.cloudinaryService = cloudinaryService;
+    this.likeRepository = likeRepository;
     this.repostRepository = repostRepository;
   }
 
@@ -119,6 +123,8 @@ public class PostService {
       throw new UnauthorizedException("Você precisa estar logado para deletar essa publicação!");
     }
 
+    likeRepository.deleteByPostId(postId);
+    repostRepository.deleteByPostId(postId);
     postRepository.delete(post);
 
     return postMapper.toResponseDTO("Publicação excluída com sucesso", post);
