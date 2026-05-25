@@ -168,7 +168,10 @@ The first wave should reference the class issues below:
 ### Phase 4: Report Target Stabilization
 
 - Add a stable report target representation while keeping current report endpoints.
-- Backfill existing reports from `(type, entityId)`.
+- Map `ReportTarget` onto the existing `type` and `entity_id` columns first so DTO and database
+  compatibility are preserved while repository paths migrate.
+- If report targets later move into a dedicated table, backfill it from existing
+  `(type, entityId)` values.
 - Update admin/report queries to use the new target representation.
 - Keep old fields available in DTOs until consumers no longer need them.
 

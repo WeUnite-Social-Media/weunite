@@ -35,8 +35,7 @@ public class Report {
 
   public Report(User reporter, ReportType type, Long entityId, String reason) {
     this.reporter = reporter;
-    this.type = type;
-    this.entityId = entityId;
+    this.target = new ReportTarget(type, entityId);
     this.reason = reason;
   }
 
@@ -48,12 +47,7 @@ public class Report {
   @JoinColumn(name = "reporter_id", nullable = false)
   private User reporter;
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  private ReportType type;
-
-  @Column(nullable = false)
-  private Long entityId;
+  @Embedded private ReportTarget target;
 
   @Column(length = 500)
   private String reason;
@@ -85,5 +79,21 @@ public class Report {
   @PreUpdate
   protected void onUpdate() {
     this.updatedAt = Instant.now();
+  }
+
+  public ReportType getType() {
+    return target != null ? target.getType() : null;
+  }
+
+  public void setType(ReportType type) {
+    target = new ReportTarget(type, getEntityId());
+  }
+
+  public Long getEntityId() {
+    return target != null ? target.getEntityId() : null;
+  }
+
+  public void setEntityId(Long entityId) {
+    target = new ReportTarget(getType(), entityId);
   }
 }
