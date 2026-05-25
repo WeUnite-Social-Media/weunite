@@ -36,10 +36,12 @@ The current backend already follows the repository's module-by-feature direction
 - User subtype modeling uses `SINGLE_TABLE` inheritance for `User`, `Athlete`, and `Company`, which grows sparse columns and couples profile-specific fields to all users.
 - Many entity graphs are bidirectional and cascade broadly, increasing accidental fetch/cascade blast radius.
 - Several hot relationships use eager loading, including roles, conversation participants, and message senders.
-- Reports point to reported content with `(type, entityId)` instead of typed associations or a stable target abstraction.
+- Reports preserve `(type, entityId)` storage and API fields while mapping them through the typed
+  `ReportTarget` value object.
 - Notifications store scalar actor/recipient IDs and actor snapshots, which is acceptable for notification history, but needs clear ownership and indexing.
 - `Subscriber`, `SavedOpportunity`, `Like`, `Repost`, and follow relationships should be treated as first-class join entities with uniqueness, timestamps, and repository-owned queries.
-- Schema ownership still depends on `ddl-auto=update`, while role seed data has moved into migrations.
+- Schema ownership is enforced through Flyway migrations with Hibernate runtime validation; profile
+  compatibility fields remain until the subtype split cleanup is complete.
 
 ## Class Diagram Surface
 
@@ -138,7 +140,8 @@ The first wave should reference the class issues below:
 - Add migration tooling and baseline the current schema.
 - Add repository/entity tests for high-risk invariants: unique joins, soft deletes, report status transitions, subscription rules, and role seeding.
 - Document every intentional scalar-ID relationship before changing mappings.
-- Keep `ddl-auto=update` during the first compatibility step if needed, then move to migration validation once baseline is proven.
+- Keep the migration baseline covered by validation tests and require new schema evolution to land in
+  versioned migrations.
 
 ### Phase 2: Relationship Hardening
 
@@ -179,7 +182,8 @@ The first wave should reference the class issues below:
 
 - Remove obsolete inheritance/discriminator assumptions once profile split is complete.
 - Replace remaining entity serialization annotations with DTO-only responses.
-- Switch schema config from update-style DDL to migration validation.
+- Keep runtime schema config on migration validation and remove remaining compatibility mappings only
+  after their data migrations are proven.
 - Run API build/test plus web typecheck for affected contracts.
 
 ## Proposed PR Scope
