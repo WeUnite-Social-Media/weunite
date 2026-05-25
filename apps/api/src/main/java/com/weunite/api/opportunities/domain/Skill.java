@@ -1,6 +1,5 @@
 package com.weunite.api.opportunities.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.weunite.api.users.domain.Athlete;
 import jakarta.persistence.*;
 import java.util.HashSet;
@@ -26,11 +25,9 @@ public class Skill {
   @Column(unique = true, nullable = false)
   private String name;
 
-  @JsonIgnore
   @ManyToMany(mappedBy = "skills")
   private Set<Opportunity> opportunities = new HashSet<>();
 
-  @JsonIgnore
   @ManyToMany(mappedBy = "skills")
   private Set<Athlete> athlete = new HashSet<>();
 }

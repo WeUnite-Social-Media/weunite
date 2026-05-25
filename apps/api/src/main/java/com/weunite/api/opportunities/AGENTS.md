@@ -38,6 +38,7 @@ This module owns opportunities, skills association, subscriptions, and saved opp
 
 - Keep controllers thin and services transactional.
 - Keep opportunity domain/repository/mapper logic within this module.
+- Keep entity relationships out of transport serialization; expose opportunities and skills through DTO mappings.
 - Preserve existing HTTP contracts unless explicitly requested.
 - Keep `OpportunityDTO` as the read model for web/mobile/admin opportunity responses, including derived subscriber totals when available.
 - Keep opportunity and relationship read-model fetch plans repository-owned so DTO mapping does not rely on lazy-load side effects.

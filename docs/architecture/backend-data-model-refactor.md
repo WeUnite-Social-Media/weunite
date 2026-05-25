@@ -181,7 +181,8 @@ The first wave should reference the class issues below:
 ### Phase 5: Cleanup And Contract Verification
 
 - Remove obsolete inheritance/discriminator assumptions once profile split is complete.
-- Replace remaining entity serialization annotations with DTO-only responses.
+- Keep response serialization DTO-only; domain relationship entities should not carry Jackson cycle
+  annotations for endpoint output.
 - Keep runtime schema config on migration validation and remove remaining compatibility mappings only
   after their data migrations are proven.
 - Run API build/test plus web typecheck for affected contracts.
