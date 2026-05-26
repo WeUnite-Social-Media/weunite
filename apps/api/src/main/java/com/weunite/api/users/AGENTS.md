@@ -36,8 +36,8 @@ This module owns user account and profile domain flows in `com.weunite.api.users
 - Keep profile business rules in service layer.
 - Keep athlete-specific profile update rules in `AthleteProfileService` while the profile split is
   migrating.
-- Keep company registration profile details, including CNPJ assignment, in
-  `CompanyProfileService` while the profile split is migrating.
+- Keep company registration profile assignment in `CompanyProfileService` and require CNPJ in the
+  registration contract while the profile split is migrating.
 - Keep athlete profile read compatibility/fallback rules in `AthleteProfileService`, not in DTO
   mappers.
 - Keep user DTOs, repositories, and mappers in this module.

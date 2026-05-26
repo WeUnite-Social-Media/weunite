@@ -162,8 +162,8 @@ The first wave should reference the class issues below:
 - Fetch split athlete/company profile entities through user read-model queries that map profile DTOs.
 - Route athlete profile updates through a profile-specific service boundary while keeping compatibility
   mirroring in the domain model.
-- Route company registration identifiers through a profile-specific service boundary so CNPJ writes
-  reach the split company profile entity.
+- Route required company registration identifiers through a profile-specific service boundary so
+  CNPJ writes reach the split company profile entity.
 - Add profile-owned repositories so split profile persistence and lookup can move off user-only access
   paths incrementally.
 - Centralize athlete profile read compatibility in the profile service instead of DTO mappers.
