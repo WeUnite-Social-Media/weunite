@@ -126,6 +126,7 @@ The first wave should reference the class issues below:
 2. Retain actor snapshots for historical display.
 3. Keep notification indexes around recipient/read state, recipient/creation time, type, actor, and related entity aligned with migration-owned schema changes.
 4. Keep notification trigger decisions in the owning feature service.
+5. Scope notification delivery-record access and read-state mutations to the authenticated recipient.
 
 ### Reports And Admin
 
