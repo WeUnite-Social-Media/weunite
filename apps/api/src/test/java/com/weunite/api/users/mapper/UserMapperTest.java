@@ -5,7 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.weunite.api.users.domain.Athlete;
 import com.weunite.api.users.domain.AthleteProfile;
+import com.weunite.api.users.domain.Company;
+import com.weunite.api.users.domain.CompanyProfile;
 import com.weunite.api.users.service.AthleteProfileService;
+import com.weunite.api.users.service.CompanyProfileService;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +24,7 @@ class UserMapperTest {
   void setUp() {
     ReflectionTestUtils.setField(
         mapper, "athleteProfileService", new AthleteProfileService(null, null));
+    ReflectionTestUtils.setField(mapper, "companyProfileService", new CompanyProfileService());
   }
 
   @Test
@@ -65,5 +69,27 @@ class UserMapperTest {
     assertEquals("RIGHT", mapper.mapFootDomain(athlete));
     assertEquals("FORWARD", mapper.mapPosition(athlete));
     assertEquals(LocalDate.of(2000, 7, 10), mapper.mapBirthDate(athlete));
+  }
+
+  @Test
+  @DisplayName("Should prefer split company profile values when mapping company identifier")
+  void mapCompanyCnpjFromSplitProfile() {
+    Company company = new Company();
+    CompanyProfile profile = new CompanyProfile(company);
+    profile.setCNPJ("12345678000199");
+    company.setProfile(profile);
+    ReflectionTestUtils.setField(company, "CNPJ", "00000000000000");
+
+    assertEquals("12345678000199", mapper.mapCnpj(company));
+  }
+
+  @Test
+  @DisplayName("Should fall back to legacy company identifier during profile split compatibility")
+  void mapCompanyCnpjFromLegacySubtypeWhenSplitProfileIsMissing() {
+    Company company = new Company();
+    ReflectionTestUtils.setField(company, "CNPJ", "12345678000199");
+
+    assertNull(company.getProfile());
+    assertEquals("12345678000199", mapper.mapCnpj(company));
   }
 }

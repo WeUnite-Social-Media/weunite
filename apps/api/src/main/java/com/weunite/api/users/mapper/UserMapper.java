@@ -10,6 +10,7 @@ import com.weunite.api.users.domain.User;
 import com.weunite.api.users.dto.CreateUserRequestDTO;
 import com.weunite.api.users.dto.UserDTO;
 import com.weunite.api.users.service.AthleteProfileService;
+import com.weunite.api.users.service.CompanyProfileService;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public abstract class UserMapper {
 
   @Autowired protected AthleteProfileService athleteProfileService;
+  @Autowired protected CompanyProfileService companyProfileService;
 
   public User toEntity(CreateUserRequestDTO dto) {
     String role = dto.role().toUpperCase();
@@ -51,6 +53,7 @@ public abstract class UserMapper {
   @Mapping(target = "isPrivate", source = "user.private")
   @Mapping(target = "createdAt", source = "user.createdAt")
   @Mapping(target = "updatedAt", source = "user.updatedAt")
+  @Mapping(target = "cnpj", expression = "java(mapCnpj(user))")
   @Mapping(target = "height", expression = "java(mapHeight(user))")
   @Mapping(target = "weight", expression = "java(mapWeight(user))")
   @Mapping(target = "footDomain", expression = "java(mapFootDomain(user))")
@@ -67,6 +70,14 @@ public abstract class UserMapper {
     }
 
     return athleteProfileService.resolveHeight(athlete);
+  }
+
+  public String mapCnpj(User user) {
+    if (!(user instanceof Company company)) {
+      return null;
+    }
+
+    return companyProfileService.resolveCnpj(company);
   }
 
   public Double mapWeight(User user) {

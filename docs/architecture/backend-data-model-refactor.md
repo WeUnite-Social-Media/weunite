@@ -167,6 +167,8 @@ The first wave should reference the class issues below:
 - Add profile-owned repositories so split profile persistence and lookup can move off user-only access
   paths incrementally.
 - Centralize athlete profile read compatibility in the profile service instead of DTO mappers.
+- Centralize company CNPJ read compatibility in the company profile service while exposing it through
+  the existing user response contract.
 - Update repositories and mappers while preserving existing DTO responses.
 - Keep auth and profile reads aligned through the shared user profile contract.
 
