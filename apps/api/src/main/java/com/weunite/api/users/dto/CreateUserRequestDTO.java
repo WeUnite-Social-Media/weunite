@@ -3,6 +3,7 @@ package com.weunite.api.users.dto;
 import com.weunite.api.common.validation.ValidPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record CreateUserRequestDTO(
@@ -16,4 +17,5 @@ public record CreateUserRequestDTO(
         @Email(message = "Este campo deve ter o formato: exemplo@provedor.com")
         String email,
     @NotBlank(message = "A senha não pode estar vazia") @ValidPassword String password,
-    @NotBlank String role) {}
+    @NotBlank String role,
+    @Pattern(regexp = "\\d{14}", message = "O CNPJ deve conter 14 digitos") String cnpj) {}
