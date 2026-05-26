@@ -169,6 +169,8 @@ The first wave should reference the class issues below:
 - Centralize athlete profile read compatibility in the profile service instead of DTO mappers.
 - Centralize company CNPJ read compatibility in the company profile service while exposing it through
   the existing user response contract.
+- Remove unused subtype-only update requests after editable profile fields are consolidated on the
+  routed shared user request contract.
 - Update repositories and mappers while preserving existing DTO responses.
 - Keep auth and profile reads aligned through the shared user profile contract.
 

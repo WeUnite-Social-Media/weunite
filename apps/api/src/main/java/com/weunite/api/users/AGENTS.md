@@ -41,6 +41,8 @@ This module owns user account and profile domain flows in `com.weunite.api.users
 - Keep athlete and company profile read compatibility/fallback rules in their profile services, not
   in DTO mappers.
 - Keep user DTOs, repositories, and mappers in this module.
+- Keep editable athlete profile fields on the routed `UpdateUserRequestDTO` contract; CPF is not
+  part of the current public profile update request.
 - Preserve user API contracts unless explicitly requested.
 - Keep athlete characteristics, skills, and company CNPJ in the shared user profile contract so
   auth and profile reads stay aligned.
