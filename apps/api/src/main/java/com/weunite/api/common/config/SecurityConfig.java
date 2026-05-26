@@ -111,7 +111,12 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(
                         HttpMethod.POST, "/api/follow/followAndUnfollow/{followerid}/{followedId}")
-                    .permitAll()
+                    .authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/api/follow/accept/{followerid}/{followedId}")
+                    .authenticated()
+                    .requestMatchers(
+                        HttpMethod.PUT, "/api/follow/decline/{followerid}/{followedId}")
+                    .authenticated()
 
                     // Swagger
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html")

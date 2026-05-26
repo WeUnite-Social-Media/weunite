@@ -31,6 +31,8 @@ This module owns user follow relationships in `com.weunite.api.follow`.
 - Keep follow DTOs and mappers inside this module.
 - Preserve follow endpoint contracts unless explicitly requested.
 - Reject self-follow attempts in the service layer before persisting relationship state.
+- Validate the authenticated actor against follow mutation path IDs: the follower owns follow
+  toggles, and the followed user owns request acceptance or decline.
 - Keep follow lifecycle repository/service-owned; user-side collections are read views, not aggregate owners.
 
 ## Validation

@@ -64,4 +64,12 @@ class SecurityConfigTest {
         .perform(get("/api/saved-opportunities/isSaved/1/2"))
         .andExpect(status().isUnauthorized());
   }
+
+  @Test
+  @DisplayName("Should require authentication for follow mutation endpoints")
+  void followMutationEndpointsRequireAuthentication() throws Exception {
+    mockMvc.perform(post("/api/follow/followAndUnfollow/1/2")).andExpect(status().isUnauthorized());
+    mockMvc.perform(put("/api/follow/accept/1/2")).andExpect(status().isUnauthorized());
+    mockMvc.perform(put("/api/follow/decline/1/2")).andExpect(status().isUnauthorized());
+  }
 }

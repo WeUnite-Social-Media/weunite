@@ -150,6 +150,7 @@ The first wave should reference the class issues below:
 - Make relationship entities explicit where they are currently only join mechanics.
 - Remove unnecessary eager fetches and replace them with repository queries or entity graphs.
 - Tighten cascade/orphan-removal rules to match aggregate ownership.
+- Bind actor-owned follow mutations to authenticated identity before changing relationship state.
 
 ### Phase 3: User Profile Split
 
