@@ -180,6 +180,8 @@ The first wave should reference the class issues below:
 - Add a stable report target representation while keeping current report endpoints.
 - Map `ReportTarget` onto the existing `type` and `entity_id` columns first so DTO and database
   compatibility are preserved while repository paths migrate.
+- Route single-target report and moderation lookups through `ReportTarget`, while retaining
+  projection-oriented batched queries for admin list views.
 - If report targets later move into a dedicated table, backfill it from existing
   `(type, entityId)` values.
 - Update admin/report queries to use the new target representation.

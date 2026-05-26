@@ -1,6 +1,7 @@
 package com.weunite.api.reports.repository;
 
 import com.weunite.api.reports.domain.Report;
+import com.weunite.api.reports.domain.ReportTarget;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,28 +19,16 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
   List<Object[]> findEntitiesWithManyReports(
       @Param("type") Report.ReportType type, @Param("threshold") Long threshold);
 
-  @Query(
-      "SELECT COUNT(r) FROM Report r "
-          + "WHERE r.target.entityId = :entityId AND r.target.type = :type "
-          + "AND r.status = :status")
-  Long countByEntityIdAndTypeAndStatus(
-      @Param("entityId") Long entityId,
-      @Param("type") Report.ReportType type,
-      @Param("status") Report.ReportStatus status);
+  @Query("SELECT COUNT(r) FROM Report r WHERE r.target = :target AND r.status = :status")
+  Long countByTargetAndStatus(
+      @Param("target") ReportTarget target, @Param("status") Report.ReportStatus status);
 
-  @Query(
-      "SELECT r FROM Report r "
-          + "WHERE r.target.entityId = :entityId AND r.target.type = :type "
-          + "AND r.status = :status")
-  List<Report> findByEntityIdAndTypeAndStatus(
-      @Param("entityId") Long entityId,
-      @Param("type") Report.ReportType type,
-      @Param("status") Report.ReportStatus status);
+  @Query("SELECT r FROM Report r WHERE r.target = :target AND r.status = :status")
+  List<Report> findByTargetAndStatus(
+      @Param("target") ReportTarget target, @Param("status") Report.ReportStatus status);
 
-  @Query(
-      "SELECT r FROM Report r " + "WHERE r.target.entityId = :entityId AND r.target.type = :type")
-  List<Report> findByEntityIdAndType(
-      @Param("entityId") Long entityId, @Param("type") Report.ReportType type);
+  @Query("SELECT r FROM Report r WHERE r.target = :target")
+  List<Report> findByTarget(@Param("target") ReportTarget target);
 
   @Query(
       "SELECT r FROM Report r " + "WHERE r.target.entityId IN :entityIds AND r.target.type = :type")

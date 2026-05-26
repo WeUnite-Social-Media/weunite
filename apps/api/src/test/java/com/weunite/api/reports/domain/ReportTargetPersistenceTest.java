@@ -35,10 +35,13 @@ class ReportTargetPersistenceTest {
     assertEquals(42L, report.getEntityId());
     assertEquals(
         1L,
-        reportRepository.countByEntityIdAndTypeAndStatus(
-            42L, Report.ReportType.POST, Report.ReportStatus.PENDING));
+        reportRepository.countByTargetAndStatus(
+            new ReportTarget(Report.ReportType.POST, 42L), Report.ReportStatus.PENDING));
     assertEquals(
         report.getId(),
-        reportRepository.findByEntityIdAndType(42L, Report.ReportType.POST).get(0).getId());
+        reportRepository
+            .findByTarget(new ReportTarget(Report.ReportType.POST, 42L))
+            .get(0)
+            .getId());
   }
 }

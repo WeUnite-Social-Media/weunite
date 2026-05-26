@@ -32,6 +32,8 @@ This module owns admin-side report analysis and moderation actions in `com.weuni
 
 - Keep report moderation orchestration in this use case folder.
 - Depend on `com.weunite.api.reports` for report domain/repository data.
+- Build `ReportTarget` values for single-content moderation operations rather than passing target
+  type and entity id independently through report repository calls.
 - Preserve existing `/api/admin/**` report routes unless explicitly requested.
 - Keep dismiss-style moderation actions idempotent and expose them as `PUT` routes when they map to state transitions on existing report aggregates.
 - Keep route names aligned with the actual moderation action being executed (`delete`, `restore`, `dismiss`, `review`, `resolve`).

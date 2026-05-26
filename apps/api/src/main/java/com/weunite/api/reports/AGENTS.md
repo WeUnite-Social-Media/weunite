@@ -32,6 +32,8 @@ This module owns report creation, report queries, and reporting-related data str
 - Keep status-based report listing logic inside this module instead of duplicating it in admin.
 - Keep report targets modeled through `ReportTarget` while preserving `type` and `entityId` in
   external DTO contracts.
+- Use `ReportTarget` for single-target report repository lookups; keep split target parameters only
+  where batched projections require independent ID collections.
 - Keep `ReportDTO` response fields aligned with admin consumers, including lowercase status strings and resolution metadata when present.
 
 ## Validation
