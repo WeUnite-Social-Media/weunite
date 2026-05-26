@@ -117,7 +117,8 @@ The first wave should reference the class issues below:
 2. Avoid eager participant/sender loading in default entity mappings; fetch exactly what each endpoint needs.
 3. Keep message deletion/edit/read semantics explicit in the domain model.
 4. Keep websocket identity derived from authenticated session state.
-5. Keep `UserStatus` as the API/domain concept for availability and decide whether the persisted class remains `UserPresence` or is renamed during the refactor.
+5. Keep `UserStatus` as the API/domain availability value and retain `UserPresence` as the
+   persistence record for the user's latest status and timestamp.
 
 ### Notifications
 

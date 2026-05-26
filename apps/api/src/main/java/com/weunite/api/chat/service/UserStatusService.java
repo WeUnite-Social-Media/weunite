@@ -21,7 +21,7 @@ public class UserStatusService {
 
   @Transactional
   public UserStatusDTO updateUserStatus(Long userId, String status) {
-    UserPresence userPresence = new UserPresence(userId, UserStatus.from(status).name());
+    UserPresence userPresence = new UserPresence(userId, UserStatus.from(status));
     UserPresence savedPresence = userPresenceRepository.save(userPresence);
     return new UserStatusDTO(
         savedPresence.getUserId(), savedPresence.getStatusValue(), savedPresence.getUpdatedAt());
@@ -35,7 +35,7 @@ public class UserStatusService {
             presence ->
                 new UserStatusDTO(
                     presence.getUserId(), presence.getStatusValue(), presence.getUpdatedAt()))
-        .orElse(new UserStatusDTO(userId, "OFFLINE", LocalDateTime.now()));
+        .orElse(new UserStatusDTO(userId, UserStatus.OFFLINE.name(), LocalDateTime.now()));
   }
 
   public Long requireAuthenticatedUserId(SimpMessageHeaderAccessor headerAccessor) {

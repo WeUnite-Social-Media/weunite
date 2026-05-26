@@ -17,7 +17,7 @@ class UserPresencePersistenceTest {
   @Test
   @DisplayName("Should persist user status as domain enum while exposing string value")
   void persistUserStatus() {
-    userPresenceRepository.saveAndFlush(new UserPresence(7L, "online"));
+    userPresenceRepository.saveAndFlush(new UserPresence(7L, UserStatus.ONLINE));
 
     UserPresence presence = userPresenceRepository.findById(7L).orElseThrow();
 
