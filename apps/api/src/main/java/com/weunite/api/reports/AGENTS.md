@@ -27,7 +27,9 @@ This module owns report creation, report queries, and reporting-related data str
 
 ## Working rules
 
-- Keep report submission flows public and moderation resolution flows coordinated through the admin module.
+- Bind report submissions to the authenticated reporting user, and keep report queue reads restricted
+  to administrators.
+- Keep report moderation resolution flows coordinated through the admin module.
 - Keep report payload types here instead of leaking them into unrelated modules.
 - Keep status-based report listing logic inside this module instead of duplicating it in admin.
 - Keep report targets modeled through `ReportTarget` while preserving `type` and `entityId` in

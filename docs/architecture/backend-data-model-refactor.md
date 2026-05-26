@@ -151,6 +151,7 @@ The first wave should reference the class issues below:
 - Remove unnecessary eager fetches and replace them with repository queries or entity graphs.
 - Tighten cascade/orphan-removal rules to match aggregate ownership.
 - Bind actor-owned follow mutations to authenticated identity before changing relationship state.
+- Bind report submissions to the authenticated reporter and keep report queues admin-only.
 
 ### Phase 3: User Profile Split
 

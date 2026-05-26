@@ -1,5 +1,6 @@
 package com.weunite.api.common.config;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -31,6 +32,22 @@ class SecurityConfigTest {
     mockMvc.perform(get("/api/reports/all")).andExpect(status().isUnauthorized());
     mockMvc.perform(get("/api/reports/status/PENDING")).andExpect(status().isUnauthorized());
     mockMvc.perform(get("/api/reports/pending")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @DisplayName("Should deny report queue endpoints to authenticated non-admin users")
+  void reportQueueEndpointsRequireAdminRole() throws Exception {
+    mockMvc
+        .perform(get("/api/reports/all").with(jwt().jwt(token -> token.claim("role", "USER"))))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(
+            get("/api/reports/status/PENDING")
+                .with(jwt().jwt(token -> token.claim("role", "USER"))))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(get("/api/reports/pending").with(jwt().jwt(token -> token.claim("role", "USER"))))
+        .andExpect(status().isForbidden());
   }
 
   @Test

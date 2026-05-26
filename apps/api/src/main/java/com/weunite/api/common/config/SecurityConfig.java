@@ -173,11 +173,17 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/api/reports/create/{userId}")
                     .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/reports/pending")
-                    .authenticated()
+                    .access(
+                        (authentication, context) ->
+                            new AuthorizationDecision(hasAdminRole(authentication.get())))
                     .requestMatchers(HttpMethod.GET, "/api/reports/all")
-                    .authenticated()
+                    .access(
+                        (authentication, context) ->
+                            new AuthorizationDecision(hasAdminRole(authentication.get())))
                     .requestMatchers(HttpMethod.GET, "/api/reports/status/{status}")
-                    .authenticated()
+                    .access(
+                        (authentication, context) ->
+                            new AuthorizationDecision(hasAdminRole(authentication.get())))
                     .requestMatchers(HttpMethod.GET, "/api/reports/count/{entityId}/{type}")
                     .permitAll()
 
