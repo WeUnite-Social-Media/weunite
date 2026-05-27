@@ -107,7 +107,11 @@ public class SecurityConfig {
                     // Follow endpoints
                     .requestMatchers(HttpMethod.GET, "/api/follow/followers/{userId}")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/follow/followers/{userId}/count")
+                    .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/follow/following/{userId}")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/follow/following/{userId}/count")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/follow/get/{followerid}/{followedId}")
                     .permitAll()

@@ -43,14 +43,32 @@ public class FollowController {
   }
 
   @GetMapping("/followers/{userId}")
-  public ResponseEntity<ResponseDTO<List<FollowDTO>>> getFollowers(@PathVariable Long userId) {
-    ResponseDTO<List<FollowDTO>> result = followService.getFollowers(userId);
+  public ResponseEntity<ResponseDTO<List<FollowDTO>>> getFollowers(
+      @PathVariable Long userId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    ResponseDTO<List<FollowDTO>> result = followService.getFollowers(userId, page, size);
     return ResponseEntity.status(HttpStatus.OK).body(result);
   }
 
   @GetMapping("/following/{userId}")
-  public ResponseEntity<ResponseDTO<List<FollowDTO>>> getFollowing(@PathVariable Long userId) {
-    ResponseDTO<List<FollowDTO>> result = followService.getFollowing(userId);
+  public ResponseEntity<ResponseDTO<List<FollowDTO>>> getFollowing(
+      @PathVariable Long userId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    ResponseDTO<List<FollowDTO>> result = followService.getFollowing(userId, page, size);
+    return ResponseEntity.status(HttpStatus.OK).body(result);
+  }
+
+  @GetMapping("/followers/{userId}/count")
+  public ResponseEntity<ResponseDTO<Long>> countFollowers(@PathVariable Long userId) {
+    ResponseDTO<Long> result = followService.countFollowers(userId);
+    return ResponseEntity.status(HttpStatus.OK).body(result);
+  }
+
+  @GetMapping("/following/{userId}/count")
+  public ResponseEntity<ResponseDTO<Long>> countFollowing(@PathVariable Long userId) {
+    ResponseDTO<Long> result = followService.countFollowing(userId);
     return ResponseEntity.status(HttpStatus.OK).body(result);
   }
 

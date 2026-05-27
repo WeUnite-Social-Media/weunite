@@ -12,9 +12,10 @@ import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.UserRepository;
-import com.weunite.api.users.service.UserService;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,19 +25,16 @@ public class FollowService {
   private final UserRepository userRepository;
   private final FollowRepository followRepository;
   private final FollowMapper followMapper;
-  private final UserService userService;
   private final NotificationService notificationService;
 
   public FollowService(
       UserRepository userRepository,
       FollowRepository followRepository,
       FollowMapper followMapper,
-      UserService userService,
       NotificationService notificationService) {
     this.followMapper = followMapper;
     this.userRepository = userRepository;
     this.followRepository = followRepository;
-    this.userService = userService;
     this.notificationService = notificationService;
   }
 
@@ -81,34 +79,54 @@ public class FollowService {
 
   @Transactional(readOnly = true)
   public FollowDTO getFollow(Long followerId, Long followedId) {
-    User follower = userService.findUserEntityById(followerId);
-
-    User followed = userService.findUserEntityById(followedId);
-
-    Follow follow = new Follow(follower, followed);
+    Follow follow =
+        followRepository
+            .findByFollowerIdAndFollowedId(followerId, followedId)
+            .orElseThrow(FollowNotFoundException::new);
 
     return followMapper.toFollowDTO(follow);
   }
 
   @Transactional(readOnly = true)
-  public ResponseDTO<List<FollowDTO>> getFollowers(Long userId) {
+  public ResponseDTO<List<FollowDTO>> getFollowers(Long userId, int page, int size) {
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
     List<Follow> follows =
-        followRepository.findAllByFollowedAndStatus(user, Follow.FollowStatus.ACCEPTED);
-    System.out.println("Follows: " + follows.size());
+        followRepository
+            .findAllByFollowedAndStatus(user, Follow.FollowStatus.ACCEPTED, pageRequest(page, size))
+            .getContent();
 
     return followMapper.toResponseDTO("Seguidores consultados com sucesso!", follows);
   }
 
   @Transactional(readOnly = true)
-  public ResponseDTO<List<FollowDTO>> getFollowing(Long userId) {
+  public ResponseDTO<List<FollowDTO>> getFollowing(Long userId, int page, int size) {
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
     List<Follow> follows =
-        followRepository.findAllByFollowerAndStatus(user, Follow.FollowStatus.ACCEPTED);
+        followRepository
+            .findAllByFollowerAndStatus(user, Follow.FollowStatus.ACCEPTED, pageRequest(page, size))
+            .getContent();
 
     return followMapper.toResponseDTO("Seguindo consultados com sucesso!", follows);
+  }
+
+  @Transactional(readOnly = true)
+  public ResponseDTO<Long> countFollowers(Long userId) {
+    User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+
+    long count = followRepository.countByFollowedAndStatus(user, Follow.FollowStatus.ACCEPTED);
+
+    return new ResponseDTO<>("Total de seguidores consultado com sucesso!", count);
+  }
+
+  @Transactional(readOnly = true)
+  public ResponseDTO<Long> countFollowing(Long userId) {
+    User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+
+    long count = followRepository.countByFollowerAndStatus(user, Follow.FollowStatus.ACCEPTED);
+
+    return new ResponseDTO<>("Total de seguindo consultado com sucesso!", count);
   }
 
   @Transactional
@@ -135,5 +153,11 @@ public class FollowService {
     followRepository.save(follow);
 
     return followMapper.toResponseDTO("Solicitação de seguimento recusada com sucesso!", follow);
+  }
+
+  private Pageable pageRequest(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 100);
+    return PageRequest.of(safePage, safeSize);
   }
 }

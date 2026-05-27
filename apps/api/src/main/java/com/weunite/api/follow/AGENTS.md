@@ -34,6 +34,7 @@ This module owns user follow relationships in `com.weunite.api.follow`.
 - Validate the authenticated actor against follow mutation path IDs: the follower owns follow
   toggles, and the followed user owns request acceptance or decline.
 - Keep follow lifecycle repository/service-owned; user-side collections are read views, not aggregate owners.
+- Keep followers/following lists paginated and expose counts through explicit count queries.
 
 ## Validation
 

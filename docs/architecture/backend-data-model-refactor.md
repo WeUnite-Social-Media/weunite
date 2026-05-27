@@ -115,7 +115,7 @@ The first wave should reference the class issues below:
 
 1. Keep follow relationships in the follow module.
 2. Enforce uniqueness for follower/followed pairs and prevent self-follow in the service layer.
-3. Keep followers/following projections repository-backed.
+3. Keep followers/following projections repository-backed, paginated, and counted explicitly.
 
 ### Chat
 
