@@ -2,13 +2,16 @@ package com.weunite.api.posts.repository;
 
 import com.weunite.api.posts.domain.Comment;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-  List<Comment> findByPostId(Long postId);
+  List<Comment> findByPostIdAndDeletedFalse(Long postId);
+
+  Optional<Comment> findByIdAndDeletedFalse(Long commentId);
 
   boolean existsByIdAndUserId(Long commentId, Long userId);
 
@@ -21,7 +24,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
   List<Object[]> countActiveCommentsByUserIds(@Param("userIds") List<Long> userIds);
 
   @Query(
-      "SELECT c FROM Comment c WHERE c.user.id = :userId "
+      "SELECT c FROM Comment c WHERE c.user.id = :userId AND c.deleted = false "
           + "ORDER BY COALESCE(c.updatedAt, c.createdAt) DESC")
-  List<Comment> findByUserId(@Param("userId") Long userId);
+  List<Comment> findByUserIdAndDeletedFalse(@Param("userId") Long userId);
 }

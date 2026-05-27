@@ -12,6 +12,7 @@ import com.weunite.api.posts.repository.RepostRepository;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.repository.UserRepository;
 import jakarta.persistence.EntityManager;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -130,5 +131,29 @@ class PostInteractionPersistenceTest {
     assertTrue(postRepository.findById(post.getId()).isPresent());
     assertFalse(postRepository.findByIdAndDeletedFalse(post.getId()).isPresent());
     assertTrue(postRepository.findFeedEntries(PageRequest.of(0, 10)).isEmpty());
+  }
+
+  @Test
+  @DisplayName("Should retain deleted comments while keeping non-deleted replies publicly readable")
+  void hideSoftDeletedCommentWithoutRemovingReply() {
+    User author = userRepository.save(new User("Author", "author7", "author7@example.com", "p"));
+    Post post = postRepository.save(new Post(author, "Post"));
+    Comment parent = commentRepository.save(new Comment(author, post, "Parent", null));
+    Comment reply = new Comment(author, post, "Reply", null);
+    reply.setParentComment(parent);
+    commentRepository.save(reply);
+
+    parent.setDeleted(true);
+    commentRepository.saveAndFlush(parent);
+
+    entityManager.clear();
+
+    assertTrue(commentRepository.findById(parent.getId()).isPresent());
+    assertFalse(commentRepository.findByIdAndDeletedFalse(parent.getId()).isPresent());
+    assertEquals(
+        List.of(reply.getId()),
+        commentRepository.findByPostIdAndDeletedFalse(post.getId()).stream()
+            .map(Comment::getId)
+            .toList());
   }
 }

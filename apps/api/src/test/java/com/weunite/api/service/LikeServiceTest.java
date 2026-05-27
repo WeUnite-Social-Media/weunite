@@ -96,7 +96,7 @@ public class LikeServiceTest {
         new ResponseDTO<>("Curtida criada com sucesso!", new LikeDTO("1", null, null));
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+    when(commentRepository.findByIdAndDeletedFalse(commentId)).thenReturn(Optional.of(comment));
     when(likeRepository.findByUserAndComment(user, comment)).thenReturn(Optional.empty());
     when(likeMapper.toResponseDTO(eq("Curtida criada com sucesso!"), any(Like.class)))
         .thenReturn(expectedResponse);

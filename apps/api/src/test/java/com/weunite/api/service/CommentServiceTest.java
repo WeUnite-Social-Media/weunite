@@ -240,7 +240,8 @@ public class CommentServiceTest {
         new ResponseDTO<>("Coment\u00E1rio atualizado com sucesso!", updatedCommentDTO);
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
-    when(commentRepository.findById(commentId)).thenReturn(Optional.of(existingComment));
+    when(commentRepository.findByIdAndDeletedFalse(commentId))
+        .thenReturn(Optional.of(existingComment));
     when(commentRepository.save(existingComment)).thenReturn(existingComment);
     when(commentMapper.toResponseDTO(
             eq("Coment\u00E1rio atualizado com sucesso!"), eq(existingComment)))
@@ -254,7 +255,7 @@ public class CommentServiceTest {
     assertNotNull(result.data());
 
     verify(userRepository).findById(userId);
-    verify(commentRepository).findById(commentId);
+    verify(commentRepository).findByIdAndDeletedFalse(commentId);
     verify(commentRepository).save(existingComment);
     verify(commentMapper)
         .toResponseDTO(eq("Coment\u00E1rio atualizado com sucesso!"), eq(existingComment));
@@ -291,7 +292,7 @@ public class CommentServiceTest {
     mockUser.setUsername("testuser");
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
-    when(commentRepository.findById(commentId)).thenReturn(Optional.empty());
+    when(commentRepository.findByIdAndDeletedFalse(commentId)).thenReturn(Optional.empty());
 
     CommentNotFoundException exception =
         assertThrows(
@@ -300,7 +301,7 @@ public class CommentServiceTest {
 
     assertNotNull(exception);
     verify(userRepository).findById(userId);
-    verify(commentRepository).findById(commentId);
+    verify(commentRepository).findByIdAndDeletedFalse(commentId);
     verifyNoInteractions(commentMapper);
   }
 
@@ -325,7 +326,8 @@ public class CommentServiceTest {
     existingComment.setUser(commentOwner);
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(currentUser));
-    when(commentRepository.findById(commentId)).thenReturn(Optional.of(existingComment));
+    when(commentRepository.findByIdAndDeletedFalse(commentId))
+        .thenReturn(Optional.of(existingComment));
 
     UnauthorizedException exception =
         assertThrows(
@@ -336,7 +338,7 @@ public class CommentServiceTest {
         "Voc\u00EA precisa estar logado para atualizar este coment\u00E1rio",
         exception.getMessage());
     verify(userRepository).findById(userId);
-    verify(commentRepository).findById(commentId);
+    verify(commentRepository).findByIdAndDeletedFalse(commentId);
     verify(commentRepository, never()).save(any());
     verifyNoInteractions(commentMapper);
   }
@@ -344,7 +346,7 @@ public class CommentServiceTest {
   // DELETE COMMENT TESTS
 
   @Test
-  @DisplayName("Should delete comment successfully when user is owner")
+  @DisplayName("Should soft delete comment successfully when user is owner")
   void deleteCommentSuccess() {
     Long userId = 1L;
     Long commentId = 1L;
@@ -387,7 +389,9 @@ public class CommentServiceTest {
     ResponseDTO<CommentDTO> expectedResponse =
         new ResponseDTO<>("Coment\u00E1rio exclu\u00EDdo com sucesso", deletedCommentDTO);
 
-    when(commentRepository.findById(commentId)).thenReturn(Optional.of(existingComment));
+    when(commentRepository.findByIdAndDeletedFalse(commentId))
+        .thenReturn(Optional.of(existingComment));
+    when(commentRepository.save(existingComment)).thenReturn(existingComment);
     when(commentMapper.toResponseDTO(
             eq("Coment\u00E1rio exclu\u00EDdo com sucesso"), eq(existingComment)))
         .thenReturn(expectedResponse);
@@ -398,8 +402,10 @@ public class CommentServiceTest {
     assertEquals("Coment\u00E1rio exclu\u00EDdo com sucesso", result.message());
     assertNotNull(result.data());
 
-    verify(commentRepository).findById(commentId);
-    verify(commentRepository).delete(existingComment);
+    assertTrue(existingComment.isDeleted());
+    verify(commentRepository).findByIdAndDeletedFalse(commentId);
+    verify(commentRepository).save(existingComment);
+    verify(commentRepository, never()).delete(any());
     verify(commentMapper)
         .toResponseDTO(eq("Coment\u00E1rio exclu\u00EDdo com sucesso"), eq(existingComment));
   }
@@ -410,14 +416,14 @@ public class CommentServiceTest {
     Long userId = 1L;
     Long commentId = 999L;
 
-    when(commentRepository.findById(commentId)).thenReturn(Optional.empty());
+    when(commentRepository.findByIdAndDeletedFalse(commentId)).thenReturn(Optional.empty());
 
     CommentNotFoundException exception =
         assertThrows(
             CommentNotFoundException.class, () -> commentService.deleteComment(userId, commentId));
 
     assertNotNull(exception);
-    verify(commentRepository).findById(commentId);
+    verify(commentRepository).findByIdAndDeletedFalse(commentId);
     verify(commentRepository, never()).delete(any());
     verifyNoInteractions(commentMapper);
   }
@@ -437,7 +443,8 @@ public class CommentServiceTest {
     existingComment.setId(commentId);
     existingComment.setUser(commentOwner);
 
-    when(commentRepository.findById(commentId)).thenReturn(Optional.of(existingComment));
+    when(commentRepository.findByIdAndDeletedFalse(commentId))
+        .thenReturn(Optional.of(existingComment));
 
     UnauthorizedException exception =
         assertThrows(
@@ -446,7 +453,7 @@ public class CommentServiceTest {
     assertEquals(
         "Voc\u00EA precisa estar logado para deletar esse coment\u00E1rio!",
         exception.getMessage());
-    verify(commentRepository).findById(commentId);
+    verify(commentRepository).findByIdAndDeletedFalse(commentId);
     verify(commentRepository, never()).delete(any());
     verifyNoInteractions(commentMapper);
   }
@@ -461,7 +468,7 @@ public class CommentServiceTest {
     List<CommentDTO> expectedCommentDTOs = new ArrayList<>();
 
     when(postRepository.existsByIdAndDeletedFalse(postId)).thenReturn(true);
-    when(commentRepository.findByPostId(postId)).thenReturn(mockComments);
+    when(commentRepository.findByPostIdAndDeletedFalse(postId)).thenReturn(mockComments);
     when(commentMapper.mapCommentsToList(mockComments)).thenReturn(expectedCommentDTOs);
 
     List<CommentDTO> result = commentService.getCommentsByPost(postId);
@@ -470,7 +477,7 @@ public class CommentServiceTest {
     assertEquals(expectedCommentDTOs, result);
 
     verify(postRepository).existsByIdAndDeletedFalse(postId);
-    verify(commentRepository).findByPostId(postId);
+    verify(commentRepository).findByPostIdAndDeletedFalse(postId);
     verify(commentMapper).mapCommentsToList(mockComments);
   }
 
@@ -497,7 +504,7 @@ public class CommentServiceTest {
     List<CommentDTO> expectedCommentDTOs = new ArrayList<>();
 
     when(userRepository.existsById(userId)).thenReturn(true);
-    when(commentRepository.findByUserId(userId)).thenReturn(mockComments);
+    when(commentRepository.findByUserIdAndDeletedFalse(userId)).thenReturn(mockComments);
     when(commentMapper.mapCommentsToList(mockComments)).thenReturn(expectedCommentDTOs);
 
     List<CommentDTO> result = commentService.getCommentsByUser(userId);
@@ -506,7 +513,7 @@ public class CommentServiceTest {
     assertEquals(expectedCommentDTOs, result);
 
     verify(userRepository).existsById(userId);
-    verify(commentRepository).findByUserId(userId);
+    verify(commentRepository).findByUserIdAndDeletedFalse(userId);
     verify(commentMapper).mapCommentsToList(mockComments);
   }
 

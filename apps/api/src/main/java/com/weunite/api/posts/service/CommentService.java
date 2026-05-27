@@ -66,7 +66,7 @@ public class CommentService {
       throw new PostNotFoundException();
     }
 
-    List<Comment> comments = commentRepository.findByPostId(postId);
+    List<Comment> comments = commentRepository.findByPostIdAndDeletedFalse(postId);
     return commentMapper.mapCommentsToList(comments);
   }
 
@@ -75,7 +75,7 @@ public class CommentService {
     if (!userRepository.existsById(userId)) {
       throw new UserNotFoundException();
     }
-    List<Comment> comments = commentRepository.findByUserId(userId);
+    List<Comment> comments = commentRepository.findByUserIdAndDeletedFalse(userId);
     return commentMapper.mapCommentsToList(comments);
   }
 
@@ -85,7 +85,9 @@ public class CommentService {
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
     Comment existingComment =
-        commentRepository.findById(commentId).orElseThrow(CommentNotFoundException::new);
+        commentRepository
+            .findByIdAndDeletedFalse(commentId)
+            .orElseThrow(CommentNotFoundException::new);
 
     if (!userId.equals(existingComment.getUser().getId())) {
       throw new UnauthorizedException("Você precisa estar logado para atualizar este comentário");
@@ -101,13 +103,16 @@ public class CommentService {
   @Transactional
   public ResponseDTO<CommentDTO> deleteComment(Long userId, Long commentId) {
     Comment comment =
-        commentRepository.findById(commentId).orElseThrow(CommentNotFoundException::new);
+        commentRepository
+            .findByIdAndDeletedFalse(commentId)
+            .orElseThrow(CommentNotFoundException::new);
 
     if (!userId.equals(comment.getUser().getId())) {
       throw new UnauthorizedException("Você precisa estar logado para deletar esse comentário!");
     }
 
-    commentRepository.delete(comment);
+    comment.setDeleted(true);
+    commentRepository.save(comment);
 
     return commentMapper.toResponseDTO("Comentário excluído com sucesso", comment);
   }
