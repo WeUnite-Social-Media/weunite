@@ -13,7 +13,7 @@ public class CompanyProfileService {
 
   public String resolveCnpj(Company company) {
     CompanyProfile profile = company.getProfile();
-    return profile != null ? profile.getCNPJ() : company.getCNPJ();
+    return profile != null ? profile.getCNPJ() : null;
   }
 
   private String blankToNull(String value) {

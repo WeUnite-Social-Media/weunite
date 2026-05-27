@@ -52,12 +52,12 @@ class CompanyProfileServiceTest {
   }
 
   @Test
-  @DisplayName("Should fall back to legacy company CNPJ when split profile is missing")
-  void resolveCnpjFromLegacySubtypeWhenSplitProfileIsMissing() {
+  @DisplayName("Should not expose legacy company CNPJ when split profile is missing")
+  void ignoreLegacyCnpjWhenSplitProfileIsMissing() {
     Company company = new Company();
     ReflectionTestUtils.setField(company, "CNPJ", "12345678000199");
 
     assertNull(company.getProfile());
-    assertEquals("12345678000199", companyProfileService.resolveCnpj(company));
+    assertNull(companyProfileService.resolveCnpj(company));
   }
 }

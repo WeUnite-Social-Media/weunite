@@ -41,7 +41,8 @@ The current backend already follows the repository's module-by-feature direction
 - Notifications store scalar actor/recipient IDs and actor snapshots, which is acceptable for notification history, but needs clear ownership and indexing.
 - `Subscriber`, `SavedOpportunity`, `Like`, `Repost`, and follow relationships should be treated as first-class join entities with uniqueness, timestamps, and repository-owned queries.
 - Schema ownership is enforced through Flyway migrations with Hibernate runtime validation; profile
-  compatibility fields remain until the subtype split cleanup is complete.
+  DTO reads use explicit profile entities while legacy subtype columns remain write-compatible until
+  the subtype split cleanup is complete.
 
 ## Class Diagram Surface
 
@@ -164,8 +165,8 @@ The first wave should reference the class issues below:
 - Backfill profile data from the current single user table before moving repositories or mappers.
 - Mirror writes into explicit athlete/company profile entities while existing DTO reads still use the
   compatibility subtype fields.
-- Prefer explicit athlete profile entities in user DTO mapping while keeping legacy subtype fields as
-  compatibility fallback.
+- Prefer explicit athlete profile entities in user DTO mapping and retire subtype-column read
+  fallbacks once profile-table backfill and write coverage are established.
 - Fetch split athlete/company profile entities through user read-model queries that map profile DTOs.
 - Route athlete profile updates through a profile-specific service boundary while keeping compatibility
   mirroring in the domain model.
@@ -227,25 +228,27 @@ PR `#17` is the current draft delivery and contains:
 - `ReportTarget` compatibility mapping plus typed single-target report/admin queries;
 - typed persisted presence status through `UserStatus`;
 - company CNPJ validation, persistence, read exposure, and web profile presentation;
+- authoritative athlete/company profile DTO reads without legacy subtype-column fallback;
 - removal of the unused athlete-only update request;
 - authenticated ownership enforcement for follow, report, notification, and user profile mutations.
 
 ### Phase Status
 
-| Phase                                | Status                               | Remaining Work                                                                                  |
-| ------------------------------------ | ------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| 1. Baseline And Safety               | Substantially delivered in PR `#16`  | Keep new schema changes migration-owned and retain invariant coverage.                          |
-| 2. Relationship Hardening            | Advanced in PRs `#16` and `#17`      | Complete remaining fetch/cascade and relationship audit work.                                   |
-| 3. User Profile Split                | Compatibility step in progress       | Complete cutover/backfill confidence and remove legacy subtype fallbacks only after validation. |
-| 4. Report Target Stabilization       | Compatibility-first step in PR `#17` | Decide whether a dedicated target table is warranted after current representation is reviewed.  |
-| 5. Cleanup And Contract Verification | Pending                              | Remove proven-obsolete compatibility mappings and run final full validation.                    |
+| Phase                                | Status                               | Remaining Work                                                                                 |
+| ------------------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| 1. Baseline And Safety               | Substantially delivered in PR `#16`  | Keep new schema changes migration-owned and retain invariant coverage.                         |
+| 2. Relationship Hardening            | Advanced in PRs `#16` and `#17`      | Complete remaining fetch/cascade and relationship audit work.                                  |
+| 3. User Profile Split                | Read cutover in progress             | Retire remaining legacy persistence/discriminator mappings only after validation.              |
+| 4. Report Target Stabilization       | Compatibility-first step in PR `#17` | Decide whether a dedicated target table is warranted after current representation is reviewed. |
+| 5. Cleanup And Contract Verification | Pending                              | Remove proven-obsolete compatibility mappings and run final full validation.                   |
 
 ## Next Delivery Scope
 
 Continue after PR `#17` with a bounded profile-split and cleanup tranche:
 
-1. Audit remaining athlete/company reads and writes that still rely on subtype compatibility fields.
-2. Move the next safe user-profile paths to explicit profile entities with migration/backfill tests.
+1. Audit remaining athlete/company writes that still rely on subtype compatibility fields.
+2. Move the next safe profile persistence paths off legacy subtype columns with migration/backfill
+   tests.
 3. Remove only compatibility mappings whose replacement paths and data migration coverage are
    proven.
 4. Revisit remaining eager fetch/cascade findings from Phase 2 while touching affected aggregates.

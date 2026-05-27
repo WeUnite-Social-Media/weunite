@@ -40,16 +40,16 @@ This module owns user account and profile domain flows in `com.weunite.api.users
   migrating.
 - Keep company registration profile assignment in `CompanyProfileService` and require CNPJ in the
   registration contract while the profile split is migrating.
-- Keep athlete and company profile read compatibility/fallback rules in their profile services, not
-  in DTO mappers.
+- Keep athlete and company profile reads sourced from their explicit profile entities through profile
+  services; do not reintroduce DTO mapping fallbacks to legacy subtype columns.
 - Keep user DTOs, repositories, and mappers in this module.
 - Keep editable athlete profile fields on the routed `UpdateUserRequestDTO` contract; CPF is not
   part of the current public profile update request.
 - Preserve user API contracts unless explicitly requested.
 - Keep athlete characteristics, skills, and company CNPJ in the shared user profile contract so
   auth and profile reads stay aligned.
-- Keep the in-progress athlete/company profile split backward-compatible until DTOs and repositories
-  are intentionally moved off the current single-table subtype model.
+- Keep the in-progress athlete/company profile split backward-compatible for persistence until
+  discriminator and legacy subtype-column removal is intentionally migrated.
 - Keep athlete/company profile writes mirrored between current subtype fields and explicit profile
   entities until reads fully move to the profile tables.
 - Use profile repositories for direct split-profile persistence or lookup instead of hiding all profile

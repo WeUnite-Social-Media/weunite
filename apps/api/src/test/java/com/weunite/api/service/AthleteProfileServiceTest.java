@@ -130,8 +130,8 @@ class AthleteProfileServiceTest {
   }
 
   @Test
-  @DisplayName("Should fall back to legacy subtype fields when split profile is missing")
-  void resolveProfileReadsFromLegacySubtypeWhenSplitProfileIsMissing() {
+  @DisplayName("Should not expose legacy subtype fields when split profile is missing")
+  void ignoreLegacySubtypeFieldsWhenSplitProfileIsMissing() {
     Athlete athlete = new Athlete();
     ReflectionTestUtils.setField(athlete, "height", 1.82);
     ReflectionTestUtils.setField(athlete, "weight", 78.2);
@@ -140,10 +140,10 @@ class AthleteProfileServiceTest {
     ReflectionTestUtils.setField(athlete, "birthDate", LocalDate.of(2000, 7, 10));
 
     assertNull(athlete.getProfile());
-    assertEquals(1.82, athleteProfileService.resolveHeight(athlete));
-    assertEquals(78.2, athleteProfileService.resolveWeight(athlete));
-    assertEquals("RIGHT", athleteProfileService.resolveFootDomain(athlete));
-    assertEquals("FORWARD", athleteProfileService.resolvePosition(athlete));
-    assertEquals(LocalDate.of(2000, 7, 10), athleteProfileService.resolveBirthDate(athlete));
+    assertNull(athleteProfileService.resolveHeight(athlete));
+    assertNull(athleteProfileService.resolveWeight(athlete));
+    assertNull(athleteProfileService.resolveFootDomain(athlete));
+    assertNull(athleteProfileService.resolvePosition(athlete));
+    assertNull(athleteProfileService.resolveBirthDate(athlete));
   }
 }
