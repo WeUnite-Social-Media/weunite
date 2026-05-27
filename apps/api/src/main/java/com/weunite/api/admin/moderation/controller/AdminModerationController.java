@@ -34,7 +34,7 @@ public class AdminModerationController {
 
   @GetMapping
   public ResponseEntity<AdminUserPageDTO> getUsers(
-      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
     AdminUserPageDTO users = adminModerationService.getUsersSummary(page, size);
     return ResponseEntity.ok(users);
   }
