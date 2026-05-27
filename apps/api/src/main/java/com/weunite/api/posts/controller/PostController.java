@@ -77,7 +77,7 @@ public class PostController {
   public ResponseEntity<List<PostDTO>> getPostsByUser(
       @PathVariable Long userId,
       @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "50") int size) {
+      @RequestParam(defaultValue = "10") int size) {
     List<PostDTO> posts = postService.getPostsByUser(userId, page, size);
     return ResponseEntity.status(HttpStatus.OK).body(posts);
   }

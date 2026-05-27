@@ -36,7 +36,10 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
   const userId = displayUser?.id ? Number(displayUser.id) : 0;
   const {
     data: postsResponse,
+    fetchNextPage: fetchNextPostsPage,
+    hasNextPage: hasNextPostsPage,
     isError: isPostsError,
+    isFetchingNextPage: isFetchingNextPostsPage,
     isLoading: isPostsLoading,
   } = useGetPostsByUser(userId);
   const {
@@ -49,7 +52,8 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
   } = useGetCommentsByUserId(userId);
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("publicacoes");
-  const posts = (postsResponse?.data || []) as PostType[];
+  const posts = (postsResponse?.pages.flatMap((page) => page.data ?? []) ||
+    []) as PostType[];
   const comments = (commentsResponse?.pages.flatMap(
     (page) => page.data ?? [],
   ) || []) as CommentType[];
@@ -119,7 +123,25 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
               tone="error"
             />
           ) : posts.length > 0 ? (
-            posts.map((post) => <Post key={post.id} post={post} />)
+            <>
+              {posts.map((post) => (
+                <Post key={post.id} post={post} />
+              ))}
+
+              {hasNextPostsPage && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="my-6"
+                  onClick={() => void fetchNextPostsPage()}
+                  disabled={isFetchingNextPostsPage}
+                >
+                  {isFetchingNextPostsPage
+                    ? "Carregando..."
+                    : "Carregar mais publicacoes"}
+                </Button>
+              )}
+            </>
           ) : (
             <ProfileSectionState
               icon={FileText}

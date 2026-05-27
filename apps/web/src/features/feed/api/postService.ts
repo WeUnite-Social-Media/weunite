@@ -140,12 +140,15 @@ export const getPostsRequest = async ({
   }
 };
 
-export const getPostsByUserRequest = async (userId: number) => {
+export const getPostsByUserRequest = async (
+  userId: number,
+  { page = 0, size = FEED_POSTS_PAGE_SIZE }: GetPostsRequestParams = {},
+) => {
   try {
     const response = await axios.get(`/posts/get/user/${userId}`, {
       params: {
-        page: 0,
-        size: 50,
+        page,
+        size,
       },
     });
 
