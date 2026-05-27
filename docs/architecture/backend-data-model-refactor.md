@@ -236,6 +236,7 @@ PR `#17` is the current draft delivery and contains:
 - migration-owned removal of legacy athlete/company profile columns from `tb_user`;
 - role-backed athlete/company dashboard counts independent of JPA subtype discrimination;
 - lazy default loading for opportunity/company and subscriber associations, with repository-owned read-model graphs;
+- removal of company-collection orphan deletion so opportunity lifecycle remains module-owned;
 - removal of the unused athlete-only update request;
 - authenticated ownership enforcement for follow, report, notification, and user profile mutations.
 
@@ -244,7 +245,7 @@ PR `#17` is the current draft delivery and contains:
 | Phase                                | Status                               | Remaining Work                                                                                 |
 | ------------------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | 1. Baseline And Safety               | Substantially delivered in PR `#16`  | Keep new schema changes migration-owned and retain invariant coverage.                         |
-| 2. Relationship Hardening            | Advanced in PRs `#16` and `#17`      | Continue remaining cascade and relationship audit work after opportunity fetch hardening.      |
+| 2. Relationship Hardening            | Advanced in PRs `#16` and `#17`      | Continue remaining cascade audit after opportunity fetch and company-orphan hardening.         |
 | 3. User Profile Split                | Profile-field cutover in PR `#17`    | Retain discriminator only for typed opportunity relationships; classification is role-backed.  |
 | 4. Report Target Stabilization       | Compatibility-first step in PR `#17` | Decide whether a dedicated target table is warranted after current representation is reviewed. |
 | 5. Cleanup And Contract Verification | Pending                              | Remove proven-obsolete compatibility mappings and run final full validation.                   |

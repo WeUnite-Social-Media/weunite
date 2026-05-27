@@ -23,11 +23,7 @@ public class Company extends User {
       fetch = FetchType.LAZY)
   private CompanyProfile profile;
 
-  @OneToMany(
-      mappedBy = "company",
-      cascade = CascadeType.ALL,
-      orphanRemoval = true,
-      fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private Set<Opportunity> opportunities = new HashSet<>();
 
   @PrePersist

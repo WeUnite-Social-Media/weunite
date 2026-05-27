@@ -116,6 +116,23 @@ class OpportunityRelationshipPersistenceTest {
   }
 
   @Test
+  @DisplayName("Should keep opportunity lifecycle repository-owned when company collection changes")
+  void keepOpportunityLifecycleRepositoryOwnedFromCompany() {
+    Opportunity opportunity = opportunityRepository.saveAndFlush(buildOpportunity());
+    Long companyId = opportunity.getCompany().getId();
+
+    entityManager.clear();
+
+    Company reloadedCompany = companyRepository.findById(companyId).orElseThrow();
+    reloadedCompany.getOpportunities().clear();
+    companyRepository.saveAndFlush(reloadedCompany);
+
+    entityManager.clear();
+
+    assertTrue(opportunityRepository.findById(opportunity.getId()).isPresent());
+  }
+
+  @Test
   @DisplayName("Should keep operational opportunity lookups from loading company implicitly")
   void keepOperationalOpportunityLookupAssociationsLazy() {
     Opportunity opportunity = opportunityRepository.saveAndFlush(buildOpportunity());

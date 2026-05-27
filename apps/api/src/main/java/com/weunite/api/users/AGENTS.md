@@ -56,6 +56,8 @@ This module owns user account and profile domain flows in `com.weunite.api.users
   access behind `UserRepository`.
 - Keep roles lazy by default and use repository-owned role fetch plans for auth, admin, and DTO flows that need them.
 - Keep cross-module relationship collections as read views unless users truly own the child lifecycle.
+- Keep `Company.opportunities` as a read view; removing an entry from the collection must not
+  delete an opportunity owned by the opportunities module.
 
 ## Validation
 
