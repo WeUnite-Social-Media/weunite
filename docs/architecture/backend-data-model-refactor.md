@@ -61,6 +61,8 @@ The persistence shape can change, but these concepts should remain visible in th
 
 The first wave should reference the class issues below:
 
+- `#5`: broader scalability and API/Admin/Chat/profile backlog touched by relationship and
+  authorization hardening slices.
 - `#6`: architecture parent issue for the class refactor.
 - `#8`: `AccountCredentials`, currently represented inside `User` as email, password, verification token, reset token, and token expiry state.
 - `#9`: `Email`, currently represented as a validated user field plus `common.mail` delivery infrastructure.
@@ -200,19 +202,65 @@ The first wave should reference the class issues below:
   after their data migrations are proven.
 - Run API build/test plus web typecheck for affected contracts.
 
-## Proposed PR Scope
+## Delivery Status
 
-The PR from `refactor/architecture` should be split into reviewable commits:
+This plan is delivered incrementally so each persistence or authorization boundary can be reviewed
+and validated without waiting for the full subtype migration.
 
-1. `docs(api): define backend data model refactor plan`
-2. `chore(api): add migration baseline`
-3. `test(api): cover data model invariants`
-4. `refactor(api): harden relationship entities and fetch plans`
-5. `refactor(api): split user subtype persistence`
-6. `refactor(api): stabilize report targets`
-7. `chore(api): enforce migration-owned schema validation`
+### Delivered In PR #16
 
-Each commit should keep HTTP contracts stable or include the matching web/mobile contract update in the same PR.
+PR `#16` is merged and delivered the architecture foundation:
+
+- migration baseline, migration smoke coverage, runtime schema transition groundwork, and
+  migration-owned role seed data;
+- explicit `AccountCredentials`, `Email`, and initial `UserStatus` modeling;
+- repository/entity coverage and ownership/query hardening for relationships, feed interactions,
+  opportunities, notifications, chat participants, roles, and follows;
+- the compatibility-first start of athlete/company profile tables, repositories, services, mirrored
+  writes, and athlete profile reads.
+
+### In Progress In PR #17
+
+PR `#17` is the current draft delivery and contains:
+
+- migration-owned schema validation and DTO-only entity response cleanup;
+- `ReportTarget` compatibility mapping plus typed single-target report/admin queries;
+- typed persisted presence status through `UserStatus`;
+- company CNPJ validation, persistence, read exposure, and web profile presentation;
+- removal of the unused athlete-only update request;
+- authenticated ownership enforcement for follow, report, notification, and user profile mutations.
+
+### Phase Status
+
+| Phase                                | Status                               | Remaining Work                                                                                  |
+| ------------------------------------ | ------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| 1. Baseline And Safety               | Substantially delivered in PR `#16`  | Keep new schema changes migration-owned and retain invariant coverage.                          |
+| 2. Relationship Hardening            | Advanced in PRs `#16` and `#17`      | Complete remaining fetch/cascade and relationship audit work.                                   |
+| 3. User Profile Split                | Compatibility step in progress       | Complete cutover/backfill confidence and remove legacy subtype fallbacks only after validation. |
+| 4. Report Target Stabilization       | Compatibility-first step in PR `#17` | Decide whether a dedicated target table is warranted after current representation is reviewed.  |
+| 5. Cleanup And Contract Verification | Pending                              | Remove proven-obsolete compatibility mappings and run final full validation.                    |
+
+## Next Delivery Scope
+
+Continue after PR `#17` with a bounded profile-split and cleanup tranche:
+
+1. Audit remaining athlete/company reads and writes that still rely on subtype compatibility fields.
+2. Move the next safe user-profile paths to explicit profile entities with migration/backfill tests.
+3. Remove only compatibility mappings whose replacement paths and data migration coverage are
+   proven.
+4. Revisit remaining eager fetch/cascade findings from Phase 2 while touching affected aggregates.
+5. Run final contract verification only after the compatibility cleanup is complete.
+
+## Commit And Issue Traceability
+
+- Before each new commit, review open issues and include applicable `Refs #...` entries in the commit
+  body.
+- Use `Closes #...` only after the complete acceptance scope of that issue has been delivered and
+  verified.
+- PR `#16` is already merged, so its delivered work is linked through issue progress updates rather
+  than history rewrites.
+- The open commits in PR `#17` carry references to `#5`, `#6`, and the applicable class issues
+  (`#11` through `#15`).
 
 ## Validation
 
@@ -229,39 +277,6 @@ Run full validation before merge:
 
 ```bash
 pnpm check
-```
-
-## PR Description Draft
-
-Title:
-
-```text
-refactor(api): prepare scalable backend data model architecture
-```
-
-Body:
-
-```markdown
-## Summary
-
-- documents the target backend data model architecture for the class-diagram-driven refactor
-- keeps the current module-by-feature boundaries and API-as-domain-owner rule
-- defines phased work for migrations, relationship hardening, user profile split, report target stabilization, and validation
-
-## Principles
-
-- preserve current HTTP contracts unless explicitly changed
-- keep controllers thin and services transactional
-- keep feature-owned domain/repository/DTO/mapper code inside each module
-- move schema evolution from `ddl-auto=update` to versioned migrations
-
-## Validation
-
-- [ ] pnpm --filter @weunite/api lint
-- [ ] pnpm --filter @weunite/api test
-- [ ] pnpm --filter @weunite/api build
-- [ ] pnpm --filter @weunite/web typecheck
-- [ ] pnpm check
 ```
 
 ## Keep This Updated When
