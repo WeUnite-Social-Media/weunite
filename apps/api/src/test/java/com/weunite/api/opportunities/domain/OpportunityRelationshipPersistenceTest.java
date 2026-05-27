@@ -1,6 +1,7 @@
 package com.weunite.api.opportunities.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -112,6 +113,39 @@ class OpportunityRelationshipPersistenceTest {
     entityManager.clear();
 
     assertEquals(1, subscribersRepository.count());
+  }
+
+  @Test
+  @DisplayName("Should keep operational opportunity lookups from loading company implicitly")
+  void keepOperationalOpportunityLookupAssociationsLazy() {
+    Opportunity opportunity = opportunityRepository.saveAndFlush(buildOpportunity());
+
+    entityManager.clear();
+
+    Opportunity reloadedOpportunity =
+        opportunityRepository.findByIdAndDeletedFalse(opportunity.getId()).orElseThrow();
+    var persistenceUnitUtil = entityManager.getEntityManagerFactory().getPersistenceUnitUtil();
+
+    assertFalse(persistenceUnitUtil.isLoaded(reloadedOpportunity, "company"));
+  }
+
+  @Test
+  @DisplayName("Should keep operational subscriber lookups from loading associations implicitly")
+  void keepOperationalSubscriberLookupAssociationsLazy() {
+    Athlete athlete =
+        athleteRepository.saveAndFlush(
+            new Athlete("Lazy Athlete", "lazy_athlete", "lazy-athlete@example.com", "p"));
+    Opportunity opportunity = opportunityRepository.saveAndFlush(buildOpportunity());
+    subscribersRepository.saveAndFlush(new Subscriber(athlete, opportunity));
+
+    entityManager.clear();
+
+    Subscriber reloadedSubscriber =
+        subscribersRepository.findByOpportunityId(opportunity.getId()).get(0);
+    var persistenceUnitUtil = entityManager.getEntityManagerFactory().getPersistenceUnitUtil();
+
+    assertFalse(persistenceUnitUtil.isLoaded(reloadedSubscriber, "athlete"));
+    assertFalse(persistenceUnitUtil.isLoaded(reloadedSubscriber, "opportunity"));
   }
 
   @Test
