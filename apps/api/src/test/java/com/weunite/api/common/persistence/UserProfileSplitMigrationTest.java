@@ -1,10 +1,12 @@
 package com.weunite.api.common.persistence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
@@ -63,5 +65,11 @@ class UserProfileSplitMigrationTest {
     assertEquals(
         "12345678000199",
         jdbcTemplate.queryForObject("select cnpj from company_profile", String.class));
+    assertThrows(
+        DataAccessException.class,
+        () -> jdbcTemplate.queryForObject("select cnpj from tb_user", String.class));
+    assertThrows(
+        DataAccessException.class,
+        () -> jdbcTemplate.queryForObject("select cpf from tb_user", String.class));
   }
 }

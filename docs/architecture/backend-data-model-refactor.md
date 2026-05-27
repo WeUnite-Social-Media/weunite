@@ -33,7 +33,8 @@ The target architecture keeps the current module ownership:
 
 The current backend already follows the repository's module-by-feature direction, but the persistence model still has scalability risks:
 
-- User subtype modeling uses `SINGLE_TABLE` inheritance for `User`, `Athlete`, and `Company`, which grows sparse columns and couples profile-specific fields to all users.
+- User subtype modeling still uses `SINGLE_TABLE` discrimination for role-specific relationships,
+  but athlete/company profile fields now live only in explicit profile tables.
 - Many entity graphs are bidirectional and cascade broadly, increasing accidental fetch/cascade blast radius.
 - Several hot relationships use eager loading, including roles, conversation participants, and message senders.
 - Reports preserve `(type, entityId)` storage and API fields while mapping them through the typed
@@ -41,8 +42,7 @@ The current backend already follows the repository's module-by-feature direction
 - Notifications store scalar actor/recipient IDs and actor snapshots, which is acceptable for notification history, but needs clear ownership and indexing.
 - `Subscriber`, `SavedOpportunity`, `Like`, `Repost`, and follow relationships should be treated as first-class join entities with uniqueness, timestamps, and repository-owned queries.
 - Schema ownership is enforced through Flyway migrations with Hibernate runtime validation; profile
-  DTO reads use explicit profile entities while legacy subtype columns remain write-compatible until
-  the subtype split cleanup is complete.
+  DTO reads and profile-field persistence now use explicit profile entities.
 
 ## Class Diagram Surface
 
@@ -163,8 +163,8 @@ The first wave should reference the class issues below:
 - Introduce athlete and company profile tables while keeping the current single-table subtype model
   available during the compatibility step.
 - Backfill profile data from the current single user table before moving repositories or mappers.
-- Mirror writes into explicit athlete/company profile entities while existing DTO reads still use the
-  compatibility subtype fields.
+- Move writes into explicit athlete/company profile entities after migration-backed backfill has
+  established their initial rows.
 - Prefer explicit athlete profile entities in user DTO mapping and retire subtype-column read
   fallbacks once profile-table backfill and write coverage are established.
 - Fetch split athlete/company profile entities through user read-model queries that map profile DTOs.
@@ -229,6 +229,7 @@ PR `#17` is the current draft delivery and contains:
 - typed persisted presence status through `UserStatus`;
 - company CNPJ validation, persistence, read exposure, and web profile presentation;
 - authoritative athlete/company profile DTO reads without legacy subtype-column fallback;
+- migration-owned removal of legacy athlete/company profile columns from `tb_user`;
 - removal of the unused athlete-only update request;
 - authenticated ownership enforcement for follow, report, notification, and user profile mutations.
 
@@ -238,7 +239,7 @@ PR `#17` is the current draft delivery and contains:
 | ------------------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | 1. Baseline And Safety               | Substantially delivered in PR `#16`  | Keep new schema changes migration-owned and retain invariant coverage.                         |
 | 2. Relationship Hardening            | Advanced in PRs `#16` and `#17`      | Complete remaining fetch/cascade and relationship audit work.                                  |
-| 3. User Profile Split                | Read cutover in progress             | Retire remaining legacy persistence/discriminator mappings only after validation.              |
+| 3. User Profile Split                | Profile-field cutover in PR `#17`    | Retire discriminator assumptions only if role-specific relationships can be safely remodeled.  |
 | 4. Report Target Stabilization       | Compatibility-first step in PR `#17` | Decide whether a dedicated target table is warranted after current representation is reviewed. |
 | 5. Cleanup And Contract Verification | Pending                              | Remove proven-obsolete compatibility mappings and run final full validation.                   |
 
@@ -246,11 +247,11 @@ PR `#17` is the current draft delivery and contains:
 
 Continue after PR `#17` with a bounded profile-split and cleanup tranche:
 
-1. Audit remaining athlete/company writes that still rely on subtype compatibility fields.
-2. Move the next safe profile persistence paths off legacy subtype columns with migration/backfill
-   tests.
-3. Remove only compatibility mappings whose replacement paths and data migration coverage are
+1. Assess whether remaining subtype relationships require keeping `Athlete` and `Company`
+   discriminator entities.
+2. Remove only discriminator assumptions whose replacement paths and data migration coverage are
    proven.
+3. Complete remaining profile-contract verification after profile-field persistence moves.
 4. Revisit remaining eager fetch/cascade findings from Phase 2 while touching affected aggregates.
 5. Run final contract verification only after the compatibility cleanup is complete.
 

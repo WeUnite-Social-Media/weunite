@@ -16,8 +16,6 @@ public class Company extends User {
     super(name, username, email, password);
   }
 
-  @Column private String CNPJ;
-
   @OneToOne(
       mappedBy = "user",
       cascade = CascadeType.ALL,
@@ -38,8 +36,11 @@ public class Company extends User {
   }
 
   public void setCNPJ(String CNPJ) {
-    this.CNPJ = CNPJ;
     ensureProfile().setCNPJ(CNPJ);
+  }
+
+  public String getCNPJ() {
+    return profile != null ? profile.getCNPJ() : null;
   }
 
   public void setOpportunities(Set<Opportunity> opportunities) {
@@ -50,14 +51,12 @@ public class Company extends User {
     this.profile = profile;
     if (profile != null) {
       profile.setUser(this);
-      this.CNPJ = profile.getCNPJ();
     }
   }
 
   public CompanyProfile ensureProfile() {
     if (profile == null) {
       profile = new CompanyProfile(this);
-      profile.setCNPJ(CNPJ);
     }
 
     return profile;

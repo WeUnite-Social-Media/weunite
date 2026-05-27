@@ -9,7 +9,6 @@ import com.weunite.api.users.domain.CompanyProfile;
 import com.weunite.api.users.service.CompanyProfileService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 class CompanyProfileServiceTest {
 
@@ -46,7 +45,6 @@ class CompanyProfileServiceTest {
     CompanyProfile profile = new CompanyProfile(company);
     profile.setCNPJ("12345678000199");
     company.setProfile(profile);
-    ReflectionTestUtils.setField(company, "CNPJ", "00000000000000");
 
     assertEquals("12345678000199", companyProfileService.resolveCnpj(company));
   }
@@ -55,7 +53,6 @@ class CompanyProfileServiceTest {
   @DisplayName("Should not expose legacy company CNPJ when split profile is missing")
   void ignoreLegacyCnpjWhenSplitProfileIsMissing() {
     Company company = new Company();
-    ReflectionTestUtils.setField(company, "CNPJ", "12345678000199");
 
     assertNull(company.getProfile());
     assertNull(companyProfileService.resolveCnpj(company));

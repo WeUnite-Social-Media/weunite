@@ -39,11 +39,6 @@ class UserMapperTest {
     profile.setBirthDate(LocalDate.of(1998, 5, 19));
 
     athlete.setProfile(profile);
-    ReflectionTestUtils.setField(athlete, "height", 1.7);
-    ReflectionTestUtils.setField(athlete, "weight", 70.0);
-    ReflectionTestUtils.setField(athlete, "footDomain", "RIGHT");
-    ReflectionTestUtils.setField(athlete, "position", "DEFENDER");
-    ReflectionTestUtils.setField(athlete, "birthDate", LocalDate.of(2001, 1, 1));
 
     assertEquals(1.91, mapper.mapHeight(athlete));
     assertEquals(86.4, mapper.mapWeight(athlete));
@@ -56,11 +51,6 @@ class UserMapperTest {
   @DisplayName("Should not map legacy athlete subtype fields when split profile is missing")
   void ignoreLegacyAthleteFieldsWhenSplitProfileIsMissing() {
     Athlete athlete = new Athlete();
-    ReflectionTestUtils.setField(athlete, "height", 1.82);
-    ReflectionTestUtils.setField(athlete, "weight", 78.2);
-    ReflectionTestUtils.setField(athlete, "footDomain", "RIGHT");
-    ReflectionTestUtils.setField(athlete, "position", "FORWARD");
-    ReflectionTestUtils.setField(athlete, "birthDate", LocalDate.of(2000, 7, 10));
 
     assertNull(athlete.getProfile());
     assertNull(mapper.mapHeight(athlete));
@@ -77,7 +67,6 @@ class UserMapperTest {
     CompanyProfile profile = new CompanyProfile(company);
     profile.setCNPJ("12345678000199");
     company.setProfile(profile);
-    ReflectionTestUtils.setField(company, "CNPJ", "00000000000000");
 
     assertEquals("12345678000199", mapper.mapCnpj(company));
   }
@@ -86,7 +75,6 @@ class UserMapperTest {
   @DisplayName("Should not map legacy company identifier when split profile is missing")
   void ignoreLegacyCompanyCnpjWhenSplitProfileIsMissing() {
     Company company = new Company();
-    ReflectionTestUtils.setField(company, "CNPJ", "12345678000199");
 
     assertNull(company.getProfile());
     assertNull(mapper.mapCnpj(company));

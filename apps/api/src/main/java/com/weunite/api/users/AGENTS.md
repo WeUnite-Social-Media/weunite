@@ -48,10 +48,9 @@ This module owns user account and profile domain flows in `com.weunite.api.users
 - Preserve user API contracts unless explicitly requested.
 - Keep athlete characteristics, skills, and company CNPJ in the shared user profile contract so
   auth and profile reads stay aligned.
-- Keep the in-progress athlete/company profile split backward-compatible for persistence until
-  discriminator and legacy subtype-column removal is intentionally migrated.
-- Keep athlete/company profile writes mirrored between current subtype fields and explicit profile
-  entities until reads fully move to the profile tables.
+- Keep athlete/company profile fields in explicit profile tables; do not add profile-specific
+  columns back to `tb_user`.
+- Keep the `User` discriminator while role-specific relationships still use subtype entities.
 - Use profile repositories for direct split-profile persistence or lookup instead of hiding all profile
   access behind `UserRepository`.
 - Keep roles lazy by default and use repository-owned role fetch plans for auth, admin, and DTO flows that need them.
