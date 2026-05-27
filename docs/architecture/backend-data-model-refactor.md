@@ -153,6 +153,7 @@ The first wave should reference the class issues below:
 - Tighten cascade/orphan-removal rules to match aggregate ownership.
 - Bind actor-owned follow mutations to authenticated identity before changing relationship state.
 - Bind report submissions to the authenticated reporter and keep report queues admin-only.
+- Bind user profile mutations to the authenticated account identity while leaving public reads intact.
 
 ### Phase 3: User Profile Split
 

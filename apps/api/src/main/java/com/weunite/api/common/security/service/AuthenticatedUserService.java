@@ -26,6 +26,20 @@ public class AuthenticatedUserService {
     return authenticatedUserId;
   }
 
+  public String requireMatchingUsername(Jwt jwt, String requestedUsername) {
+    Long authenticatedUserId = requireUserId(jwt);
+    User authenticatedUser =
+        userRepository
+            .findById(authenticatedUserId)
+            .orElseThrow(() -> new UnauthorizedException("Usuario autenticado nao encontrado"));
+
+    if (!authenticatedUser.getUsername().equals(requestedUsername)) {
+      throw new UnauthorizedException("Acao nao permitida para outro usuario");
+    }
+
+    return authenticatedUser.getUsername();
+  }
+
   public Long requireUserId(Jwt jwt) {
     if (jwt == null) {
       throw new UnauthorizedException("Usuario autenticado nao encontrado");

@@ -53,9 +53,11 @@ public class SecurityConfig {
 
                     // User endpoints
                     .requestMatchers(HttpMethod.PUT, "/api/user/update/{username}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/api/user/delete/{username}")
-                    .permitAll()
+                    .authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/api/user/banner/delete/{username}")
+                    .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/user/username/{username}")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/user/id/{id}")

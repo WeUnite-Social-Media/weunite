@@ -34,6 +34,8 @@ This module owns user account and profile domain flows in `com.weunite.api.users
 ## Working rules
 
 - Keep profile business rules in service layer.
+- Bind profile updates, banner removal, and account deletion to the authenticated user's current
+  username resolved from the token user id.
 - Keep athlete-specific profile update rules in `AthleteProfileService` while the profile split is
   migrating.
 - Keep company registration profile assignment in `CompanyProfileService` and require CNPJ in the

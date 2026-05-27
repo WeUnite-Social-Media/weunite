@@ -27,6 +27,14 @@ class SecurityConfigTest {
   }
 
   @Test
+  @DisplayName("Should require authentication for user profile mutation endpoints")
+  void userProfileMutationEndpointsRequireAuthentication() throws Exception {
+    mockMvc.perform(put("/api/user/update/me")).andExpect(status().isUnauthorized());
+    mockMvc.perform(delete("/api/user/delete/me")).andExpect(status().isUnauthorized());
+    mockMvc.perform(delete("/api/user/banner/delete/me")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
   @DisplayName("Should require authentication for sensitive report endpoints")
   void sensitiveReportEndpointsRequireAuthentication() throws Exception {
     mockMvc.perform(get("/api/reports/all")).andExpect(status().isUnauthorized());
