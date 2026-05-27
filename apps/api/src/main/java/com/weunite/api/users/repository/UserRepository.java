@@ -4,6 +4,7 @@ import com.weunite.api.users.domain.User;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -80,6 +81,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
           + "LEFT JOIN FETCH TREAT(u AS Athlete).profile "
           + "LEFT JOIN FETCH TREAT(u AS Company).profile")
   List<User> findAllWithRoles(Sort sort);
+
+  @Query("SELECT u.id FROM User u")
+  Page<Long> findUserIds(Pageable pageable);
+
+  @Query(
+      "SELECT DISTINCT u FROM User u "
+          + "LEFT JOIN FETCH u.role "
+          + "LEFT JOIN FETCH TREAT(u AS Athlete).profile "
+          + "LEFT JOIN FETCH TREAT(u AS Company).profile "
+          + "WHERE u.id IN :ids")
+  List<User> findAllWithRolesByIdIn(@Param("ids") List<Long> ids);
 
   @Query(
       "SELECT COUNT(DISTINCT p.user.id) FROM Post p WHERE COALESCE(p.updatedAt, p.createdAt) >= :since")

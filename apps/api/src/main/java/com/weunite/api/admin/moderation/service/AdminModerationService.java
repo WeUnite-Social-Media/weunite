@@ -1,5 +1,6 @@
 package com.weunite.api.admin.moderation.service;
 
+import com.weunite.api.admin.moderation.dto.AdminUserPageDTO;
 import com.weunite.api.admin.moderation.dto.AdminUserSummaryDTO;
 import com.weunite.api.admin.moderation.dto.BanUserRequestDTO;
 import com.weunite.api.admin.moderation.dto.ReactivateUserRequestDTO;
@@ -21,6 +22,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,21 +55,45 @@ public class AdminModerationService {
   }
 
   @Transactional(readOnly = true)
-  public List<AdminUserSummaryDTO> getUsersSummary() {
+  public AdminUserPageDTO getUsersSummary(int page, int size) {
     Instant now = Instant.now();
-    List<User> users = userRepository.findAllWithRoles(Sort.by(Sort.Direction.DESC, "createdAt"));
+    Page<Long> userIdPage = userRepository.findUserIds(pageRequest(page, size));
+    List<Long> userIds = userIdPage.getContent();
 
-    if (users.isEmpty()) {
-      return List.of();
+    if (userIds.isEmpty()) {
+      return toPage(List.of(), userIdPage);
     }
 
-    List<Long> userIds = users.stream().map(User::getId).toList();
+    Map<Long, User> usersById =
+        userRepository.findAllWithRolesByIdIn(userIds).stream()
+            .collect(Collectors.toMap(User::getId, Function.identity()));
     Map<Long, Long> contentCounts = buildContentCounts(userIds);
     Map<Long, Long> pendingReportCounts = buildPendingReportCounts(userIds);
 
-    return users.stream()
-        .map(user -> toUserSummary(user, now, contentCounts, pendingReportCounts))
-        .toList();
+    List<AdminUserSummaryDTO> items =
+        userIds.stream()
+            .map(usersById::get)
+            .map(user -> toUserSummary(user, now, contentCounts, pendingReportCounts))
+            .toList();
+
+    return toPage(items, userIdPage);
+  }
+
+  private AdminUserPageDTO toPage(List<AdminUserSummaryDTO> items, Page<Long> page) {
+    return new AdminUserPageDTO(
+        items,
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages(),
+        page.hasNext(),
+        page.hasPrevious());
+  }
+
+  private Pageable pageRequest(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.max(1, Math.min(size, 100));
+    return PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
   }
 
   /** Permanently bans a user and resolves open reports against the user's content. */

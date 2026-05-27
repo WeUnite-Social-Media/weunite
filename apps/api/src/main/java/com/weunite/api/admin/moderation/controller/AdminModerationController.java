@@ -1,6 +1,6 @@
 package com.weunite.api.admin.moderation.controller;
 
-import com.weunite.api.admin.moderation.dto.AdminUserSummaryDTO;
+import com.weunite.api.admin.moderation.dto.AdminUserPageDTO;
 import com.weunite.api.admin.moderation.dto.BanUserRequestDTO;
 import com.weunite.api.admin.moderation.dto.ReactivateUserRequestDTO;
 import com.weunite.api.admin.moderation.dto.SuspendUserRequestDTO;
@@ -8,7 +8,6 @@ import com.weunite.api.admin.moderation.service.AdminModerationService;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.security.service.AuthenticatedUserService;
 import jakarta.validation.Valid;
-import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -33,8 +33,9 @@ public class AdminModerationController {
   }
 
   @GetMapping
-  public ResponseEntity<List<AdminUserSummaryDTO>> getUsers() {
-    List<AdminUserSummaryDTO> users = adminModerationService.getUsersSummary();
+  public ResponseEntity<AdminUserPageDTO> getUsers(
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+    AdminUserPageDTO users = adminModerationService.getUsersSummary(page, size);
     return ResponseEntity.ok(users);
   }
 

@@ -9,6 +9,21 @@ interface ApiResponse<T> {
   error: string | null;
 }
 
+export interface AdminUsersPageResponse {
+  items: AdminUserSummary[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+interface AdminUsersRequestParams {
+  page?: number;
+  size?: number;
+}
+
 interface ModerationResponseBody {
   message: string;
   data?: string | null;
@@ -30,11 +45,13 @@ interface ReactivateAdminUserRequest {
   userId: number;
 }
 
-export const getAdminUsersRequest = async (): Promise<
-  ApiResponse<AdminUserSummary[]>
-> => {
+export const getAdminUsersRequest = async (
+  params: AdminUsersRequestParams = {},
+): Promise<ApiResponse<AdminUsersPageResponse>> => {
   try {
-    const response = await axios.get<AdminUserSummary[]>("/admin/users");
+    const response = await axios.get<AdminUsersPageResponse>("/admin/users", {
+      params,
+    });
 
     return {
       success: true,
