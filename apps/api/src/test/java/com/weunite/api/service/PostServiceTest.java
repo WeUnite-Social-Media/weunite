@@ -254,7 +254,7 @@ public class PostServiceTest {
     ResponseDTO<PostDTO> expectedResponse =
         new ResponseDTO<>("Publicação atualizada com sucesso!", updatedPostDTO);
 
-    when(postRepository.findById(postId)).thenReturn(Optional.of(existingPost));
+    when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.of(existingPost));
     when(image.isEmpty()).thenReturn(false);
     when(cloudinaryService.uploadPost(image, userId)).thenReturn("http://new-image.url");
     when(postRepository.save(existingPost)).thenReturn(existingPost);
@@ -267,7 +267,7 @@ public class PostServiceTest {
     assertEquals("Publicação atualizada com sucesso!", result.message());
     assertNotNull(result.data());
 
-    verify(postRepository).findById(postId);
+    verify(postRepository).findByIdAndDeletedFalse(postId);
     verify(image).isEmpty();
     verify(cloudinaryService).uploadPost(image, userId);
     verify(postRepository).save(existingPost);
@@ -281,7 +281,7 @@ public class PostServiceTest {
     Long postId = 999L;
     PostRequestDTO updatedPostRequest = new PostRequestDTO("Updated post text");
 
-    when(postRepository.findById(postId)).thenReturn(Optional.empty());
+    when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.empty());
 
     PostNotFoundException exception =
         assertThrows(
@@ -289,7 +289,7 @@ public class PostServiceTest {
             () -> postService.updatePost(userId, postId, updatedPostRequest, null));
 
     assertNotNull(exception);
-    verify(postRepository).findById(postId);
+    verify(postRepository).findByIdAndDeletedFalse(postId);
     verifyNoInteractions(postMapper, cloudinaryService);
   }
 
@@ -309,7 +309,7 @@ public class PostServiceTest {
     existingPost.setId(postId);
     existingPost.setUser(postOwner);
 
-    when(postRepository.findById(postId)).thenReturn(Optional.of(existingPost));
+    when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.of(existingPost));
 
     UnauthorizedException exception =
         assertThrows(
@@ -318,14 +318,14 @@ public class PostServiceTest {
 
     assertEquals(
         "Você precisa estar logado para atualizar esta publicação", exception.getMessage());
-    verify(postRepository).findById(postId);
+    verify(postRepository).findByIdAndDeletedFalse(postId);
     verifyNoInteractions(postMapper, cloudinaryService);
   }
 
   // DELETE POST TESTS
 
   @Test
-  @DisplayName("Should delete post successfully when user is owner")
+  @DisplayName("Should soft delete post successfully when user is owner")
   void deletePostSuccess() {
     Long userId = 1L;
     Long postId = 1L;
@@ -370,7 +370,8 @@ public class PostServiceTest {
     ResponseDTO<PostDTO> expectedResponse =
         new ResponseDTO<>("Publicação excluída com sucesso", deletedPostDTO);
 
-    when(postRepository.findById(postId)).thenReturn(Optional.of(existingPost));
+    when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.of(existingPost));
+    when(postRepository.save(existingPost)).thenReturn(existingPost);
     when(postMapper.toResponseDTO(eq("Publicação excluída com sucesso"), eq(existingPost)))
         .thenReturn(expectedResponse);
 
@@ -380,10 +381,10 @@ public class PostServiceTest {
     assertEquals("Publicação excluída com sucesso", result.message());
     assertNotNull(result.data());
 
-    verify(postRepository).findById(postId);
-    verify(likeRepository).deleteByPostId(postId);
-    verify(repostRepository).deleteByPostId(postId);
-    verify(postRepository).delete(existingPost);
+    assertTrue(existingPost.isDeleted());
+    verify(postRepository).findByIdAndDeletedFalse(postId);
+    verify(postRepository).save(existingPost);
+    verifyNoInteractions(likeRepository, repostRepository);
     verify(postMapper).toResponseDTO(eq("Publicação excluída com sucesso"), eq(existingPost));
   }
 
@@ -393,13 +394,13 @@ public class PostServiceTest {
     Long userId = 1L;
     Long postId = 999L;
 
-    when(postRepository.findById(postId)).thenReturn(Optional.empty());
+    when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.empty());
 
     PostNotFoundException exception =
         assertThrows(PostNotFoundException.class, () -> postService.deletePost(userId, postId));
 
     assertNotNull(exception);
-    verify(postRepository).findById(postId);
+    verify(postRepository).findByIdAndDeletedFalse(postId);
     verify(postRepository, never()).delete(any());
     verifyNoInteractions(postMapper);
   }
@@ -419,13 +420,13 @@ public class PostServiceTest {
     existingPost.setId(postId);
     existingPost.setUser(postOwner);
 
-    when(postRepository.findById(postId)).thenReturn(Optional.of(existingPost));
+    when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.of(existingPost));
 
     UnauthorizedException exception =
         assertThrows(UnauthorizedException.class, () -> postService.deletePost(userId, postId));
 
     assertEquals("Você precisa estar logado para deletar essa publicação!", exception.getMessage());
-    verify(postRepository).findById(postId);
+    verify(postRepository).findByIdAndDeletedFalse(postId);
     verify(postRepository, never()).delete(any());
     verifyNoInteractions(postMapper);
   }
@@ -486,7 +487,8 @@ public class PostServiceTest {
                 List.of(
                     feedEntry("REPOST", post.getId(), repost.getId()),
                     feedEntry("POST", post.getId(), null))));
-    when(postRepository.findAllWithUserByIdIn(List.of(post.getId()))).thenReturn(List.of(post));
+    when(postRepository.findAllWithUserByIdInAndDeletedFalse(List.of(post.getId())))
+        .thenReturn(List.of(post));
     when(repostRepository.findAllByIdWithFeedContext(List.of(repost.getId())))
         .thenReturn(List.of(repost));
     when(postMapper.toPostDTO(post)).thenReturn(originalPostDTO);
@@ -496,7 +498,7 @@ public class PostServiceTest {
 
     assertEquals(List.of(repostedPostDTO, originalPostDTO), result);
     verify(postRepository).findFeedEntries(any());
-    verify(postRepository).findAllWithUserByIdIn(List.of(post.getId()));
+    verify(postRepository).findAllWithUserByIdInAndDeletedFalse(List.of(post.getId()));
     verify(repostRepository).findAllByIdWithFeedContext(List.of(repost.getId()));
     verify(postMapper).toPostDTO(post);
     verify(postMapper).toPostDTOFromRepost(repost);

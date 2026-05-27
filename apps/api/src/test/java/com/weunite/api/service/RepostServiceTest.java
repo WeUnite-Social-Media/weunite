@@ -59,7 +59,7 @@ public class RepostServiceTest {
         new ResponseDTO<>("Post republicado com sucesso!", new RepostDTO("1", null, null));
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+    when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.of(post));
     when(repostRepository.findByUserAndPost(user, post)).thenReturn(Optional.empty());
     when(repostMapper.toResponseDTO(eq("Post republicado com sucesso!"), any(Repost.class)))
         .thenReturn(expectedResponse);
@@ -93,7 +93,7 @@ public class RepostServiceTest {
         new ResponseDTO<>("Repost removido com sucesso!", new RepostDTO("5", null, null));
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+    when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.of(post));
     when(repostRepository.findByUserAndPost(user, post)).thenReturn(Optional.of(existingRepost));
     when(repostMapper.toResponseDTO(eq("Repost removido com sucesso!"), eq(existingRepost)))
         .thenReturn(expectedResponse);

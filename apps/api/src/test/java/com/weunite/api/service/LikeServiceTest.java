@@ -62,7 +62,7 @@ public class LikeServiceTest {
         new ResponseDTO<>("Curtida criada com sucesso!", new LikeDTO("1", null, null));
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+    when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.of(post));
     when(likeRepository.findByUserAndPost(user, post)).thenReturn(Optional.empty());
     when(likeMapper.toResponseDTO(eq("Curtida criada com sucesso!"), any(Like.class)))
         .thenReturn(expectedResponse);
@@ -131,7 +131,7 @@ public class LikeServiceTest {
         new ResponseDTO<>("Curtida deletada com sucesso!", new LikeDTO("99", null, null));
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+    when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.of(post));
     when(likeRepository.findByUserAndPost(user, post)).thenReturn(Optional.of(existingLike));
     when(likeMapper.toResponseDTO(eq("Curtida deletada com sucesso!"), eq(existingLike)))
         .thenReturn(expectedResponse);

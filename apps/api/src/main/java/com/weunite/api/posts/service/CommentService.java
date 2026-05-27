@@ -48,7 +48,8 @@ public class CommentService {
       Long userId, Long postId, CommentRequestDTO comment) {
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
-    Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+    Post post =
+        postRepository.findByIdAndDeletedFalse(postId).orElseThrow(PostNotFoundException::new);
 
     Comment newComment = new Comment(user, post, comment.text(), comment.image());
 
@@ -61,7 +62,7 @@ public class CommentService {
 
   @Transactional
   public List<CommentDTO> getCommentsByPost(Long postId) {
-    if (!postRepository.existsById(postId)) {
+    if (!postRepository.existsByIdAndDeletedFalse(postId)) {
       throw new PostNotFoundException();
     }
 

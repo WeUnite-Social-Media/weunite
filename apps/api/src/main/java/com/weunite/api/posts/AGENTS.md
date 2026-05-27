@@ -47,6 +47,8 @@ This module owns posts, comments, likes, and reposts in `com.weunite.api.posts`.
   before calling the service layer.
 - Keep post-like/repost lifecycle repository-owned; post-side interaction collections are read
   views, not aggregate owners.
+- Treat post removal as soft deletion: hide deleted posts from public read and interaction flows
+  while retaining their persisted interaction history.
 - Keep comment-thread cleanup comment-owned; deleting a comment subtree may cascade through nested
   comments and their likes.
 

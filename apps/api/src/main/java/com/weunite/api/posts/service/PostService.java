@@ -10,7 +10,6 @@ import com.weunite.api.posts.dto.PostRequestDTO;
 import com.weunite.api.posts.exception.PostNotFoundException;
 import com.weunite.api.posts.mapper.PostMapper;
 import com.weunite.api.posts.repository.FeedItemProjection;
-import com.weunite.api.posts.repository.LikeRepository;
 import com.weunite.api.posts.repository.PostRepository;
 import com.weunite.api.posts.repository.RepostRepository;
 import com.weunite.api.users.domain.User;
@@ -31,7 +30,6 @@ public class PostService {
   private final PostRepository postRepository;
   private final PostMapper postMapper;
   private final CloudinaryService cloudinaryService;
-  private final LikeRepository likeRepository;
   private final RepostRepository repostRepository;
 
   public PostService(
@@ -39,13 +37,11 @@ public class PostService {
       PostRepository postRepository,
       PostMapper postMapper,
       CloudinaryService cloudinaryService,
-      LikeRepository likeRepository,
       RepostRepository repostRepository) {
     this.userRepository = userRepository;
     this.postRepository = postRepository;
     this.postMapper = postMapper;
     this.cloudinaryService = cloudinaryService;
-    this.likeRepository = likeRepository;
     this.repostRepository = repostRepository;
   }
 
@@ -69,7 +65,8 @@ public class PostService {
   @Transactional
   public ResponseDTO<PostDTO> updatePost(
       Long userId, Long postId, PostRequestDTO updatedPost, MultipartFile image) {
-    Post existingPost = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+    Post existingPost =
+        postRepository.findByIdAndDeletedFalse(postId).orElseThrow(PostNotFoundException::new);
 
     if (!userId.equals(existingPost.getUser().getId())) {
       throw new UnauthorizedException("Você precisa estar logado para atualizar esta publicação");
@@ -90,7 +87,8 @@ public class PostService {
 
   @Transactional(readOnly = true)
   public ResponseDTO<PostDTO> getPost(Long postId) {
-    Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+    Post post =
+        postRepository.findByIdAndDeletedFalse(postId).orElseThrow(PostNotFoundException::new);
 
     return postMapper.toResponseDTO("Publicação consultada com sucesso!", post);
   }
@@ -117,15 +115,15 @@ public class PostService {
 
   @Transactional
   public ResponseDTO<PostDTO> deletePost(Long userId, Long postId) {
-    Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+    Post post =
+        postRepository.findByIdAndDeletedFalse(postId).orElseThrow(PostNotFoundException::new);
 
     if (!userId.equals(post.getUser().getId())) {
       throw new UnauthorizedException("Você precisa estar logado para deletar essa publicação!");
     }
 
-    likeRepository.deleteByPostId(postId);
-    repostRepository.deleteByPostId(postId);
-    postRepository.delete(post);
+    post.setDeleted(true);
+    postRepository.save(post);
 
     return postMapper.toResponseDTO("Publicação excluída com sucesso", post);
   }
@@ -150,7 +148,7 @@ public class PostService {
 
     Map<Long, Post> postsById = new HashMap<>();
     postRepository
-        .findAllWithUserByIdIn(postIds)
+        .findAllWithUserByIdInAndDeletedFalse(postIds)
         .forEach(post -> postsById.put(post.getId(), post));
 
     Map<Long, Repost> repostsById = new HashMap<>();

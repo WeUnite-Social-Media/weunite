@@ -54,7 +54,8 @@ public class LikeService {
 
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
-    Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+    Post post =
+        postRepository.findByIdAndDeletedFalse(postId).orElseThrow(PostNotFoundException::new);
 
     Like existingLike = likeRepository.findByUserAndPost(user, post).orElse(null);
 

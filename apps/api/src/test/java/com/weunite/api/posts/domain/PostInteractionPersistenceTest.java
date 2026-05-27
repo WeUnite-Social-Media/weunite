@@ -1,7 +1,9 @@
 package com.weunite.api.posts.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.weunite.api.posts.repository.CommentRepository;
 import com.weunite.api.posts.repository.LikeRepository;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 
 @DataJpaTest
 class PostInteractionPersistenceTest {
@@ -111,5 +114,21 @@ class PostInteractionPersistenceTest {
     entityManager.clear();
 
     assertEquals(1, repostRepository.count());
+  }
+
+  @Test
+  @DisplayName("Should retain soft deleted posts while removing them from active feed lookups")
+  void hideSoftDeletedPostsFromActiveReads() {
+    User author = userRepository.save(new User("Author", "author6", "author6@example.com", "p"));
+    Post post = postRepository.save(new Post(author, "Post"));
+
+    post.setDeleted(true);
+    postRepository.saveAndFlush(post);
+
+    entityManager.clear();
+
+    assertTrue(postRepository.findById(post.getId()).isPresent());
+    assertFalse(postRepository.findByIdAndDeletedFalse(post.getId()).isPresent());
+    assertTrue(postRepository.findFeedEntries(PageRequest.of(0, 10)).isEmpty());
   }
 }

@@ -124,7 +124,7 @@ public class CommentServiceTest {
         new ResponseDTO<>("Coment\u00E1rio criado com sucesso!", commentDTO);
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
-    when(postRepository.findById(postId)).thenReturn(Optional.of(mockPost));
+    when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.of(mockPost));
     when(commentRepository.save(any(Comment.class))).thenReturn(createdComment);
     when(commentMapper.toResponseDTO(eq("Coment\u00E1rio criado com sucesso!"), any(Comment.class)))
         .thenReturn(expectedResponse);
@@ -137,7 +137,7 @@ public class CommentServiceTest {
     assertEquals("This is a test comment", result.data().text());
 
     verify(userRepository).findById(userId);
-    verify(postRepository).findById(postId);
+    verify(postRepository).findByIdAndDeletedFalse(postId);
     verify(commentRepository).save(any(Comment.class));
     verify(commentMapper)
         .toResponseDTO(eq("Coment\u00E1rio criado com sucesso!"), any(Comment.class));
@@ -178,7 +178,7 @@ public class CommentServiceTest {
     mockUser.setUsername("testuser");
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
-    when(postRepository.findById(postId)).thenReturn(Optional.empty());
+    when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.empty());
 
     PostNotFoundException exception =
         assertThrows(
@@ -187,7 +187,7 @@ public class CommentServiceTest {
 
     assertNotNull(exception);
     verify(userRepository).findById(userId);
-    verify(postRepository).findById(postId);
+    verify(postRepository).findByIdAndDeletedFalse(postId);
     verifyNoInteractions(commentRepository, commentMapper);
   }
 
@@ -460,7 +460,7 @@ public class CommentServiceTest {
     List<Comment> mockComments = new ArrayList<>();
     List<CommentDTO> expectedCommentDTOs = new ArrayList<>();
 
-    when(postRepository.existsById(postId)).thenReturn(true);
+    when(postRepository.existsByIdAndDeletedFalse(postId)).thenReturn(true);
     when(commentRepository.findByPostId(postId)).thenReturn(mockComments);
     when(commentMapper.mapCommentsToList(mockComments)).thenReturn(expectedCommentDTOs);
 
@@ -469,7 +469,7 @@ public class CommentServiceTest {
     assertNotNull(result);
     assertEquals(expectedCommentDTOs, result);
 
-    verify(postRepository).existsById(postId);
+    verify(postRepository).existsByIdAndDeletedFalse(postId);
     verify(commentRepository).findByPostId(postId);
     verify(commentMapper).mapCommentsToList(mockComments);
   }
@@ -479,13 +479,13 @@ public class CommentServiceTest {
   void getCommentsByPostWithNonExistentPost() {
     Long postId = 999L;
 
-    when(postRepository.existsById(postId)).thenReturn(false);
+    when(postRepository.existsByIdAndDeletedFalse(postId)).thenReturn(false);
 
     PostNotFoundException exception =
         assertThrows(PostNotFoundException.class, () -> commentService.getCommentsByPost(postId));
 
     assertNotNull(exception);
-    verify(postRepository).existsById(postId);
+    verify(postRepository).existsByIdAndDeletedFalse(postId);
     verifyNoInteractions(commentRepository, commentMapper);
   }
 

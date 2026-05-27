@@ -41,7 +41,8 @@ public class RepostService {
   @Transactional
   public ResponseDTO<RepostDTO> toggleRepost(Long userId, Long postId) {
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-    Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+    Post post =
+        postRepository.findByIdAndDeletedFalse(postId).orElseThrow(PostNotFoundException::new);
 
     Repost existingRepost = repostRepository.findByUserAndPost(user, post).orElse(null);
 
