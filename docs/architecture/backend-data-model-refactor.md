@@ -101,7 +101,7 @@ The first wave should reference the class issues below:
 2. Make soft-delete semantics consistent for posts and comments.
 3. Treat post likes and reposts as independent interaction entities with database uniqueness,
    timestamps, and explicit repository-owned cleanup.
-4. Keep feed pagination database-backed through projections that fetch required author/repost data explicitly.
+4. Keep feed and comment pagination database-backed; feed projections should fetch required author/repost data explicitly.
 5. Avoid serializing entities directly; remove Jackson cycle annotations once DTO boundaries cover responses.
 
 ### Opportunities
@@ -238,6 +238,7 @@ PR `#17` is the current draft delivery and contains:
 - lazy default loading for opportunity/company and subscriber associations, with repository-owned read-model graphs;
 - removal of company-collection orphan deletion so opportunity lifecycle remains module-owned;
 - soft-deleted posts/comments retained as stored content while public reads and new interactions reject deleted content;
+- paginated public comment reads for post and profile activity surfaces;
 - removal of the unused athlete-only update request;
 - authenticated ownership enforcement for follow, report, notification, and user profile mutations.
 

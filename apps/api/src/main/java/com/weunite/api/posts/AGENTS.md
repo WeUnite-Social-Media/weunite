@@ -40,7 +40,7 @@ This module owns posts, comments, likes, and reposts in `com.weunite.api.posts`.
 - Keep post/comment/like DTOs and mappings inside this module.
 - Keep entity relationships out of transport serialization; expose posts and comments through DTO mappings.
 - Preserve endpoint contracts unless explicitly requested.
-- Keep feed pagination database-backed; do not merge and paginate full post/repost result sets in memory.
+- Keep feed and comment pagination database-backed; do not merge and paginate full result sets in memory.
 - When materializing feed projections, preload the author/repost relations the mapper needs instead
   of relying on lazy loads inside the service loop.
 - For actor-owned mutations, validate the path or request user id against the authenticated JWT

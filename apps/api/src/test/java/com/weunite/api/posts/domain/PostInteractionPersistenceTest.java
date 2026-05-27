@@ -152,7 +152,7 @@ class PostInteractionPersistenceTest {
     assertFalse(commentRepository.findByIdAndDeletedFalse(parent.getId()).isPresent());
     assertEquals(
         List.of(reply.getId()),
-        commentRepository.findByPostIdAndDeletedFalse(post.getId()).stream()
+        commentRepository.findByPostIdAndDeletedFalse(post.getId(), PageRequest.of(0, 10)).stream()
             .map(Comment::getId)
             .toList());
   }

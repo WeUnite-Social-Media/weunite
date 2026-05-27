@@ -17,6 +17,8 @@ import com.weunite.api.users.domain.User;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.UserRepository;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -61,21 +63,23 @@ public class CommentService {
   }
 
   @Transactional
-  public List<CommentDTO> getCommentsByPost(Long postId) {
+  public List<CommentDTO> getCommentsByPost(Long postId, int page, int size) {
     if (!postRepository.existsByIdAndDeletedFalse(postId)) {
       throw new PostNotFoundException();
     }
 
-    List<Comment> comments = commentRepository.findByPostIdAndDeletedFalse(postId);
+    List<Comment> comments =
+        commentRepository.findByPostIdAndDeletedFalse(postId, pageRequest(page, size)).getContent();
     return commentMapper.mapCommentsToList(comments);
   }
 
   @Transactional
-  public List<CommentDTO> getCommentsByUser(Long userId) {
+  public List<CommentDTO> getCommentsByUser(Long userId, int page, int size) {
     if (!userRepository.existsById(userId)) {
       throw new UserNotFoundException();
     }
-    List<Comment> comments = commentRepository.findByUserIdAndDeletedFalse(userId);
+    List<Comment> comments =
+        commentRepository.findByUserIdAndDeletedFalse(userId, pageRequest(page, size)).getContent();
     return commentMapper.mapCommentsToList(comments);
   }
 
@@ -115,5 +119,11 @@ public class CommentService {
     commentRepository.save(comment);
 
     return commentMapper.toResponseDTO("Comentário excluído com sucesso", comment);
+  }
+
+  private Pageable pageRequest(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 100);
+    return PageRequest.of(safePage, safeSize);
   }
 }

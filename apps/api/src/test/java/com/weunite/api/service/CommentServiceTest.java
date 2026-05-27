@@ -34,6 +34,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
@@ -468,17 +470,38 @@ public class CommentServiceTest {
     List<CommentDTO> expectedCommentDTOs = new ArrayList<>();
 
     when(postRepository.existsByIdAndDeletedFalse(postId)).thenReturn(true);
-    when(commentRepository.findByPostIdAndDeletedFalse(postId)).thenReturn(mockComments);
+    when(commentRepository.findByPostIdAndDeletedFalse(postId, PageRequest.of(0, 10)))
+        .thenReturn(new PageImpl<>(mockComments));
     when(commentMapper.mapCommentsToList(mockComments)).thenReturn(expectedCommentDTOs);
 
-    List<CommentDTO> result = commentService.getCommentsByPost(postId);
+    List<CommentDTO> result = commentService.getCommentsByPost(postId, 0, 10);
 
     assertNotNull(result);
     assertEquals(expectedCommentDTOs, result);
 
     verify(postRepository).existsByIdAndDeletedFalse(postId);
-    verify(commentRepository).findByPostIdAndDeletedFalse(postId);
+    verify(commentRepository).findByPostIdAndDeletedFalse(postId, PageRequest.of(0, 10));
     verify(commentMapper).mapCommentsToList(mockComments);
+  }
+
+  @Test
+  @DisplayName("Should clamp invalid pagination parameters when listing comments by post")
+  void getCommentsByPostClampsInvalidPagination() {
+    Long postId = 1L;
+    List<Comment> mockComments = new ArrayList<>();
+    List<CommentDTO> expectedCommentDTOs = new ArrayList<>();
+
+    when(postRepository.existsByIdAndDeletedFalse(postId)).thenReturn(true);
+    when(commentRepository.findByPostIdAndDeletedFalse(postId, PageRequest.of(0, 100)))
+        .thenReturn(new PageImpl<>(mockComments));
+    when(commentMapper.mapCommentsToList(mockComments)).thenReturn(expectedCommentDTOs);
+
+    List<CommentDTO> result = commentService.getCommentsByPost(postId, -1, 500);
+
+    assertNotNull(result);
+    assertEquals(expectedCommentDTOs, result);
+
+    verify(commentRepository).findByPostIdAndDeletedFalse(postId, PageRequest.of(0, 100));
   }
 
   @Test
@@ -489,7 +512,8 @@ public class CommentServiceTest {
     when(postRepository.existsByIdAndDeletedFalse(postId)).thenReturn(false);
 
     PostNotFoundException exception =
-        assertThrows(PostNotFoundException.class, () -> commentService.getCommentsByPost(postId));
+        assertThrows(
+            PostNotFoundException.class, () -> commentService.getCommentsByPost(postId, 0, 10));
 
     assertNotNull(exception);
     verify(postRepository).existsByIdAndDeletedFalse(postId);
@@ -504,16 +528,17 @@ public class CommentServiceTest {
     List<CommentDTO> expectedCommentDTOs = new ArrayList<>();
 
     when(userRepository.existsById(userId)).thenReturn(true);
-    when(commentRepository.findByUserIdAndDeletedFalse(userId)).thenReturn(mockComments);
+    when(commentRepository.findByUserIdAndDeletedFalse(userId, PageRequest.of(0, 10)))
+        .thenReturn(new PageImpl<>(mockComments));
     when(commentMapper.mapCommentsToList(mockComments)).thenReturn(expectedCommentDTOs);
 
-    List<CommentDTO> result = commentService.getCommentsByUser(userId);
+    List<CommentDTO> result = commentService.getCommentsByUser(userId, 0, 10);
 
     assertNotNull(result);
     assertEquals(expectedCommentDTOs, result);
 
     verify(userRepository).existsById(userId);
-    verify(commentRepository).findByUserIdAndDeletedFalse(userId);
+    verify(commentRepository).findByUserIdAndDeletedFalse(userId, PageRequest.of(0, 10));
     verify(commentMapper).mapCommentsToList(mockComments);
   }
 
@@ -525,7 +550,8 @@ public class CommentServiceTest {
     when(userRepository.existsById(userId)).thenReturn(false);
 
     UserNotFoundException exception =
-        assertThrows(UserNotFoundException.class, () -> commentService.getCommentsByUser(userId));
+        assertThrows(
+            UserNotFoundException.class, () -> commentService.getCommentsByUser(userId, 0, 10));
 
     assertNotNull(exception);
     verify(userRepository).existsById(userId);
