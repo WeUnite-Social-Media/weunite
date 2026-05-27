@@ -50,7 +50,8 @@ This module owns user account and profile domain flows in `com.weunite.api.users
   auth and profile reads stay aligned.
 - Keep athlete/company profile fields in explicit profile tables; do not add profile-specific
   columns back to `tb_user`.
-- Keep the `User` discriminator while role-specific relationships still use subtype entities.
+- Derive user classification metrics from explicit roles, not JPA discriminator values.
+- Keep the `User` discriminator only while role-specific relationships still use subtype entities.
 - Use profile repositories for direct split-profile persistence or lookup instead of hiding all profile
   access behind `UserRepository`.
 - Keep roles lazy by default and use repository-owned role fetch plans for auth, admin, and DTO flows that need them.

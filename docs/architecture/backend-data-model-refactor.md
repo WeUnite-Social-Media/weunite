@@ -33,8 +33,9 @@ The target architecture keeps the current module ownership:
 
 The current backend already follows the repository's module-by-feature direction, but the persistence model still has scalability risks:
 
-- User subtype modeling still uses `SINGLE_TABLE` discrimination for role-specific relationships,
-  but athlete/company profile fields now live only in explicit profile tables.
+- User subtype modeling still uses `SINGLE_TABLE` discrimination for role-specific opportunity
+  relationships, while profile fields live only in explicit profile tables and classification
+  metrics use assigned roles.
 - Many entity graphs are bidirectional and cascade broadly, increasing accidental fetch/cascade blast radius.
 - Several hot relationships use eager loading, including roles, conversation participants, and message senders.
 - Reports preserve `(type, entityId)` storage and API fields while mapping them through the typed
@@ -88,7 +89,9 @@ The first wave should reference the class issues below:
 1. Keep `User` as the account aggregate root for authentication, identity, moderation status, privacy, and common profile fields.
 2. Introduce `AccountCredentials` as the explicit owner of login email, password hash, verification/reset tokens, and credential lifecycle timestamps.
 3. Treat `Email` as a value object or embeddable identity value, not as the mail-delivery service.
-4. Keep role assignments explicit through `tb_user_roles`; role seed data now lives in migrations, and eager loading should be removed where services can fetch roles intentionally.
+4. Keep role assignments explicit through `tb_user_roles`; role seed data now lives in migrations,
+   user-type metrics should classify accounts through roles rather than subtype discrimination, and
+   eager loading should be removed where services can fetch roles intentionally.
 5. Move athlete-only and company-only fields into profile tables or explicit one-to-one profile entities owned by `users`.
 6. Keep `Athlete` and `Company` API behavior stable through DTO/mappers during migration.
 
@@ -196,7 +199,8 @@ The first wave should reference the class issues below:
 
 ### Phase 5: Cleanup And Contract Verification
 
-- Remove obsolete inheritance/discriminator assumptions once profile split is complete.
+- Remove obsolete inheritance/discriminator assumptions once profile split is complete, while
+  retaining documented subtype mappings required by typed opportunity relationships.
 - Keep response serialization DTO-only; domain relationship entities should not carry Jackson cycle
   annotations for endpoint output.
 - Keep runtime schema config on migration validation and remove remaining compatibility mappings only
@@ -230,6 +234,7 @@ PR `#17` is the current draft delivery and contains:
 - company CNPJ validation, persistence, read exposure, and web profile presentation;
 - authoritative athlete/company profile DTO reads without legacy subtype-column fallback;
 - migration-owned removal of legacy athlete/company profile columns from `tb_user`;
+- role-backed athlete/company dashboard counts independent of JPA subtype discrimination;
 - removal of the unused athlete-only update request;
 - authenticated ownership enforcement for follow, report, notification, and user profile mutations.
 
@@ -239,7 +244,7 @@ PR `#17` is the current draft delivery and contains:
 | ------------------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | 1. Baseline And Safety               | Substantially delivered in PR `#16`  | Keep new schema changes migration-owned and retain invariant coverage.                         |
 | 2. Relationship Hardening            | Advanced in PRs `#16` and `#17`      | Complete remaining fetch/cascade and relationship audit work.                                  |
-| 3. User Profile Split                | Profile-field cutover in PR `#17`    | Retire discriminator assumptions only if role-specific relationships can be safely remodeled.  |
+| 3. User Profile Split                | Profile-field cutover in PR `#17`    | Retain discriminator only for typed opportunity relationships; classification is role-backed.  |
 | 4. Report Target Stabilization       | Compatibility-first step in PR `#17` | Decide whether a dedicated target table is warranted after current representation is reviewed. |
 | 5. Cleanup And Contract Verification | Pending                              | Remove proven-obsolete compatibility mappings and run final full validation.                   |
 
@@ -247,10 +252,11 @@ PR `#17` is the current draft delivery and contains:
 
 Continue after PR `#17` with a bounded profile-split and cleanup tranche:
 
-1. Assess whether remaining subtype relationships require keeping `Athlete` and `Company`
-   discriminator entities.
-2. Remove only discriminator assumptions whose replacement paths and data migration coverage are
-   proven.
+1. Preserve `Athlete` and `Company` discriminator entities for typed opportunity,
+   subscription, and saved-opportunity relationships until those contracts are intentionally
+   remodeled.
+2. Remove any further discriminator assumptions only where replacement paths and data migration
+   coverage are proven.
 3. Complete remaining profile-contract verification after profile-field persistence moves.
 4. Revisit remaining eager fetch/cascade findings from Phase 2 while touching affected aggregates.
 5. Run final contract verification only after the compatibility cleanup is complete.

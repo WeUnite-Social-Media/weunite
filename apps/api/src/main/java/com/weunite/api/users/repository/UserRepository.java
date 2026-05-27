@@ -1,7 +1,5 @@
 package com.weunite.api.users.repository;
 
-import com.weunite.api.users.domain.Athlete;
-import com.weunite.api.users.domain.Company;
 import com.weunite.api.users.domain.User;
 import java.time.Instant;
 import java.util.List;
@@ -96,14 +94,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
   Long countUsersCreatedBetweenDates(
       @Param("startDate") Instant startDate, @Param("endDate") Instant endDate);
 
-  @Query("SELECT COUNT(u) FROM User u WHERE TYPE(u) = :athleteType")
-  Long countByDiscriminator(@Param("athleteType") Class<? extends User> athleteType);
+  @Query("SELECT COUNT(DISTINCT u) FROM User u JOIN u.role r WHERE r.name = :roleName")
+  Long countByRoleName(@Param("roleName") String roleName);
 
   default Long countAthletes() {
-    return countByDiscriminator(Athlete.class);
+    return countByRoleName("ATHLETE");
   }
 
   default Long countCompanies() {
-    return countByDiscriminator(Company.class);
+    return countByRoleName("COMPANY");
   }
 }

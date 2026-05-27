@@ -12,6 +12,7 @@ import com.weunite.api.users.repository.RoleRepository;
 import com.weunite.api.users.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +60,25 @@ class UserIdentityPersistenceTest {
     assertThrows(
         DataIntegrityViolationException.class,
         () -> roleRepository.saveAndFlush(new Role(null, "ATHLETE")));
+  }
+
+  @Test
+  @DisplayName("Should count user types from assigned roles rather than entity discriminator")
+  void countUserTypesFromAssignedRoles() {
+    Role athleteRole = roleRepository.saveAndFlush(new Role(null, "ATHLETE"));
+    Role companyRole = roleRepository.saveAndFlush(new Role(null, "COMPANY"));
+
+    User athleteAccount = new User("Role Athlete", "role_athlete", "role-athlete@example.com", "p");
+    athleteAccount.setRole(Set.of(athleteRole));
+    User companyAccount = new User("Role Company", "role_company", "role-company@example.com", "p");
+    companyAccount.setRole(Set.of(companyRole));
+    Athlete subtypeWithoutRole =
+        new Athlete("Subtype Only", "subtype_only", "subtype-only@example.com", "p");
+
+    userRepository.saveAllAndFlush(Set.of(athleteAccount, companyAccount, subtypeWithoutRole));
+
+    assertEquals(1L, userRepository.countAthletes());
+    assertEquals(1L, userRepository.countCompanies());
   }
 
   @Test
