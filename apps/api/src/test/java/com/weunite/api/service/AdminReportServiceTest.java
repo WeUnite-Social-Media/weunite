@@ -296,15 +296,10 @@ class AdminReportServiceTest {
     reviewedReport.setStatus(Report.ReportStatus.REVIEWED);
     reviewedReport.setActionTaken(Report.ActionTaken.CONTENT_REMOVED);
 
-    List<Report> pendingReports = List.of(pendingReport);
-    List<Report> reviewedReports = List.of(reviewedReport);
-
-    when(reportRepository.findByTargetAndStatus(
-            new ReportTarget(Report.ReportType.POST, postId), Report.ReportStatus.PENDING))
-        .thenReturn(pendingReports);
-    when(reportRepository.findByTargetAndStatus(
-            new ReportTarget(Report.ReportType.POST, postId), Report.ReportStatus.REVIEWED))
-        .thenReturn(reviewedReports);
+    when(reportRepository.findByTargetAndStatusIn(
+            new ReportTarget(Report.ReportType.POST, postId),
+            List.of(Report.ReportStatus.PENDING, Report.ReportStatus.REVIEWED)))
+        .thenReturn(List.of(pendingReport, reviewedReport));
 
     ResponseDTO<String> result = adminReportService.dismissReports(postId, "POST");
 
@@ -336,12 +331,10 @@ class AdminReportServiceTest {
     reviewedReport.setStatus(Report.ReportStatus.REVIEWED);
     reviewedReport.setActionTaken(Report.ActionTaken.CONTENT_REMOVED);
 
-    when(reportRepository.findByTargetAndStatus(
-            new ReportTarget(Report.ReportType.POST, postId), Report.ReportStatus.PENDING))
-        .thenReturn(List.of(pendingReport));
-    when(reportRepository.findByTargetAndStatus(
-            new ReportTarget(Report.ReportType.POST, postId), Report.ReportStatus.REVIEWED))
-        .thenReturn(List.of(reviewedReport));
+    when(reportRepository.findByTargetAndStatusIn(
+            new ReportTarget(Report.ReportType.POST, postId),
+            List.of(Report.ReportStatus.PENDING, Report.ReportStatus.REVIEWED)))
+        .thenReturn(List.of(pendingReport, reviewedReport));
 
     ResponseDTO<String> result = adminReportService.resolveReports(postId, "POST");
 
@@ -355,8 +348,7 @@ class AdminReportServiceTest {
     verify(reportRepository).saveAll(savedReportsCaptor.capture());
     assertEquals(2, savedReportsCaptor.getValue().size());
     verify(reportRepository, never())
-        .findByTargetAndStatus(
-            new ReportTarget(Report.ReportType.POST, postId), Report.ReportStatus.RESOLVED);
+        .findByTargetAndStatus(any(ReportTarget.class), eq(Report.ReportStatus.RESOLVED));
   }
 
   @Test
@@ -364,11 +356,9 @@ class AdminReportServiceTest {
   void resolveReportsWithoutEntriesReturnsZero() {
     Long postId = 31L;
 
-    when(reportRepository.findByTargetAndStatus(
-            new ReportTarget(Report.ReportType.POST, postId), Report.ReportStatus.PENDING))
-        .thenReturn(List.of());
-    when(reportRepository.findByTargetAndStatus(
-            new ReportTarget(Report.ReportType.POST, postId), Report.ReportStatus.REVIEWED))
+    when(reportRepository.findByTargetAndStatusIn(
+            new ReportTarget(Report.ReportType.POST, postId),
+            List.of(Report.ReportStatus.PENDING, Report.ReportStatus.REVIEWED)))
         .thenReturn(List.of());
 
     ResponseDTO<String> result = adminReportService.resolveReports(postId, "POST");

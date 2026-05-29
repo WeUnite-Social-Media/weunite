@@ -371,7 +371,6 @@ public class PostServiceTest {
         new ResponseDTO<>("Publicação excluída com sucesso", deletedPostDTO);
 
     when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.of(existingPost));
-    when(postRepository.save(existingPost)).thenReturn(existingPost);
     when(postMapper.toResponseDTO(eq("Publicação excluída com sucesso"), eq(existingPost)))
         .thenReturn(expectedResponse);
 
@@ -383,7 +382,7 @@ public class PostServiceTest {
 
     assertTrue(existingPost.isDeleted());
     verify(postRepository).findByIdAndDeletedFalse(postId);
-    verify(postRepository).save(existingPost);
+    verify(postRepository, never()).save(any());
     verifyNoInteractions(likeRepository, repostRepository);
     verify(postMapper).toResponseDTO(eq("Publicação excluída com sucesso"), eq(existingPost));
   }

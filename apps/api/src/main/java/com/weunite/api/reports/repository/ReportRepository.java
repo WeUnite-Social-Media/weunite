@@ -27,6 +27,10 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
   List<Report> findByTargetAndStatus(
       @Param("target") ReportTarget target, @Param("status") Report.ReportStatus status);
 
+  @Query("SELECT r FROM Report r WHERE r.target = :target AND r.status IN :statuses")
+  List<Report> findByTargetAndStatusIn(
+      @Param("target") ReportTarget target, @Param("statuses") List<Report.ReportStatus> statuses);
+
   @Query("SELECT r FROM Report r WHERE r.target = :target")
   List<Report> findByTarget(@Param("target") ReportTarget target);
 

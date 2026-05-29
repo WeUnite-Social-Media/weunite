@@ -488,11 +488,7 @@ public class AdminReportService {
   public ResponseDTO<String> dismissReports(Long entityId, String type) {
     Report.ReportType reportType = Report.ReportType.valueOf(type.toUpperCase());
     ReportTarget target = targetFor(reportType, entityId);
-    List<Report> reportsToDismiss = new java.util.ArrayList<>();
-    reportsToDismiss.addAll(
-        reportRepository.findByTargetAndStatus(target, Report.ReportStatus.PENDING));
-    reportsToDismiss.addAll(
-        reportRepository.findByTargetAndStatus(target, Report.ReportStatus.REVIEWED));
+    List<Report> reportsToDismiss = findOpenReports(target);
 
     if (reportsToDismiss.isEmpty()) {
       return new ResponseDTO<>("Nenhuma denuncia para descartar", "0 denuncias foram descartadas");
@@ -537,11 +533,7 @@ public class AdminReportService {
   public ResponseDTO<String> resolveReports(Long entityId, String type) {
     Report.ReportType reportType = Report.ReportType.valueOf(type.toUpperCase());
     ReportTarget target = targetFor(reportType, entityId);
-    List<Report> reportsToResolve = new java.util.ArrayList<>();
-    reportsToResolve.addAll(
-        reportRepository.findByTargetAndStatus(target, Report.ReportStatus.PENDING));
-    reportsToResolve.addAll(
-        reportRepository.findByTargetAndStatus(target, Report.ReportStatus.REVIEWED));
+    List<Report> reportsToResolve = findOpenReports(target);
 
     if (reportsToResolve.isEmpty()) {
       return new ResponseDTO<>(
@@ -570,6 +562,11 @@ public class AdminReportService {
 
   private List<Long> extractEntityIds(List<Object[]> results) {
     return results.stream().map(result -> (Long) result[0]).distinct().collect(Collectors.toList());
+  }
+
+  private List<Report> findOpenReports(ReportTarget target) {
+    return reportRepository.findByTargetAndStatusIn(
+        target, List.of(Report.ReportStatus.PENDING, Report.ReportStatus.REVIEWED));
   }
 
   private ReportTarget targetFor(Report.ReportType reportType, Long entityId) {

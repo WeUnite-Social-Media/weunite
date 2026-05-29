@@ -65,6 +65,7 @@ const ADMIN_USERS_PAGE_SIZE = 20;
 
 export function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [pagination, setPagination] = useState<AdminUsersPageResponse | null>(
@@ -78,13 +79,21 @@ export function AdminUsersPage() {
   const adminId = authUser?.id ? Number(authUser.id) : null;
   const canModerateUsers = adminId !== null;
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [searchTerm]);
+
   const loadUsers = useCallback(
     async (page: number) => {
       setIsLoading(true);
       const response = await getAdminUsersRequest({
         page,
         size: ADMIN_USERS_PAGE_SIZE,
-        query: searchTerm.trim(),
+        query: debouncedSearchTerm.trim(),
         status: statusFilter,
       });
 
@@ -97,7 +106,7 @@ export function AdminUsersPage() {
 
       setIsLoading(false);
     },
-    [searchTerm, statusFilter],
+    [debouncedSearchTerm, statusFilter],
   );
 
   useEffect(() => {

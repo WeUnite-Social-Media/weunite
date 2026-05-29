@@ -124,7 +124,8 @@ class OpportunityRelationshipPersistenceTest {
     entityManager.clear();
 
     Company reloadedCompany = companyRepository.findById(companyId).orElseThrow();
-    reloadedCompany.getOpportunities().clear();
+    assertThrows(
+        UnsupportedOperationException.class, () -> reloadedCompany.getOpportunities().clear());
     companyRepository.saveAndFlush(reloadedCompany);
 
     entityManager.clear();

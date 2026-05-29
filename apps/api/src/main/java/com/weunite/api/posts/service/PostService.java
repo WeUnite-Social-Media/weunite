@@ -123,7 +123,6 @@ public class PostService {
     }
 
     post.setDeleted(true);
-    postRepository.save(post);
 
     return postMapper.toResponseDTO("Publicação excluída com sucesso", post);
   }

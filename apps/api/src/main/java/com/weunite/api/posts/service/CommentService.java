@@ -116,7 +116,6 @@ public class CommentService {
     }
 
     comment.setDeleted(true);
-    commentRepository.save(comment);
 
     return commentMapper.toResponseDTO("Comentário excluído com sucesso", comment);
   }

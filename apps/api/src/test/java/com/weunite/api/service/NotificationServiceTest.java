@@ -115,7 +115,6 @@ public class NotificationServiceTest {
     notificationService.markAsRead(2L, 100L);
 
     verify(notificationRepository).findByIdAndUserId(100L, 2L);
-    verify(notificationRepository).save(notification);
     assertTrue(notification.isRead());
   }
 

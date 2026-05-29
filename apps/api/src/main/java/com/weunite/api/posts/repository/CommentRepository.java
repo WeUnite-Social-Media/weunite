@@ -32,8 +32,11 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
   @Query(
       value =
-          "SELECT c FROM Comment c WHERE c.user.id = :userId AND c.deleted = false "
+          "SELECT c FROM Comment c "
+              + "WHERE c.user.id = :userId AND c.deleted = false AND c.post.deleted = false "
               + "ORDER BY COALESCE(c.updatedAt, c.createdAt) DESC",
-      countQuery = "SELECT COUNT(c) FROM Comment c WHERE c.user.id = :userId AND c.deleted = false")
+      countQuery =
+          "SELECT COUNT(c) FROM Comment c "
+              + "WHERE c.user.id = :userId AND c.deleted = false AND c.post.deleted = false")
   Page<Comment> findByUserIdAndDeletedFalse(@Param("userId") Long userId, Pageable pageable);
 }

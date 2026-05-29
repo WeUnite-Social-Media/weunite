@@ -84,7 +84,6 @@ public class NotificationService {
   public void markAsRead(Long userId, Long notificationId) {
     Notification notification = requireOwnedNotification(userId, notificationId);
     notification.setRead(true);
-    notificationRepository.save(notification);
   }
 
   @Transactional

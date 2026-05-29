@@ -393,7 +393,6 @@ public class CommentServiceTest {
 
     when(commentRepository.findByIdAndDeletedFalse(commentId))
         .thenReturn(Optional.of(existingComment));
-    when(commentRepository.save(existingComment)).thenReturn(existingComment);
     when(commentMapper.toResponseDTO(
             eq("Coment\u00E1rio exclu\u00EDdo com sucesso"), eq(existingComment)))
         .thenReturn(expectedResponse);
@@ -406,7 +405,7 @@ public class CommentServiceTest {
 
     assertTrue(existingComment.isDeleted());
     verify(commentRepository).findByIdAndDeletedFalse(commentId);
-    verify(commentRepository).save(existingComment);
+    verify(commentRepository, never()).save(any());
     verify(commentRepository, never()).delete(any());
     verify(commentMapper)
         .toResponseDTO(eq("Coment\u00E1rio exclu\u00EDdo com sucesso"), eq(existingComment));

@@ -2,6 +2,7 @@ package com.weunite.api.users.domain;
 
 import com.weunite.api.opportunities.domain.Opportunity;
 import jakarta.persistence.*;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.Getter;
@@ -25,6 +26,10 @@ public class Company extends User {
 
   @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private Set<Opportunity> opportunities = new HashSet<>();
+
+  public Set<Opportunity> getOpportunities() {
+    return opportunities != null ? Collections.unmodifiableSet(opportunities) : Set.of();
+  }
 
   @PrePersist
   protected void ensureProfileBeforePersist() {
