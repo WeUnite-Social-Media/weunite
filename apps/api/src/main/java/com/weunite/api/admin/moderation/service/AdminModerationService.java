@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
@@ -55,9 +56,12 @@ public class AdminModerationService {
   }
 
   @Transactional(readOnly = true)
-  public AdminUserPageDTO getUsersSummary(int page, int size) {
+  public AdminUserPageDTO getUsersSummary(int page, int size, String query, String status) {
     Instant now = Instant.now();
-    Page<Long> userIdPage = userRepository.findUserIds(pageRequest(page, size));
+    String normalizedQuery = query == null ? "" : query.trim();
+    String normalizedStatus = normalizeStatus(status);
+    Page<Long> userIdPage =
+        userRepository.findUserIds(normalizedQuery, normalizedStatus, now, pageRequest(page, size));
     List<Long> userIds = userIdPage.getContent();
 
     if (userIds.isEmpty()) {
@@ -73,6 +77,7 @@ public class AdminModerationService {
     List<AdminUserSummaryDTO> items =
         userIds.stream()
             .map(usersById::get)
+            .filter(Objects::nonNull)
             .map(user -> toUserSummary(user, now, contentCounts, pendingReportCounts))
             .toList();
 
@@ -94,6 +99,18 @@ public class AdminModerationService {
     int safePage = Math.max(page, 0);
     int safeSize = Math.max(1, Math.min(size, 100));
     return PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+  }
+
+  private String normalizeStatus(String status) {
+    if (status == null || status.isBlank()) {
+      return "all";
+    }
+
+    String normalizedStatus = status.trim().toLowerCase(Locale.ROOT);
+    return switch (normalizedStatus) {
+      case "active", "suspended", "banned" -> normalizedStatus;
+      default -> "all";
+    };
   }
 
   /** Permanently bans a user and resolves open reports against the user's content. */

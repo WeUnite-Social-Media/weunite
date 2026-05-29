@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -24,6 +26,7 @@ import com.weunite.api.reports.repository.ReportRepository;
 import com.weunite.api.users.domain.Role;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.repository.UserRepository;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -90,7 +93,10 @@ class AdminModerationServiceTest {
     user.setRole(java.util.Set.of(new Role(4L, "ATHLETE")));
 
     when(userRepository.findUserIds(
-            PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"))))
+            eq(""),
+            eq("all"),
+            any(Instant.class),
+            eq(PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt")))))
         .thenReturn(new PageImpl<>(List.of(12L), PageRequest.of(0, 20), 42));
     when(userRepository.findAllWithRolesByIdIn(List.of(12L))).thenReturn(List.of(user));
     when(postRepository.countActivePostsByUserIds(List.of(12L)))
@@ -109,7 +115,7 @@ class AdminModerationServiceTest {
             List.of(12L), Report.ReportStatus.PENDING, Report.ReportType.OPPORTUNITY))
         .thenReturn(List.<Object[]>of(new Object[] {12L, 1L}));
 
-    var result = adminModerationService.getUsersSummary(0, 20);
+    var result = adminModerationService.getUsersSummary(0, 20, "", "all");
 
     assertEquals(1, result.items().size());
     assertEquals(42, result.totalElements());

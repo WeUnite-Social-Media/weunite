@@ -62,7 +62,7 @@ public class CommentService {
     return commentMapper.toResponseDTO("Comentário criado com sucesso!", newComment);
   }
 
-  @Transactional
+  @Transactional(readOnly = true)
   public List<CommentDTO> getCommentsByPost(Long postId, int page, int size) {
     if (!postRepository.existsByIdAndDeletedFalse(postId)) {
       throw new PostNotFoundException();
@@ -73,7 +73,7 @@ public class CommentService {
     return commentMapper.mapCommentsToList(comments);
   }
 
-  @Transactional
+  @Transactional(readOnly = true)
   public List<CommentDTO> getCommentsByUser(Long userId, int page, int size) {
     if (!userRepository.existsById(userId)) {
       throw new UserNotFoundException();

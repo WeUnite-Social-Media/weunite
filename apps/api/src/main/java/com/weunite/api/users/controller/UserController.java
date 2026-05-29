@@ -5,6 +5,7 @@ import com.weunite.api.common.security.service.AuthenticatedUserService;
 import com.weunite.api.users.dto.UpdateUserRequestDTO;
 import com.weunite.api.users.dto.UserDTO;
 import com.weunite.api.users.service.UserService;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -59,7 +60,7 @@ public class UserController {
   public ResponseEntity<ResponseDTO<UserDTO>> updateUser(
       @AuthenticationPrincipal Jwt jwt,
       @PathVariable String username,
-      @RequestPart(value = "user") UpdateUserRequestDTO requestDTO,
+      @RequestPart(value = "user") @Valid UpdateUserRequestDTO requestDTO,
       @RequestPart(value = "profileImage", required = false) MultipartFile profileImage,
       @RequestPart(value = "bannerImage", required = false) MultipartFile bannerImage) {
     String authenticatedUsername = authenticatedUserService.requireMatchingUsername(jwt, username);

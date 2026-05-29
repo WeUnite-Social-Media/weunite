@@ -86,6 +86,39 @@ public interface UserRepository extends JpaRepository<User, Long> {
   Page<Long> findUserIds(Pageable pageable);
 
   @Query(
+      value =
+          "SELECT u.id FROM User u "
+              + "WHERE (:query = '' "
+              + "OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) "
+              + "OR LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) "
+              + "OR LOWER(u.accountCredentials.email.value) LIKE LOWER(CONCAT('%', :query, '%'))) "
+              + "AND (:status = 'all' "
+              + "OR (:status = 'banned' AND u.isBanned = true) "
+              + "OR (:status = 'suspended' AND u.isBanned = false AND u.isSuspended = true "
+              + "AND (u.suspendedUntil IS NULL OR u.suspendedUntil > :now)) "
+              + "OR (:status = 'active' AND u.isBanned = false "
+              + "AND (u.isSuspended = false "
+              + "OR (u.isSuspended = true AND u.suspendedUntil IS NOT NULL AND u.suspendedUntil <= :now))))",
+      countQuery =
+          "SELECT COUNT(u) FROM User u "
+              + "WHERE (:query = '' "
+              + "OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) "
+              + "OR LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) "
+              + "OR LOWER(u.accountCredentials.email.value) LIKE LOWER(CONCAT('%', :query, '%'))) "
+              + "AND (:status = 'all' "
+              + "OR (:status = 'banned' AND u.isBanned = true) "
+              + "OR (:status = 'suspended' AND u.isBanned = false AND u.isSuspended = true "
+              + "AND (u.suspendedUntil IS NULL OR u.suspendedUntil > :now)) "
+              + "OR (:status = 'active' AND u.isBanned = false "
+              + "AND (u.isSuspended = false "
+              + "OR (u.isSuspended = true AND u.suspendedUntil IS NOT NULL AND u.suspendedUntil <= :now))))")
+  Page<Long> findUserIds(
+      @Param("query") String query,
+      @Param("status") String status,
+      @Param("now") Instant now,
+      Pageable pageable);
+
+  @Query(
       "SELECT DISTINCT u FROM User u "
           + "LEFT JOIN FETCH u.role "
           + "LEFT JOIN FETCH TREAT(u AS Athlete).profile "

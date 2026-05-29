@@ -34,8 +34,11 @@ public class AdminModerationController {
 
   @GetMapping
   public ResponseEntity<AdminUserPageDTO> getUsers(
-      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-    AdminUserPageDTO users = adminModerationService.getUsersSummary(page, size);
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size,
+      @RequestParam(defaultValue = "") String query,
+      @RequestParam(defaultValue = "all") String status) {
+    AdminUserPageDTO users = adminModerationService.getUsersSummary(page, size, query, status);
     return ResponseEntity.ok(users);
   }
 

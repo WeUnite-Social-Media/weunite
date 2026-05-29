@@ -22,6 +22,8 @@ export interface AdminUsersPageResponse {
 interface AdminUsersRequestParams {
   page?: number;
   size?: number;
+  query?: string;
+  status?: string;
 }
 
 interface ModerationResponseBody {

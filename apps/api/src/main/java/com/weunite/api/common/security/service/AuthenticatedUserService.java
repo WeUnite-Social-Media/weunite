@@ -33,7 +33,7 @@ public class AuthenticatedUserService {
             .findById(authenticatedUserId)
             .orElseThrow(() -> new UnauthorizedException("Usuario autenticado nao encontrado"));
 
-    if (!authenticatedUser.getUsername().equals(requestedUsername)) {
+    if (!authenticatedUser.getUsername().equalsIgnoreCase(requestedUsername)) {
       throw new UnauthorizedException("Acao nao permitida para outro usuario");
     }
 

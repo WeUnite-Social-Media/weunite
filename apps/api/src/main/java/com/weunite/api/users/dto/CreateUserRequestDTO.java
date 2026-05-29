@@ -20,4 +20,4 @@ public record CreateUserRequestDTO(
         String email,
     @NotBlank(message = "A senha não pode estar vazia") @ValidPassword String password,
     @NotBlank String role,
-    @Pattern(regexp = "\\d{14}", message = "O CNPJ deve conter 14 digitos") String cnpj) {}
+    @Pattern(regexp = "^$|\\d{14}", message = "O CNPJ deve conter 14 digitos") String cnpj) {}

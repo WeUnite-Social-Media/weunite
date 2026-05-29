@@ -113,15 +113,15 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/follow/following/{userId}/count")
                     .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/follow/get/{followerid}/{followedId}")
+                    .requestMatchers(HttpMethod.GET, "/api/follow/get/{followerId}/{followedId}")
                     .permitAll()
                     .requestMatchers(
-                        HttpMethod.POST, "/api/follow/followAndUnfollow/{followerid}/{followedId}")
+                        HttpMethod.POST, "/api/follow/followAndUnfollow/{followerId}/{followedId}")
                     .authenticated()
-                    .requestMatchers(HttpMethod.PUT, "/api/follow/accept/{followerid}/{followedId}")
+                    .requestMatchers(HttpMethod.PUT, "/api/follow/accept/{followerId}/{followedId}")
                     .authenticated()
                     .requestMatchers(
-                        HttpMethod.PUT, "/api/follow/decline/{followerid}/{followedId}")
+                        HttpMethod.PUT, "/api/follow/decline/{followerId}/{followedId}")
                     .authenticated()
 
                     // Swagger

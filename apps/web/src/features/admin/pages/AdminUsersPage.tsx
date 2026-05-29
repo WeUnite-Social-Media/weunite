@@ -78,39 +78,31 @@ export function AdminUsersPage() {
   const adminId = authUser?.id ? Number(authUser.id) : null;
   const canModerateUsers = adminId !== null;
 
-  const loadUsers = useCallback(async (page: number) => {
-    setIsLoading(true);
-    const response = await getAdminUsersRequest({
-      page,
-      size: ADMIN_USERS_PAGE_SIZE,
-    });
+  const loadUsers = useCallback(
+    async (page: number) => {
+      setIsLoading(true);
+      const response = await getAdminUsersRequest({
+        page,
+        size: ADMIN_USERS_PAGE_SIZE,
+        query: searchTerm.trim(),
+        status: statusFilter,
+      });
 
-    if (response.success && response.data) {
-      setUsers(response.data.items);
-      setPagination(response.data);
-    } else {
-      toast.error(response.error || "Nao foi possivel carregar os usuarios.");
-    }
+      if (response.success && response.data) {
+        setUsers(response.data.items);
+        setPagination(response.data);
+      } else {
+        toast.error(response.error || "Nao foi possivel carregar os usuarios.");
+      }
 
-    setIsLoading(false);
-  }, []);
+      setIsLoading(false);
+    },
+    [searchTerm, statusFilter],
+  );
 
   useEffect(() => {
     void loadUsers(currentPage);
   }, [currentPage, loadUsers]);
-
-  const filteredUsers = users.filter((user) => {
-    const query = searchTerm.trim().toLowerCase();
-    const matchesSearch =
-      !query ||
-      user.name.toLowerCase().includes(query) ||
-      user.email.toLowerCase().includes(query) ||
-      user.username.toLowerCase().includes(query);
-    const matchesStatus =
-      statusFilter === "all" || user.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
 
   const getStatusBadge = (status: AdminUserStatus) => {
     switch (status) {
@@ -353,11 +345,20 @@ export function AdminUsersPage() {
                 <Input
                   placeholder="Buscar por nome, email ou username..."
                   value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
+                  onChange={(event) => {
+                    setSearchTerm(event.target.value);
+                    setCurrentPage(0);
+                  }}
                   className="pl-10"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => {
+                  setStatusFilter(value);
+                  setCurrentPage(0);
+                }}
+              >
                 <SelectTrigger className="w-full md:w-[220px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -369,9 +370,6 @@ export function AdminUsersPage() {
                 </SelectContent>
               </Select>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Busca e status filtram apenas os usuarios carregados nesta pagina.
-            </p>
           </CardContent>
         </Card>
 
@@ -424,7 +422,7 @@ export function AdminUsersPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : filteredUsers.length === 0 ? (
+                ) : users.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={7}
@@ -434,7 +432,7 @@ export function AdminUsersPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredUsers.map((user) => {
+                  users.map((user) => {
                     const isOwnUser = adminId === user.id;
                     const isActionLoading = activeUserId === user.id;
                     const isModerationDisabled =

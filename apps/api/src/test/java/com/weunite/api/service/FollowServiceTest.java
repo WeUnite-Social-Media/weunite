@@ -27,6 +27,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @ExtendWith(MockitoExtension.class)
 class FollowServiceTest {
@@ -90,7 +91,9 @@ class FollowServiceTest {
 
     when(userRepository.findById(2L)).thenReturn(Optional.of(user));
     when(followRepository.findAllByFollowedAndStatus(
-            user, Follow.FollowStatus.ACCEPTED, PageRequest.of(0, 100)))
+            user,
+            Follow.FollowStatus.ACCEPTED,
+            PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, "id"))))
         .thenReturn(new PageImpl<>(follows));
     when(followMapper.toResponseDTO("Seguidores consultados com sucesso!", follows))
         .thenReturn(expected);
@@ -99,7 +102,10 @@ class FollowServiceTest {
 
     assertEquals(expected, result);
     verify(followRepository)
-        .findAllByFollowedAndStatus(user, Follow.FollowStatus.ACCEPTED, PageRequest.of(0, 100));
+        .findAllByFollowedAndStatus(
+            user,
+            Follow.FollowStatus.ACCEPTED,
+            PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, "id")));
   }
 
   @Test

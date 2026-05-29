@@ -165,7 +165,11 @@ public class PostService {
               }
 
               Repost repost = repostsById.get(entry.getRepostId());
-              return repost != null ? postMapper.toPostDTOFromRepost(repost) : null;
+              if (repost == null || repost.getPost() == null || repost.getPost().isDeleted()) {
+                return null;
+              }
+
+              return postMapper.toPostDTOFromRepost(repost);
             })
         .filter(dto -> dto != null)
         .toList();
