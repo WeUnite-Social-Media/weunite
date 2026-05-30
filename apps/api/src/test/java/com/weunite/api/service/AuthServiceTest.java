@@ -223,7 +223,7 @@ class AuthServiceTest {
   void signUpSuccess() {
     CreateUserRequestDTO userRequestDTO =
         new CreateUserRequestDTO(
-            "Luizao", "Luizada", "lgtgusmao@hotmail.com", "123456Cl@", "BASIC");
+            "Luizao", "Luizada", "lgtgusmao@hotmail.com", "123456Cl@", "BASIC", null);
 
     User mockUser = new User();
     mockUser.setUsername("Luizada");
@@ -252,7 +252,7 @@ class AuthServiceTest {
   void signUpError() {
     CreateUserRequestDTO userRequestDTO =
         new CreateUserRequestDTO(
-            "Luizao", "Luizada", "lgtgusmao@hotmail.com", "123456Cl@", "BASIC");
+            "Luizao", "Luizada", "lgtgusmao@hotmail.com", "123456Cl@", "BASIC", null);
 
     when(userService.createUser(userRequestDTO))
         .thenThrow(new RuntimeException("Erro ao criar usuário"));

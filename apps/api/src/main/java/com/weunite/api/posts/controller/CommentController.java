@@ -42,14 +42,20 @@ public class CommentController {
   }
 
   @GetMapping("/get/{postId}")
-  public ResponseEntity<List<CommentDTO>> getCommentsByPost(@PathVariable Long postId) {
-    List<CommentDTO> comments = commentService.getCommentsByPost(postId);
+  public ResponseEntity<List<CommentDTO>> getCommentsByPost(
+      @PathVariable Long postId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    List<CommentDTO> comments = commentService.getCommentsByPost(postId, page, size);
     return ResponseEntity.status(HttpStatus.OK).body(comments);
   }
 
   @GetMapping("/get/user/{userId}")
-  public ResponseEntity<List<CommentDTO>> getCommentsByUser(@PathVariable Long userId) {
-    List<CommentDTO> comments = commentService.getCommentsByUser(userId);
+  public ResponseEntity<List<CommentDTO>> getCommentsByUser(
+      @PathVariable Long userId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    List<CommentDTO> comments = commentService.getCommentsByUser(userId, page, size);
     return ResponseEntity.status(HttpStatus.OK).body(comments);
   }
 

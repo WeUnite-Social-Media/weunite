@@ -53,9 +53,11 @@ public class SecurityConfig {
 
                     // User endpoints
                     .requestMatchers(HttpMethod.PUT, "/api/user/update/{username}")
-                    .permitAll()
+                    .authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/api/user/delete/{username}")
-                    .permitAll()
+                    .authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/api/user/banner/delete/{username}")
+                    .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/user/username/{username}")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/user/id/{id}")
@@ -105,13 +107,22 @@ public class SecurityConfig {
                     // Follow endpoints
                     .requestMatchers(HttpMethod.GET, "/api/follow/followers/{userId}")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/follow/followers/{userId}/count")
+                    .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/follow/following/{userId}")
                     .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/follow/get/{followerid}/{followedId}")
+                    .requestMatchers(HttpMethod.GET, "/api/follow/following/{userId}/count")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/follow/get/{followerId}/{followedId}")
                     .permitAll()
                     .requestMatchers(
-                        HttpMethod.POST, "/api/follow/followAndUnfollow/{followerid}/{followedId}")
-                    .permitAll()
+                        HttpMethod.POST, "/api/follow/followAndUnfollow/{followerId}/{followedId}")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/api/follow/accept/{followerId}/{followedId}")
+                    .authenticated()
+                    .requestMatchers(
+                        HttpMethod.PUT, "/api/follow/decline/{followerId}/{followedId}")
+                    .authenticated()
 
                     // Swagger
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html")
@@ -168,11 +179,17 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/api/reports/create/{userId}")
                     .authenticated()
                     .requestMatchers(HttpMethod.GET, "/api/reports/pending")
-                    .authenticated()
+                    .access(
+                        (authentication, context) ->
+                            new AuthorizationDecision(hasAdminRole(authentication.get())))
                     .requestMatchers(HttpMethod.GET, "/api/reports/all")
-                    .authenticated()
+                    .access(
+                        (authentication, context) ->
+                            new AuthorizationDecision(hasAdminRole(authentication.get())))
                     .requestMatchers(HttpMethod.GET, "/api/reports/status/{status}")
-                    .authenticated()
+                    .access(
+                        (authentication, context) ->
+                            new AuthorizationDecision(hasAdminRole(authentication.get())))
                     .requestMatchers(HttpMethod.GET, "/api/reports/count/{entityId}/{type}")
                     .permitAll()
 

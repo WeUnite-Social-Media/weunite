@@ -3,6 +3,7 @@ package com.weunite.api.posts.repository;
 import com.weunite.api.posts.domain.Post;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -13,9 +14,13 @@ import org.springframework.data.repository.query.Param;
 public interface PostRepository extends JpaRepository<Post, Long> {
 
   @EntityGraph(attributePaths = {"user"})
-  List<Post> findAllWithUserByIdIn(List<Long> ids);
+  List<Post> findAllWithUserByIdInAndDeletedFalse(List<Long> ids);
 
   boolean existsByIdAndUserId(Long postId, Long userId);
+
+  Optional<Post> findByIdAndDeletedFalse(Long postId);
+
+  boolean existsByIdAndDeletedFalse(Long postId);
 
   Long countByUserIdAndDeletedFalse(Long userId);
 

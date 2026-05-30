@@ -7,6 +7,13 @@ import type {
 import { instance as axios } from "@/shared/api/http";
 import { AxiosError } from "axios";
 
+export const FOLLOW_PAGE_SIZE = 10;
+
+interface FollowListRequestParams {
+  page?: number;
+  size?: number;
+}
+
 export const followAndUnfollowRequest = async (data: FollowAndUnfollow) => {
   try {
     const response = await axios.post(
@@ -30,9 +37,17 @@ export const followAndUnfollowRequest = async (data: FollowAndUnfollow) => {
   }
 };
 
-export const getFollowersRequest = async (data: GetFollowers) => {
+export const getFollowersRequest = async (
+  data: GetFollowers,
+  { page = 0, size = FOLLOW_PAGE_SIZE }: FollowListRequestParams = {},
+) => {
   try {
-    const response = await axios.get(`/follow/followers/${data.id}`);
+    const response = await axios.get(`/follow/followers/${data.id}`, {
+      params: {
+        page,
+        size,
+      },
+    });
     return {
       success: true,
       data: response.data,
@@ -50,9 +65,39 @@ export const getFollowersRequest = async (data: GetFollowers) => {
   }
 };
 
-export const getFollowingRequest = async (data: GetFollowing) => {
+export const getFollowersCountRequest = async (data: GetFollowers) => {
   try {
-    const response = await axios.get(`/follow/following/${data.id}`);
+    const response = await axios.get(`/follow/followers/${data.id}/count`);
+    return {
+      success: true,
+      data: response.data,
+      message:
+        response.data.message || "Total de seguidores consultado com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data.message || "Erro ao consultar total de seguidores",
+    };
+  }
+};
+
+export const getFollowingRequest = async (
+  data: GetFollowing,
+  { page = 0, size = FOLLOW_PAGE_SIZE }: FollowListRequestParams = {},
+) => {
+  try {
+    const response = await axios.get(`/follow/following/${data.id}`, {
+      params: {
+        page,
+        size,
+      },
+    });
     return {
       success: true,
       data: response.data,
@@ -66,6 +111,28 @@ export const getFollowingRequest = async (data: GetFollowing) => {
       data: null,
       message: null,
       error: error.response?.data.message || "Erro ao consultar seguindo",
+    };
+  }
+};
+
+export const getFollowingCountRequest = async (data: GetFollowing) => {
+  try {
+    const response = await axios.get(`/follow/following/${data.id}/count`);
+    return {
+      success: true,
+      data: response.data,
+      message:
+        response.data.message || "Total de seguindo consultado com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data.message || "Erro ao consultar total de seguindo",
     };
   }
 };

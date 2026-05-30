@@ -1,7 +1,9 @@
 package com.weunite.api.posts.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.weunite.api.posts.repository.CommentRepository;
 import com.weunite.api.posts.repository.LikeRepository;
@@ -10,11 +12,13 @@ import com.weunite.api.posts.repository.RepostRepository;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.repository.UserRepository;
 import jakarta.persistence.EntityManager;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 
 @DataJpaTest
 class PostInteractionPersistenceTest {
@@ -111,5 +115,45 @@ class PostInteractionPersistenceTest {
     entityManager.clear();
 
     assertEquals(1, repostRepository.count());
+  }
+
+  @Test
+  @DisplayName("Should retain soft deleted posts while removing them from active feed lookups")
+  void hideSoftDeletedPostsFromActiveReads() {
+    User author = userRepository.save(new User("Author", "author6", "author6@example.com", "p"));
+    Post post = postRepository.save(new Post(author, "Post"));
+
+    post.setDeleted(true);
+    postRepository.saveAndFlush(post);
+
+    entityManager.clear();
+
+    assertTrue(postRepository.findById(post.getId()).isPresent());
+    assertFalse(postRepository.findByIdAndDeletedFalse(post.getId()).isPresent());
+    assertTrue(postRepository.findFeedEntries(PageRequest.of(0, 10)).isEmpty());
+  }
+
+  @Test
+  @DisplayName("Should retain deleted comments while keeping non-deleted replies publicly readable")
+  void hideSoftDeletedCommentWithoutRemovingReply() {
+    User author = userRepository.save(new User("Author", "author7", "author7@example.com", "p"));
+    Post post = postRepository.save(new Post(author, "Post"));
+    Comment parent = commentRepository.save(new Comment(author, post, "Parent", null));
+    Comment reply = new Comment(author, post, "Reply", null);
+    reply.setParentComment(parent);
+    commentRepository.save(reply);
+
+    parent.setDeleted(true);
+    commentRepository.saveAndFlush(parent);
+
+    entityManager.clear();
+
+    assertTrue(commentRepository.findById(parent.getId()).isPresent());
+    assertFalse(commentRepository.findByIdAndDeletedFalse(parent.getId()).isPresent());
+    assertEquals(
+        List.of(reply.getId()),
+        commentRepository.findByPostIdAndDeletedFalse(post.getId(), PageRequest.of(0, 10)).stream()
+            .map(Comment::getId)
+            .toList());
   }
 }

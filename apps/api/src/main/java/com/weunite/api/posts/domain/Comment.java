@@ -1,6 +1,5 @@
 package com.weunite.api.posts.domain;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.weunite.api.users.domain.User;
 import jakarta.persistence.*;
 import java.time.Instant;
@@ -47,7 +46,6 @@ public class Comment {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "post_id", nullable = false)
-  @JsonBackReference
   private Post post;
 
   @ManyToOne(fetch = FetchType.LAZY)

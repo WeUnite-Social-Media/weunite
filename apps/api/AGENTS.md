@@ -31,6 +31,7 @@ This package owns the Spring Boot backend in `apps/api`.
 - Keep feature-specific types, repositories, and mappers inside their feature module.
 - Keep cross-cutting config, error handling, validation, mail, storage, and security under `common`.
 - Keep runtime configuration environment-driven; local PostgreSQL support should flow through app properties and env defaults instead of hardcoded machine-specific values.
+- Keep production/runtime schema ownership in Flyway migrations; Hibernate should validate mapped schema rather than mutate it at startup.
 - Keep backend source comments and admin-facing response text ASCII-safe or valid UTF-8; do not commit mojibake.
 - Prefer repository-backed calculations for dashboard and moderation summaries when historical accuracy matters instead of heuristic constants.
 - Preserve existing HTTP contracts unless a product/API change is explicit.

@@ -54,7 +54,8 @@ public class LikeService {
 
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
-    Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+    Post post =
+        postRepository.findByIdAndDeletedFalse(postId).orElseThrow(PostNotFoundException::new);
 
     Like existingLike = likeRepository.findByUserAndPost(user, post).orElse(null);
 
@@ -78,7 +79,9 @@ public class LikeService {
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
     Comment comment =
-        commentRepository.findById(commentId).orElseThrow(CommentNotFoundException::new);
+        commentRepository
+            .findByIdAndDeletedFalse(commentId)
+            .orElseThrow(CommentNotFoundException::new);
 
     Like existingLike = likeRepository.findByUserAndComment(user, comment).orElse(null);
 
@@ -119,7 +122,9 @@ public class LikeService {
   @Transactional(readOnly = true)
   public ResponseDTO<List<LikeDTO>> getCommentLikes(Long commentId) {
     Comment comment =
-        commentRepository.findById(commentId).orElseThrow(CommentNotFoundException::new);
+        commentRepository
+            .findByIdAndDeletedFalse(commentId)
+            .orElseThrow(CommentNotFoundException::new);
 
     Set<Like> likes = likeRepository.findByComment(comment);
 

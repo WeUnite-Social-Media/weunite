@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.weunite.api.reports.domain.Report;
+import com.weunite.api.reports.domain.ReportTarget;
 import com.weunite.api.reports.dto.ReportDTO;
 import com.weunite.api.reports.mapper.ReportMapper;
 import com.weunite.api.reports.repository.ReportRepository;
@@ -67,5 +68,18 @@ class ReportServiceTest {
     assertEquals(List.of(reportDTO), result);
     verify(reportRepository).findAllReportsByStatus(Report.ReportStatus.RESOLVED);
     verify(reportMapper).toReportDTOList(List.of(report));
+  }
+
+  @Test
+  @DisplayName("Should count pending reports through a typed target")
+  void getReportCountUsesTypedTarget() {
+    ReportTarget target = new ReportTarget(Report.ReportType.POST, 10L);
+    when(reportRepository.countByTargetAndStatus(target, Report.ReportStatus.PENDING))
+        .thenReturn(3L);
+
+    Long result = reportService.getReportCount(10L, "post");
+
+    assertEquals(3L, result);
+    verify(reportRepository).countByTargetAndStatus(target, Report.ReportStatus.PENDING);
   }
 }

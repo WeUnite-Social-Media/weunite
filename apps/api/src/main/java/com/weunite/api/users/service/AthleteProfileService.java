@@ -40,27 +40,27 @@ public class AthleteProfileService {
 
   public Double resolveHeight(Athlete athlete) {
     AthleteProfile profile = athlete.getProfile();
-    return profile != null ? profile.getHeight() : athlete.getHeight();
+    return profile != null ? profile.getHeight() : null;
   }
 
   public Double resolveWeight(Athlete athlete) {
     AthleteProfile profile = athlete.getProfile();
-    return profile != null ? profile.getWeight() : athlete.getWeight();
+    return profile != null ? profile.getWeight() : null;
   }
 
   public String resolveFootDomain(Athlete athlete) {
     AthleteProfile profile = athlete.getProfile();
-    return profile != null ? profile.getFootDomain() : athlete.getFootDomain();
+    return profile != null ? profile.getFootDomain() : null;
   }
 
   public String resolvePosition(Athlete athlete) {
     AthleteProfile profile = athlete.getProfile();
-    return profile != null ? profile.getPosition() : athlete.getPosition();
+    return profile != null ? profile.getPosition() : null;
   }
 
   public LocalDate resolveBirthDate(Athlete athlete) {
     AthleteProfile profile = athlete.getProfile();
-    return profile != null ? profile.getBirthDate() : athlete.getBirthDate();
+    return profile != null ? profile.getBirthDate() : null;
   }
 
   private LinkedHashSet<Skill> resolveSkills(List<SkillDTO> requestedSkills) {

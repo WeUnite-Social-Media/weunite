@@ -16,9 +16,9 @@ import lombok.Setter;
 @NoArgsConstructor
 public class UserPresence {
 
-  public UserPresence(Long userId, String status) {
+  public UserPresence(Long userId, UserStatus status) {
     this.userId = userId;
-    this.status = UserStatus.from(status);
+    this.status = status != null ? status : UserStatus.OFFLINE;
   }
 
   @Id private Long userId;
@@ -37,9 +37,5 @@ public class UserPresence {
 
   public String getStatusValue() {
     return status.name();
-  }
-
-  public void setStatus(String status) {
-    this.status = UserStatus.from(status);
   }
 }

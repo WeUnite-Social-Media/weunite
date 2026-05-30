@@ -2,6 +2,7 @@ package com.weunite.api.reports.service;
 
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.reports.domain.Report;
+import com.weunite.api.reports.domain.ReportTarget;
 import com.weunite.api.reports.dto.ReportDTO;
 import com.weunite.api.reports.dto.ReportRequestDTO;
 import com.weunite.api.reports.mapper.ReportMapper;
@@ -61,7 +62,7 @@ public class ReportService {
   @Transactional(readOnly = true)
   public Long getReportCount(Long entityId, String type) {
     Report.ReportType reportType = Report.ReportType.valueOf(type.toUpperCase(Locale.ROOT));
-    return reportRepository.countByEntityIdAndTypeAndStatus(
-        entityId, reportType, Report.ReportStatus.PENDING);
+    return reportRepository.countByTargetAndStatus(
+        new ReportTarget(reportType, entityId), Report.ReportStatus.PENDING);
   }
 }

@@ -6,6 +6,7 @@ import com.weunite.api.common.exception.NotFoundResourceException;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.storage.service.CloudinaryService;
 import com.weunite.api.users.domain.Athlete;
+import com.weunite.api.users.domain.Company;
 import com.weunite.api.users.domain.Role;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.dto.CreateUserRequestDTO;
@@ -37,6 +38,7 @@ public class UserService {
   private final RoleRepository roleRepository;
   private final CloudinaryService cloudinaryService;
   private final AthleteProfileService athleteProfileService;
+  private final CompanyProfileService companyProfileService;
 
   public UserService(
       UserRepository userRepository,
@@ -44,13 +46,15 @@ public class UserService {
       PasswordEncoder passwordEncoder,
       RoleRepository roleRepository,
       CloudinaryService cloudinaryService,
-      AthleteProfileService athleteProfileService) {
+      AthleteProfileService athleteProfileService,
+      CompanyProfileService companyProfileService) {
     this.userRepository = userRepository;
     this.userMapper = userMapper;
     this.passwordEncoder = passwordEncoder;
     this.roleRepository = roleRepository;
     this.cloudinaryService = cloudinaryService;
     this.athleteProfileService = athleteProfileService;
+    this.companyProfileService = companyProfileService;
   }
 
   @Transactional
@@ -67,6 +71,9 @@ public class UserService {
     User newUser = userMapper.toEntity(userDTO);
 
     newUser.setPassword(encodedPassword);
+    if (newUser instanceof Company company) {
+      companyProfileService.applyRegistrationDetails(company, userDTO.cnpj());
+    }
 
     Role roleUser = roleRepository.findByName(userDTO.role().toUpperCase());
     if (roleUser == null) {
