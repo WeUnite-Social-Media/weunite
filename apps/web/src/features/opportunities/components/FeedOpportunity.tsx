@@ -54,7 +54,7 @@ function OpportunitySkeleton() {
 
 export default function FeedOpportunity() {
   const { data, isLoading } = useGetOpportunities();
-  const opportunities = data?.data;
+  const opportunities = data?.data ?? [];
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpportunityOpen, setIsCreateOpportunityOpen] = useState(false);
   const { isDesktop, isMobile, isTablet } = useBreakpoints();

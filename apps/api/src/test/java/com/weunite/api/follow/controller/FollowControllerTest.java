@@ -1,5 +1,6 @@
 package com.weunite.api.follow.controller;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.security.service.AuthenticatedUserService;
 import com.weunite.api.follow.dto.FollowDTO;
+import com.weunite.api.follow.exception.FollowNotFoundException;
 import com.weunite.api.follow.service.FollowService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,6 +42,17 @@ class FollowControllerTest {
 
     assertSame(expected, result.getBody());
     verify(followService).followAndUnfollow(11L, 22L);
+  }
+
+  @Test
+  @DisplayName("Should return empty body when follow relationship does not exist")
+  void getFollowReturnsEmptyBodyWhenRelationshipDoesNotExist() {
+    when(followService.getFollow(11L, 22L)).thenThrow(new FollowNotFoundException());
+
+    ResponseEntity<FollowDTO> result = followController.getFollow(11L, 22L);
+
+    assertNull(result.getBody());
+    verify(followService).getFollow(11L, 22L);
   }
 
   @Test

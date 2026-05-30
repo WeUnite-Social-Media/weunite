@@ -125,7 +125,10 @@ export default function Followers({
   }
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="h-[80vh] w-[70vw] xl:max-w-[50vw] flex flex-col">
+      <DialogContent
+        className="h-[80vh] w-[70vw] xl:max-w-[50vw] flex flex-col"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
           <DialogTitle>Seguidores</DialogTitle>
           <DialogClose />

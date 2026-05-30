@@ -3,6 +3,7 @@ package com.weunite.api.follow.controller;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.security.service.AuthenticatedUserService;
 import com.weunite.api.follow.dto.FollowDTO;
+import com.weunite.api.follow.exception.FollowNotFoundException;
 import com.weunite.api.follow.service.FollowService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -38,8 +39,12 @@ public class FollowController {
   @GetMapping("/get/{followerId}/{followedId}")
   public ResponseEntity<FollowDTO> getFollow(
       @PathVariable Long followerId, @PathVariable Long followedId) {
-    FollowDTO result = followService.getFollow(followerId, followedId);
-    return ResponseEntity.status(HttpStatus.OK).body(result);
+    try {
+      FollowDTO result = followService.getFollow(followerId, followedId);
+      return ResponseEntity.status(HttpStatus.OK).body(result);
+    } catch (FollowNotFoundException exception) {
+      return ResponseEntity.status(HttpStatus.OK).body(null);
+    }
   }
 
   @GetMapping("/followers/{userId}")

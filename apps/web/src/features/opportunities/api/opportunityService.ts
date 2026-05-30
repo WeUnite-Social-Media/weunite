@@ -144,10 +144,14 @@ export const deleteOpportunityRequest = async (
 export const getOpportunitiesCompanyRequest = async (companyId: number) => {
   try {
     const response = await axios.get(`/opportunities/get/company/${companyId}`);
+    const opportunities = unwrapArrayResponse<Opportunity>(response.data);
+
     return {
       success: true,
-      data: response.data,
-      message: response.data.message || "Oportunidade carregada com sucesso!",
+      data: opportunities,
+      message:
+        (response.data as ResponseWithData<Opportunity[]>)?.message ||
+        "Oportunidade carregada com sucesso!",
       error: null,
     };
   } catch (err) {
@@ -164,10 +168,14 @@ export const getOpportunitiesCompanyRequest = async (companyId: number) => {
 export const getOpportunitiesRequest = async () => {
   try {
     const response = await axios.get("/opportunities/get");
+    const opportunities = unwrapArrayResponse<Opportunity>(response.data);
+
     return {
       success: true,
-      data: response.data,
-      message: response.data.message || "Oportunidades carregadas com sucesso!",
+      data: opportunities,
+      message:
+        (response.data as ResponseWithData<Opportunity[]>)?.message ||
+        "Oportunidades carregadas com sucesso!",
       error: null,
     };
   } catch (err) {
@@ -361,10 +369,16 @@ export const getSavedOpportunitiesRequest = async (athleteId: number) => {
     const response = await axios.get(
       `/saved-opportunities/athlete/${athleteId}`,
     );
+    const savedOpportunities = unwrapArrayResponse<SavedOpportunity>(
+      response.data,
+    );
+
     return {
       success: true,
-      data: response.data as SavedOpportunity[],
-      message: "Oportunidades salvas carregadas com sucesso!",
+      data: savedOpportunities,
+      message:
+        (response.data as ResponseWithData<SavedOpportunity[]>)?.message ||
+        "Oportunidades salvas carregadas com sucesso!",
       error: null,
     };
   } catch (err) {
