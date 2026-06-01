@@ -13,6 +13,7 @@ import {
   useFollowAndUnfollow,
   useGetFollow,
 } from "@/features/profile/state/useFollow";
+import { useEffect, useState } from "react";
 
 interface CardFollowingProps {
   user: User;
@@ -32,19 +33,39 @@ export default function CardFollowing({
   const { data: followStatusResponse, isLoading: isFollowStatusLoading } =
     useGetFollow(authUserId, listedUserId);
   const followMutation = useFollowAndUnfollow();
-  const isFollowing =
+  const serverIsFollowing =
     followStatusResponse?.success === true &&
     followStatusResponse.data?.data?.status === "ACCEPTED";
+  const [isFollowing, setIsFollowing] = useState(serverIsFollowing);
+
+  useEffect(() => {
+    setIsFollowing(serverIsFollowing);
+  }, [serverIsFollowing]);
 
   const handleFollowClick = () => {
     if (!canFollow) {
       return;
     }
 
-    followMutation.mutate({
-      followerId: authUserId,
-      followedId: listedUserId,
-    });
+    const previousIsFollowing = isFollowing;
+    const nextIsFollowing = !isFollowing;
+
+    setIsFollowing(nextIsFollowing);
+
+    followMutation.mutate(
+      {
+        followerId: authUserId,
+        followedId: listedUserId,
+      },
+      {
+        onError: () => setIsFollowing(previousIsFollowing),
+        onSuccess: (result) => {
+          if (!result.success) {
+            setIsFollowing(previousIsFollowing);
+          }
+        },
+      },
+    );
   };
 
   return (
