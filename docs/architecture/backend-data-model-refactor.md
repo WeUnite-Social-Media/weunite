@@ -265,6 +265,8 @@ PR `#18` continues the architecture cleanup and manual E2E hardening:
   unavailable or the stored account no longer exists.
 - profile follower/following lists reuse the paginated follow API and load additional pages
   automatically inside the modal/drawer surfaces.
+- post like relationships no longer rely on JPA's eager `ManyToOne` defaults; read paths declare the
+  entity graph needed by the DTO mapper.
 
 ### Phase Status
 
