@@ -267,6 +267,8 @@ PR `#18` continues the architecture cleanup and manual E2E hardening:
   automatically inside the modal/drawer surfaces.
 - post like relationships no longer rely on JPA's eager `ManyToOne` defaults; read paths declare the
   entity graph needed by the DTO mapper.
+- follow read repositories keep only the paginated/count contracts used by the service and declare
+  participant entity graphs for DTO lookups.
 
 ### Phase Status
 
