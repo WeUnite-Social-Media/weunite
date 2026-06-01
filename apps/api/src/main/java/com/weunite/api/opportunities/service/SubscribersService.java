@@ -76,6 +76,12 @@ public class SubscribersService {
 
   @Transactional
   public List<SubscriberDTO> getSubscribersByOpportunity(Long userId, Long opportunityId) {
+    return getSubscribersByOpportunity(userId, opportunityId, 0, 10);
+  }
+
+  @Transactional
+  public List<SubscriberDTO> getSubscribersByOpportunity(
+      Long userId, Long opportunityId, int page, int size) {
     Opportunity opportunity = getActiveOpportunity(opportunityId);
 
     if (!userId.equals(opportunity.getCompany().getId())) {
@@ -84,7 +90,9 @@ public class SubscribersService {
     }
 
     List<Subscriber> subscribers =
-        subscribersRepository.findReadModelsByOpportunityId(opportunityId);
+        subscribersRepository
+            .findReadModelsByOpportunityId(opportunityId, pageRequest(page, size))
+            .getContent();
     return subscribersMapper.mapSubscribersToList(subscribers);
   }
 

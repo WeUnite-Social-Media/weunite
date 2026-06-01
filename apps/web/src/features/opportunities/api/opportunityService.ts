@@ -255,10 +255,17 @@ export const getAvailableSkillsRequest = async () => {
 
 export const getOpportunitySubscribersRequest = async (
   opportunityId: number,
+  {
+    page = 0,
+    size = OPPORTUNITIES_PAGE_SIZE,
+  }: GetOpportunitiesRequestParams = {},
 ) => {
   try {
     const response = await axios.get(
       `/subscriber/subscribers/${opportunityId}`,
+      {
+        params: { page, size },
+      },
     );
     const subscribers = unwrapArrayResponse<Subscriber>(response.data);
 

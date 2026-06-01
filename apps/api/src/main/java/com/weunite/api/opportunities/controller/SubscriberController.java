@@ -37,10 +37,14 @@ public class SubscriberController {
 
   @GetMapping("/subscribers/{opportunityId}")
   public ResponseEntity<List<SubscriberDTO>> getSubscribersByOpportunity(
-      @AuthenticationPrincipal Jwt jwt, @PathVariable Long opportunityId) {
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long opportunityId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
     Long authenticatedUserId = authenticatedUserService.requireUserId(jwt);
     List<SubscriberDTO> result =
-        subscribersService.getSubscribersByOpportunity(authenticatedUserId, opportunityId);
+        subscribersService.getSubscribersByOpportunity(
+            authenticatedUserId, opportunityId, page, size);
     return ResponseEntity.status(HttpStatus.OK).body(result);
   }
 

@@ -237,8 +237,9 @@ class SubscriberServiceTest {
 
     when(opportunityRepository.findByIdAndDeletedFalse(opportunityId))
         .thenReturn(Optional.of(opportunity));
-    when(subscribersRepository.findReadModelsByOpportunityId(opportunityId))
-        .thenReturn(List.of(subscriber));
+    when(subscribersRepository.findReadModelsByOpportunityId(
+            eq(opportunityId), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(subscriber)));
     when(subscribersMapper.mapSubscribersToList(List.of(subscriber)))
         .thenReturn(List.of(subscriberDTO));
 

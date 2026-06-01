@@ -193,9 +193,20 @@ export const useGetOpportunitySubscribers = (
   opportunityId: number,
   enabled = true,
 ) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: opportunityKeys.subscribers(opportunityId),
-    queryFn: () => getOpportunitySubscribersRequest(opportunityId),
+    queryFn: ({ pageParam }) =>
+      getOpportunitySubscribersRequest(opportunityId, { page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.success || !lastPage.data) {
+        return undefined;
+      }
+
+      return lastPage.data.length < OPPORTUNITIES_PAGE_SIZE
+        ? undefined
+        : allPages.length;
+    },
     enabled,
     staleTime: 2 * 60 * 1000,
     retry: 2,

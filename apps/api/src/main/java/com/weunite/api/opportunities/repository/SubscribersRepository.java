@@ -44,6 +44,19 @@ public interface SubscribersRepository extends JpaRepository<Subscriber, Long> {
         "opportunity.skills",
         "opportunity.subscribers"
       })
+  Page<Subscriber> findReadModelsByOpportunityId(Long opportunityId, Pageable pageable);
+
+  @EntityGraph(
+      attributePaths = {
+        "athlete",
+        "athlete.role",
+        "athlete.skills",
+        "opportunity",
+        "opportunity.company",
+        "opportunity.company.role",
+        "opportunity.skills",
+        "opportunity.subscribers"
+      })
   List<Subscriber> findReadModelsByAthleteIdAndOpportunityDeletedFalse(Long athleteId);
 
   @EntityGraph(
