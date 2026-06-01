@@ -56,7 +56,9 @@ export default function CreateSkill({
       if (response.success && response.data) {
         setAvailableSkills(response.data);
       } else {
-        setLoadError(response.error || "Nao foi possivel carregar as habilidades.");
+        setLoadError(
+          response.error || "Nao foi possivel carregar as habilidades.",
+        );
       }
 
       setIsLoading(false);
@@ -84,7 +86,8 @@ export default function CreateSkill({
 
   const hasSelectedSkill = (skillName: string) =>
     selectedSkills.some(
-      (selectedSkill) => selectedSkill.toLowerCase() === skillName.toLowerCase(),
+      (selectedSkill) =>
+        selectedSkill.toLowerCase() === skillName.toLowerCase(),
     );
 
   const handleSkillToggle = (skillName: string) => {
@@ -103,7 +106,8 @@ export default function CreateSkill({
   const handleRemoveSkill = (skillName: string) => {
     onSkillsChange(
       selectedSkills.filter(
-        (selectedSkill) => selectedSkill.toLowerCase() !== skillName.toLowerCase(),
+        (selectedSkill) =>
+          selectedSkill.toLowerCase() !== skillName.toLowerCase(),
       ),
     );
   };
@@ -127,6 +131,16 @@ export default function CreateSkill({
     customSkillName.length > 0 &&
     !hasExactSkillMatch &&
     !hasSelectedSkill(customSkillName);
+
+  const handleAddCustomSkill = () => {
+    if (!canAddCustomSkill || !canSelectMore) {
+      return;
+    }
+
+    handleSkillToggle(customSkillName);
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
 
   return (
     <Dialog
@@ -167,6 +181,12 @@ export default function CreateSkill({
               onChange={(event) => {
                 setSearchTerm(event.target.value);
                 setCurrentPage(1);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  handleAddCustomSkill();
+                }
               }}
               className="pl-10"
             />
@@ -232,9 +252,7 @@ export default function CreateSkill({
                         ? "hover:bg-accent"
                         : "cursor-not-allowed opacity-50",
                     )}
-                    onClick={() =>
-                      canSelectMore && handleSkillToggle(customSkillName)
-                    }
+                    onClick={handleAddCustomSkill}
                     disabled={!canSelectMore}
                   >
                     <Plus className="h-4 w-4 text-muted-foreground" />
@@ -258,7 +276,9 @@ export default function CreateSkill({
                           : "hover:bg-accent",
                         isDisabled && "cursor-not-allowed opacity-50",
                       )}
-                      onClick={() => !isDisabled && handleSkillToggle(skill.name)}
+                      onClick={() =>
+                        !isDisabled && handleSkillToggle(skill.name)
+                      }
                     >
                       <Checkbox
                         checked={isSelected}
