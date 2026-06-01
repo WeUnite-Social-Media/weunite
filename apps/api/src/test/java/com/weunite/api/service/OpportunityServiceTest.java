@@ -39,6 +39,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class OpportunityServiceTest {
@@ -312,13 +314,14 @@ class OpportunityServiceTest {
             null,
             null);
 
-    when(opportunityRepository.findAllActiveForReadModelOrderedByCreationDate())
-        .thenReturn(List.of(opportunity));
+    when(opportunityRepository.findAllActiveForReadModelOrderedByCreationDate(any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(opportunity)));
     when(opportunityMapper.toOpportunityDTOList(List.of(opportunity))).thenReturn(List.of(dto));
 
     List<OpportunityDTO> result = opportunityService.getOpportunities();
 
     assertEquals(List.of(dto), result);
-    verify(opportunityRepository).findAllActiveForReadModelOrderedByCreationDate();
+    verify(opportunityRepository)
+        .findAllActiveForReadModelOrderedByCreationDate(any(Pageable.class));
   }
 }
