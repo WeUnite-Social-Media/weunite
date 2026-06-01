@@ -20,7 +20,11 @@ import {
 import { Textarea } from "@/shared/components/ui/textarea";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
-import { Dialog, DialogContent } from "@/shared/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 import {
   useCreateComment,
   useGetComments,
@@ -243,7 +247,10 @@ export default function Comments({
         className={`${
           post.imageUrl ? "max-w-6xl" : "max-w-3xl"
         } h-[90vh] w-[90vw] overflow-hidden rounded-xl p-0`}
+        aria-describedby={undefined}
       >
+        <DialogTitle className="sr-only">Comentários da publicação</DialogTitle>
+
         <DrawerClose className="absolute right-4 top-4 z-10 rounded-sm transition-opacity">
           <CloseIcon className="h-5 w-5 hover:cursor-pointer" />
         </DrawerClose>
