@@ -36,4 +36,12 @@ public interface SkillMapper {
 
     return skills.stream().map(this::toSkillDTO).collect(Collectors.toList());
   }
+
+  default Set<SkillDTO> toSkillDTOSet(Set<Skill> skills) {
+    if (skills == null || skills.isEmpty()) {
+      return Set.of();
+    }
+
+    return skills.stream().map(this::toSkillDTO).collect(Collectors.toSet());
+  }
 }

@@ -1,11 +1,10 @@
 package com.weunite.api.users.repository;
 
-import com.weunite.api.users.domain.Athlete;
-import com.weunite.api.users.domain.Company;
 import com.weunite.api.users.domain.User;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -83,6 +82,50 @@ public interface UserRepository extends JpaRepository<User, Long> {
           + "LEFT JOIN FETCH TREAT(u AS Company).profile")
   List<User> findAllWithRoles(Sort sort);
 
+  @Query("SELECT u.id FROM User u")
+  Page<Long> findUserIds(Pageable pageable);
+
+  @Query(
+      value =
+          "SELECT u.id FROM User u "
+              + "WHERE (:query = '' "
+              + "OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) "
+              + "OR LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) "
+              + "OR LOWER(u.accountCredentials.email.value) LIKE LOWER(CONCAT('%', :query, '%'))) "
+              + "AND (:status = 'all' "
+              + "OR (:status = 'banned' AND u.isBanned = true) "
+              + "OR (:status = 'suspended' AND u.isBanned = false AND u.isSuspended = true "
+              + "AND (u.suspendedUntil IS NULL OR u.suspendedUntil > :now)) "
+              + "OR (:status = 'active' AND u.isBanned = false "
+              + "AND (u.isSuspended = false "
+              + "OR (u.isSuspended = true AND u.suspendedUntil IS NOT NULL AND u.suspendedUntil <= :now))))",
+      countQuery =
+          "SELECT COUNT(u) FROM User u "
+              + "WHERE (:query = '' "
+              + "OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) "
+              + "OR LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) "
+              + "OR LOWER(u.accountCredentials.email.value) LIKE LOWER(CONCAT('%', :query, '%'))) "
+              + "AND (:status = 'all' "
+              + "OR (:status = 'banned' AND u.isBanned = true) "
+              + "OR (:status = 'suspended' AND u.isBanned = false AND u.isSuspended = true "
+              + "AND (u.suspendedUntil IS NULL OR u.suspendedUntil > :now)) "
+              + "OR (:status = 'active' AND u.isBanned = false "
+              + "AND (u.isSuspended = false "
+              + "OR (u.isSuspended = true AND u.suspendedUntil IS NOT NULL AND u.suspendedUntil <= :now))))")
+  Page<Long> findUserIds(
+      @Param("query") String query,
+      @Param("status") String status,
+      @Param("now") Instant now,
+      Pageable pageable);
+
+  @Query(
+      "SELECT DISTINCT u FROM User u "
+          + "LEFT JOIN FETCH u.role "
+          + "LEFT JOIN FETCH TREAT(u AS Athlete).profile "
+          + "LEFT JOIN FETCH TREAT(u AS Company).profile "
+          + "WHERE u.id IN :ids")
+  List<User> findAllWithRolesByIdIn(@Param("ids") List<Long> ids);
+
   @Query(
       "SELECT COUNT(DISTINCT p.user.id) FROM Post p WHERE COALESCE(p.updatedAt, p.createdAt) >= :since")
   Long countActiveUsersByPostActivity(@Param("since") Instant since);
@@ -96,14 +139,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
   Long countUsersCreatedBetweenDates(
       @Param("startDate") Instant startDate, @Param("endDate") Instant endDate);
 
-  @Query("SELECT COUNT(u) FROM User u WHERE TYPE(u) = :athleteType")
-  Long countByDiscriminator(@Param("athleteType") Class<? extends User> athleteType);
+  @Query("SELECT COUNT(DISTINCT u) FROM User u JOIN u.role r WHERE r.name = :roleName")
+  Long countByRoleName(@Param("roleName") String roleName);
 
   default Long countAthletes() {
-    return countByDiscriminator(Athlete.class);
+    return countByRoleName("ATHLETE");
   }
 
   default Long countCompanies() {
-    return countByDiscriminator(Company.class);
+    return countByRoleName("COMPANY");
   }
 }

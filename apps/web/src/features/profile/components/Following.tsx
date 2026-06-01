@@ -14,6 +14,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import { X as CloseIcon } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
+import { Button } from "@/shared/components/ui/button";
 import CardFollowing from "./CardFollowing";
 import { useCallback } from "react";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
@@ -32,7 +33,14 @@ export default function Following({
   userId,
 }: FollowingProps) {
   const { isDesktop, isTablet } = useBreakpoints();
-  const { data: followingData, error } = useGetFollowing(userId);
+  const {
+    data: followingData,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useGetFollowing(userId);
 
   const handleClose = useCallback(() => {
     if (onOpenChange) onOpenChange(false);
@@ -40,23 +48,47 @@ export default function Following({
 
   const renderFollowingList = () => {
     if (error) {
-      return <p>Erro ao carregar usuários seguidos.</p>;
+      return <p>Erro ao carregar usuarios seguidos.</p>;
     }
-    if (!followingData?.success) {
-      return <p>Erro ao buscar usuários seguidos.</p>;
-    }
-    const following = followingData?.data?.data;
-    if (!following || !Array.isArray(following) || following.length === 0) {
-      return <p>Você não está seguindo ninguém.</p>;
+    if (isLoading) {
+      return <p>Carregando usuarios seguidos...</p>;
     }
 
-    return following.map((followingItem: Follower) => (
-      <CardFollowing
-        key={followingItem.id}
-        user={followingItem.followed}
-        onUserClick={handleClose}
-      />
-    ));
+    const pages = followingData?.pages ?? [];
+    const hasFailedPage = pages.some((page) => !page.success);
+
+    if (hasFailedPage) {
+      return <p>Erro ao buscar usuarios seguidos.</p>;
+    }
+
+    const following = pages.flatMap((page) => page.data?.data ?? []);
+    if (!following || !Array.isArray(following) || following.length === 0) {
+      return <p>Voce nao esta seguindo ninguem.</p>;
+    }
+
+    return (
+      <>
+        {following.map((followingItem: Follower) => (
+          <CardFollowing
+            key={followingItem.id}
+            user={followingItem.followed}
+            onUserClick={handleClose}
+          />
+        ))}
+
+        {hasNextPage && (
+          <Button
+            type="button"
+            variant="outline"
+            className="mx-auto my-4"
+            onClick={() => void fetchNextPage()}
+            disabled={isFetchingNextPage}
+          >
+            {isFetchingNextPage ? "Carregando..." : "Carregar mais seguindo"}
+          </Button>
+        )}
+      </>
+    );
   };
 
   if (!isDesktop && isTablet) {
@@ -95,7 +127,10 @@ export default function Following({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="h-[80vh] w-[70vw] xl:max-w-[50vw] flex flex-col">
+      <DialogContent
+        className="h-[80vh] w-[70vw] xl:max-w-[50vw] flex flex-col"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
           <DialogTitle>Seguindo</DialogTitle>
           <DialogClose />

@@ -10,6 +10,7 @@ import CompanyOpportunities from "@/features/profile/components/CompanyOpportuni
 import { useUserProfile } from "@/features/profile/hooks/useUserProfile";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { Card, CardContent } from "@/shared/components/ui/card";
+import { Button } from "@/shared/components/ui/button";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import type { Comment as CommentType } from "@/shared/types/comment.types";
 import type { Post as PostType } from "@/shared/types/post.types";
@@ -35,18 +36,27 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
   const userId = displayUser?.id ? Number(displayUser.id) : 0;
   const {
     data: postsResponse,
+    fetchNextPage: fetchNextPostsPage,
+    hasNextPage: hasNextPostsPage,
     isError: isPostsError,
+    isFetchingNextPage: isFetchingNextPostsPage,
     isLoading: isPostsLoading,
   } = useGetPostsByUser(userId);
   const {
     data: commentsResponse,
+    fetchNextPage: fetchNextCommentsPage,
+    hasNextPage: hasNextCommentsPage,
     isError: isCommentsError,
+    isFetchingNextPage: isFetchingNextCommentsPage,
     isLoading: isCommentsLoading,
   } = useGetCommentsByUserId(userId);
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("publicacoes");
-  const posts = (postsResponse?.data || []) as PostType[];
-  const comments = (commentsResponse?.data || []) as CommentType[];
+  const posts = (postsResponse?.pages.flatMap((page) => page.data ?? []) ||
+    []) as PostType[];
+  const comments = (commentsResponse?.pages.flatMap(
+    (page) => page.data ?? [],
+  ) || []) as CommentType[];
 
   if (!isOwnProfile && isProfileLoading) {
     return <FeedProfileSkeleton />;
@@ -113,7 +123,25 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
               tone="error"
             />
           ) : posts.length > 0 ? (
-            posts.map((post) => <Post key={post.id} post={post} />)
+            <>
+              {posts.map((post) => (
+                <Post key={post.id} post={post} />
+              ))}
+
+              {hasNextPostsPage && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="my-6"
+                  onClick={() => void fetchNextPostsPage()}
+                  disabled={isFetchingNextPostsPage}
+                >
+                  {isFetchingNextPostsPage
+                    ? "Carregando..."
+                    : "Carregar mais publicacoes"}
+                </Button>
+              )}
+            </>
           ) : (
             <ProfileSectionState
               icon={FileText}
@@ -138,9 +166,25 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
               tone="error"
             />
           ) : comments.length > 0 ? (
-            comments.map((comment) => (
-              <Comment key={comment.id} comment={comment} />
-            ))
+            <>
+              {comments.map((comment) => (
+                <Comment key={comment.id} comment={comment} />
+              ))}
+
+              {hasNextCommentsPage && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="my-6"
+                  onClick={() => void fetchNextCommentsPage()}
+                  disabled={isFetchingNextCommentsPage}
+                >
+                  {isFetchingNextCommentsPage
+                    ? "Carregando..."
+                    : "Carregar mais comentarios"}
+                </Button>
+              )}
+            </>
           ) : (
             <ProfileSectionState
               icon={MessageSquareText}

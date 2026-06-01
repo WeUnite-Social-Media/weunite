@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -27,6 +28,7 @@ import com.weunite.api.posts.mapper.PostMapper;
 import com.weunite.api.posts.repository.CommentRepository;
 import com.weunite.api.posts.repository.PostRepository;
 import com.weunite.api.reports.domain.Report;
+import com.weunite.api.reports.domain.ReportTarget;
 import com.weunite.api.reports.dto.ReportDTO;
 import com.weunite.api.reports.dto.ReportedCommentDetailDTO;
 import com.weunite.api.reports.dto.ReportedOpportunityDetailDTO;
@@ -76,7 +78,7 @@ class AdminReportServiceTest {
     ResponseDTO<PostDTO> expectedResponse = new ResponseDTO<>("ok", null);
 
     when(postRepository.findById(postId)).thenReturn(Optional.of(post));
-    when(reportRepository.findByEntityIdAndType(postId, Report.ReportType.POST))
+    when(reportRepository.findByTarget(new ReportTarget(Report.ReportType.POST, postId)))
         .thenReturn(relatedReports);
     when(postMapper.toResponseDTO(anyString(), eq(post))).thenReturn(expectedResponse);
 
@@ -148,7 +150,7 @@ class AdminReportServiceTest {
     verify(reportRepository)
         .findByEntityIdInAndType(List.of(existingPostId, deletedPostId), Report.ReportType.POST);
     verify(postRepository, never()).findById(anyLong());
-    verify(reportRepository, never()).findByEntityIdAndType(anyLong(), eq(Report.ReportType.POST));
+    verify(reportRepository, never()).findByTarget(any(ReportTarget.class));
   }
 
   @Test
@@ -219,8 +221,7 @@ class AdminReportServiceTest {
         .findByEntityIdInAndType(
             List.of(existingOpportunityId, deletedOpportunityId), Report.ReportType.OPPORTUNITY);
     verify(opportunityRepository, never()).findById(anyLong());
-    verify(reportRepository, never())
-        .findByEntityIdAndType(anyLong(), eq(Report.ReportType.OPPORTUNITY));
+    verify(reportRepository, never()).findByTarget(any(ReportTarget.class));
   }
 
   @Test
@@ -279,8 +280,7 @@ class AdminReportServiceTest {
         .findByEntityIdInAndType(
             List.of(existingCommentId, deletedCommentId), Report.ReportType.COMMENT);
     verify(commentRepository, never()).findById(anyLong());
-    verify(reportRepository, never())
-        .findByEntityIdAndType(anyLong(), eq(Report.ReportType.COMMENT));
+    verify(reportRepository, never()).findByTarget(any(ReportTarget.class));
   }
 
   @Test
@@ -296,15 +296,10 @@ class AdminReportServiceTest {
     reviewedReport.setStatus(Report.ReportStatus.REVIEWED);
     reviewedReport.setActionTaken(Report.ActionTaken.CONTENT_REMOVED);
 
-    List<Report> pendingReports = List.of(pendingReport);
-    List<Report> reviewedReports = List.of(reviewedReport);
-
-    when(reportRepository.findByEntityIdAndTypeAndStatus(
-            postId, Report.ReportType.POST, Report.ReportStatus.PENDING))
-        .thenReturn(pendingReports);
-    when(reportRepository.findByEntityIdAndTypeAndStatus(
-            postId, Report.ReportType.POST, Report.ReportStatus.REVIEWED))
-        .thenReturn(reviewedReports);
+    when(reportRepository.findByTargetAndStatusIn(
+            new ReportTarget(Report.ReportType.POST, postId),
+            List.of(Report.ReportStatus.PENDING, Report.ReportStatus.REVIEWED)))
+        .thenReturn(List.of(pendingReport, reviewedReport));
 
     ResponseDTO<String> result = adminReportService.dismissReports(postId, "POST");
 
@@ -336,12 +331,10 @@ class AdminReportServiceTest {
     reviewedReport.setStatus(Report.ReportStatus.REVIEWED);
     reviewedReport.setActionTaken(Report.ActionTaken.CONTENT_REMOVED);
 
-    when(reportRepository.findByEntityIdAndTypeAndStatus(
-            postId, Report.ReportType.POST, Report.ReportStatus.PENDING))
-        .thenReturn(List.of(pendingReport));
-    when(reportRepository.findByEntityIdAndTypeAndStatus(
-            postId, Report.ReportType.POST, Report.ReportStatus.REVIEWED))
-        .thenReturn(List.of(reviewedReport));
+    when(reportRepository.findByTargetAndStatusIn(
+            new ReportTarget(Report.ReportType.POST, postId),
+            List.of(Report.ReportStatus.PENDING, Report.ReportStatus.REVIEWED)))
+        .thenReturn(List.of(pendingReport, reviewedReport));
 
     ResponseDTO<String> result = adminReportService.resolveReports(postId, "POST");
 
@@ -355,8 +348,7 @@ class AdminReportServiceTest {
     verify(reportRepository).saveAll(savedReportsCaptor.capture());
     assertEquals(2, savedReportsCaptor.getValue().size());
     verify(reportRepository, never())
-        .findByEntityIdAndTypeAndStatus(
-            postId, Report.ReportType.POST, Report.ReportStatus.RESOLVED);
+        .findByTargetAndStatus(any(ReportTarget.class), eq(Report.ReportStatus.RESOLVED));
   }
 
   @Test
@@ -364,11 +356,9 @@ class AdminReportServiceTest {
   void resolveReportsWithoutEntriesReturnsZero() {
     Long postId = 31L;
 
-    when(reportRepository.findByEntityIdAndTypeAndStatus(
-            postId, Report.ReportType.POST, Report.ReportStatus.PENDING))
-        .thenReturn(List.of());
-    when(reportRepository.findByEntityIdAndTypeAndStatus(
-            postId, Report.ReportType.POST, Report.ReportStatus.REVIEWED))
+    when(reportRepository.findByTargetAndStatusIn(
+            new ReportTarget(Report.ReportType.POST, postId),
+            List.of(Report.ReportStatus.PENDING, Report.ReportStatus.REVIEWED)))
         .thenReturn(List.of());
 
     ResponseDTO<String> result = adminReportService.resolveReports(postId, "POST");

@@ -112,7 +112,7 @@ public class Opportunity {
   @OneToMany(mappedBy = "opportunity", fetch = FetchType.LAZY)
   private Set<Subscriber> subscribers = new HashSet<>();
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "company_id", nullable = false)
   private Company company;
 }

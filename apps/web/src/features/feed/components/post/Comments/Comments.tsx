@@ -52,11 +52,15 @@ export default function Comments({
   const { commentDesktop } = useBreakpoints();
   const {
     data,
+    fetchNextPage,
+    hasNextPage,
     isError: isCommentsError,
+    isFetchingNextPage,
     isLoading: isCommentsLoading,
   } = useGetComments(Number(post.id));
 
-  const comments = (data?.data || []) as CommentType[];
+  const comments = (data?.pages.flatMap((page) => page.data ?? []) ||
+    []) as CommentType[];
   const createComment = useCreateComment();
 
   const handleCreateComment = () => {
@@ -112,7 +116,29 @@ export default function Comments({
       );
     }
 
-    return comments.map((comment) => <Comment key={comment.id} comment={comment} />);
+    return comments.map((comment) => (
+      <Comment key={comment.id} comment={comment} />
+    ));
+  };
+
+  const renderLoadMoreComments = () => {
+    if (!hasNextPage || !comments.length) {
+      return null;
+    }
+
+    return (
+      <div className="flex justify-center py-4">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => void fetchNextPage()}
+          disabled={isFetchingNextPage}
+        >
+          {isFetchingNextPage ? "Carregando..." : "Carregar mais comentarios"}
+        </Button>
+      </div>
+    );
   };
 
   if (!commentDesktop) {
@@ -181,7 +207,10 @@ export default function Comments({
               </div>
             </div>
 
-            <div className="w-full max-w-[45em] p-2">{renderCommentsList()}</div>
+            <div className="w-full max-w-[45em] p-2">
+              {renderCommentsList()}
+              {renderLoadMoreComments()}
+            </div>
           </div>
         </DrawerContent>
       </Drawer>
@@ -210,7 +239,9 @@ export default function Comments({
             </div>
           ) : null}
 
-          <div className={`${post.imageUrl ? "w-1/2" : "w-full"} flex flex-col`}>
+          <div
+            className={`${post.imageUrl ? "w-1/2" : "w-full"} flex flex-col`}
+          >
             <div className="z-2 flex gap-2 border-b bg-card p-4">
               <Avatar
                 className="hover:cursor-pointer"
@@ -235,7 +266,10 @@ export default function Comments({
             </div>
 
             <div className="custom-scrollbar flex-1 max-h-[66vh] overflow-y-auto p-4">
-              <div className="space-y-4">{renderCommentsList()}</div>
+              <div className="space-y-4">
+                {renderCommentsList()}
+                {renderLoadMoreComments()}
+              </div>
             </div>
 
             <div className="border-t border-foreground/30 px-4 py-3">

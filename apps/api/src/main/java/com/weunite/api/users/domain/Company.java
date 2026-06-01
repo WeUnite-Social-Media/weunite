@@ -2,6 +2,7 @@ package com.weunite.api.users.domain;
 
 import com.weunite.api.opportunities.domain.Opportunity;
 import jakarta.persistence.*;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.Getter;
@@ -16,8 +17,6 @@ public class Company extends User {
     super(name, username, email, password);
   }
 
-  @Column private String CNPJ;
-
   @OneToOne(
       mappedBy = "user",
       cascade = CascadeType.ALL,
@@ -25,12 +24,12 @@ public class Company extends User {
       fetch = FetchType.LAZY)
   private CompanyProfile profile;
 
-  @OneToMany(
-      mappedBy = "company",
-      cascade = CascadeType.ALL,
-      orphanRemoval = true,
-      fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private Set<Opportunity> opportunities = new HashSet<>();
+
+  public Set<Opportunity> getOpportunities() {
+    return opportunities != null ? Collections.unmodifiableSet(opportunities) : Set.of();
+  }
 
   @PrePersist
   protected void ensureProfileBeforePersist() {
@@ -38,8 +37,11 @@ public class Company extends User {
   }
 
   public void setCNPJ(String CNPJ) {
-    this.CNPJ = CNPJ;
     ensureProfile().setCNPJ(CNPJ);
+  }
+
+  public String getCNPJ() {
+    return profile != null ? profile.getCNPJ() : null;
   }
 
   public void setOpportunities(Set<Opportunity> opportunities) {
@@ -50,14 +52,12 @@ public class Company extends User {
     this.profile = profile;
     if (profile != null) {
       profile.setUser(this);
-      this.CNPJ = profile.getCNPJ();
     }
   }
 
   public CompanyProfile ensureProfile() {
     if (profile == null) {
       profile = new CompanyProfile(this);
-      profile.setCNPJ(CNPJ);
     }
 
     return profile;

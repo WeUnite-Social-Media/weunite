@@ -2,11 +2,14 @@ package com.weunite.api.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.weunite.api.common.exception.NotFoundResourceException;
 import com.weunite.api.notifications.domain.Notification;
 import com.weunite.api.notifications.domain.NotificationType;
 import com.weunite.api.notifications.dto.NotificationDTO;
@@ -98,5 +101,31 @@ public class NotificationServiceTest {
     assertNull(result);
     verifyNoInteractions(
         userRepository, notificationRepository, notificationMapper, messagingTemplate);
+  }
+
+  @Test
+  @DisplayName("Should mark a notification as read only for its recipient")
+  void markAsReadUsesRecipientOwnership() {
+    Notification notification = new Notification();
+    notification.setId(100L);
+    notification.setUserId(2L);
+
+    when(notificationRepository.findByIdAndUserId(100L, 2L)).thenReturn(Optional.of(notification));
+
+    notificationService.markAsRead(2L, 100L);
+
+    verify(notificationRepository).findByIdAndUserId(100L, 2L);
+    assertTrue(notification.isRead());
+  }
+
+  @Test
+  @DisplayName("Should not delete a notification owned by another recipient")
+  void deleteNotificationRejectsForeignRecipient() {
+    when(notificationRepository.findByIdAndUserId(100L, 2L)).thenReturn(Optional.empty());
+
+    assertThrows(
+        NotFoundResourceException.class, () -> notificationService.deleteNotification(2L, 100L));
+
+    verify(notificationRepository).findByIdAndUserId(100L, 2L);
   }
 }

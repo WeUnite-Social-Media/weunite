@@ -16,6 +16,7 @@ import com.weunite.api.opportunities.domain.Opportunity;
 import com.weunite.api.opportunities.domain.Skill;
 import com.weunite.api.opportunities.dto.OpportunityDTO;
 import com.weunite.api.opportunities.dto.OpportunityRequestDTO;
+import com.weunite.api.opportunities.dto.SkillDTO;
 import com.weunite.api.opportunities.exception.OpportunityNotFoundException;
 import com.weunite.api.opportunities.mapper.OpportunityMapper;
 import com.weunite.api.opportunities.repository.OpportunityRepository;
@@ -56,6 +57,7 @@ class OpportunityServiceTest {
   void createOpportunitySuccess() {
     Long companyId = 1L;
     Set<Skill> skills = Set.of(new Skill("Perna Esquerda"));
+    Set<SkillDTO> skillDtos = Set.of(new SkillDTO(1L, "Perna Esquerda"));
 
     OpportunityRequestDTO request =
         new OpportunityRequestDTO(
@@ -77,7 +79,7 @@ class OpportunityServiceTest {
                 request.description(),
                 request.location(),
                 request.dateEnd(),
-                skills,
+                skillDtos,
                 Instant.now(),
                 null,
                 null));
@@ -126,6 +128,7 @@ class OpportunityServiceTest {
     Long opportunityId = 1L;
     Set<Skill> updatedSkills = new HashSet<>();
     updatedSkills.add(new Skill("Python"));
+    Set<SkillDTO> updatedSkillDtos = Set.of(new SkillDTO(1L, "Python"));
 
     OpportunityRequestDTO request =
         new OpportunityRequestDTO(
@@ -150,7 +153,7 @@ class OpportunityServiceTest {
             request.description(),
             request.location(),
             request.dateEnd(),
-            updatedSkills,
+            updatedSkillDtos,
             null,
             Instant.now(),
             null);

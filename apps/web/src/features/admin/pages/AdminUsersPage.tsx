@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -14,6 +14,7 @@ import {
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import {
   banAdminUserRequest,
+  type AdminUsersPageResponse,
   getAdminUsersRequest,
   reactivateAdminUserRequest,
   suspendAdminUserRequest,
@@ -60,10 +61,17 @@ import type {
 } from "@/shared/types/admin.types";
 import { getInitials } from "@/shared/utils/getInitials";
 
+const ADMIN_USERS_PAGE_SIZE = 20;
+
 export function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
+  const [pagination, setPagination] = useState<AdminUsersPageResponse | null>(
+    null,
+  );
+  const [currentPage, setCurrentPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [activeUserId, setActiveUserId] = useState<number | null>(null);
   const authUser = useAuthStore((state) => state.user);
@@ -71,35 +79,39 @@ export function AdminUsersPage() {
   const adminId = authUser?.id ? Number(authUser.id) : null;
   const canModerateUsers = adminId !== null;
 
-  const loadUsers = async () => {
-    setIsLoading(true);
-    const response = await getAdminUsersRequest();
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-    if (response.success && response.data) {
-      setUsers(response.data);
-    } else {
-      toast.error(response.error || "Nao foi possivel carregar os usuarios.");
-    }
+    return () => window.clearTimeout(timer);
+  }, [searchTerm]);
 
-    setIsLoading(false);
-  };
+  const loadUsers = useCallback(
+    async (page: number) => {
+      setIsLoading(true);
+      const response = await getAdminUsersRequest({
+        page,
+        size: ADMIN_USERS_PAGE_SIZE,
+        query: debouncedSearchTerm.trim(),
+        status: statusFilter,
+      });
+
+      if (response.success && response.data) {
+        setUsers(response.data.items);
+        setPagination(response.data);
+      } else {
+        toast.error(response.error || "Nao foi possivel carregar os usuarios.");
+      }
+
+      setIsLoading(false);
+    },
+    [debouncedSearchTerm, statusFilter],
+  );
 
   useEffect(() => {
-    void loadUsers();
-  }, []);
-
-  const filteredUsers = users.filter((user) => {
-    const query = searchTerm.trim().toLowerCase();
-    const matchesSearch =
-      !query ||
-      user.name.toLowerCase().includes(query) ||
-      user.email.toLowerCase().includes(query) ||
-      user.username.toLowerCase().includes(query);
-    const matchesStatus =
-      statusFilter === "all" || user.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
+    void loadUsers(currentPage);
+  }, [currentPage, loadUsers]);
 
   const getStatusBadge = (status: AdminUserStatus) => {
     switch (status) {
@@ -151,6 +163,9 @@ export function AdminUsersPage() {
   const moderatedUsers = users.filter(
     (user) => user.status !== "active",
   ).length;
+  const totalUsers = pagination?.totalElements ?? users.length;
+  const totalPages = pagination?.totalPages ?? 0;
+  const pageLabel = totalPages > 0 ? currentPage + 1 : 0;
 
   const handleSuspend = async (user: AdminUserSummary) => {
     if (!canModerateUsers) {
@@ -193,7 +208,7 @@ export function AdminUsersPage() {
 
     if (response.success) {
       toast.success(response.message || "Usuario suspenso com sucesso.");
-      void loadUsers();
+      void loadUsers(currentPage);
       return;
     }
 
@@ -232,7 +247,7 @@ export function AdminUsersPage() {
 
     if (response.success) {
       toast.success(response.message || "Usuario banido com sucesso.");
-      void loadUsers();
+      void loadUsers(currentPage);
       return;
     }
 
@@ -261,7 +276,7 @@ export function AdminUsersPage() {
 
     if (response.success) {
       toast.success(response.message || "Usuario reativado com sucesso.");
-      void loadUsers();
+      void loadUsers(currentPage);
       return;
     }
 
@@ -278,7 +293,7 @@ export function AdminUsersPage() {
               Gerencie usuarios da plataforma com dados reais de moderacao.
             </p>
           </div>
-          <Button variant="outline" onClick={() => void loadUsers()}>
+          <Button variant="outline" onClick={() => void loadUsers(currentPage)}>
             <RefreshCcw className="mr-2 h-4 w-4" />
             Atualizar
           </Button>
@@ -292,7 +307,7 @@ export function AdminUsersPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{users.length}</div>
+              <div className="text-2xl font-bold">{totalUsers}</div>
               <p className="text-xs text-muted-foreground">
                 Contas disponiveis para administracao
               </p>
@@ -308,7 +323,7 @@ export function AdminUsersPage() {
             <CardContent>
               <div className="text-2xl font-bold">{moderatedUsers}</div>
               <p className="text-xs text-muted-foreground">
-                Suspensos ou banidos no momento
+                Suspensos ou banidos nesta pagina
               </p>
             </CardContent>
           </Card>
@@ -322,7 +337,7 @@ export function AdminUsersPage() {
             <CardContent>
               <div className="text-2xl font-bold">{totalPendingReports}</div>
               <p className="text-xs text-muted-foreground">
-                Ligadas ao conteudo desses usuarios
+                Ligadas ao conteudo desta pagina
               </p>
             </CardContent>
           </Card>
@@ -339,11 +354,20 @@ export function AdminUsersPage() {
                 <Input
                   placeholder="Buscar por nome, email ou username..."
                   value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
+                  onChange={(event) => {
+                    setSearchTerm(event.target.value);
+                    setCurrentPage(0);
+                  }}
                   className="pl-10"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => {
+                  setStatusFilter(value);
+                  setCurrentPage(0);
+                }}
+              >
                 <SelectTrigger className="w-full md:w-[220px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -360,6 +384,31 @@ export function AdminUsersPage() {
 
         <Card>
           <CardContent className="p-0">
+            <div className="flex items-center justify-between border-b px-4 py-3 text-sm text-muted-foreground">
+              <span>
+                Pagina {pageLabel} de {totalPages} ({totalUsers} usuarios)
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isLoading || !pagination?.hasPrevious}
+                  onClick={() =>
+                    setCurrentPage((page) => Math.max(page - 1, 0))
+                  }
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isLoading || !pagination?.hasNext}
+                  onClick={() => setCurrentPage((page) => page + 1)}
+                >
+                  Proxima
+                </Button>
+              </div>
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -382,7 +431,7 @@ export function AdminUsersPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : filteredUsers.length === 0 ? (
+                ) : users.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={7}
@@ -392,7 +441,7 @@ export function AdminUsersPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredUsers.map((user) => {
+                  users.map((user) => {
                     const isOwnUser = adminId === user.id;
                     const isActionLoading = activeUserId === user.id;
                     const isModerationDisabled =

@@ -7,11 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.weunite.api.admin.moderation.dto.AdminUserSummaryDTO;
 import com.weunite.api.admin.moderation.dto.BanUserRequestDTO;
 import com.weunite.api.admin.moderation.dto.ReactivateUserRequestDTO;
 import com.weunite.api.admin.moderation.dto.SuspendUserRequestDTO;
@@ -26,6 +26,7 @@ import com.weunite.api.reports.repository.ReportRepository;
 import com.weunite.api.users.domain.Role;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.repository.UserRepository;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +35,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @ExtendWith(MockitoExtension.class)
 class AdminModerationServiceTest {
@@ -88,8 +92,13 @@ class AdminModerationServiceTest {
     user.setSuspended(true);
     user.setRole(java.util.Set.of(new Role(4L, "ATHLETE")));
 
-    when(userRepository.findAllWithRoles(any(org.springframework.data.domain.Sort.class)))
-        .thenReturn(List.of(user));
+    when(userRepository.findUserIds(
+            eq(""),
+            eq("all"),
+            any(Instant.class),
+            eq(PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt")))))
+        .thenReturn(new PageImpl<>(List.of(12L), PageRequest.of(0, 20), 42));
+    when(userRepository.findAllWithRolesByIdIn(List.of(12L))).thenReturn(List.of(user));
     when(postRepository.countActivePostsByUserIds(List.of(12L)))
         .thenReturn(List.<Object[]>of(new Object[] {12L, 2L}));
     when(commentRepository.countActiveCommentsByUserIds(List.of(12L)))
@@ -106,14 +115,16 @@ class AdminModerationServiceTest {
             List.of(12L), Report.ReportStatus.PENDING, Report.ReportType.OPPORTUNITY))
         .thenReturn(List.<Object[]>of(new Object[] {12L, 1L}));
 
-    List<AdminUserSummaryDTO> result = adminModerationService.getUsersSummary();
+    var result = adminModerationService.getUsersSummary(0, 20, "", "all");
 
-    assertEquals(1, result.size());
-    assertEquals("maria", result.get(0).username());
-    assertEquals("athlete", result.get(0).role());
-    assertEquals("suspended", result.get(0).status());
-    assertEquals(5L, result.get(0).contentCount());
-    assertEquals(4L, result.get(0).pendingReportCount());
+    assertEquals(1, result.items().size());
+    assertEquals(42, result.totalElements());
+    assertEquals(3, result.totalPages());
+    assertEquals("maria", result.items().get(0).username());
+    assertEquals("athlete", result.items().get(0).role());
+    assertEquals("suspended", result.items().get(0).status());
+    assertEquals(5L, result.items().get(0).contentCount());
+    assertEquals(4L, result.items().get(0).pendingReportCount());
   }
 
   @Test

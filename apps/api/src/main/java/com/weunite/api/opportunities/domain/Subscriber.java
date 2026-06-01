@@ -21,11 +21,11 @@ public class Subscriber {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "opportunity_id", nullable = false)
   private Opportunity opportunity;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "athlete_id", nullable = false)
   private Athlete athlete;
 }

@@ -21,6 +21,7 @@ This module owns user account and profile domain flows in `com.weunite.api.users
 - `controller/UserController.java`
 - `service/UserService.java`
 - `service/AthleteProfileService.java`
+- `service/CompanyProfileService.java`
 - `repository/AthleteProfileRepository.java`
 - `repository/CompanyProfileRepository.java`
 
@@ -33,21 +34,30 @@ This module owns user account and profile domain flows in `com.weunite.api.users
 ## Working rules
 
 - Keep profile business rules in service layer.
+- Bind profile updates, banner removal, and account deletion to the authenticated user's current
+  username resolved from the token user id.
 - Keep athlete-specific profile update rules in `AthleteProfileService` while the profile split is
   migrating.
-- Keep athlete profile read compatibility/fallback rules in `AthleteProfileService`, not in DTO
-  mappers.
+- Keep company registration profile assignment in `CompanyProfileService` and require CNPJ in the
+  registration contract while the profile split is migrating.
+- Keep athlete and company profile reads sourced from their explicit profile entities through profile
+  services; do not reintroduce DTO mapping fallbacks to legacy subtype columns.
 - Keep user DTOs, repositories, and mappers in this module.
+- Keep editable athlete profile fields on the routed `UpdateUserRequestDTO` contract; CPF is not
+  part of the current public profile update request.
 - Preserve user API contracts unless explicitly requested.
-- Keep athlete-specific profile characteristics and skills in the shared user profile contract so auth and profile reads stay aligned.
-- Keep the in-progress athlete/company profile split backward-compatible until DTOs and repositories
-  are intentionally moved off the current single-table subtype model.
-- Keep athlete/company profile writes mirrored between current subtype fields and explicit profile
-  entities until reads fully move to the profile tables.
+- Keep athlete characteristics, skills, and company CNPJ in the shared user profile contract so
+  auth and profile reads stay aligned.
+- Keep athlete/company profile fields in explicit profile tables; do not add profile-specific
+  columns back to `tb_user`.
+- Derive user classification metrics from explicit roles, not JPA discriminator values.
+- Keep the `User` discriminator only while role-specific relationships still use subtype entities.
 - Use profile repositories for direct split-profile persistence or lookup instead of hiding all profile
   access behind `UserRepository`.
 - Keep roles lazy by default and use repository-owned role fetch plans for auth, admin, and DTO flows that need them.
 - Keep cross-module relationship collections as read views unless users truly own the child lifecycle.
+- Keep `Company.opportunities` as a read view; removing an entry from the collection must not
+  delete an opportunity owned by the opportunities module.
 
 ## Validation
 

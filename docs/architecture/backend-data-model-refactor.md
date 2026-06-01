@@ -33,13 +33,17 @@ The target architecture keeps the current module ownership:
 
 The current backend already follows the repository's module-by-feature direction, but the persistence model still has scalability risks:
 
-- User subtype modeling uses `SINGLE_TABLE` inheritance for `User`, `Athlete`, and `Company`, which grows sparse columns and couples profile-specific fields to all users.
+- User subtype modeling still uses `SINGLE_TABLE` discrimination for role-specific opportunity
+  relationships, while profile fields live only in explicit profile tables and classification
+  metrics use assigned roles.
 - Many entity graphs are bidirectional and cascade broadly, increasing accidental fetch/cascade blast radius.
 - Several hot relationships use eager loading, including roles, conversation participants, and message senders.
-- Reports point to reported content with `(type, entityId)` instead of typed associations or a stable target abstraction.
+- Reports preserve `(type, entityId)` storage and API fields while mapping them through the typed
+  `ReportTarget` value object.
 - Notifications store scalar actor/recipient IDs and actor snapshots, which is acceptable for notification history, but needs clear ownership and indexing.
 - `Subscriber`, `SavedOpportunity`, `Like`, `Repost`, and follow relationships should be treated as first-class join entities with uniqueness, timestamps, and repository-owned queries.
-- Schema ownership still depends on `ddl-auto=update`, while role seed data has moved into migrations.
+- Schema ownership is enforced through Flyway migrations with Hibernate runtime validation; profile
+  DTO reads and profile-field persistence now use explicit profile entities.
 
 ## Class Diagram Surface
 
@@ -59,6 +63,8 @@ The persistence shape can change, but these concepts should remain visible in th
 
 The first wave should reference the class issues below:
 
+- `#5`: broader scalability and API/Admin/Chat/profile backlog touched by relationship and
+  authorization hardening slices.
 - `#6`: architecture parent issue for the class refactor.
 - `#8`: `AccountCredentials`, currently represented inside `User` as email, password, verification token, reset token, and token expiry state.
 - `#9`: `Email`, currently represented as a validated user field plus `common.mail` delivery infrastructure.
@@ -83,7 +89,9 @@ The first wave should reference the class issues below:
 1. Keep `User` as the account aggregate root for authentication, identity, moderation status, privacy, and common profile fields.
 2. Introduce `AccountCredentials` as the explicit owner of login email, password hash, verification/reset tokens, and credential lifecycle timestamps.
 3. Treat `Email` as a value object or embeddable identity value, not as the mail-delivery service.
-4. Keep role assignments explicit through `tb_user_roles`; role seed data now lives in migrations, and eager loading should be removed where services can fetch roles intentionally.
+4. Keep role assignments explicit through `tb_user_roles`; role seed data now lives in migrations,
+   user-type metrics should classify accounts through roles rather than subtype discrimination, and
+   eager loading should be removed where services can fetch roles intentionally.
 5. Move athlete-only and company-only fields into profile tables or explicit one-to-one profile entities owned by `users`.
 6. Keep `Athlete` and `Company` API behavior stable through DTO/mappers during migration.
 
@@ -93,7 +101,7 @@ The first wave should reference the class issues below:
 2. Make soft-delete semantics consistent for posts and comments.
 3. Treat post likes and reposts as independent interaction entities with database uniqueness,
    timestamps, and explicit repository-owned cleanup.
-4. Keep feed pagination database-backed through projections that fetch required author/repost data explicitly.
+4. Keep feed and comment pagination database-backed; feed projections should fetch required author/repost data explicitly.
 5. Avoid serializing entities directly; remove Jackson cycle annotations once DTO boundaries cover responses.
 
 ### Opportunities
@@ -107,7 +115,7 @@ The first wave should reference the class issues below:
 
 1. Keep follow relationships in the follow module.
 2. Enforce uniqueness for follower/followed pairs and prevent self-follow in the service layer.
-3. Keep followers/following projections repository-backed.
+3. Keep followers/following projections repository-backed, paginated, and counted explicitly.
 
 ### Chat
 
@@ -115,7 +123,8 @@ The first wave should reference the class issues below:
 2. Avoid eager participant/sender loading in default entity mappings; fetch exactly what each endpoint needs.
 3. Keep message deletion/edit/read semantics explicit in the domain model.
 4. Keep websocket identity derived from authenticated session state.
-5. Keep `UserStatus` as the API/domain concept for availability and decide whether the persisted class remains `UserPresence` or is renamed during the refactor.
+5. Keep `UserStatus` as the API/domain availability value and retain `UserPresence` as the
+   persistence record for the user's latest status and timestamp.
 
 ### Notifications
 
@@ -123,6 +132,7 @@ The first wave should reference the class issues below:
 2. Retain actor snapshots for historical display.
 3. Keep notification indexes around recipient/read state, recipient/creation time, type, actor, and related entity aligned with migration-owned schema changes.
 4. Keep notification trigger decisions in the owning feature service.
+5. Scope notification delivery-record access and read-state mutations to the authenticated recipient.
 
 ### Reports And Admin
 
@@ -138,7 +148,8 @@ The first wave should reference the class issues below:
 - Add migration tooling and baseline the current schema.
 - Add repository/entity tests for high-risk invariants: unique joins, soft deletes, report status transitions, subscription rules, and role seeding.
 - Document every intentional scalar-ID relationship before changing mappings.
-- Keep `ddl-auto=update` during the first compatibility step if needed, then move to migration validation once baseline is proven.
+- Keep the migration baseline covered by validation tests and require new schema evolution to land in
+  versioned migrations.
 
 ### Phase 2: Relationship Hardening
 
@@ -146,52 +157,124 @@ The first wave should reference the class issues below:
 - Make relationship entities explicit where they are currently only join mechanics.
 - Remove unnecessary eager fetches and replace them with repository queries or entity graphs.
 - Tighten cascade/orphan-removal rules to match aggregate ownership.
+- Bind actor-owned follow mutations to authenticated identity before changing relationship state.
+- Bind report submissions to the authenticated reporter and keep report queues admin-only.
+- Bind user profile mutations to the authenticated account identity while leaving public reads intact.
 
 ### Phase 3: User Profile Split
 
 - Introduce athlete and company profile tables while keeping the current single-table subtype model
   available during the compatibility step.
 - Backfill profile data from the current single user table before moving repositories or mappers.
-- Mirror writes into explicit athlete/company profile entities while existing DTO reads still use the
-  compatibility subtype fields.
-- Prefer explicit athlete profile entities in user DTO mapping while keeping legacy subtype fields as
-  compatibility fallback.
+- Move writes into explicit athlete/company profile entities after migration-backed backfill has
+  established their initial rows.
+- Prefer explicit athlete profile entities in user DTO mapping and retire subtype-column read
+  fallbacks once profile-table backfill and write coverage are established.
 - Fetch split athlete/company profile entities through user read-model queries that map profile DTOs.
 - Route athlete profile updates through a profile-specific service boundary while keeping compatibility
   mirroring in the domain model.
+- Route required company registration identifiers through a profile-specific service boundary so
+  CNPJ writes reach the split company profile entity.
 - Add profile-owned repositories so split profile persistence and lookup can move off user-only access
   paths incrementally.
 - Centralize athlete profile read compatibility in the profile service instead of DTO mappers.
+- Centralize company CNPJ read compatibility in the company profile service while exposing it through
+  the existing user response contract.
+- Remove unused subtype-only update requests after editable profile fields are consolidated on the
+  routed shared user request contract.
 - Update repositories and mappers while preserving existing DTO responses.
 - Keep auth and profile reads aligned through the shared user profile contract.
 
 ### Phase 4: Report Target Stabilization
 
 - Add a stable report target representation while keeping current report endpoints.
-- Backfill existing reports from `(type, entityId)`.
+- Map `ReportTarget` onto the existing `type` and `entity_id` columns first so DTO and database
+  compatibility are preserved while repository paths migrate.
+- Route single-target report and moderation lookups through `ReportTarget`, while retaining
+  projection-oriented batched queries for admin list views.
+- If report targets later move into a dedicated table, backfill it from existing
+  `(type, entityId)` values.
 - Update admin/report queries to use the new target representation.
 - Keep old fields available in DTOs until consumers no longer need them.
 
 ### Phase 5: Cleanup And Contract Verification
 
-- Remove obsolete inheritance/discriminator assumptions once profile split is complete.
-- Replace remaining entity serialization annotations with DTO-only responses.
-- Switch schema config from update-style DDL to migration validation.
+- Remove obsolete inheritance/discriminator assumptions once profile split is complete, while
+  retaining documented subtype mappings required by typed opportunity relationships.
+- Keep response serialization DTO-only; domain relationship entities should not carry Jackson cycle
+  annotations for endpoint output.
+- Keep runtime schema config on migration validation and remove remaining compatibility mappings only
+  after their data migrations are proven.
 - Run API build/test plus web typecheck for affected contracts.
 
-## Proposed PR Scope
+## Delivery Status
 
-The PR from `refactor/architecture` should be split into reviewable commits:
+This plan is delivered incrementally so each persistence or authorization boundary can be reviewed
+and validated without waiting for the full subtype migration.
 
-1. `docs(api): define backend data model refactor plan`
-2. `chore(api): add migration baseline`
-3. `test(api): cover data model invariants`
-4. `refactor(api): harden relationship entities and fetch plans`
-5. `refactor(api): split user subtype persistence`
-6. `refactor(api): stabilize report targets`
-7. `chore(api): enforce migration-owned schema validation`
+### Delivered In PR #16
 
-Each commit should keep HTTP contracts stable or include the matching web/mobile contract update in the same PR.
+PR `#16` is merged and delivered the architecture foundation:
+
+- migration baseline, migration smoke coverage, runtime schema transition groundwork, and
+  migration-owned role seed data;
+- explicit `AccountCredentials`, `Email`, and initial `UserStatus` modeling;
+- repository/entity coverage and ownership/query hardening for relationships, feed interactions,
+  opportunities, notifications, chat participants, roles, and follows;
+- the compatibility-first start of athlete/company profile tables, repositories, services, mirrored
+  writes, and athlete profile reads.
+
+### In Progress In PR #17
+
+PR `#17` is the current draft delivery and contains:
+
+- migration-owned schema validation and DTO-only entity response cleanup;
+- `ReportTarget` compatibility mapping plus typed single-target report/admin queries;
+- typed persisted presence status through `UserStatus`;
+- company CNPJ validation, persistence, read exposure, and web profile presentation;
+- authoritative athlete/company profile DTO reads without legacy subtype-column fallback;
+- migration-owned removal of legacy athlete/company profile columns from `tb_user`;
+- role-backed athlete/company dashboard counts independent of JPA subtype discrimination;
+- lazy default loading for opportunity/company and subscriber associations, with repository-owned read-model graphs;
+- removal of company-collection orphan deletion so opportunity lifecycle remains module-owned;
+- soft-deleted posts/comments retained as stored content while public reads and new interactions reject deleted content;
+- paginated public comment reads for post and profile activity surfaces;
+- removal of the unused athlete-only update request;
+- authenticated ownership enforcement for follow, report, notification, and user profile mutations.
+
+### Phase Status
+
+| Phase                                | Status                               | Remaining Work                                                                                 |
+| ------------------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| 1. Baseline And Safety               | Substantially delivered in PR `#16`  | Keep new schema changes migration-owned and retain invariant coverage.                         |
+| 2. Relationship Hardening            | Advanced in PRs `#16` and `#17`      | Continue remaining cascade audit after opportunity ownership and feed soft-delete hardening.   |
+| 3. User Profile Split                | Profile-field cutover in PR `#17`    | Retain discriminator only for typed opportunity relationships; classification is role-backed.  |
+| 4. Report Target Stabilization       | Compatibility-first step in PR `#17` | Decide whether a dedicated target table is warranted after current representation is reviewed. |
+| 5. Cleanup And Contract Verification | Pending                              | Remove proven-obsolete compatibility mappings and run final full validation.                   |
+
+## Next Delivery Scope
+
+Continue after PR `#17` with a bounded profile-split and cleanup tranche:
+
+1. Preserve `Athlete` and `Company` discriminator entities for typed opportunity,
+   subscription, and saved-opportunity relationships until those contracts are intentionally
+   remodeled.
+2. Remove any further discriminator assumptions only where replacement paths and data migration
+   coverage are proven.
+3. Complete remaining profile-contract verification after profile-field persistence moves.
+4. Revisit remaining eager fetch/cascade findings from Phase 2 while touching affected aggregates.
+5. Run final contract verification only after the compatibility cleanup is complete.
+
+## Commit And Issue Traceability
+
+- Before each new commit, review open issues and include applicable `Refs #...` entries in the commit
+  body.
+- Use `Closes #...` only after the complete acceptance scope of that issue has been delivered and
+  verified.
+- PR `#16` is already merged, so its delivered work is linked through issue progress updates rather
+  than history rewrites.
+- The open commits in PR `#17` carry references to `#5`, `#6`, and the applicable class issues
+  (`#11` through `#15`).
 
 ## Validation
 
@@ -208,39 +291,6 @@ Run full validation before merge:
 
 ```bash
 pnpm check
-```
-
-## PR Description Draft
-
-Title:
-
-```text
-refactor(api): prepare scalable backend data model architecture
-```
-
-Body:
-
-```markdown
-## Summary
-
-- documents the target backend data model architecture for the class-diagram-driven refactor
-- keeps the current module-by-feature boundaries and API-as-domain-owner rule
-- defines phased work for migrations, relationship hardening, user profile split, report target stabilization, and validation
-
-## Principles
-
-- preserve current HTTP contracts unless explicitly changed
-- keep controllers thin and services transactional
-- keep feature-owned domain/repository/DTO/mapper code inside each module
-- move schema evolution from `ddl-auto=update` to versioned migrations
-
-## Validation
-
-- [ ] pnpm --filter @weunite/api lint
-- [ ] pnpm --filter @weunite/api test
-- [ ] pnpm --filter @weunite/api build
-- [ ] pnpm --filter @weunite/web typecheck
-- [ ] pnpm check
 ```
 
 ## Keep This Updated When

@@ -5,6 +5,13 @@ import type {
 } from "@/shared/types/comment.types";
 import { AxiosError } from "axios";
 
+export const COMMENTS_PAGE_SIZE = 10;
+
+interface GetCommentsRequestParams {
+  page?: number;
+  size?: number;
+}
+
 export const createCommentRequest = async (
   data: CreateComment,
   userId: number,
@@ -79,9 +86,17 @@ export const updateCommentRequest = async (
   }
 };
 
-export const getCommentsPostRequest = async (postId: number) => {
+export const getCommentsPostRequest = async (
+  postId: number,
+  { page = 0, size = COMMENTS_PAGE_SIZE }: GetCommentsRequestParams = {},
+) => {
   try {
-    const response = await axios.get(`/comment/get/${postId}`);
+    const response = await axios.get(`/comment/get/${postId}`, {
+      params: {
+        page,
+        size,
+      },
+    });
 
     return {
       success: true,
@@ -101,9 +116,17 @@ export const getCommentsPostRequest = async (postId: number) => {
   }
 };
 
-export const getCommentsUserId = async (userId: number) => {
+export const getCommentsUserId = async (
+  userId: number,
+  { page = 0, size = COMMENTS_PAGE_SIZE }: GetCommentsRequestParams = {},
+) => {
   try {
-    const response = await axios.get(`/comment/get/user/${userId}`);
+    const response = await axios.get(`/comment/get/user/${userId}`, {
+      params: {
+        page,
+        size,
+      },
+    });
 
     return {
       success: true,
