@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Lightbulb } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Skeleton } from "@/shared/components/ui/skeleton";
@@ -41,41 +41,52 @@ export const OpportunitiesSidebar: React.FC = () => {
   const [displayCount, setDisplayCount] = useState(4);
 
   const isDesktop = useCustomBreakpoint(1500);
-  const { data: opportunitiesData, isLoading } = useGetOpportunities();
+  const {
+    data: opportunitiesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useGetOpportunities();
 
-  const allOpportunities = Array.isArray(opportunitiesData?.data)
-    ? opportunitiesData.data
-    : [];
+  const allOpportunities = useMemo(
+    () => opportunitiesData?.pages.flatMap((page) => page.data ?? []) ?? [],
+    [opportunitiesData],
+  );
 
   useEffect(() => {
-    if (!opportunitiesData?.success || !opportunitiesData.data) {
+    if (allOpportunities.length === 0) {
       return;
     }
-
-    const opportunities = Array.isArray(opportunitiesData.data)
-      ? opportunitiesData.data
-      : [];
 
     setRandomizedOpportunities((current) => {
       if (
         current.length > 0 &&
-        Math.abs(opportunities.length - current.length) <= 2
+        Math.abs(allOpportunities.length - current.length) <= 2
       ) {
         return current;
       }
 
-      return [...opportunities].sort(() => Math.random() - 0.5);
+      return [...allOpportunities].sort(() => Math.random() - 0.5);
     });
-  }, [opportunitiesData]);
+  }, [allOpportunities]);
 
   const randomOpportunities = randomizedOpportunities.slice(0, displayCount);
   const hasMoreOpportunities = displayCount < randomizedOpportunities.length;
 
-  const handleShowMore = () => {
+  const handleShowMore = async () => {
     if (!showAll) {
       setShowAll(true);
       setVisibleOpportunities(randomOpportunities.length);
       return;
+    }
+
+    if (
+      displayCount >= randomizedOpportunities.length &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
+      await fetchNextPage();
     }
 
     setDisplayCount((previous) =>
@@ -144,20 +155,26 @@ export const OpportunitiesSidebar: React.FC = () => {
           </div>
         )}
 
-        {showAll && hasMoreOpportunities && (
+        {showAll && (hasMoreOpportunities || hasNextPage) && (
           <button
             onClick={handleShowMore}
+            disabled={isFetchingNextPage}
             className="w-full rounded border border-third/20 bg-transparent px-4 py-2 text-sm font-medium text-third duration-200 hover:cursor-pointer hover:bg-hover-button"
           >
-            Mostrar Mais Oportunidades
+            {isFetchingNextPage
+              ? "Carregando..."
+              : "Mostrar Mais Oportunidades"}
           </button>
         )}
 
-        {showAll && !hasMoreOpportunities && allOpportunities.length > 0 && (
-          <p className="py-2 text-center text-xs text-muted-foreground">
-            Todas as oportunidades foram carregadas
-          </p>
-        )}
+        {showAll &&
+          !hasMoreOpportunities &&
+          !hasNextPage &&
+          allOpportunities.length > 0 && (
+            <p className="py-2 text-center text-xs text-muted-foreground">
+              Todas as oportunidades foram carregadas
+            </p>
+          )}
       </div>
     </>
   );

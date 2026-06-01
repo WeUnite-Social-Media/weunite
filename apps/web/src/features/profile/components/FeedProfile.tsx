@@ -1,5 +1,5 @@
 import { CircleAlert, FileText, Info, MessageSquareText } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Comment from "@/features/feed/components/post/Comments/Comment";
 import Post from "@/features/feed/components/post/Post";
 import PostSkeleton from "@/features/feed/components/post/PostSkeleton";
@@ -23,6 +23,7 @@ type ActiveTab = "publicacoes" | "comentarios" | "oportunidades" | "sobre";
 
 export default function FeedProfile({ profileUsername }: FeedProfileProps) {
   const { user } = useAuthStore();
+  const commentsLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const {
     data: profileUser,
     isError: isProfileError,
@@ -57,6 +58,45 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
   const comments = (commentsResponse?.pages.flatMap(
     (page) => page.data ?? [],
   ) || []) as CommentType[];
+
+  useEffect(() => {
+    const loadMoreElement = commentsLoadMoreRef.current;
+
+    if (
+      activeTab !== "comentarios" ||
+      !loadMoreElement ||
+      !hasNextCommentsPage ||
+      isFetchingNextCommentsPage
+    ) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (
+          entry?.isIntersecting &&
+          hasNextCommentsPage &&
+          !isFetchingNextCommentsPage
+        ) {
+          void fetchNextCommentsPage();
+        }
+      },
+      { rootMargin: "160px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    activeTab,
+    comments.length,
+    fetchNextCommentsPage,
+    hasNextCommentsPage,
+    isFetchingNextCommentsPage,
+  ]);
 
   if (!isOwnProfile && isProfileLoading) {
     return <FeedProfileSkeleton />;
@@ -172,17 +212,12 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
               ))}
 
               {hasNextCommentsPage && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="my-6"
-                  onClick={() => void fetchNextCommentsPage()}
-                  disabled={isFetchingNextCommentsPage}
+                <div
+                  ref={commentsLoadMoreRef}
+                  className="my-6 text-sm text-muted-foreground"
                 >
-                  {isFetchingNextCommentsPage
-                    ? "Carregando..."
-                    : "Carregar mais comentarios"}
-                </Button>
+                  {isFetchingNextCommentsPage ? "Carregando..." : null}
+                </div>
               )}
             </>
           ) : (

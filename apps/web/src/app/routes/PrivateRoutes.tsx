@@ -8,14 +8,20 @@ import { NotificationSync } from "@/features/notifications/components/Notificati
 import { OnboardingController } from "@/features/onboarding/components/OnboardingController";
 import { Navigate, Outlet } from "react-router-dom";
 import { HeaderMobile } from "@/shared/components/shared/HeaderMobile";
+import { useSessionGuard } from "@/app/routes/useSessionGuard";
 
 export function PrivateRoutes() {
   const { isAuthenticated } = useAuthStore();
   const { maxLeftSideBar } = useBreakpoints();
   const isConversationOpen = useChatStore((state) => state.isConversationOpen);
+  const sessionState = useSessionGuard();
 
   if (!isAuthenticated) {
     return <Navigate to={"/auth/login"} replace />;
+  }
+
+  if (sessionState === "checking") {
+    return null;
   }
 
   return (

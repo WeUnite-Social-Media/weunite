@@ -20,6 +20,7 @@ import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -151,17 +152,37 @@ public class OpportunityService {
 
   @Transactional
   public List<OpportunityDTO> getOpportunities() {
+    return getOpportunities(0, 10);
+  }
+
+  @Transactional
+  public List<OpportunityDTO> getOpportunities(int page, int size) {
+    PageRequest pageable = pageRequest(page, size);
     List<Opportunity> opportunities =
-        opportunityRepository.findAllActiveForReadModelOrderedByCreationDate();
+        opportunityRepository.findAllActiveForReadModelOrderedByCreationDate(pageable).getContent();
     return opportunityMapper.toOpportunityDTOList(opportunities);
   }
 
   @Transactional
   public List<OpportunityDTO> getOpportunitiesByCompanyId(Long userId) {
+    return getOpportunitiesByCompanyId(userId, 0, 10);
+  }
+
+  @Transactional
+  public List<OpportunityDTO> getOpportunitiesByCompanyId(Long userId, int page, int size) {
     companyRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
-    List<Opportunity> opportunities = opportunityRepository.findActiveReadModelsByCompanyId(userId);
+    List<Opportunity> opportunities =
+        opportunityRepository
+            .findActiveReadModelsByCompanyId(userId, pageRequest(page, size))
+            .getContent();
     return opportunityMapper.toOpportunityDTOList(opportunities);
+  }
+
+  private PageRequest pageRequest(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 100);
+    return PageRequest.of(safePage, safeSize);
   }
 
   private void validateOpportunityRequest(OpportunityRequestDTO opportunityDTO) {

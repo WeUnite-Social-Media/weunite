@@ -13,12 +13,18 @@ import {
   getOpportunitiesCompanyRequest,
   getOpportunitiesRequest,
   getOpportunitySubscribersRequest,
+  OPPORTUNITIES_PAGE_SIZE,
   getSavedOpportunitiesRequest,
   toggleSavedOpportunityRequest,
   toggleSubscriberRequest,
   updateOpportunityRequest,
 } from "@/features/opportunities/api/opportunityService";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export const opportunityKeys = {
@@ -144,9 +150,19 @@ export const useGetOpportunitiesCompany = (
 };
 
 export const useGetOpportunities = () => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: opportunityKeys.lists(),
-    queryFn: getOpportunitiesRequest,
+    queryFn: ({ pageParam }) => getOpportunitiesRequest({ page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.success || !lastPage.data) {
+        return undefined;
+      }
+
+      return lastPage.data.length < OPPORTUNITIES_PAGE_SIZE
+        ? undefined
+        : allPages.length;
+    },
     staleTime: 5 * 60 * 1000,
     retry: 2,
   });

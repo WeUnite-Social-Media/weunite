@@ -223,7 +223,7 @@ public class AdminReportService {
             Report.ReportType.OPPORTUNITY, REPORT_THRESHOLD);
     List<Long> opportunityIds = extractEntityIds(results);
     Map<Long, Opportunity> opportunitiesById =
-        indexById(opportunityRepository.findAllById(opportunityIds), Opportunity::getId);
+        indexById(opportunityRepository.findReadModelsByIdIn(opportunityIds), Opportunity::getId);
     Map<Long, List<Report>> reportsByOpportunityId =
         groupReportsByEntityId(opportunityIds, Report.ReportType.OPPORTUNITY);
     Instant placeholderTimestamp = Instant.now();
