@@ -22,7 +22,7 @@ export const useFollowAction = (profileUsername?: string) => {
 
   const initialIsFollowing =
     followStatusResponse?.success === true &&
-    followStatusResponse.data?.data?.status === "ACCEPTED";
+    followStatusResponse.data?.status === "ACCEPTED";
 
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
 

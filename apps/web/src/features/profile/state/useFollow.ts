@@ -52,7 +52,7 @@ export const useFollowAndUnfollow = () => {
           isNowFollowing
             ? {
                 success: true,
-                data: result.data,
+                data: result.data?.data ?? null,
                 message: result.message,
                 error: null,
               }

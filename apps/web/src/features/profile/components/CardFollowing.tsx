@@ -35,7 +35,7 @@ export default function CardFollowing({
   const followMutation = useFollowAndUnfollow();
   const serverIsFollowing =
     followStatusResponse?.success === true &&
-    followStatusResponse.data?.data?.status === "ACCEPTED";
+    followStatusResponse.data?.status === "ACCEPTED";
   const [isFollowing, setIsFollowing] = useState(serverIsFollowing);
 
   useEffect(() => {
