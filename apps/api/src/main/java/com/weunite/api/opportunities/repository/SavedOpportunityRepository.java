@@ -3,6 +3,8 @@ package com.weunite.api.opportunities.repository;
 import com.weunite.api.opportunities.domain.SavedOpportunity;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -38,6 +40,22 @@ public interface SavedOpportunityRepository extends JpaRepository<SavedOpportuni
           + "ORDER BY s.savedAt DESC")
   List<SavedOpportunity> findReadModelsByAthleteIdOrderBySavedAtDesc(
       @Param("athleteId") Long athleteId);
+
+  @EntityGraph(
+      attributePaths = {
+        "opportunity",
+        "opportunity.company",
+        "opportunity.company.role",
+        "opportunity.skills",
+        "opportunity.subscribers"
+      })
+  @Query(
+      "SELECT s FROM SavedOpportunity s "
+          + "WHERE s.athlete.id = :athleteId "
+          + "AND s.opportunity.deleted = false "
+          + "ORDER BY s.savedAt DESC")
+  Page<SavedOpportunity> findReadModelsByAthleteIdOrderBySavedAtDesc(
+      @Param("athleteId") Long athleteId, Pageable pageable);
 
   @Query(
       "SELECT COUNT(s) > 0 FROM SavedOpportunity s "

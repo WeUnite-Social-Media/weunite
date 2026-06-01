@@ -17,6 +17,7 @@ import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.AthleteRepository;
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,10 +98,17 @@ public class SubscribersService {
 
   @Transactional(readOnly = true)
   public List<SubscriberDTO> getSubscribersByAthlete(Long athleteId) {
+    return getSubscribersByAthlete(athleteId, 0, 10);
+  }
+
+  @Transactional(readOnly = true)
+  public List<SubscriberDTO> getSubscribersByAthlete(Long athleteId, int page, int size) {
     athleteRepository.findById(athleteId).orElseThrow(UserNotFoundException::new);
 
     List<Subscriber> subscribers =
-        subscribersRepository.findReadModelsByAthleteIdAndOpportunityDeletedFalse(athleteId);
+        subscribersRepository
+            .findReadModelsByAthleteIdAndOpportunityDeletedFalse(athleteId, pageRequest(page, size))
+            .getContent();
     return subscribersMapper.mapSubscribersToList(subscribers);
   }
 
@@ -114,5 +122,11 @@ public class SubscribersService {
     if (opportunity.getDateEnd() != null && opportunity.getDateEnd().isBefore(LocalDate.now())) {
       throw new OpportunityExpiredException();
     }
+  }
+
+  private PageRequest pageRequest(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 100);
+    return PageRequest.of(safePage, safeSize);
   }
 }

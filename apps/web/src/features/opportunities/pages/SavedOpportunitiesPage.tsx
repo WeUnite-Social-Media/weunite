@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bookmark, Briefcase, Calendar, Loader2, MapPin } from "lucide-react";
 import { format } from "date-fns";
@@ -22,12 +22,47 @@ export function SavedOpportunitiesPage() {
   const [selectedOpportunity, setSelectedOpportunity] =
     useState<Opportunity | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  const { data, isLoading } = useGetSavedOpportunities(Number(user?.id), {
-    enabled: Boolean(user?.id) && user?.role === "athlete",
-  });
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useGetSavedOpportunities(Number(user?.id), {
+      enabled: Boolean(user?.id) && user?.role === "athlete",
+    });
 
-  const savedOpportunities = (data?.data ?? []) as Opportunity[];
+  const savedOpportunities = useMemo<Opportunity[]>(
+    () =>
+      data?.pages.flatMap((page) => (page.data ?? []) as Opportunity[]) ?? [],
+    [data],
+  );
+
+  useEffect(() => {
+    const loadMoreElement = loadMoreRef.current;
+
+    if (!loadMoreElement || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    savedOpportunities.length,
+  ]);
 
   const handleViewDetails = (opportunity: Opportunity) => {
     setSelectedOpportunity(opportunity);
@@ -105,7 +140,8 @@ export function SavedOpportunitiesPage() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Briefcase className="h-4 w-4" />
                       <span className="truncate">
-                        {opportunity.company.name || opportunity.company.username}
+                        {opportunity.company.name ||
+                          opportunity.company.username}
                       </span>
                     </div>
                   ) : null}
@@ -127,7 +163,8 @@ export function SavedOpportunitiesPage() {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span>
-                        Até {format(new Date(opportunity.dateEnd), "dd/MM/yyyy")}
+                        Até{" "}
+                        {format(new Date(opportunity.dateEnd), "dd/MM/yyyy")}
                       </span>
                     </div>
                   </div>
@@ -160,6 +197,15 @@ export function SavedOpportunitiesPage() {
                 </CardContent>
               </Card>
             ))}
+
+            {hasNextPage ? (
+              <div
+                ref={loadMoreRef}
+                className="py-4 text-center text-sm text-muted-foreground"
+              >
+                {isFetchingNextPage ? "Carregando..." : null}
+              </div>
+            ) : null}
           </div>
         )}
 

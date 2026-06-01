@@ -56,9 +56,13 @@ public class SubscriberController {
 
   @GetMapping("/athlete/{athleteId}")
   public ResponseEntity<List<SubscriberDTO>> getSubscribersByAthlete(
-      @AuthenticationPrincipal Jwt jwt, @PathVariable Long athleteId) {
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long athleteId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
     Long authenticatedUserId = authenticatedUserService.requireMatchingUserId(jwt, athleteId);
-    List<SubscriberDTO> result = subscribersService.getSubscribersByAthlete(authenticatedUserId);
+    List<SubscriberDTO> result =
+        subscribersService.getSubscribersByAthlete(authenticatedUserId, page, size);
     return ResponseEntity.status(HttpStatus.OK).body(result);
   }
 }

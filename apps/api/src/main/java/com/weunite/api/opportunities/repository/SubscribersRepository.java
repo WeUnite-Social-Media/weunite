@@ -5,6 +5,8 @@ import com.weunite.api.opportunities.domain.Subscriber;
 import com.weunite.api.users.domain.Athlete;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -43,4 +45,18 @@ public interface SubscribersRepository extends JpaRepository<Subscriber, Long> {
         "opportunity.subscribers"
       })
   List<Subscriber> findReadModelsByAthleteIdAndOpportunityDeletedFalse(Long athleteId);
+
+  @EntityGraph(
+      attributePaths = {
+        "athlete",
+        "athlete.role",
+        "athlete.skills",
+        "opportunity",
+        "opportunity.company",
+        "opportunity.company.role",
+        "opportunity.skills",
+        "opportunity.subscribers"
+      })
+  Page<Subscriber> findReadModelsByAthleteIdAndOpportunityDeletedFalse(
+      Long athleteId, Pageable pageable);
 }

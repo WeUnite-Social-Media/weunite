@@ -140,9 +140,20 @@ export const useGetOpportunitiesCompany = (
   companyId: number,
   options?: { enabled?: boolean },
 ) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: opportunityKeys.list(`companyId=${companyId}`),
-    queryFn: () => getOpportunitiesCompanyRequest(companyId),
+    queryFn: ({ pageParam }) =>
+      getOpportunitiesCompanyRequest(companyId, { page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.success || !lastPage.data) {
+        return undefined;
+      }
+
+      return lastPage.data.length < OPPORTUNITIES_PAGE_SIZE
+        ? undefined
+        : allPages.length;
+    },
     staleTime: 5 * 60 * 1000,
     retry: 2,
     enabled: options?.enabled ?? true,
@@ -246,23 +257,38 @@ export const useGetAthleteSubscriptions = (
   athleteId: number,
   options?: { enabled?: boolean },
 ) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: opportunityKeys.athleteSubscriptions(athleteId),
-    queryFn: () => getAthleteSubscriptionsRequest(athleteId),
+    queryFn: ({ pageParam }) =>
+      getAthleteSubscriptionsRequest(athleteId, { page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.success || !lastPage.data) {
+        return undefined;
+      }
+
+      return lastPage.data.length < OPPORTUNITIES_PAGE_SIZE
+        ? undefined
+        : allPages.length;
+    },
     staleTime: 2 * 60 * 1000,
     retry: 2,
     enabled: options?.enabled ?? true,
-    select: (result) =>
-      result.success && result.data
-        ? {
-            ...result,
-            data: result.data
-              .map((subscription) => subscription.opportunity)
-              .filter((opportunity): opportunity is Opportunity =>
-                Boolean(opportunity),
-              ),
-          }
-        : result,
+    select: (result) => ({
+      ...result,
+      pages: result.pages.map((page) =>
+        page.success && page.data
+          ? {
+              ...page,
+              data: page.data
+                .map((subscription) => subscription.opportunity)
+                .filter((opportunity): opportunity is Opportunity =>
+                  Boolean(opportunity),
+                ),
+            }
+          : page,
+      ),
+    }),
   });
 };
 
@@ -303,23 +329,38 @@ export const useGetSavedOpportunities = (
   athleteId: number,
   options?: { enabled?: boolean },
 ) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: opportunityKeys.saved(athleteId),
-    queryFn: () => getSavedOpportunitiesRequest(athleteId),
+    queryFn: ({ pageParam }) =>
+      getSavedOpportunitiesRequest(athleteId, { page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.success || !lastPage.data) {
+        return undefined;
+      }
+
+      return lastPage.data.length < OPPORTUNITIES_PAGE_SIZE
+        ? undefined
+        : allPages.length;
+    },
     staleTime: 2 * 60 * 1000,
     retry: 2,
     enabled: options?.enabled ?? true,
-    select: (result) =>
-      result.success && result.data
-        ? {
-            ...result,
-            data: result.data
-              .map((savedOpportunity) => savedOpportunity.opportunity)
-              .filter((opportunity): opportunity is Opportunity =>
-                Boolean(opportunity),
-              ),
-          }
-        : result,
+    select: (result) => ({
+      ...result,
+      pages: result.pages.map((page) =>
+        page.success && page.data
+          ? {
+              ...page,
+              data: page.data
+                .map((savedOpportunity) => savedOpportunity.opportunity)
+                .filter((opportunity): opportunity is Opportunity =>
+                  Boolean(opportunity),
+                ),
+            }
+          : page,
+      ),
+    }),
   });
 };
 

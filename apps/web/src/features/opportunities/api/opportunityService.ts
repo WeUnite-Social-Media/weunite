@@ -333,9 +333,17 @@ export const checkIsSubscribedRequest = async (
   }
 };
 
-export const getAthleteSubscriptionsRequest = async (athleteId: number) => {
+export const getAthleteSubscriptionsRequest = async (
+  athleteId: number,
+  {
+    page = 0,
+    size = OPPORTUNITIES_PAGE_SIZE,
+  }: GetOpportunitiesRequestParams = {},
+) => {
   try {
-    const response = await axios.get(`/subscriber/athlete/${athleteId}`);
+    const response = await axios.get(`/subscriber/athlete/${athleteId}`, {
+      params: { page, size },
+    });
     const subscriptions = unwrapArrayResponse<Subscriber>(response.data);
 
     return {
@@ -387,10 +395,19 @@ export const toggleSavedOpportunityRequest = async (
   }
 };
 
-export const getSavedOpportunitiesRequest = async (athleteId: number) => {
+export const getSavedOpportunitiesRequest = async (
+  athleteId: number,
+  {
+    page = 0,
+    size = OPPORTUNITIES_PAGE_SIZE,
+  }: GetOpportunitiesRequestParams = {},
+) => {
   try {
     const response = await axios.get(
       `/saved-opportunities/athlete/${athleteId}`,
+      {
+        params: { page, size },
+      },
     );
     const savedOpportunities = unwrapArrayResponse<SavedOpportunity>(
       response.data,

@@ -252,6 +252,8 @@ PR `#18` continues the architecture cleanup and manual E2E hardening:
   buttons on the main web surfaces;
 - public opportunity list endpoints accept bounded `page`/`size` parameters and keep repository-owned
   read-model graphs;
+- company opportunity, athlete subscription, and saved-opportunity lists also accept bounded
+  pagination and use automatic incremental loading on their web surfaces;
 - reported-opportunity admin details load opportunity read models in bulk to avoid lazy-loading failures
   in moderation queues;
 - closed report rows remain inspectable but no longer expose pending moderation actions;
@@ -283,8 +285,8 @@ Continue after PR `#18` with a bounded profile-split and cleanup tranche:
 4. Revisit remaining eager fetch/cascade findings from Phase 2 while touching affected aggregates.
 5. Run final contract verification only after the compatibility cleanup is complete.
 6. Manually verify the web flows hardened in PR `#18`: infinite comment loading, opportunity infinite
-   loading, reported opportunities, closed report actions, presence expiry, and auth fallback when the
-   API/account is unavailable.
+   loading across public/company/my/saved surfaces, reported opportunities, closed report actions,
+   presence expiry, and auth fallback when the API/account is unavailable.
 
 ## Commit And Issue Traceability
 
