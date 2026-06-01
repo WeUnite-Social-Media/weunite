@@ -7,7 +7,6 @@ import {
 } from "@/shared/components/ui/drawer";
 import { X as CloseIcon } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
-import { Button } from "@/shared/components/ui/button";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import {
   Dialog,
@@ -19,6 +18,7 @@ import {
 import CardFollowing from "./CardFollowing";
 import { useGetFollowers } from "@/features/profile/state/useFollow";
 import type { Follower } from "@/shared/types/follower.type";
+import { useEffect, useRef } from "react";
 
 interface FollowersProps {
   isOpen?: boolean;
@@ -40,6 +40,28 @@ export default function Followers({
     isFetchingNextPage,
     isLoading,
   } = useGetFollowers(userId);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const loadMoreElement = loadMoreRef.current;
+
+    if (!loadMoreElement || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "160px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, followersData]);
 
   const handleClose = () => {
     if (onOpenChange) onOpenChange(false);
@@ -75,17 +97,14 @@ export default function Followers({
           />
         ))}
 
-        {hasNextPage && (
-          <Button
-            type="button"
-            variant="outline"
-            className="mx-auto my-4"
-            onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
+        {hasNextPage ? (
+          <div
+            ref={loadMoreRef}
+            className="py-4 text-center text-sm text-muted-foreground"
           >
-            {isFetchingNextPage ? "Carregando..." : "Carregar mais seguidores"}
-          </Button>
-        )}
+            {isFetchingNextPage ? "Carregando..." : null}
+          </div>
+        ) : null}
       </>
     );
   };

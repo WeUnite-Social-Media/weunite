@@ -263,6 +263,8 @@ PR `#18` continues the architecture cleanup and manual E2E hardening:
   and marks websocket disconnects offline;
 - protected web routes validate the authenticated account and route back to auth when the backend is
   unavailable or the stored account no longer exists.
+- profile follower/following lists reuse the paginated follow API and load additional pages
+  automatically inside the modal/drawer surfaces.
 
 ### Phase Status
 
@@ -287,8 +289,8 @@ Continue after PR `#18` with a bounded profile-split and cleanup tranche:
 4. Revisit remaining eager fetch/cascade findings from Phase 2 while touching affected aggregates.
 5. Run final contract verification only after the compatibility cleanup is complete.
 6. Manually verify the web flows hardened in PR `#18`: infinite comment loading, opportunity infinite
-   loading across public/company/my/saved/subscriber surfaces, reported opportunities, closed report
-   actions, presence expiry, and auth fallback when the API/account is unavailable.
+   loading across public/company/my/saved/subscriber/follow surfaces, reported opportunities, closed
+   report actions, presence expiry, and auth fallback when the API/account is unavailable.
 
 ## Commit And Issue Traceability
 
