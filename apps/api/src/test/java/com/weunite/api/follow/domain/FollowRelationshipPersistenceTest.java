@@ -2,6 +2,7 @@ package com.weunite.api.follow.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.weunite.api.follow.repository.FollowRepository;
 import com.weunite.api.users.domain.User;
@@ -33,6 +34,34 @@ class FollowRelationshipPersistenceTest {
     assertThrows(
         DataIntegrityViolationException.class,
         () -> followRepository.saveAndFlush(new Follow(follower, followed)));
+  }
+
+  @Test
+  @DisplayName("Should load follow participants for read-model lookups")
+  void loadFollowParticipantsForReadModelLookups() {
+    User follower =
+        userRepository.save(new User("Follower Three", "follower_three", "f3@example.com", "p"));
+    User followed =
+        userRepository.save(new User("Followed Three", "followed_three", "d3@example.com", "p"));
+    followRepository.saveAndFlush(new Follow(follower, followed));
+
+    entityManager.clear();
+
+    Follow follow =
+        followRepository
+            .findByFollowerIdAndFollowedId(follower.getId(), followed.getId())
+            .orElseThrow();
+
+    assertTrue(
+        entityManager
+            .getEntityManagerFactory()
+            .getPersistenceUnitUtil()
+            .isLoaded(follow, "follower"));
+    assertTrue(
+        entityManager
+            .getEntityManagerFactory()
+            .getPersistenceUnitUtil()
+            .isLoaded(follow, "followed"));
   }
 
   @Test

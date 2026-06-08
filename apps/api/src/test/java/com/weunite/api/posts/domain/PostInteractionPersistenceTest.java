@@ -118,6 +118,30 @@ class PostInteractionPersistenceTest {
   }
 
   @Test
+  @DisplayName("Should keep like relationships lazy by default")
+  void keepLikeRelationshipsLazyByDefault() {
+    User author = userRepository.save(new User("Author", "author8", "author8@example.com", "p"));
+    User user = userRepository.save(new User("Liker", "liker8", "liker8@example.com", "p"));
+    Post post = postRepository.save(new Post(author, "Post"));
+    Like like = likeRepository.saveAndFlush(new Like(post, user));
+
+    entityManager.clear();
+
+    Like reloadedLike = likeRepository.findById(like.getId()).orElseThrow();
+
+    assertFalse(
+        entityManager
+            .getEntityManagerFactory()
+            .getPersistenceUnitUtil()
+            .isLoaded(reloadedLike, "post"));
+    assertFalse(
+        entityManager
+            .getEntityManagerFactory()
+            .getPersistenceUnitUtil()
+            .isLoaded(reloadedLike, "user"));
+  }
+
+  @Test
   @DisplayName("Should retain soft deleted posts while removing them from active feed lookups")
   void hideSoftDeletedPostsFromActiveReads() {
     User author = userRepository.save(new User("Author", "author6", "author6@example.com", "p"));

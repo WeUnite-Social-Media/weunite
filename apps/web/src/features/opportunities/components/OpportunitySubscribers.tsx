@@ -1,7 +1,12 @@
+import { useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ExternalLink, Loader2, Mail, Users } from "lucide-react";
 import { useGetOpportunitySubscribers } from "@/features/opportunities/state/useOpportunities";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/shared/components/ui/avatar";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { getInitials } from "@/shared/utils/getInitials";
@@ -17,16 +22,54 @@ export function OpportunitySubscribers({
   subscribers: subscribersProp,
 }: OpportunitySubscribersProps) {
   const navigate = useNavigate();
-  const { data, isLoading } = useGetOpportunitySubscribers(
-    opportunityId || 0,
-    Boolean(opportunityId) && !subscribersProp,
-  );
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useGetOpportunitySubscribers(
+      opportunityId || 0,
+      Boolean(opportunityId) && !subscribersProp,
+    );
 
+  const pagedSubscribers = useMemo(
+    () => data?.pages.flatMap((page) => page.data ?? []) ?? [],
+    [data],
+  );
   const subscribers = Array.isArray(subscribersProp)
     ? subscribersProp
-    : Array.isArray(data?.data)
-      ? data.data
-      : [];
+    : pagedSubscribers;
+
+  useEffect(() => {
+    if (subscribersProp) {
+      return;
+    }
+
+    const loadMoreElement = loadMoreRef.current;
+
+    if (!loadMoreElement || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    subscribers.length,
+    subscribersProp,
+  ]);
 
   if (isLoading) {
     return (
@@ -97,6 +140,15 @@ export function OpportunitySubscribers({
           </Card>
         );
       })}
+
+      {!subscribersProp && hasNextPage ? (
+        <div
+          ref={loadMoreRef}
+          className="py-4 text-center text-sm text-muted-foreground"
+        >
+          {isFetchingNextPage ? "Carregando..." : null}
+        </div>
+      ) : null}
     </div>
   );
 }

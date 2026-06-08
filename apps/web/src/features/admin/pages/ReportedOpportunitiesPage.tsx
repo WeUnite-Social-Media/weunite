@@ -111,7 +111,8 @@ export function ReportedOpportunitiesPage() {
       reportedUser: {
         id: reportedOpportunity.opportunity.company?.id,
         name:
-          reportedOpportunity.opportunity.company?.name || "Empresa desconhecida",
+          reportedOpportunity.opportunity.company?.name ||
+          "Empresa desconhecida",
         username:
           reportedOpportunity.opportunity.company?.username || "empresa",
         profileImg: reportedOpportunity.opportunity.company?.profileImg,
@@ -310,78 +311,87 @@ export function ReportedOpportunitiesPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredOpportunities.map((item) => (
-                      <TableRow key={item.opportunity.id}>
-                        <TableCell className="max-w-md">
-                          <div className="space-y-1">
-                            <p className="font-medium">{item.opportunity.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Por {item.opportunity.company?.name || "Empresa"}
-                            </p>
-                            <p className="truncate text-sm text-muted-foreground">
-                              {item.opportunity.description}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="destructive" className="bg-red-600">
-                            {item.totalReports} denúncia
-                            {item.totalReports === 1 ? "" : "s"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {getReportStatusBadge(normalizeStatus(item.status))}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(item.reports[0]?.createdAt).toLocaleDateString(
-                            "pt-BR",
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleReview(item)}
-                            >
-                              Revisar
-                            </Button>
+                    filteredOpportunities.map((item) => {
+                      const status = normalizeStatus(item.status);
+                      const isActionable =
+                        status === "pending" || status === "under_review";
 
-                            {normalizeStatus(item.status) === "deleted" ? (
+                      return (
+                        <TableRow key={item.opportunity.id}>
+                          <TableCell className="max-w-md">
+                            <div className="space-y-1">
+                              <p className="font-medium">
+                                {item.opportunity.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Por{" "}
+                                {item.opportunity.company?.name || "Empresa"}
+                              </p>
+                              <p className="truncate text-sm text-muted-foreground">
+                                {item.opportunity.description}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="destructive" className="bg-red-600">
+                              {item.totalReports} denúncia
+                              {item.totalReports === 1 ? "" : "s"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{getReportStatusBadge(status)}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(
+                              item.reports[0]?.createdAt,
+                            ).toLocaleDateString("pt-BR")}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleRestore(Number(item.opportunity.id))}
+                                onClick={() => handleReview(item)}
                               >
-                                <RotateCcw className="mr-2 h-4 w-4" />
-                                Restaurar
+                                {isActionable ? "Revisar" : "Ver detalhes"}
                               </Button>
-                            ) : (
-                              <>
+
+                              {status === "deleted" ? (
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() =>
-                                    handleDismiss(Number(item.opportunity.id))
+                                    handleRestore(Number(item.opportunity.id))
                                   }
                                 >
-                                  Descartar
+                                  <RotateCcw className="mr-2 h-4 w-4" />
+                                  Restaurar
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() =>
-                                    handleDelete(Number(item.opportunity.id))
-                                  }
-                                >
-                                  Deletar
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                              ) : isActionable ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      handleDismiss(Number(item.opportunity.id))
+                                    }
+                                  >
+                                    Descartar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() =>
+                                      handleDelete(Number(item.opportunity.id))
+                                    }
+                                  >
+                                    Deletar
+                                  </Button>
+                                </>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>

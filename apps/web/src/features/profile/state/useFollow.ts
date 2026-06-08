@@ -14,6 +14,7 @@ import {
   getFollowRequest,
 } from "@/features/profile/api/followerService";
 import { toast } from "sonner";
+import type { Follower } from "@/shared/types/follower.type";
 
 export const followKeys = {
   all: ["follows"] as const,
@@ -44,6 +45,44 @@ export const useFollowAndUnfollow = () => {
     onSuccess: (result, { followedId, followerId }) => {
       if (result.success) {
         toast.success(result.message);
+        const isNowFollowing = result.message?.includes("Seguiu");
+
+        queryClient.setQueryData(
+          followKeys.detail(followerId, followedId),
+          isNowFollowing
+            ? {
+                success: true,
+                data: result.data?.data ?? null,
+                message: result.message,
+                error: null,
+              }
+            : {
+                success: false,
+                data: null,
+                message: null,
+                error: null,
+              },
+        );
+
+        queryClient.setQueriesData(
+          { queryKey: followKeys.followers(followedId) },
+          (oldData: unknown) =>
+            updateFollowStatusInInfiniteData(
+              oldData,
+              followerId,
+              isNowFollowing,
+            ),
+        );
+        queryClient.setQueriesData(
+          { queryKey: followKeys.following(followerId) },
+          (oldData: unknown) =>
+            updateFollowStatusInInfiniteData(
+              oldData,
+              followedId,
+              isNowFollowing,
+            ),
+        );
+
         queryClient.invalidateQueries({
           queryKey: followKeys.followers(followedId),
         });
@@ -68,6 +107,48 @@ export const useFollowAndUnfollow = () => {
     },
   });
 };
+
+function updateFollowStatusInInfiniteData(
+  oldData: unknown,
+  userId: number,
+  isFollowing: boolean,
+) {
+  if (!oldData || typeof oldData !== "object" || !("pages" in oldData)) {
+    return oldData;
+  }
+
+  const data = oldData as {
+    pages: Array<{
+      data?: {
+        data?: Follower[];
+      };
+    }>;
+  };
+
+  return {
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      data: page.data
+        ? {
+            ...page.data,
+            data: page.data.data?.map((follow) => {
+              const followerId = Number(follow.follower?.id);
+              const followedId = Number(follow.followed?.id);
+              const matches = followerId === userId || followedId === userId;
+
+              return matches
+                ? {
+                    ...follow,
+                    status: isFollowing ? "ACCEPTED" : "REMOVED",
+                  }
+                : follow;
+            }),
+          }
+        : page.data,
+    })),
+  };
+}
 
 export const useGetFollowers = (userId: number) => {
   return useInfiniteQuery({

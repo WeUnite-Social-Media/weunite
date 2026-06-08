@@ -12,6 +12,7 @@ import com.weunite.api.users.domain.Athlete;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.AthleteRepository;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,10 +54,17 @@ public class SavedOpportunityService {
 
   @Transactional(readOnly = true)
   public List<SavedOpportunityDTO> getSavedOpportunitiesByAthlete(Long athleteId) {
+    return getSavedOpportunitiesByAthlete(athleteId, 0, 10);
+  }
+
+  @Transactional(readOnly = true)
+  public List<SavedOpportunityDTO> getSavedOpportunitiesByAthlete(
+      Long athleteId, int page, int size) {
     athleteRepository.findById(athleteId).orElseThrow(UserNotFoundException::new);
 
     return savedOpportunityRepository
-        .findReadModelsByAthleteIdOrderBySavedAtDesc(athleteId)
+        .findReadModelsByAthleteIdOrderBySavedAtDesc(athleteId, pageRequest(page, size))
+        .getContent()
         .stream()
         .map(savedOpportunityMapper::toDTO)
         .toList();
@@ -82,5 +90,11 @@ public class SavedOpportunityService {
     return opportunityRepository
         .findByIdAndDeletedFalse(opportunityId)
         .orElseThrow(OpportunityNotFoundException::new);
+  }
+
+  private PageRequest pageRequest(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 100);
+    return PageRequest.of(safePage, safeSize);
   }
 }

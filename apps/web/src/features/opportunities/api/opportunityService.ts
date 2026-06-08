@@ -15,6 +15,13 @@ type ResponseWithData<T> = {
   message?: string;
 };
 
+interface GetOpportunitiesRequestParams {
+  page?: number;
+  size?: number;
+}
+
+export const OPPORTUNITIES_PAGE_SIZE = 10;
+
 const unwrapArrayResponse = <T>(payload: unknown): T[] => {
   if (Array.isArray(payload)) {
     return payload as T[];
@@ -141,9 +148,20 @@ export const deleteOpportunityRequest = async (
   }
 };
 
-export const getOpportunitiesCompanyRequest = async (companyId: number) => {
+export const getOpportunitiesCompanyRequest = async (
+  companyId: number,
+  {
+    page = 0,
+    size = OPPORTUNITIES_PAGE_SIZE,
+  }: GetOpportunitiesRequestParams = {},
+) => {
   try {
-    const response = await axios.get(`/opportunities/get/company/${companyId}`);
+    const response = await axios.get(
+      `/opportunities/get/company/${companyId}`,
+      {
+        params: { page, size },
+      },
+    );
     const opportunities = unwrapArrayResponse<Opportunity>(response.data);
 
     return {
@@ -165,9 +183,14 @@ export const getOpportunitiesCompanyRequest = async (companyId: number) => {
   }
 };
 
-export const getOpportunitiesRequest = async () => {
+export const getOpportunitiesRequest = async ({
+  page = 0,
+  size = OPPORTUNITIES_PAGE_SIZE,
+}: GetOpportunitiesRequestParams = {}) => {
   try {
-    const response = await axios.get("/opportunities/get");
+    const response = await axios.get("/opportunities/get", {
+      params: { page, size },
+    });
     const opportunities = unwrapArrayResponse<Opportunity>(response.data);
 
     return {
@@ -232,10 +255,17 @@ export const getAvailableSkillsRequest = async () => {
 
 export const getOpportunitySubscribersRequest = async (
   opportunityId: number,
+  {
+    page = 0,
+    size = OPPORTUNITIES_PAGE_SIZE,
+  }: GetOpportunitiesRequestParams = {},
 ) => {
   try {
     const response = await axios.get(
       `/subscriber/subscribers/${opportunityId}`,
+      {
+        params: { page, size },
+      },
     );
     const subscribers = unwrapArrayResponse<Subscriber>(response.data);
 
@@ -310,9 +340,17 @@ export const checkIsSubscribedRequest = async (
   }
 };
 
-export const getAthleteSubscriptionsRequest = async (athleteId: number) => {
+export const getAthleteSubscriptionsRequest = async (
+  athleteId: number,
+  {
+    page = 0,
+    size = OPPORTUNITIES_PAGE_SIZE,
+  }: GetOpportunitiesRequestParams = {},
+) => {
   try {
-    const response = await axios.get(`/subscriber/athlete/${athleteId}`);
+    const response = await axios.get(`/subscriber/athlete/${athleteId}`, {
+      params: { page, size },
+    });
     const subscriptions = unwrapArrayResponse<Subscriber>(response.data);
 
     return {
@@ -364,10 +402,19 @@ export const toggleSavedOpportunityRequest = async (
   }
 };
 
-export const getSavedOpportunitiesRequest = async (athleteId: number) => {
+export const getSavedOpportunitiesRequest = async (
+  athleteId: number,
+  {
+    page = 0,
+    size = OPPORTUNITIES_PAGE_SIZE,
+  }: GetOpportunitiesRequestParams = {},
+) => {
   try {
     const response = await axios.get(
       `/saved-opportunities/athlete/${athleteId}`,
+      {
+        params: { page, size },
+      },
     );
     const savedOpportunities = unwrapArrayResponse<SavedOpportunity>(
       response.data,

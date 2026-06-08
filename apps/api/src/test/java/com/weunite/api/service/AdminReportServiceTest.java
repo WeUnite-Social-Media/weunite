@@ -194,7 +194,8 @@ class AdminReportServiceTest {
 
     when(reportRepository.findAllEntitiesWithReports(Report.ReportType.OPPORTUNITY, 1L))
         .thenReturn(results);
-    when(opportunityRepository.findAllById(List.of(existingOpportunityId, deletedOpportunityId)))
+    when(opportunityRepository.findReadModelsByIdIn(
+            List.of(existingOpportunityId, deletedOpportunityId)))
         .thenReturn(List.of(opportunity));
     when(reportRepository.findByEntityIdInAndType(
             List.of(existingOpportunityId, deletedOpportunityId), Report.ReportType.OPPORTUNITY))
@@ -216,7 +217,8 @@ class AdminReportServiceTest {
         reportedOpportunities.get(1).opportunity().title());
     assertEquals("deleted", reportedOpportunities.get(1).status());
 
-    verify(opportunityRepository).findAllById(List.of(existingOpportunityId, deletedOpportunityId));
+    verify(opportunityRepository)
+        .findReadModelsByIdIn(List.of(existingOpportunityId, deletedOpportunityId));
     verify(reportRepository)
         .findByEntityIdInAndType(
             List.of(existingOpportunityId, deletedOpportunityId), Report.ReportType.OPPORTUNITY);

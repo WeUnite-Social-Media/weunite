@@ -8,7 +8,7 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import type { Post as PostType } from "@/shared/types/post.types";
 import { X as CloseIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Post from "@/features/feed/components/post/Post";
 import Comment from "@/features/feed/components/post/Comments/Comment";
@@ -20,7 +20,11 @@ import {
 import { Textarea } from "@/shared/components/ui/textarea";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
-import { Dialog, DialogContent } from "@/shared/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 import {
   useCreateComment,
   useGetComments,
@@ -42,6 +46,7 @@ export default function Comments({
   post,
 }: CommentsProps) {
   const [commentText, setCommentText] = useState("");
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -62,6 +67,30 @@ export default function Comments({
   const comments = (data?.pages.flatMap((page) => page.data ?? []) ||
     []) as CommentType[];
   const createComment = useCreateComment();
+
+  useEffect(() => {
+    const loadMoreElement = loadMoreRef.current;
+
+    if (!loadMoreElement || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "160px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, comments.length]);
 
   const handleCreateComment = () => {
     if (!user || !commentText.trim()) return;
@@ -121,22 +150,17 @@ export default function Comments({
     ));
   };
 
-  const renderLoadMoreComments = () => {
+  const renderCommentsSentinel = () => {
     if (!hasNextPage || !comments.length) {
       return null;
     }
 
     return (
-      <div className="flex justify-center py-4">
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => void fetchNextPage()}
-          disabled={isFetchingNextPage}
-        >
-          {isFetchingNextPage ? "Carregando..." : "Carregar mais comentarios"}
-        </Button>
+      <div
+        ref={loadMoreRef}
+        className="flex justify-center py-4 text-sm text-muted-foreground"
+      >
+        {isFetchingNextPage ? "Carregando..." : null}
       </div>
     );
   };
@@ -209,7 +233,7 @@ export default function Comments({
 
             <div className="w-full max-w-[45em] p-2">
               {renderCommentsList()}
-              {renderLoadMoreComments()}
+              {renderCommentsSentinel()}
             </div>
           </div>
         </DrawerContent>
@@ -223,7 +247,10 @@ export default function Comments({
         className={`${
           post.imageUrl ? "max-w-6xl" : "max-w-3xl"
         } h-[90vh] w-[90vw] overflow-hidden rounded-xl p-0`}
+        aria-describedby={undefined}
       >
+        <DialogTitle className="sr-only">Comentários da publicação</DialogTitle>
+
         <DrawerClose className="absolute right-4 top-4 z-10 rounded-sm transition-opacity">
           <CloseIcon className="h-5 w-5 hover:cursor-pointer" />
         </DrawerClose>
@@ -268,7 +295,7 @@ export default function Comments({
             <div className="custom-scrollbar flex-1 max-h-[66vh] overflow-y-auto p-4">
               <div className="space-y-4">
                 {renderCommentsList()}
-                {renderLoadMoreComments()}
+                {renderCommentsSentinel()}
               </div>
             </div>
 

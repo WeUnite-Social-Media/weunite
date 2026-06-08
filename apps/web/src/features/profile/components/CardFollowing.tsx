@@ -8,6 +8,12 @@ import { Button } from "@/shared/components/ui/button";
 import { CardContent } from "@/shared/components/ui/card";
 import type { User } from "@/shared/types/user.types";
 import { Link } from "react-router-dom";
+import { useAuthStore } from "@/features/auth/stores/useAuthStore";
+import {
+  useFollowAndUnfollow,
+  useGetFollow,
+} from "@/features/profile/state/useFollow";
+import { useEffect, useState } from "react";
 
 interface CardFollowingProps {
   user: User;
@@ -18,7 +24,49 @@ export default function CardFollowing({
   user,
   onUserClick,
 }: CardFollowingProps) {
+  const { user: authUser } = useAuthStore();
   const initials = getInitials(user?.name);
+  const authUserId = Number(authUser?.id);
+  const listedUserId = Number(user?.id);
+  const isSelf = authUserId === listedUserId;
+  const canFollow = Boolean(authUserId && listedUserId && !isSelf);
+  const { data: followStatusResponse, isLoading: isFollowStatusLoading } =
+    useGetFollow(authUserId, listedUserId);
+  const followMutation = useFollowAndUnfollow();
+  const serverIsFollowing =
+    followStatusResponse?.success === true &&
+    followStatusResponse.data?.status === "ACCEPTED";
+  const [isFollowing, setIsFollowing] = useState(serverIsFollowing);
+
+  useEffect(() => {
+    setIsFollowing(serverIsFollowing);
+  }, [serverIsFollowing]);
+
+  const handleFollowClick = () => {
+    if (!canFollow) {
+      return;
+    }
+
+    const previousIsFollowing = isFollowing;
+    const nextIsFollowing = !isFollowing;
+
+    setIsFollowing(nextIsFollowing);
+
+    followMutation.mutate(
+      {
+        followerId: authUserId,
+        followedId: listedUserId,
+      },
+      {
+        onError: () => setIsFollowing(previousIsFollowing),
+        onSuccess: (result) => {
+          if (!result.success) {
+            setIsFollowing(previousIsFollowing);
+          }
+        },
+      },
+    );
+  };
 
   return (
     <CardContent className="flex mt-5">
@@ -42,11 +90,19 @@ export default function CardFollowing({
           <p className="text-[#a1a1a1] text-xs">{user?.name}</p>
         </div>
       </Link>
-      <div className="ml-auto flex items-center">
-        <Button variant="outline" className="text-xs font-normal">
-          Deixar de seguir
-        </Button>
-      </div>
+      {canFollow ? (
+        <div className="ml-auto flex items-center">
+          <Button
+            type="button"
+            variant={isFollowing ? "outline" : "third"}
+            className="text-xs font-normal"
+            onClick={handleFollowClick}
+            disabled={isFollowStatusLoading || followMutation.isPending}
+          >
+            {isFollowing ? "Deixar de seguir" : "Seguir"}
+          </Button>
+        </div>
+      ) : null}
     </CardContent>
   );
 }

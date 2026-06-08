@@ -9,12 +9,18 @@ import { ReportedOpportunitiesPage } from "@/features/admin/pages/ReportedOpport
 import { ReportedPostsPage } from "@/features/admin/pages/ReportedPostsPage";
 import { AdminModerationDemo } from "@/features/admin/pages/AdminModerationDemo";
 import { isAdminUser } from "@/shared/lib/isAdminUser";
+import { useSessionGuard } from "@/app/routes/useSessionGuard";
 
 function AdminProtectedRoutes() {
   const { isAuthenticated, user } = useAuthStore();
+  const sessionState = useSessionGuard();
 
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />;
+  }
+
+  if (sessionState === "checking") {
+    return null;
   }
 
   if (!isAdminUser(user)) {

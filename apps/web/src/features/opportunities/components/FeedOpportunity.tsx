@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Building2, Plus } from "lucide-react";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useGetOpportunities } from "@/features/opportunities/state/useOpportunities";
@@ -53,12 +53,38 @@ function OpportunitySkeleton() {
 }
 
 export default function FeedOpportunity() {
-  const { data, isLoading } = useGetOpportunities();
-  const opportunities = data?.data ?? [];
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useGetOpportunities();
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const opportunities = data?.pages.flatMap((page) => page.data ?? []) ?? [];
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpportunityOpen, setIsCreateOpportunityOpen] = useState(false);
   const { isDesktop, isMobile, isTablet } = useBreakpoints();
   const { user } = useAuthStore();
+
+  useEffect(() => {
+    const loadMoreElement = loadMoreRef.current;
+
+    if (!loadMoreElement || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "240px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, opportunities.length]);
 
   if (isLoading) {
     return (
@@ -138,6 +164,15 @@ export default function FeedOpportunity() {
           {opportunities.map((opportunity: Opportunity) => (
             <OpportunityCard key={opportunity.id} opportunity={opportunity} />
           ))}
+
+          {hasNextPage ? (
+            <div
+              ref={loadMoreRef}
+              className="py-6 text-sm text-muted-foreground"
+            >
+              {isFetchingNextPage ? "Carregando..." : null}
+            </div>
+          ) : null}
         </div>
       </div>
 

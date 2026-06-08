@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { FileText, Flag, Image, Loader2, RotateCcw, Search } from "lucide-react";
+import {
+  FileText,
+  Flag,
+  Image,
+  Loader2,
+  RotateCcw,
+  Search,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { ReportDetailsModal } from "@/features/admin/components/ReportDetailsModal";
@@ -72,7 +79,8 @@ export function ReportedCommentsPage() {
       setReportedComments(response.data);
     } else {
       toast.error(
-        response.error || "Não foi possível carregar os comentários denunciados.",
+        response.error ||
+          "Não foi possível carregar os comentários denunciados.",
       );
     }
 
@@ -203,7 +211,9 @@ export function ReportedCommentsPage() {
               <Flag className="h-4 w-4 text-red-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{reportedComments.length}</div>
+              <div className="text-2xl font-bold">
+                {reportedComments.length}
+              </div>
               <p className="text-xs text-muted-foreground">Requerem atenção</p>
             </CardContent>
           </Card>
@@ -298,77 +308,89 @@ export function ReportedCommentsPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredComments.map((item) => (
-                      <TableRow key={item.comment.id}>
-                        <TableCell className="max-w-md">
-                          <div className="space-y-1">
-                            <p className="font-medium">{item.comment.user.name}</p>
-                            <p className="truncate text-sm text-muted-foreground">
-                              {item.comment.text}
-                            </p>
-                            {item.comment.imageUrl ? (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Image className="h-3 w-3" />
-                                <span>Com mídia</span>
-                              </div>
-                            ) : null}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="destructive" className="bg-red-600">
-                            {item.totalReports} denúncia
-                            {item.totalReports === 1 ? "" : "s"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {getReportStatusBadge(normalizeStatus(item.status))}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(item.reports[0]?.createdAt).toLocaleDateString(
-                            "pt-BR",
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleReview(item)}
-                            >
-                              Revisar
-                            </Button>
+                    filteredComments.map((item) => {
+                      const status = normalizeStatus(item.status);
+                      const isActionable =
+                        status === "pending" || status === "under_review";
 
-                            {normalizeStatus(item.status) === "deleted" ? (
+                      return (
+                        <TableRow key={item.comment.id}>
+                          <TableCell className="max-w-md">
+                            <div className="space-y-1">
+                              <p className="font-medium">
+                                {item.comment.user.name}
+                              </p>
+                              <p className="truncate text-sm text-muted-foreground">
+                                {item.comment.text}
+                              </p>
+                              {item.comment.imageUrl ? (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Image className="h-3 w-3" />
+                                  <span>Com mídia</span>
+                                </div>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="destructive" className="bg-red-600">
+                              {item.totalReports} denúncia
+                              {item.totalReports === 1 ? "" : "s"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{getReportStatusBadge(status)}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(
+                              item.reports[0]?.createdAt,
+                            ).toLocaleDateString("pt-BR")}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleRestore(Number(item.comment.id))}
+                                onClick={() => handleReview(item)}
                               >
-                                <RotateCcw className="mr-2 h-4 w-4" />
-                                Restaurar
+                                {isActionable ? "Revisar" : "Ver detalhes"}
                               </Button>
-                            ) : (
-                              <>
+
+                              {status === "deleted" ? (
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => handleDismiss(Number(item.comment.id))}
+                                  onClick={() =>
+                                    handleRestore(Number(item.comment.id))
+                                  }
                                 >
-                                  Descartar
+                                  <RotateCcw className="mr-2 h-4 w-4" />
+                                  Restaurar
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleDelete(Number(item.comment.id))}
-                                >
-                                  Deletar
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                              ) : isActionable ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      handleDismiss(Number(item.comment.id))
+                                    }
+                                  >
+                                    Descartar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() =>
+                                      handleDelete(Number(item.comment.id))
+                                    }
+                                  >
+                                    Deletar
+                                  </Button>
+                                </>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>

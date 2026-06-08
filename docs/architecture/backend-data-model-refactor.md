@@ -224,9 +224,9 @@ PR `#16` is merged and delivered the architecture foundation:
 - the compatibility-first start of athlete/company profile tables, repositories, services, mirrored
   writes, and athlete profile reads.
 
-### In Progress In PR #17
+### Delivered In PR #17
 
-PR `#17` is the current draft delivery and contains:
+PR `#17` is merged and delivered:
 
 - migration-owned schema validation and DTO-only entity response cleanup;
 - `ReportTarget` compatibility mapping plus typed single-target report/admin queries;
@@ -242,19 +242,47 @@ PR `#17` is the current draft delivery and contains:
 - removal of the unused athlete-only update request;
 - authenticated ownership enforcement for follow, report, notification, and user profile mutations.
 
+### In Progress In PR #18
+
+PR `#18` continues the architecture cleanup and manual E2E hardening:
+
+- company opportunity collections remain read-only, so opportunity lifecycle stays owned by the
+  opportunities module;
+- comment and opportunity public reads use automatic infinite loading instead of manual pagination
+  buttons on the main web surfaces;
+- public opportunity list endpoints accept bounded `page`/`size` parameters and keep repository-owned
+  read-model graphs;
+- company opportunity, athlete subscription, and saved-opportunity lists also accept bounded
+  pagination and use automatic incremental loading on their web surfaces;
+- opportunity subscriber lists accept bounded pagination and load candidates incrementally on the
+  owner-facing web surface;
+- reported-opportunity admin details load opportunity read models in bulk to avoid lazy-loading failures
+  in moderation queues;
+- closed report rows remain inspectable but no longer expose pending moderation actions;
+- persisted presence treats stale ONLINE rows as offline, clears ONLINE rows when the backend starts,
+  and marks websocket disconnects offline;
+- protected web routes validate the authenticated account and route back to auth when the backend is
+  unavailable or the stored account no longer exists.
+- profile follower/following lists reuse the paginated follow API and load additional pages
+  automatically inside the modal/drawer surfaces.
+- post like relationships no longer rely on JPA's eager `ManyToOne` defaults; read paths declare the
+  entity graph needed by the DTO mapper.
+- follow read repositories keep only the paginated/count contracts used by the service and declare
+  participant entity graphs for DTO lookups.
+
 ### Phase Status
 
-| Phase                                | Status                               | Remaining Work                                                                                 |
-| ------------------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| 1. Baseline And Safety               | Substantially delivered in PR `#16`  | Keep new schema changes migration-owned and retain invariant coverage.                         |
-| 2. Relationship Hardening            | Advanced in PRs `#16` and `#17`      | Continue remaining cascade audit after opportunity ownership and feed soft-delete hardening.   |
-| 3. User Profile Split                | Profile-field cutover in PR `#17`    | Retain discriminator only for typed opportunity relationships; classification is role-backed.  |
-| 4. Report Target Stabilization       | Compatibility-first step in PR `#17` | Decide whether a dedicated target table is warranted after current representation is reviewed. |
-| 5. Cleanup And Contract Verification | Pending                              | Remove proven-obsolete compatibility mappings and run final full validation.                   |
+| Phase                                | Status                              | Remaining Work                                                                                 |
+| ------------------------------------ | ----------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 1. Baseline And Safety               | Substantially delivered in PR `#16` | Keep new schema changes migration-owned and retain invariant coverage.                         |
+| 2. Relationship Hardening            | Advanced in PRs `#16` through `#18` | Continue remaining cascade/eager-loading audit after moderation and opportunity hardening.     |
+| 3. User Profile Split                | Profile-field cutover in PR `#17`   | Retain discriminator only for typed opportunity relationships; classification is role-backed.  |
+| 4. Report Target Stabilization       | Hardened further in PR `#18`        | Decide whether a dedicated target table is warranted after current representation is reviewed. |
+| 5. Cleanup And Contract Verification | In progress in PR `#18`             | Run final full validation and finish any remaining manual web checks.                          |
 
 ## Next Delivery Scope
 
-Continue after PR `#17` with a bounded profile-split and cleanup tranche:
+Continue after PR `#18` with a bounded profile-split and cleanup tranche:
 
 1. Preserve `Athlete` and `Company` discriminator entities for typed opportunity,
    subscription, and saved-opportunity relationships until those contracts are intentionally
@@ -264,6 +292,9 @@ Continue after PR `#17` with a bounded profile-split and cleanup tranche:
 3. Complete remaining profile-contract verification after profile-field persistence moves.
 4. Revisit remaining eager fetch/cascade findings from Phase 2 while touching affected aggregates.
 5. Run final contract verification only after the compatibility cleanup is complete.
+6. Manually verify the web flows hardened in PR `#18`: infinite comment loading, opportunity infinite
+   loading across public/company/my/saved/subscriber/follow surfaces, reported opportunities, closed
+   report actions, presence expiry, and auth fallback when the API/account is unavailable.
 
 ## Commit And Issue Traceability
 
@@ -273,7 +304,7 @@ Continue after PR `#17` with a bounded profile-split and cleanup tranche:
   verified.
 - PR `#16` is already merged, so its delivered work is linked through issue progress updates rather
   than history rewrites.
-- The open commits in PR `#17` carry references to `#5`, `#6`, and the applicable class issues
+- The open commits in PR `#18` carry references to `#5`, `#6`, and the applicable class issues
   (`#11` through `#15`).
 
 ## Validation
