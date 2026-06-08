@@ -14,7 +14,10 @@ import {
   useGetAthleteSubscriptions,
   useGetOpportunitiesCompany,
 } from "@/features/opportunities/state/useOpportunities";
-import { isOpportunityExpired } from "@/features/opportunities/utils/opportunityDates";
+import {
+  compareOpportunityDeadlineAsc,
+  isOpportunityExpired,
+} from "@/features/opportunities/utils/opportunityDates";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -105,24 +108,26 @@ export function MyOpportunities() {
   );
 
   const opportunities = isCompany ? companyOpportunities : athleteOpportunities;
-  const filteredOpportunities = opportunities.filter((opportunity) => {
-    if (isCompany) {
-      if (deadlineFilter === "active") {
-        return !isOpportunityExpired(opportunity.dateEnd);
+  const filteredOpportunities = opportunities
+    .filter((opportunity) => {
+      if (isCompany) {
+        if (deadlineFilter === "active") {
+          return !isOpportunityExpired(opportunity.dateEnd);
+        }
+
+        if (deadlineFilter === "expired") {
+          return isOpportunityExpired(opportunity.dateEnd);
+        }
+
+        return true;
       }
 
-      if (deadlineFilter === "expired") {
-        return isOpportunityExpired(opportunity.dateEnd);
-      }
-
-      return true;
-    }
-
-    return (
-      companyFilter === "all" ||
-      String(opportunity.company?.id ?? "") === companyFilter
-    );
-  });
+      return (
+        companyFilter === "all" ||
+        String(opportunity.company?.id ?? "") === companyFilter
+      );
+    })
+    .sort(compareOpportunityDeadlineAsc);
   const hasNextPage = isCompany
     ? hasNextCompanyOpportunitiesPage
     : hasNextAthleteSubscriptionsPage;

@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import OpportunityDetailModal from "@/features/opportunities/components/OpportunityDetailModal";
 import { useGetSavedOpportunities } from "@/features/opportunities/state/useOpportunities";
+import { compareOpportunityDeadlineAsc } from "@/features/opportunities/utils/opportunityDates";
 import { Button } from "@/shared/components/ui/button";
 import {
   Card,
@@ -50,11 +51,13 @@ export function SavedOpportunitiesPage() {
 
     return Array.from(companies, ([id, name]) => ({ id, name }));
   }, [savedOpportunities]);
-  const filteredSavedOpportunities = savedOpportunities.filter(
-    (opportunity) =>
-      companyFilter === "all" ||
-      String(opportunity.company?.id ?? "") === companyFilter,
-  );
+  const filteredSavedOpportunities = savedOpportunities
+    .filter(
+      (opportunity) =>
+        companyFilter === "all" ||
+        String(opportunity.company?.id ?? "") === companyFilter,
+    )
+    .sort(compareOpportunityDeadlineAsc);
 
   useEffect(() => {
     const loadMoreElement = loadMoreRef.current;

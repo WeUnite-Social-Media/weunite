@@ -1,5 +1,15 @@
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Send } from "lucide-react";
+import { differenceInYears, parseISO } from "date-fns";
+import {
+  Calendar,
+  Footprints,
+  Loader2,
+  Ruler,
+  Send,
+  Target,
+  Weight,
+} from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
@@ -10,11 +20,11 @@ import { Button } from "@/shared/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
+import { Separator } from "@/shared/components/ui/separator";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import {
   useCreateConversation,
@@ -30,29 +40,10 @@ interface ProfilePreviewProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-const calculateAge = (birthDate?: string) => {
-  if (!birthDate) {
-    return null;
-  }
-
-  const parsedBirthDate = new Date(birthDate);
-  if (Number.isNaN(parsedBirthDate.getTime())) {
-    return null;
-  }
-
-  const today = new Date();
-  let age = today.getFullYear() - parsedBirthDate.getFullYear();
-  const monthDelta = today.getMonth() - parsedBirthDate.getMonth();
-
-  if (
-    monthDelta < 0 ||
-    (monthDelta === 0 && today.getDate() < parsedBirthDate.getDate())
-  ) {
-    age -= 1;
-  }
-
-  return age;
-};
+const calculateAge = (birthDate?: string) =>
+  birthDate && !Number.isNaN(Date.parse(birthDate))
+    ? differenceInYears(new Date(), parseISO(birthDate))
+    : null;
 
 export default function ProfilePreview({
   athlete,
@@ -113,60 +104,115 @@ export default function ProfilePreview({
 
   const initials = getInitials(athlete.name || athlete.username || "Atleta");
   const age = calculateAge(athlete.birthDate);
+  const hasSkills = Boolean(athlete.skills?.length);
 
   return (
     <Dialog open={Boolean(isOpen)} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[30em] md:max-w-[36em]">
-        <DialogHeader>
-          <DialogTitle>{athlete.name || "Atleta"}</DialogTitle>
-          <DialogDescription>
-            Visualizacao rapida do atleta inscrito.
-          </DialogDescription>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[38em]">
+        <DialogHeader className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16 border">
+              <AvatarImage
+                src={athlete.profileImg}
+                alt={athlete.name || "Atleta"}
+              />
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+
+            <div className="min-w-0">
+              <DialogTitle className="truncate text-xl">
+                {athlete.name || "Atleta"}
+              </DialogTitle>
+              <p className="truncate text-sm text-muted-foreground">
+                @{athlete.username}
+              </p>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-4 sm:flex-row">
-          <Avatar className="h-20 w-20">
-            <AvatarImage
-              src={athlete.profileImg}
-              alt={athlete.name || "Atleta"}
-            />
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
-
-          <div className="min-w-0 flex-1">
-            <p className="text-sm text-muted-foreground">@{athlete.username}</p>
-
-            {athlete.bio ? (
-              <p className="mt-2 whitespace-pre-wrap text-sm">{athlete.bio}</p>
-            ) : null}
-
-            <div className="mt-3 grid gap-1 text-sm text-muted-foreground">
-              {age !== null ? <div>Idade: {age} anos</div> : null}
-              {athlete.position ? <div>Posicao: {athlete.position}</div> : null}
-              {athlete.height ? <div>Altura: {athlete.height} m</div> : null}
-              {athlete.weight ? <div>Peso: {athlete.weight} kg</div> : null}
-              {athlete.footDomain ? (
-                <div>Pe dominante: {athlete.footDomain}</div>
-              ) : null}
-            </div>
-
-            {athlete.skills?.length ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {athlete.skills.map((skill) => (
-                  <Badge key={skill.id} variant="secondary">
-                    {skill.name}
-                  </Badge>
-                ))}
-              </div>
-            ) : null}
+        <div className="space-y-5 py-2">
+          <div className="text-sm leading-relaxed text-muted-foreground">
+            {athlete.bio || "Nenhuma descricao informada."}
           </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-foreground">
+              Caracteristicas
+            </h3>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <PreviewInfoItem
+                icon={<Calendar className="h-4 w-4" />}
+                label="Idade"
+                value={age !== null ? `${age} anos` : "N/A"}
+              />
+              <PreviewInfoItem
+                icon={<Target className="h-4 w-4" />}
+                label="Posicao"
+                value={athlete.position || "N/A"}
+              />
+              <PreviewInfoItem
+                icon={<Footprints className="h-4 w-4" />}
+                label="Pe dominante"
+                value={athlete.footDomain || "N/A"}
+              />
+              <PreviewInfoItem
+                icon={<Ruler className="h-4 w-4" />}
+                label="Altura"
+                value={athlete.height ? `${athlete.height}m` : "N/A"}
+              />
+              <PreviewInfoItem
+                icon={<Weight className="h-4 w-4" />}
+                label="Peso"
+                value={athlete.weight ? `${athlete.weight}kg` : "N/A"}
+              />
+            </div>
+          </div>
+
+          {hasSkills ? (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-foreground">
+                  Habilidades
+                </h3>
+
+                <div className="flex flex-wrap gap-2">
+                  {athlete.skills?.map((skill) => (
+                    <Badge
+                      key={skill.id}
+                      variant="secondary"
+                      className="bg-secondary/50 px-3 py-1 text-xs font-normal transition-colors hover:bg-secondary/70"
+                    >
+                      {skill.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : null}
         </div>
 
-        <DialogFooter>
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={() => onOpenChange?.(false)}>
+        <DialogFooter className="gap-2 sm:justify-between">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              onOpenChange?.(false);
+              navigate(
+                athlete.username ? `/profile/${athlete.username}` : "/profile",
+              );
+            }}
+          >
+            Ver perfil completo
+          </Button>
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <Button variant="secondary" onClick={() => onOpenChange?.(false)}>
               Fechar
             </Button>
+
             <Button onClick={handleChat} disabled={isCreatingConversation}>
               {isCreatingConversation ? (
                 <>
@@ -180,22 +226,33 @@ export default function ProfilePreview({
                 </>
               )}
             </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                onOpenChange?.(false);
-                navigate(
-                  athlete.username
-                    ? `/profile/${athlete.username}`
-                    : "/profile",
-                );
-              }}
-            >
-              Ver perfil completo
-            </Button>
           </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function PreviewInfoItem({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/30 p-3">
+      <div className="text-muted-foreground">{icon}</div>
+      <div className="flex min-w-0 flex-col">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+        <span className="truncate text-sm font-medium text-foreground">
+          {value}
+        </span>
+      </div>
+    </div>
   );
 }

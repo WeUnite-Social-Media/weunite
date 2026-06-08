@@ -18,6 +18,22 @@ export const isOpportunityExpired = (value: Date | string) => {
   return !isDateOnOrAfterToday(date);
 };
 
+export const compareOpportunityDeadlineAsc = <
+  T extends { dateEnd: Date | string },
+>(
+  first: T,
+  second: T,
+) => {
+  const firstExpired = isOpportunityExpired(first.dateEnd);
+  const secondExpired = isOpportunityExpired(second.dateEnd);
+
+  if (firstExpired !== secondExpired) {
+    return firstExpired ? 1 : -1;
+  }
+
+  return new Date(first.dateEnd).getTime() - new Date(second.dateEnd).getTime();
+};
+
 export const formatOpportunityDateForApi = (value: Date | string) => {
   if (typeof value === "string") {
     return value.includes("T") ? value.slice(0, 10) : value;
