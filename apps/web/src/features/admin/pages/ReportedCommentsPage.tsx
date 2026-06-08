@@ -61,6 +61,10 @@ function normalizeStatus(status: string): Report["status"] {
   }
 }
 
+function statusPriority(status: Report["status"]) {
+  return status === "pending" || status === "under_review" ? 0 : 1;
+}
+
 export function ReportedCommentsPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -167,22 +171,39 @@ export function ReportedCommentsPage() {
     toast.error(response.error || "Erro ao descartar denúncias");
   };
 
-  const filteredComments = reportedComments.filter((item) => {
-    const normalizedStatus = normalizeStatus(item.status);
-    const matchesStatus =
-      statusFilter === "all" || normalizedStatus === statusFilter;
-    const query = searchQuery.trim().toLowerCase();
+  const filteredComments = reportedComments
+    .filter((item) => {
+      const normalizedStatus = normalizeStatus(item.status);
+      const matchesStatus =
+        statusFilter === "all" || normalizedStatus === statusFilter;
+      const query = searchQuery.trim().toLowerCase();
 
-    if (!query) {
-      return matchesStatus;
-    }
+      if (!query) {
+        return matchesStatus;
+      }
 
-    return (
-      matchesStatus &&
-      ((item.comment.text || "").toLowerCase().includes(query) ||
-        item.comment.user.name.toLowerCase().includes(query))
-    );
-  });
+      return (
+        matchesStatus &&
+        ((item.comment.text || "").toLowerCase().includes(query) ||
+          item.comment.user.name.toLowerCase().includes(query))
+      );
+    })
+    .sort((left, right) => {
+      if (statusFilter === "all") {
+        const priorityDelta =
+          statusPriority(normalizeStatus(left.status)) -
+          statusPriority(normalizeStatus(right.status));
+
+        if (priorityDelta !== 0) {
+          return priorityDelta;
+        }
+      }
+
+      return (
+        new Date(right.reports[0]?.createdAt ?? 0).getTime() -
+        new Date(left.reports[0]?.createdAt ?? 0).getTime()
+      );
+    });
 
   const totalReports = reportedComments.reduce(
     (count, item) => count + item.totalReports,

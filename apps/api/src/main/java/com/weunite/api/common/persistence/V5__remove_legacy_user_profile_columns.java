@@ -1,4 +1,4 @@
-package db.migration;
+package com.weunite.api.common.persistence;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -7,7 +7,9 @@ import java.sql.Statement;
 import java.util.Locale;
 import org.flywaydb.core.api.migration.BaseJavaMigration;
 import org.flywaydb.core.api.migration.Context;
+import org.springframework.stereotype.Component;
 
+@Component
 public class V5__remove_legacy_user_profile_columns extends BaseJavaMigration {
 
   private static final String[] LEGACY_PROFILE_COLUMNS = {

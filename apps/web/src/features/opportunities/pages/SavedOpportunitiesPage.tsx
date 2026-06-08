@@ -22,6 +22,7 @@ export function SavedOpportunitiesPage() {
   const [selectedOpportunity, setSelectedOpportunity] =
     useState<Opportunity | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [companyFilter, setCompanyFilter] = useState("all");
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
@@ -33,6 +34,26 @@ export function SavedOpportunitiesPage() {
     () =>
       data?.pages.flatMap((page) => (page.data ?? []) as Opportunity[]) ?? [],
     [data],
+  );
+  const savedCompanies = useMemo(() => {
+    const companies = new Map<string, string>();
+
+    savedOpportunities.forEach((opportunity) => {
+      const company = opportunity.company;
+      const companyId = company?.id;
+      const companyName = company?.name || company?.username;
+
+      if (companyId && companyName) {
+        companies.set(String(companyId), companyName);
+      }
+    });
+
+    return Array.from(companies, ([id, name]) => ({ id, name }));
+  }, [savedOpportunities]);
+  const filteredSavedOpportunities = savedOpportunities.filter(
+    (opportunity) =>
+      companyFilter === "all" ||
+      String(opportunity.company?.id ?? "") === companyFilter,
   );
 
   useEffect(() => {
@@ -97,13 +118,36 @@ export function SavedOpportunitiesPage() {
         <div className="mb-8">
           <div className="mb-2 flex items-center gap-3">
             <Bookmark className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">Oportunidades salvas</h1>
+            <h1 className="text-3xl font-bold">
+              Oportunidades salvas - {savedOpportunities.length}
+            </h1>
           </div>
           <p className="text-muted-foreground">
             {savedOpportunities.length} oportunidade
             {savedOpportunities.length === 1 ? "" : "s"} salva
             {savedOpportunities.length === 1 ? "" : "s"}
           </p>
+          {savedOpportunities.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant={companyFilter === "all" ? "default" : "outline"}
+                onClick={() => setCompanyFilter("all")}
+              >
+                Todos ({savedOpportunities.length})
+              </Button>
+              {savedCompanies.map((company) => (
+                <Button
+                  key={company.id}
+                  size="sm"
+                  variant={companyFilter === company.id ? "default" : "outline"}
+                  onClick={() => setCompanyFilter(company.id)}
+                >
+                  {company.name}
+                </Button>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         {savedOpportunities.length === 0 ? (
@@ -123,7 +167,15 @@ export function SavedOpportunitiesPage() {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {savedOpportunities.map((opportunity) => (
+            {filteredSavedOpportunities.length === 0 ? (
+              <Card className="border-2 border-dashed">
+                <CardContent className="py-10 text-center text-muted-foreground">
+                  Nenhuma oportunidade salva encontrada para este clube.
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {filteredSavedOpportunities.map((opportunity) => (
               <Card
                 key={opportunity.id}
                 className="transition-shadow hover:shadow-lg"

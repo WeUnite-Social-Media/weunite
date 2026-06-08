@@ -62,6 +62,10 @@ function normalizeStatus(status: string): Report["status"] {
   }
 }
 
+function statusPriority(status: Report["status"]) {
+  return status === "pending" || status === "under_review" ? 0 : 1;
+}
+
 export function ReportedPostsPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -165,22 +169,39 @@ export function ReportedPostsPage() {
     toast.error(response.error || "Erro ao descartar denúncias");
   };
 
-  const filteredPosts = reportedPosts.filter((item) => {
-    const normalizedStatus = normalizeStatus(item.status);
-    const matchesStatus =
-      statusFilter === "all" || normalizedStatus === statusFilter;
-    const query = searchQuery.trim().toLowerCase();
+  const filteredPosts = reportedPosts
+    .filter((item) => {
+      const normalizedStatus = normalizeStatus(item.status);
+      const matchesStatus =
+        statusFilter === "all" || normalizedStatus === statusFilter;
+      const query = searchQuery.trim().toLowerCase();
 
-    if (!query) {
-      return matchesStatus;
-    }
+      if (!query) {
+        return matchesStatus;
+      }
 
-    return (
-      matchesStatus &&
-      ((item.post.text || "").toLowerCase().includes(query) ||
-        item.post.user.name.toLowerCase().includes(query))
-    );
-  });
+      return (
+        matchesStatus &&
+        ((item.post.text || "").toLowerCase().includes(query) ||
+          item.post.user.name.toLowerCase().includes(query))
+      );
+    })
+    .sort((left, right) => {
+      if (statusFilter === "all") {
+        const priorityDelta =
+          statusPriority(normalizeStatus(left.status)) -
+          statusPriority(normalizeStatus(right.status));
+
+        if (priorityDelta !== 0) {
+          return priorityDelta;
+        }
+      }
+
+      return (
+        new Date(right.reports[0]?.createdAt ?? 0).getTime() -
+        new Date(left.reports[0]?.createdAt ?? 0).getTime()
+      );
+    });
 
   const totalReports = reportedPosts.reduce(
     (count, item) => count + item.totalReports,

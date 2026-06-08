@@ -2,6 +2,8 @@ package com.weunite.api.chat.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -23,6 +25,7 @@ public class UserPresence {
 
   @Id private Long userId;
 
+  @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
   private UserStatus status = UserStatus.OFFLINE;
 

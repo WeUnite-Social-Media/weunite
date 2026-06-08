@@ -8,7 +8,8 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import type { Post as PostType } from "@/shared/types/post.types";
 import { X as CloseIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { UIEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import Post from "@/features/feed/components/post/Post";
 import Comment from "@/features/feed/components/post/Comments/Comment";
@@ -46,6 +47,7 @@ export default function Comments({
   post,
 }: CommentsProps) {
   const [commentText, setCommentText] = useState("");
+  const commentsScrollRef = useRef<HTMLDivElement | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const { user } = useAuthStore();
@@ -64,9 +66,25 @@ export default function Comments({
     isLoading: isCommentsLoading,
   } = useGetComments(Number(post.id));
 
-  const comments = (data?.pages.flatMap((page) => page.data ?? []) ||
+  const comments = (data?.pages.flatMap((page) => page.data?.content ?? []) ||
     []) as CommentType[];
   const createComment = useCreateComment();
+
+  const loadNextCommentsPage = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  const handleCommentsScroll = (event: UIEvent<HTMLDivElement>) => {
+    const target = event.currentTarget;
+    const distanceFromBottom =
+      target.scrollHeight - target.scrollTop - target.clientHeight;
+
+    if (distanceFromBottom < 240) {
+      loadNextCommentsPage();
+    }
+  };
 
   useEffect(() => {
     const loadMoreElement = loadMoreRef.current;
@@ -79,10 +97,10 @@ export default function Comments({
       (entries) => {
         const [entry] = entries;
         if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          void fetchNextPage();
+          loadNextCommentsPage();
         }
       },
-      { rootMargin: "160px" },
+      { root: commentsScrollRef.current, rootMargin: "160px" },
     );
 
     observer.observe(loadMoreElement);
@@ -90,7 +108,7 @@ export default function Comments({
     return () => {
       observer.disconnect();
     };
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, comments.length]);
+  }, [hasNextPage, isFetchingNextPage, loadNextCommentsPage, comments.length]);
 
   const handleCreateComment = () => {
     if (!user || !commentText.trim()) return;
@@ -176,7 +194,11 @@ export default function Comments({
             <DrawerTitle>Comentários</DrawerTitle>
           </DrawerHeader>
 
-          <div className="scrollbar-thumb flex w-full flex-col items-center overflow-y-auto">
+          <div
+            ref={commentsScrollRef}
+            onScroll={handleCommentsScroll}
+            className="scrollbar-thumb flex w-full flex-col items-center overflow-y-auto"
+          >
             <Post post={post} />
 
             <div className="flex w-full max-w-[45em] gap-4 border-y border-foreground/30 px-4 py-3">
@@ -292,7 +314,11 @@ export default function Comments({
               </div>
             </div>
 
-            <div className="custom-scrollbar flex-1 max-h-[66vh] overflow-y-auto p-4">
+            <div
+              ref={commentsScrollRef}
+              onScroll={handleCommentsScroll}
+              className="scrollbar-thumb flex-1 max-h-[62vh] overflow-y-auto p-4"
+            >
               <div className="space-y-4">
                 {renderCommentsList()}
                 {renderCommentsSentinel()}
@@ -316,7 +342,7 @@ export default function Comments({
                     onChange={(event) => setCommentText(event.target.value)}
                   />
 
-                  <div className="mt-3 flex items-center justify-end gap-2">
+                  <div className="mt-2 flex items-center justify-end gap-2">
                     <span
                       className={`text-xs font-medium text-muted-foreground ${
                         commentText.length > COMMENT_LIMIT ? "text-red-500" : ""

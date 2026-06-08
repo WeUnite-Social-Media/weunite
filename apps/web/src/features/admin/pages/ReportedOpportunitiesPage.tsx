@@ -61,6 +61,10 @@ function normalizeStatus(status: string): Report["status"] {
   }
 }
 
+function statusPriority(status: Report["status"]) {
+  return status === "pending" || status === "under_review" ? 0 : 1;
+}
+
 export function ReportedOpportunitiesPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -169,23 +173,40 @@ export function ReportedOpportunitiesPage() {
     toast.error(response.error || "Erro ao descartar denúncias");
   };
 
-  const filteredOpportunities = reportedOpportunities.filter((item) => {
-    const normalizedStatus = normalizeStatus(item.status);
-    const matchesStatus =
-      statusFilter === "all" || normalizedStatus === statusFilter;
-    const query = searchQuery.trim().toLowerCase();
+  const filteredOpportunities = reportedOpportunities
+    .filter((item) => {
+      const normalizedStatus = normalizeStatus(item.status);
+      const matchesStatus =
+        statusFilter === "all" || normalizedStatus === statusFilter;
+      const query = searchQuery.trim().toLowerCase();
 
-    if (!query) {
-      return matchesStatus;
-    }
+      if (!query) {
+        return matchesStatus;
+      }
 
-    return (
-      matchesStatus &&
-      (item.opportunity.title.toLowerCase().includes(query) ||
-        item.opportunity.description.toLowerCase().includes(query) ||
-        (item.opportunity.company?.name || "").toLowerCase().includes(query))
-    );
-  });
+      return (
+        matchesStatus &&
+        (item.opportunity.title.toLowerCase().includes(query) ||
+          item.opportunity.description.toLowerCase().includes(query) ||
+          (item.opportunity.company?.name || "").toLowerCase().includes(query))
+      );
+    })
+    .sort((left, right) => {
+      if (statusFilter === "all") {
+        const priorityDelta =
+          statusPriority(normalizeStatus(left.status)) -
+          statusPriority(normalizeStatus(right.status));
+
+        if (priorityDelta !== 0) {
+          return priorityDelta;
+        }
+      }
+
+      return (
+        new Date(right.reports[0]?.createdAt ?? 0).getTime() -
+        new Date(left.reports[0]?.createdAt ?? 0).getTime()
+      );
+    });
 
   const totalReports = reportedOpportunities.reduce(
     (count, item) => count + item.totalReports,

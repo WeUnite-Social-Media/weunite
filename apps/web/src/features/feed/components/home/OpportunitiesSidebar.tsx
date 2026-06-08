@@ -188,7 +188,7 @@ export const OpportunitiesSidebar: React.FC = () => {
               Sugestoes de oportunidade
             </h2>
           </div>
-          <div className="pointer-events-auto h-full flex-1 overflow-y-auto">
+          <div className="pointer-events-auto h-full flex-1 overflow-y-auto custom-scrollbar">
             {opportunitiesContent}
           </div>
         </div>

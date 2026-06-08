@@ -7,6 +7,7 @@ import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.posts.domain.Comment;
 import com.weunite.api.posts.domain.Post;
 import com.weunite.api.posts.dto.CommentDTO;
+import com.weunite.api.posts.dto.CommentPageDTO;
 import com.weunite.api.posts.dto.CommentRequestDTO;
 import com.weunite.api.posts.exception.CommentNotFoundException;
 import com.weunite.api.posts.exception.PostNotFoundException;
@@ -17,6 +18,7 @@ import com.weunite.api.users.domain.User;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.UserRepository;
 import java.util.List;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -64,13 +66,26 @@ public class CommentService {
 
   @Transactional(readOnly = true)
   public List<CommentDTO> getCommentsByPost(Long postId, int page, int size) {
+    return getCommentsPageByPost(postId, page, size).content();
+  }
+
+  @Transactional(readOnly = true)
+  public CommentPageDTO getCommentsPageByPost(Long postId, int page, int size) {
     if (!postRepository.existsByIdAndDeletedFalse(postId)) {
       throw new PostNotFoundException();
     }
 
-    List<Comment> comments =
-        commentRepository.findByPostIdAndDeletedFalse(postId, pageRequest(page, size)).getContent();
-    return commentMapper.mapCommentsToList(comments);
+    Pageable pageable = pageRequest(page, size);
+    Page<Comment> commentsPage = commentRepository.findByPostIdAndDeletedFalse(postId, pageable);
+    List<CommentDTO> comments = commentMapper.mapCommentsToList(commentsPage.getContent());
+
+    return new CommentPageDTO(
+        comments,
+        commentsPage.getNumber(),
+        commentsPage.getSize(),
+        commentsPage.getTotalElements(),
+        commentsPage.getTotalPages(),
+        commentsPage.hasNext());
   }
 
   @Transactional(readOnly = true)
