@@ -1,20 +1,23 @@
-
 FROM maven:3.9.5-eclipse-temurin-17 AS builder
 
-LABEL MAINTAINER="suporte.weunite@gmail.com"
+WORKDIR /workspace
+
+COPY pom.xml .
+RUN mvn -B dependency:go-offline
+
+COPY src ./src
+RUN mvn -B clean package -DskipTests
+
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY . .
+RUN groupadd --system spring && useradd --system --gid spring spring
 
-RUN mvn clean package -DskipTests
+COPY --from=builder /workspace/target/*.jar app.jar
 
-FROM eclipse-temurin:17-jdk
-
-WORKDIR /app
-
-COPY --from=builder /app/target/*.jar weunite-backend.jar
+USER spring:spring
 
 EXPOSE 8080
 
-CMD ["java", "-jar", "weunite-backend.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

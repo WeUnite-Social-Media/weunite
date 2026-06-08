@@ -38,6 +38,8 @@ This repository uses `AGENTS.md` files as local operating notes for humans and c
 - Install: `pnpm install`
 - Local infrastructure (Docker): `pnpm dev:infra`
 - Local infrastructure (native PostgreSQL): `pnpm dev:infra:local`
+- Dockerized API + PostgreSQL: `pnpm dev:api:docker`
+- Stop dockerized API + PostgreSQL: `pnpm dev:api:docker:down`
 - Web + api dev: `pnpm dev`
 - Web only: `pnpm dev:web`
 - API only: `pnpm dev:api`

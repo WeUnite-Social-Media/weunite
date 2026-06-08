@@ -157,6 +157,8 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
 - `corepack pnpm install`: install workspace dependencies.
 - `corepack pnpm dev:infra`: start local Postgres.
 - `corepack pnpm dev:infra:local`: validate the native PostgreSQL local setup.
+- `corepack pnpm dev:api:docker`: start the API and PostgreSQL together in Docker.
+- `corepack pnpm dev:api:docker:down`: stop the dockerized API stack.
 - `corepack pnpm dev`: start the web and api apps together.
 - `corepack pnpm dev:web`: start only the web app.
 - `corepack pnpm dev:api`: start only the api app.
@@ -172,6 +174,7 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
 - Web uses `VITE_API_URL` and falls back to `/api` for local proxy-based development.
 - Mobile uses `EXPO_PUBLIC_API_URL`.
 - API uses the variables documented in [apps/api/.env.example](apps/api/.env.example).
+- Dockerized API setup and localhost networking are documented in [docs/docker-java-localhost.md](docs/docker-java-localhost.md).
 
 ## CI and merge requirements
 

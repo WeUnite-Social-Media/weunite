@@ -95,6 +95,24 @@ pnpm dev:infra
 pnpm dev
 ```
 
+## Local workflow with Dockerized API
+
+Run the API and PostgreSQL together in Docker:
+
+```bash
+pnpm dev:api:docker
+```
+
+The API is available from the host at `http://localhost:8080` because Docker Compose maps `8080:8080`. Inside the Compose network, the API connects to PostgreSQL with `DB_HOST=db` instead of `localhost`.
+
+Stop the stack:
+
+```bash
+pnpm dev:api:docker:down
+```
+
+For the full explanation of local vs container networking, environment variables, and troubleshooting, see [Java API Local and Docker Runtime Guide](docker-java-localhost.md).
+
 ## Validation
 
 ```bash
