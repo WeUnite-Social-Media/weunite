@@ -3,6 +3,7 @@ package com.weunite.api.posts.controller;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.security.service.AuthenticatedUserService;
 import com.weunite.api.posts.dto.CommentDTO;
+import com.weunite.api.posts.dto.CommentPageDTO;
 import com.weunite.api.posts.dto.CommentRequestDTO;
 import com.weunite.api.posts.service.CommentService;
 import jakarta.validation.Valid;
@@ -47,6 +48,15 @@ public class CommentController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size) {
     List<CommentDTO> comments = commentService.getCommentsByPost(postId, page, size);
+    return ResponseEntity.status(HttpStatus.OK).body(comments);
+  }
+
+  @GetMapping("/get/{postId}/page")
+  public ResponseEntity<CommentPageDTO> getCommentsPageByPost(
+      @PathVariable Long postId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    CommentPageDTO comments = commentService.getCommentsPageByPost(postId, page, size);
     return ResponseEntity.status(HttpStatus.OK).body(comments);
   }
 

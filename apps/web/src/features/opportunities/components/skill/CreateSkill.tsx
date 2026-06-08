@@ -142,6 +142,25 @@ export default function CreateSkill({
     setCurrentPage(1);
   };
 
+  const handleAddSearchResult = () => {
+    if (canAddCustomSkill) {
+      handleAddCustomSkill();
+      return;
+    }
+
+    const firstSelectableSkill = currentSkills.find(
+      (skill) => canSelectMore || hasSelectedSkill(skill.name),
+    );
+
+    if (!firstSelectableSkill) {
+      return;
+    }
+
+    handleSkillToggle(firstSelectableSkill.name);
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
+
   return (
     <Dialog
       open={open}
@@ -185,7 +204,7 @@ export default function CreateSkill({
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
-                  handleAddCustomSkill();
+                  handleAddSearchResult();
                 }
               }}
               className="pl-10"

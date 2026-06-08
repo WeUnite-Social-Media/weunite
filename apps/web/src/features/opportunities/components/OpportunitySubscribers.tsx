@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ExternalLink, Loader2, Mail, Users } from "lucide-react";
 import { useGetOpportunitySubscribers } from "@/features/opportunities/state/useOpportunities";
 import {
@@ -9,8 +8,10 @@ import {
 } from "@/shared/components/ui/avatar";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
+import ProfilePreview from "@/features/profile/components/ProfilePreview";
 import { getInitials } from "@/shared/utils/getInitials";
 import type { Subscriber } from "@/shared/types/opportunity.types";
+import type { User } from "@/shared/types/user.types";
 
 interface OpportunitySubscribersProps {
   opportunityId?: number;
@@ -21,8 +22,9 @@ export function OpportunitySubscribers({
   opportunityId,
   subscribers: subscribersProp,
 }: OpportunitySubscribersProps) {
-  const navigate = useNavigate();
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const [selectedAthlete, setSelectedAthlete] = useState<User | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useGetOpportunitySubscribers(
       opportunityId || 0,
@@ -100,10 +102,6 @@ export function OpportunitySubscribers({
         const athlete = subscriber.athlete;
         const athleteName = athlete?.name || "Atleta";
         const athleteUsername = athlete?.username || "atleta";
-        const athleteProfilePath = athlete?.username
-          ? `/profile/${athlete.username}`
-          : "/profile";
-
         return (
           <Card key={subscriber.id}>
             <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -131,7 +129,10 @@ export function OpportunitySubscribers({
 
               <Button
                 variant="outline"
-                onClick={() => navigate(athleteProfilePath)}
+                onClick={() => {
+                  setSelectedAthlete(athlete ?? null);
+                  setIsPreviewOpen(true);
+                }}
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Ver perfil
@@ -140,6 +141,17 @@ export function OpportunitySubscribers({
           </Card>
         );
       })}
+
+      <ProfilePreview
+        athlete={selectedAthlete}
+        isOpen={isPreviewOpen}
+        onOpenChange={(open) => {
+          setIsPreviewOpen(open);
+          if (!open) {
+            setSelectedAthlete(null);
+          }
+        }}
+      />
 
       {!subscribersProp && hasNextPage ? (
         <div

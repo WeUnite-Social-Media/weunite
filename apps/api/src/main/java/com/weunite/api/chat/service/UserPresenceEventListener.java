@@ -1,9 +1,11 @@
 package com.weunite.api.chat.service;
 
+import com.weunite.api.chat.dto.UserStatusDTO;
 import java.util.Map;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
@@ -11,9 +13,12 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 public class UserPresenceEventListener {
 
   private final UserStatusService userStatusService;
+  private final SimpMessagingTemplate messagingTemplate;
 
-  public UserPresenceEventListener(UserStatusService userStatusService) {
+  public UserPresenceEventListener(
+      UserStatusService userStatusService, SimpMessagingTemplate messagingTemplate) {
     this.userStatusService = userStatusService;
+    this.messagingTemplate = messagingTemplate;
   }
 
   @EventListener(ApplicationReadyEvent.class)
@@ -27,7 +32,8 @@ public class UserPresenceEventListener {
     Long userId = extractUserId(accessor.getSessionAttributes());
 
     if (userId != null) {
-      userStatusService.markUserOffline(userId);
+      UserStatusDTO status = userStatusService.markUserOffline(userId);
+      messagingTemplate.convertAndSend("/topic/user/" + userId + "/status", status);
     }
   }
 

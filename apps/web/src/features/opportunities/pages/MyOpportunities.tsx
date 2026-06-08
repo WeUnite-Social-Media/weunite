@@ -14,6 +14,10 @@ import {
   useGetAthleteSubscriptions,
   useGetOpportunitiesCompany,
 } from "@/features/opportunities/state/useOpportunities";
+import {
+  compareOpportunityDeadlineAsc,
+  isOpportunityExpired,
+} from "@/features/opportunities/utils/opportunityDates";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -34,6 +38,10 @@ export function MyOpportunities() {
   const [selectedOpportunity, setSelectedOpportunity] =
     useState<Opportunity | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [deadlineFilter, setDeadlineFilter] = useState<
+    "all" | "active" | "expired"
+  >("active");
+  const [companyFilter, setCompanyFilter] = useState("all");
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const isCompany = user?.role === "company";
@@ -76,7 +84,50 @@ export function MyOpportunities() {
       ) ?? [],
     [athleteSubscriptionsResponse],
   );
+  const subscribedCompanies = useMemo(() => {
+    const companies = new Map<string, string>();
+
+    athleteOpportunities.forEach((opportunity) => {
+      const company = opportunity.company;
+      const companyId = company?.id;
+      const companyName = company?.name || company?.username;
+
+      if (companyId && companyName) {
+        companies.set(String(companyId), companyName);
+      }
+    });
+
+    return Array.from(companies, ([id, name]) => ({ id, name }));
+  }, [athleteOpportunities]);
+
+  const activeCompanyOpportunities = companyOpportunities.filter(
+    (opportunity) => !isOpportunityExpired(opportunity.dateEnd),
+  );
+  const expiredCompanyOpportunities = companyOpportunities.filter(
+    (opportunity) => isOpportunityExpired(opportunity.dateEnd),
+  );
+
   const opportunities = isCompany ? companyOpportunities : athleteOpportunities;
+  const filteredOpportunities = opportunities
+    .filter((opportunity) => {
+      if (isCompany) {
+        if (deadlineFilter === "active") {
+          return !isOpportunityExpired(opportunity.dateEnd);
+        }
+
+        if (deadlineFilter === "expired") {
+          return isOpportunityExpired(opportunity.dateEnd);
+        }
+
+        return true;
+      }
+
+      return (
+        companyFilter === "all" ||
+        String(opportunity.company?.id ?? "") === companyFilter
+      );
+    })
+    .sort(compareOpportunityDeadlineAsc);
   const hasNextPage = isCompany
     ? hasNextCompanyOpportunitiesPage
     : hasNextAthleteSubscriptionsPage;
@@ -151,7 +202,7 @@ export function MyOpportunities() {
           </div>
 
           <Card className="border-2 border-dashed">
-            <CardContent className="flex min-h-[360px] flex-col items-center justify-center p-12 text-center">
+            <CardContent className="flex min-h-90 flex-col items-center justify-center p-12 text-center">
               {isCompany ? (
                 <Briefcase className="mb-6 h-20 w-20 text-muted-foreground/30" />
               ) : (
@@ -179,17 +230,76 @@ export function MyOpportunities() {
       <div className="w-full max-w-[45em] px-4 py-8 pb-[5em]">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">
-            {isCompany ? "Minhas oportunidades" : "Minhas candidaturas"}
+            {isCompany
+              ? `Minhas oportunidades - ${activeCompanyOpportunities.length} ativas`
+              : `Minhas candidaturas - ${athleteOpportunities.length}`}
           </h1>
           <p className="mt-2 text-muted-foreground">
             {isCompany
               ? "Gerencie suas oportunidades e acompanhe os inscritos."
               : "Revise as oportunidades para as quais você já enviou candidatura."}
           </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {isCompany ? (
+              <>
+                <Button
+                  size="sm"
+                  variant={deadlineFilter === "all" ? "default" : "outline"}
+                  onClick={() => setDeadlineFilter("all")}
+                >
+                  Todas ({companyOpportunities.length})
+                </Button>
+                <Button
+                  size="sm"
+                  variant={deadlineFilter === "active" ? "default" : "outline"}
+                  onClick={() => setDeadlineFilter("active")}
+                >
+                  Ativas ({activeCompanyOpportunities.length})
+                </Button>
+                <Button
+                  size="sm"
+                  variant={deadlineFilter === "expired" ? "default" : "outline"}
+                  onClick={() => setDeadlineFilter("expired")}
+                >
+                  Encerradas ({expiredCompanyOpportunities.length})
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  size="sm"
+                  variant={companyFilter === "all" ? "default" : "outline"}
+                  onClick={() => setCompanyFilter("all")}
+                >
+                  Todos ({athleteOpportunities.length})
+                </Button>
+                {subscribedCompanies.map((company) => (
+                  <Button
+                    key={company.id}
+                    size="sm"
+                    variant={
+                      companyFilter === company.id ? "default" : "outline"
+                    }
+                    onClick={() => setCompanyFilter(company.id)}
+                  >
+                    {company.name}
+                  </Button>
+                ))}
+              </>
+            )}
+          </div>
         </div>
 
         <div className="grid gap-4">
-          {opportunities.map((opportunity: Opportunity) => {
+          {filteredOpportunities.length === 0 ? (
+            <Card className="border-2 border-dashed">
+              <CardContent className="py-10 text-center text-muted-foreground">
+                Nenhuma oportunidade encontrada para este filtro.
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {filteredOpportunities.map((opportunity: Opportunity) => {
             const subscribersCount =
               opportunity.subscribersCount ??
               opportunity.subscribers?.length ??
