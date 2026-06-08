@@ -103,7 +103,9 @@ Run the API and PostgreSQL together in Docker:
 pnpm dev:api:docker
 ```
 
-The API is available from the host at `http://localhost:8080` because Docker Compose maps `8080:8080`. Inside the Compose network, the API connects to PostgreSQL with `DB_HOST=db` instead of `localhost`.
+The API is available from the host at `http://localhost:8081` because Docker Compose maps host port `8081` to container port `8080`. Inside the Compose network, the API connects to PostgreSQL with `DB_HOST=db` instead of `localhost`.
+
+By default, this stack also publishes the Dockerized PostgreSQL service on host port `5433`. That keeps it from colliding with the local API on `8080` or the local development database on `5432`.
 
 Stop the stack:
 

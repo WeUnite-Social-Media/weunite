@@ -17,7 +17,7 @@ The WeUnite API uses Spring Boot, Java 17, PostgreSQL, and Docker Compose. The s
 
 That is why a containerized app should not use `localhost` to reach a database container. In Docker Compose, it should use the database service name, such as `db`.
 
-The browser can still call `http://localhost:8080` because Compose publishes the container port to the host with `8080:8080`.
+The browser can still call the containerized API through `localhost` because Compose publishes a container port to a host port. In this repo, the Dockerized API uses host port `8081` by default with `8081:8080`, so it can run at the same time as a local API on `8080`.
 
 ## Runtime Modes
 
@@ -40,7 +40,12 @@ Use this when you want the API and database to run together in containers:
 pnpm dev:api:docker
 ```
 
-In this mode, the API container uses `DB_HOST=db` because `db` is the Compose service name. Your browser and Postman still use `http://localhost:8080` because the API service publishes `8080:8080`.
+In this mode, the API container uses `DB_HOST=db` because `db` is the Compose service name. Your browser and Postman use `http://localhost:8081` because the API service publishes `8081:8080` by default.
+
+This lets you run both APIs at once:
+
+- Local API: `http://localhost:8080`
+- Dockerized API: `http://localhost:8081`
 
 Stop the stack with:
 
@@ -100,7 +105,7 @@ services:
     container_name: weunite-api-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "${API_DB_HOST_PORT:-5433}:5432"
     environment:
       POSTGRES_DB: weunite
       POSTGRES_USER: postgres
@@ -132,7 +137,7 @@ services:
       DB_PASSWORD: postgres
       CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173
     ports:
-      - "8080:8080"
+      - "${API_HOST_PORT:-8081}:8080"
 
 volumes:
   weunite_api_postgres_data:
@@ -140,13 +145,14 @@ volumes:
 
 Key details:
 
-- `ports: "8080:8080"` maps host port `8080` to container port `8080`.
-- `ports: "5432:5432"` lets host tools connect to PostgreSQL through `localhost:5432`.
+- `ports: "${API_HOST_PORT:-8081}:8080"` maps host port `8081` to container port `8080` unless `API_HOST_PORT` overrides it.
+- `ports: "${API_DB_HOST_PORT:-5433}:5432"` lets host tools connect to this PostgreSQL container through `localhost:5433` unless `API_DB_HOST_PORT` overrides it.
 - `DB_HOST=db` is correct inside Compose because service names resolve through Docker DNS.
 - `env_file` loads secrets and local placeholders from `apps/api/.env`.
 - `environment` overrides values that must change inside Docker, especially `DB_HOST`.
 - The database health check prevents the API from starting before PostgreSQL accepts connections.
 - The named volume preserves PostgreSQL data when containers are recreated.
+- Host ports `8081` and `5433` avoid collisions with a local API on `8080` and a local PostgreSQL service on `5432`.
 
 ## Spring Boot Configuration
 
@@ -251,13 +257,34 @@ docker build -t weunite-api:local apps/api
 Run the image directly against a host database:
 
 ```bash
-docker run --rm -p 8080:8080 --env-file apps/api/.env -e DB_HOST=host.docker.internal weunite-api:local
+docker run --rm -p 8081:8080 --env-file apps/api/.env -e DB_HOST=host.docker.internal weunite-api:local
 ```
 
 Run the API and database with Docker Compose:
 
 ```bash
 pnpm dev:api:docker
+```
+
+The Dockerized API is then available at:
+
+```bash
+curl http://localhost:8081/actuator/health
+```
+
+Override the host port when needed:
+
+Windows PowerShell:
+
+```powershell
+$env:API_HOST_PORT = "8090"
+pnpm dev:api:docker
+```
+
+macOS/Linux:
+
+```bash
+API_HOST_PORT=8090 pnpm dev:api:docker
 ```
 
 Stop the Docker API stack:
@@ -268,10 +295,16 @@ pnpm dev:api:docker:down
 
 ## Testing Localhost
 
-After the API starts, test the health endpoint:
+After the local API starts, test the health endpoint:
 
 ```bash
 curl http://localhost:8080/actuator/health
+```
+
+After the Dockerized API starts, test the mapped Docker host port:
+
+```bash
+curl http://localhost:8081/actuator/health
 ```
 
 Expected result:
@@ -282,7 +315,7 @@ Expected result:
 
 You can also open the same URL in a browser or send a GET request from Postman.
 
-If the API is running in Docker, this still works because `8080:8080` maps the container's port to the host.
+If the API is running in Docker, `localhost:8081` works because `8081:8080` maps the container's port to the host.
 
 ## Common Errors
 
@@ -335,8 +368,8 @@ Cause:
 
 Fix:
 
-- Stop the other process, or change the host side of the mapping, for example `8081:8080`.
-- If you change the host port to `8081`, browse to `http://localhost:8081`.
+- Stop the other process, or change the host side of the mapping, for example `8090:8080`.
+- If you change the host port to `8090`, browse to `http://localhost:8090`.
 
 ### Port 5432 Is Already Occupied
 
@@ -346,7 +379,7 @@ Cause:
 
 Fix:
 
-- Stop the other PostgreSQL process, or change the host mapping to `5433:5432`.
+- Stop the other PostgreSQL process, or change the host mapping to `5434:5432`.
 - Keep `DB_PORT=5432` for containers talking to each other inside Compose, because the database container still listens on `5432`.
 
 ### Env File Missing
@@ -370,9 +403,9 @@ Cause:
 
 Fix:
 
-- Ensure Compose has `ports: ["8080:8080"]`.
-- Use `http://localhost:8080` from the host.
-- If the mapping is `8081:8080`, use `http://localhost:8081`.
+- Ensure Compose has a published API port such as `ports: ["8081:8080"]`.
+- Use `http://localhost:8081` from the host for the default Dockerized API stack.
+- If the mapping is `8090:8080`, use `http://localhost:8090`.
 
 ## Adapt This Pattern
 
