@@ -1,3 +1,11 @@
+FROM maven:3.9.5-eclipse-temurin-17 AS dev
+
+WORKDIR /workspace
+
+EXPOSE 8080
+
+CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.fork=true"]
+
 FROM maven:3.9.5-eclipse-temurin-17 AS builder
 
 WORKDIR /workspace
