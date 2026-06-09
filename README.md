@@ -22,10 +22,10 @@ WeUnite is a social platform that connects athletes, companies, opportunities, a
 ## Prerequisites
 
 - Node.js 22 with Corepack enabled.
-- pnpm 10.x available locally. Recommended: run `corepack enable` once and use the pinned workspace version (`pnpm@10.6.3`).
+- pnpm 10.x available locally. Recommended: run `corepack enable` once and use the pinned workspace version from `package.json`.
 - Java 17+.
-- PostgreSQL 15+ locally or through Docker.
-- Docker and Docker Compose are optional, but useful for local infrastructure.
+- Docker Desktop with Docker Compose.
+- PostgreSQL 15+ only if you intentionally want to run a native database. The default development flow uses PostgreSQL in Docker.
 
 Helpful installers and version managers:
 
@@ -34,7 +34,7 @@ Helpful installers and version managers:
 - PostgreSQL: [postgresql.org/download](https://www.postgresql.org/download/).
 - Docker Desktop: [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/).
 
-## Quick start
+## Quick Start
 
 All workspace scripts should be run from the repository root: `weunite/`.
 
@@ -43,7 +43,7 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
 - Windows PowerShell: `cd ..\..`
 - macOS/Linux: `cd ../..`
 
-### Local native PostgreSQL
+### Docker-First Local Setup
 
 1. Go to the repository root:
 
@@ -51,7 +51,7 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
    cd /path/to/your/weunite-repository
    ```
 
-2. If `pnpm` is not available yet, enable Corepack through as a root terminal and confirm the pinned version:
+2. If `pnpm` is not available yet, enable Corepack once and confirm the pinned version:
 
    ```powershell
    corepack enable
@@ -82,68 +82,24 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
 
 5. Fill in `apps/api/.env` and `apps/web/.env`.
 
-   Minimum local values to review:
-   - `apps/web/.env`: keep `VITE_API_URL=http://localhost:8080/api` for the default local API.
-   - `apps/api/.env`: if you are using the default local setup, keep `DB_HOST=localhost`, `DB_PORT=5432`, `DB_NAME=weunite`, and `CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173`.
-   - `apps/api/.env`: set `DB_USERNAME` and `DB_PASSWORD` to your local PostgreSQL credentials.
+   Minimum Docker-first values to review:
+   - `apps/web/.env`: keep `VITE_API_URL=http://localhost:8080`. The web client adds `/api` internally for HTTP calls.
+   - `apps/web/.env`: keep `VITE_WS_URL=http://localhost:8080/ws`.
+   - `apps/web/.env`: keep `VITE_MEDIA_URL=http://localhost:8080`.
+   - `apps/api/.env`: for the default Docker database, keep `DB_USERNAME=postgres` and `DB_PASSWORD=postgres`.
+   - `apps/api/.env`: `DB_HOST`, `DB_PORT`, and `DB_NAME` can be omitted or kept as `localhost`, `5432`, and `weunite` when the API runs locally. When the API runs in Docker, Compose injects `DB_HOST=db`.
+   - `apps/api/.env`: keep `CORS_ALLOWED_ORIGINS=http://localhost:5173` or include it in the existing comma-separated list.
    - `apps/api/.env`: `MAIL_USERNAME`, `MAIL_PASSWORD`, and `MAIL_PORT` only need to exist for the API to boot locally; the placeholder values from `.env.example` are fine until you test email flows.
    - `apps/api/.env`: `CLOUDINARY_URL` only needs a valid placeholder format until you test image upload flows.
-   - `apps/api/.env`: `JWT_PUBLIC_KEY` and `JWT_PRIVATE_KEY` must be real base64-encoded full RSA PEM values; `corepack pnpm dev:infra:local` validates them before startup.
+   - `apps/api/.env`: `JWT_PUBLIC_KEY` and `JWT_PRIVATE_KEY` must be real base64-encoded full RSA PEM values.
 
-6. Create the PostgreSQL database referenced by `DB_NAME` in `apps/api/.env` (`weunite` by default):
-
-   ```bash
-   createdb weunite
-   ```
-
-   Alternative with `psql`:
-
-   ```bash
-   psql -U postgres -c "CREATE DATABASE weunite;"
-   ```
-
-7. Run the local preflight:
+6. Start the database in Docker:
 
    ```powershell
-   corepack pnpm dev:infra:local
+   docker compose -f infra/docker/compose.dev.yml up -d db
    ```
 
-8. Start web and api:
-
-   ```powershell
-   corepack pnpm dev
-   ```
-
-### Local with Docker
-
-1. Go to the repository root.
-2. If `pnpm` is not available yet, run `corepack enable` once and confirm it with `corepack pnpm --version`.
-3. Install dependencies with `corepack pnpm install`.
-4. Create the local env files:
-
-   Windows PowerShell:
-
-   ```powershell
-   Copy-Item apps/api/.env.example apps/api/.env
-   Copy-Item apps/web/.env.example apps/web/.env
-   ```
-
-   macOS/Linux:
-
-   ```bash
-   cp apps/api/.env.example apps/api/.env
-   cp apps/web/.env.example apps/web/.env
-   ```
-
-5. Start the bundled PostgreSQL container:
-
-   ```powershell
-   corepack pnpm dev:infra
-   ```
-
-   The Docker workflow already provisions PostgreSQL, so you do not need to create the database manually.
-
-6. Start web and api:
+7. Start the API and web locally:
 
    ```powershell
    corepack pnpm dev
@@ -151,14 +107,123 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
 
 - Web: `http://localhost:5173`
 - API: `http://localhost:8080/api`
+- PostgreSQL: `localhost:5432`
+
+### Docker Development Modes
+
+The development Compose file is [infra/docker/compose.dev.yml](infra/docker/compose.dev.yml). It always exposes host ports so the browser and local tools use the same addresses:
+
+- PostgreSQL: `localhost:5432`
+- API: `localhost:8080`
+- Web: `localhost:5173`
+
+The database service is named `db` inside Docker. That means:
+
+- API running locally connects to PostgreSQL through `localhost:5432`.
+- API running in Docker connects to PostgreSQL through `db:5432`.
+- Web always calls `http://localhost:8080`, because the React code runs in the user's browser even when Vite is served from a container.
+
+#### 1. Web local + API Docker + DB Docker
+
+Start API and database in Docker:
+
+```powershell
+docker compose -f infra/docker/compose.dev.yml --profile api up --build db api
+```
+
+In another terminal, start the web app locally:
+
+```powershell
+corepack pnpm dev:web
+```
+
+Network behavior:
+
+- Browser opens `http://localhost:5173`.
+- Web calls `http://localhost:8080/api`.
+- Host port `8080` forwards to the API container.
+- API container talks to PostgreSQL at `db:5432`.
+
+#### 2. Web Docker + API Docker + DB Docker
+
+Start everything in Docker:
+
+```powershell
+docker compose -f infra/docker/compose.dev.yml --profile api --profile web up --build
+```
+
+Network behavior:
+
+- Browser opens `http://localhost:5173`.
+- Vite runs in Docker, but its port is published to the host.
+- Web calls `http://localhost:8080/api`.
+- API container talks to PostgreSQL at `db:5432`.
+
+#### 3. Web Docker + API Local + DB Docker
+
+Start web and database in Docker:
+
+```powershell
+docker compose -f infra/docker/compose.dev.yml --profile web up --build db web
+```
+
+In another terminal, start the API locally:
+
+```powershell
+corepack pnpm dev:api
+```
+
+Network behavior:
+
+- Browser opens `http://localhost:5173`.
+- Web container serves Vite through the published host port.
+- Web calls the local API at `http://localhost:8080/api`.
+- API local connects to PostgreSQL at `localhost:5432`.
+
+#### 4. Web Local + API Local + DB Docker
+
+Start only the database in Docker:
+
+```powershell
+docker compose -f infra/docker/compose.dev.yml up -d db
+```
+
+Start both apps locally:
+
+```powershell
+corepack pnpm dev
+```
+
+Network behavior:
+
+- Browser opens `http://localhost:5173`.
+- Web local calls API local at `http://localhost:8080/api`.
+- API local connects to PostgreSQL at `localhost:5432`.
+
+### Optional Native PostgreSQL
+
+The recommended development flow keeps PostgreSQL in Docker. If you intentionally want a native PostgreSQL instance, create the database referenced by `DB_NAME` in `apps/api/.env` and run the local preflight:
+
+```powershell
+corepack pnpm dev:infra:local
+```
+
+Then start the local apps:
+
+```powershell
+corepack pnpm dev
+```
 
 ## Core commands
 
 - `corepack pnpm install`: install workspace dependencies.
-- `corepack pnpm dev:infra`: start local Postgres.
+- `corepack pnpm dev:infra`: start local Docker Postgres.
 - `corepack pnpm dev:infra:local`: validate the native PostgreSQL local setup.
-- `corepack pnpm dev:api:docker`: start the API and PostgreSQL together in Docker.
-- `corepack pnpm dev:api:docker:down`: stop the dockerized API stack.
+- `docker compose -f infra/docker/compose.dev.yml up -d db`: start only PostgreSQL in Docker.
+- `docker compose -f infra/docker/compose.dev.yml --profile api up --build db api`: start PostgreSQL and API in Docker.
+- `docker compose -f infra/docker/compose.dev.yml --profile web up --build db web`: start PostgreSQL and web in Docker.
+- `docker compose -f infra/docker/compose.dev.yml --profile api --profile web up --build`: start PostgreSQL, API, and web in Docker.
+- `docker compose -f infra/docker/compose.dev.yml down`: stop the Docker development stack.
 - `corepack pnpm dev`: start the web and api apps together.
 - `corepack pnpm dev:web`: start only the web app.
 - `corepack pnpm dev:api`: start only the api app.
@@ -171,9 +236,10 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
 
 ## Environment
 
-- Web uses `VITE_API_URL` and falls back to `/api` for local proxy-based development.
+- Web uses `VITE_API_URL` as the API origin. In Docker-first development, keep it as `http://localhost:8080`; the shared HTTP client appends `/api`.
 - Mobile uses `EXPO_PUBLIC_API_URL`.
 - API uses the variables documented in [apps/api/.env.example](apps/api/.env.example).
+- API database configuration falls back to `localhost:5432/weunite`, so a local API can talk to the Docker database without changing code.
 - Dockerized API setup and localhost networking are documented in [docs/docker-java-localhost.md](docs/docker-java-localhost.md).
 
 ## CI and merge requirements
