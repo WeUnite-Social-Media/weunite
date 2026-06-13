@@ -96,7 +96,7 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
 6. Start the database in Docker:
 
    ```powershell
-   docker compose -f infra/docker/compose.dev.yml up -d db
+   corepack pnpm dev:infra
    ```
 
 7. Start the API and web locally:
@@ -128,7 +128,7 @@ The database service is named `db` inside Docker. That means:
 Start API and database in Docker:
 
 ```powershell
-docker compose -f infra/docker/compose.dev.yml --profile api up --build db api
+corepack pnpm dev:docker:api
 ```
 
 In another terminal, start the web app locally:
@@ -149,7 +149,7 @@ Network behavior:
 Start everything in Docker:
 
 ```powershell
-docker compose -f infra/docker/compose.dev.yml --profile api --profile web up --build
+corepack pnpm dev:docker:all
 ```
 
 Network behavior:
@@ -164,7 +164,7 @@ Network behavior:
 Start web and database in Docker:
 
 ```powershell
-docker compose -f infra/docker/compose.dev.yml --profile web up --build db web
+corepack pnpm dev:docker:web
 ```
 
 In another terminal, start the API locally:
@@ -185,7 +185,7 @@ Network behavior:
 Start only the database in Docker:
 
 ```powershell
-docker compose -f infra/docker/compose.dev.yml up -d db
+corepack pnpm dev:infra
 ```
 
 Start both apps locally:
@@ -219,11 +219,10 @@ corepack pnpm dev
 - `corepack pnpm install`: install workspace dependencies.
 - `corepack pnpm dev:infra`: start local Docker Postgres.
 - `corepack pnpm dev:infra:local`: validate the native PostgreSQL local setup.
-- `docker compose -f infra/docker/compose.dev.yml up -d db`: start only PostgreSQL in Docker.
-- `docker compose -f infra/docker/compose.dev.yml --profile api up --build db api`: start PostgreSQL and API in Docker.
-- `docker compose -f infra/docker/compose.dev.yml --profile web up --build db web`: start PostgreSQL and web in Docker.
-- `docker compose -f infra/docker/compose.dev.yml --profile api --profile web up --build`: start PostgreSQL, API, and web in Docker.
-- `docker compose -f infra/docker/compose.dev.yml down`: stop the Docker development stack.
+- `corepack pnpm dev:docker:api`: start PostgreSQL and API in Docker.
+- `corepack pnpm dev:docker:web`: start PostgreSQL and web in Docker.
+- `corepack pnpm dev:docker:all`: start PostgreSQL, API, and web in Docker.
+- `corepack pnpm dev:docker:down`: stop the Docker development stack.
 - `corepack pnpm dev`: start the web and api apps together.
 - `corepack pnpm dev:web`: start only the web app.
 - `corepack pnpm dev:api`: start only the api app.
