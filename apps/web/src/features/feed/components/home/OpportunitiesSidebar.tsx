@@ -13,6 +13,7 @@ import {
 import CardSuggestionOpportunity from "@/features/opportunities/components/CardSuggestionOpportunity";
 import { useGetOpportunities } from "@/features/opportunities/state/useOpportunities";
 import type { Opportunity } from "@/shared/types/opportunity.types";
+import { useApiHealthStatus } from "@/app/providers/apiHealthContext";
 
 const useCustomBreakpoint = (breakpoint = 1500) => {
   const [isDesktop, setIsDesktop] = useState(false);
@@ -32,6 +33,7 @@ const useCustomBreakpoint = (breakpoint = 1500) => {
 };
 
 export const OpportunitiesSidebar: React.FC = () => {
+  const { isOffline } = useApiHealthStatus();
   const [showAll, setShowAll] = useState(false);
   const [visibleOpportunities, setVisibleOpportunities] = useState(1);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -123,7 +125,11 @@ export const OpportunitiesSidebar: React.FC = () => {
       )}
 
       <div className="space-y-4 justify-end">
-        {isLoading ? (
+        {isOffline ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            Sistema fora do ar
+          </div>
+        ) : isLoading ? (
           Array.from({ length: visibleOpportunities }).map((_, index) => (
             <div key={index} className="space-y-3">
               <Skeleton className="h-32 w-full rounded-lg" />

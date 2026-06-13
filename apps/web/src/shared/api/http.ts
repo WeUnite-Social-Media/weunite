@@ -19,6 +19,21 @@ const resolveApiBaseUrl = () => {
 
 const apiBaseUrl = resolveApiBaseUrl();
 
+export const resolveApiHealthUrl = () => {
+  const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+
+  if (!configuredApiUrl || configuredApiUrl === "/api") {
+    return "/actuator/health";
+  }
+
+  const normalizedApiUrl = configuredApiUrl.replace(/\/$/, "");
+  const apiRootUrl = normalizedApiUrl.endsWith("/api")
+    ? normalizedApiUrl.slice(0, -4)
+    : normalizedApiUrl;
+
+  return `${apiRootUrl}/actuator/health`;
+};
+
 export const instance = axios.create({
   baseURL: apiBaseUrl,
 });
