@@ -127,6 +127,8 @@ public class SecurityConfig {
                     // Swagger
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/actuator/health")
+                    .permitAll()
 
                     // Opportunities endpoints
                     .requestMatchers(HttpMethod.POST, "/api/opportunities/create/{userId}")

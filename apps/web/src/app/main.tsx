@@ -9,10 +9,8 @@ import { Toaster } from "sonner";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // ✅ Nunca mostra loading se já tem dados em cache
-      notifyOnChangeProps: ["data", "error"],
-      // ✅ Mantém dados em cache mesmo quando componente desmonta
-      gcTime: 30 * 60 * 1000, // 30 minutos
+      gcTime: 30 * 60 * 1000,
+      refetchOnReconnect: true,
     },
   },
 });
