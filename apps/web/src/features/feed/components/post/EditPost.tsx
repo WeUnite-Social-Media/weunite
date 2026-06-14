@@ -16,13 +16,13 @@ import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
-import type { Post } from "@/shared/types/post.types";
+import type { PostCard } from "@/shared/types/post.types";
 import { useEffect } from "react";
 
 interface EditPostProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  post?: Post;
+  post?: Pick<PostCard, "id" | "text">;
 }
 
 export function EditPost({ open, onOpenChange, post }: EditPostProps) {

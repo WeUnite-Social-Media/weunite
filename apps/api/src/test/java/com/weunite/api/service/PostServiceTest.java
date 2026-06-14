@@ -8,12 +8,12 @@ import com.weunite.api.common.exception.UnauthorizedException;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.storage.service.CloudinaryService;
 import com.weunite.api.posts.domain.Post;
-import com.weunite.api.posts.domain.Repost;
+import com.weunite.api.posts.dto.FeedPostSummaryDTO;
 import com.weunite.api.posts.dto.PostDTO;
 import com.weunite.api.posts.dto.PostRequestDTO;
 import com.weunite.api.posts.exception.PostNotFoundException;
 import com.weunite.api.posts.mapper.PostMapper;
-import com.weunite.api.posts.repository.FeedItemProjection;
+import com.weunite.api.posts.repository.FeedPostSummaryProjection;
 import com.weunite.api.posts.repository.LikeRepository;
 import com.weunite.api.posts.repository.PostRepository;
 import com.weunite.api.posts.repository.RepostRepository;
@@ -446,78 +446,166 @@ public class PostServiceTest {
     post.setUser(author);
     post.setCreatedAt(Instant.parse("2026-03-24T10:00:00Z"));
 
-    Repost repost = new Repost();
-    repost.setId(5L);
-    repost.setPost(post);
-    repost.setUser(reposter);
-    repost.setCreatedAt(Instant.parse("2026-03-24T12:00:00Z"));
+    Instant repostedAt = Instant.parse("2026-03-24T12:00:00Z");
 
-    PostDTO originalPostDTO =
-        new PostDTO(
-            "1",
-            "Original post",
-            null,
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
-            post.getCreatedAt(),
-            null,
-            null,
-            null,
-            null);
-
-    PostDTO repostedPostDTO =
-        new PostDTO(
-            "1",
-            "Original post",
-            null,
-            new ArrayList<>(),
-            new ArrayList<>(),
-            new ArrayList<>(),
-            post.getCreatedAt(),
-            null,
-            null,
-            null,
-            repost.getCreatedAt());
-
-    when(postRepository.findFeedEntries(any()))
+    when(postRepository.findFeedSummaries(eq(99L), any()))
         .thenReturn(
             new PageImpl<>(
                 List.of(
-                    feedEntry("REPOST", post.getId(), repost.getId()),
-                    feedEntry("POST", post.getId(), null))));
-    when(postRepository.findAllWithUserByIdInAndDeletedFalse(List.of(post.getId())))
-        .thenReturn(List.of(post));
-    when(repostRepository.findAllByIdWithFeedContext(List.of(repost.getId())))
-        .thenReturn(List.of(repost));
-    when(postMapper.toPostDTO(post)).thenReturn(originalPostDTO);
-    when(postMapper.toPostDTOFromRepost(repost)).thenReturn(repostedPostDTO);
+                    feedSummary(
+                        post.getId(),
+                        "Original post",
+                        null,
+                        post.getCreatedAt(),
+                        null,
+                        author.getId(),
+                        author.getName(),
+                        author.getUsername(),
+                        author.getProfileImg(),
+                        3L,
+                        2L,
+                        true,
+                        reposter.getId(),
+                        reposter.getName(),
+                        reposter.getUsername(),
+                        reposter.getProfileImg(),
+                        repostedAt),
+                    feedSummary(
+                        post.getId(),
+                        "Original post",
+                        null,
+                        post.getCreatedAt(),
+                        null,
+                        author.getId(),
+                        author.getName(),
+                        author.getUsername(),
+                        author.getProfileImg(),
+                        3L,
+                        2L,
+                        true,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null))));
 
-    List<PostDTO> result = postService.getPosts(0, 10);
+    List<FeedPostSummaryDTO> result = postService.getPosts(99L, 0, 10);
 
-    assertEquals(List.of(repostedPostDTO, originalPostDTO), result);
-    verify(postRepository).findFeedEntries(any());
-    verify(postRepository).findAllWithUserByIdInAndDeletedFalse(List.of(post.getId()));
-    verify(repostRepository).findAllByIdWithFeedContext(List.of(repost.getId()));
-    verify(postMapper).toPostDTO(post);
-    verify(postMapper).toPostDTOFromRepost(repost);
+    assertEquals(2, result.size());
+    assertEquals("1", result.get(0).id());
+    assertEquals(3L, result.get(0).likesCount());
+    assertEquals(2L, result.get(0).commentsCount());
+    assertTrue(result.get(0).likedByViewer());
+    assertEquals("2", result.get(0).repostedBy().id());
+    assertEquals(repostedAt, result.get(0).repostedAt());
+    assertNull(result.get(1).repostedBy());
+    assertNull(result.get(1).repostedAt());
+    verify(postRepository).findFeedSummaries(eq(99L), any());
+    verifyNoInteractions(postMapper);
   }
 
-  private FeedItemProjection feedEntry(String entryType, Long postId, Long repostId) {
-    return new FeedItemProjection() {
+  private FeedPostSummaryProjection feedSummary(
+      Long postId,
+      String text,
+      String imageUrl,
+      Instant createdAt,
+      Instant updatedAt,
+      Long userId,
+      String userName,
+      String username,
+      String userProfileImg,
+      Long likesCount,
+      Long commentsCount,
+      Boolean likedByViewer,
+      Long repostedByUserId,
+      String repostedByName,
+      String repostedByUsername,
+      String repostedByProfileImg,
+      Instant repostedAt) {
+    return new FeedPostSummaryProjection() {
       @Override
       public Long getPostId() {
         return postId;
       }
 
       @Override
-      public Long getRepostId() {
-        return repostId;
+      public String getText() {
+        return text;
       }
 
       @Override
-      public String getEntryType() {
-        return entryType;
+      public String getImageUrl() {
+        return imageUrl;
+      }
+
+      @Override
+      public Instant getCreatedAt() {
+        return createdAt;
+      }
+
+      @Override
+      public Instant getUpdatedAt() {
+        return updatedAt;
+      }
+
+      @Override
+      public Long getUserId() {
+        return userId;
+      }
+
+      @Override
+      public String getUserName() {
+        return userName;
+      }
+
+      @Override
+      public String getUsername() {
+        return username;
+      }
+
+      @Override
+      public String getUserProfileImg() {
+        return userProfileImg;
+      }
+
+      @Override
+      public Long getLikesCount() {
+        return likesCount;
+      }
+
+      @Override
+      public Long getCommentsCount() {
+        return commentsCount;
+      }
+
+      @Override
+      public Boolean getLikedByViewer() {
+        return likedByViewer;
+      }
+
+      @Override
+      public Long getRepostedByUserId() {
+        return repostedByUserId;
+      }
+
+      @Override
+      public String getRepostedByName() {
+        return repostedByName;
+      }
+
+      @Override
+      public String getRepostedByUsername() {
+        return repostedByUsername;
+      }
+
+      @Override
+      public String getRepostedByProfileImg() {
+        return repostedByProfileImg;
+      }
+
+      @Override
+      public Instant getRepostedAt() {
+        return repostedAt;
       }
     };
   }

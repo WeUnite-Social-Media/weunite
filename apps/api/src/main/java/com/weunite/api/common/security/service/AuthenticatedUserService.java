@@ -63,6 +63,14 @@ public class AuthenticatedUserService {
     throw new UnauthorizedException("Token sem identificador de usuario");
   }
 
+  public Long getUserIdOrNull(Jwt jwt) {
+    if (jwt == null) {
+      return null;
+    }
+
+    return requireUserId(jwt);
+  }
+
   public Long requireAdminUserId(Jwt jwt) {
     Long authenticatedUserId = requireUserId(jwt);
     User user =

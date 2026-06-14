@@ -6,7 +6,7 @@ import {
   DrawerTitle,
 } from "@/shared/components/ui/drawer";
 import { Button } from "@/shared/components/ui/button";
-import type { Post as PostType } from "@/shared/types/post.types";
+import type { PostCard } from "@/shared/types/post.types";
 import { X as CloseIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { UIEvent } from "react";
@@ -38,7 +38,7 @@ const COMMENT_LIMIT = 500;
 interface CommentsProps {
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
-  post: PostType;
+  post: PostCard;
 }
 
 export default function Comments({
@@ -64,7 +64,7 @@ export default function Comments({
     isError: isCommentsError,
     isFetchingNextPage,
     isLoading: isCommentsLoading,
-  } = useGetComments(Number(post.id));
+  } = useGetComments(Number(post.id), { enabled: isOpen === true });
 
   const comments = (data?.pages.flatMap((page) => page.data?.content ?? []) ||
     []) as CommentType[];
@@ -296,7 +296,7 @@ export default function Comments({
                 className="hover:cursor-pointer"
                 onClick={handlePostAuthorClick}
               >
-                <AvatarImage src={post.user.profileImg} />
+                <AvatarImage src={post.user.profileImg ?? undefined} />
                 <AvatarFallback>{postAuthorInitials}</AvatarFallback>
               </Avatar>
 

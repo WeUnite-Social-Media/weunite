@@ -52,13 +52,27 @@ import { useToggleLike } from "@/features/feed/state/useLikes";
 import { useDeletePost } from "@/features/feed/state/usePosts";
 import { ReportModal } from "@/features/reporting/components/ReportModal";
 import { getTimeAgo } from "@/shared/hooks/useGetTimeAgo";
-import type { Post } from "@/shared/types/post.types";
+import type { PostCard } from "@/shared/types/post.types";
 import { getInitials } from "@/shared/utils/getInitials";
 
 const actions = [{ icon: Heart }, { icon: MessageCircle }, { icon: Repeat2 }];
 const POST_PREVIEW_LENGTH = 200;
 
-export default function Post({ post }: { post: Post }) {
+const getLikesCount = (post: PostCard) =>
+  "likesCount" in post ? post.likesCount : post.likes.length || 0;
+
+const getCommentsCount = (post: PostCard) =>
+  "commentsCount" in post ? post.commentsCount : post.comments.length || 0;
+
+const isPostLikedByViewer = (post: PostCard, userId?: string | number) => {
+  if ("likedByViewer" in post) {
+    return post.likedByViewer;
+  }
+
+  return post.likes.some((like) => like.user.id === userId);
+};
+
+export default function Post({ post }: { post: PostCard }) {
   const initials = getInitials(post.user.name);
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -66,7 +80,9 @@ export default function Post({ post }: { post: Post }) {
   const toggleLike = useToggleLike();
   const deletePost = useDeletePost();
 
-  const isLiked = post.likes.some((like) => like.user.id === user?.id);
+  const likesCount = getLikesCount(post);
+  const commentsCount = getCommentsCount(post);
+  const isLiked = isPostLikedByViewer(post, user?.id);
   const isOwner = post.user.id === user?.id;
 
   const [isEditPostOpen, setIsEditPostOpen] = useState(false);
@@ -138,7 +154,10 @@ export default function Post({ post }: { post: Post }) {
             className="h-[2.8em] w-[2.8em] hover:cursor-pointer"
             onClick={handleProfileClick}
           >
-            <AvatarImage src={post.user.profileImg} alt="profile image" />
+            <AvatarImage
+              src={post.user.profileImg ?? undefined}
+              alt="profile image"
+            />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
 
@@ -251,7 +270,9 @@ export default function Post({ post }: { post: Post }) {
 
           {postText ? (
             <div className="space-y-2">
-              <p className="whitespace-pre-wrap break-words">{visiblePostText}</p>
+              <p className="whitespace-pre-wrap break-words">
+                {visiblePostText}
+              </p>
 
               {shouldTruncate ? (
                 <button
@@ -279,8 +300,8 @@ export default function Post({ post }: { post: Post }) {
         <CardFooter className="mt-[-20px] flex flex-col">
           <div className="mb-3 flex w-full justify-between">
             <span className="text-sm text-muted-foreground">
-              {post.likes.length || 0} curtidas • {post.comments.length || 0}{" "}
-              comentários
+              {likesCount} curtidas {"\u2022"} {commentsCount}{" "}
+              {"coment\u00e1rios"}
             </span>
           </div>
 
