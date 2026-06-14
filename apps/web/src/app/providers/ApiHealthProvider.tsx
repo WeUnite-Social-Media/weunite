@@ -19,7 +19,6 @@ export function ApiHealthProvider({ children }: { children: ReactNode }) {
   const previousStatusRef = useRef<ApiHealthStatus | null>(null);
   const hasShownOfflineToastRef = useRef(false);
   const [isManualRetrying, setIsManualRetrying] = useState(false);
-  const [status, setStatus] = useState<ApiHealthStatus>("checking");
 
   const healthQuery = useQuery({
     queryKey: API_HEALTH_QUERY_KEY,
@@ -32,17 +31,11 @@ export function ApiHealthProvider({ children }: { children: ReactNode }) {
     staleTime: 0,
   });
 
-  useEffect(() => {
-    if (healthQuery.errorUpdatedAt > 0) {
-      setStatus("offline");
-    }
-  }, [healthQuery.errorUpdatedAt]);
-
-  useEffect(() => {
-    if (healthQuery.dataUpdatedAt > 0) {
-      setStatus("online");
-    }
-  }, [healthQuery.dataUpdatedAt]);
+  const status: ApiHealthStatus = healthQuery.isError
+    ? "offline"
+    : healthQuery.isSuccess
+      ? "online"
+      : "checking";
 
   useEffect(() => {
     const previousStatus = previousStatusRef.current;

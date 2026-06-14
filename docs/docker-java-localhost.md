@@ -70,11 +70,12 @@ RUN mvn -B clean package -DskipTests
 
 FROM eclipse-temurin:17-jre
 
-WORKDIR /app
-
 RUN groupadd --system spring && useradd --system --gid spring spring
 
-COPY --from=builder /workspace/target/*.jar app.jar
+WORKDIR /app
+RUN chown spring:spring /app
+
+COPY --from=builder --chown=spring:spring /workspace/target/*.jar app.jar
 
 USER spring:spring
 
@@ -161,9 +162,9 @@ The API keeps runtime configuration in `application.properties` and environment 
 ```properties
 spring.application.name=weunite-api
 server.port=${SERVER_PORT:8080}
-spring.datasource.url=jdbc:postgresql://${env.DB_HOST:localhost}:${env.DB_PORT:5432}/${env.DB_NAME:weunite}
-spring.datasource.username=${env.DB_USERNAME}
-spring.datasource.password=${env.DB_PASSWORD}
+spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:weunite}
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
 spring.datasource.driver-class-name=org.postgresql.Driver
 app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
 ```
@@ -182,9 +183,9 @@ spring:
   application:
     name: weunite-api
   datasource:
-    url: jdbc:postgresql://${env.DB_HOST:localhost}:${env.DB_PORT:5432}/${env.DB_NAME:weunite}
-    username: ${env.DB_USERNAME}
-    password: ${env.DB_PASSWORD}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:weunite}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
 server:

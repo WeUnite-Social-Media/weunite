@@ -18,11 +18,12 @@ RUN mvn -B clean package -DskipTests
 
 FROM eclipse-temurin:17-jre
 
-WORKDIR /app
-
 RUN groupadd --system spring && useradd --system --gid spring spring
 
-COPY --from=builder /workspace/target/*.jar app.jar
+WORKDIR /app
+RUN chown spring:spring /app
+
+COPY --from=builder --chown=spring:spring /workspace/target/*.jar app.jar
 
 USER spring:spring
 
