@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { AlertTriangle, RefreshCw, Wifi } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,11 +12,10 @@ import {
 } from "@/app/providers/apiHealthContext";
 
 const API_HEALTH_QUERY_KEY = ["api-health"] as const;
-const HEALTH_CHECK_INTERVAL_MS = 5_000;
+const HEALTH_CHECK_INTERVAL_MS = 30_000;
 
 export function ApiHealthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
-  const previousStatusRef = useRef<ApiHealthStatus | null>(null);
   const hasShownOfflineToastRef = useRef(false);
   const [isManualRetrying, setIsManualRetrying] = useState(false);
 
@@ -30,6 +29,7 @@ export function ApiHealthProvider({ children }: { children: ReactNode }) {
     retry: false,
     staleTime: 0,
   });
+  const { refetch } = healthQuery;
 
   const status: ApiHealthStatus = healthQuery.isError
     ? "offline"
@@ -38,37 +38,37 @@ export function ApiHealthProvider({ children }: { children: ReactNode }) {
       : "checking";
 
   useEffect(() => {
-    const previousStatus = previousStatusRef.current;
-
     if (status === "offline" && !hasShownOfflineToastRef.current) {
       toast.error("Sem conexao com o servidor.");
       hasShownOfflineToastRef.current = true;
     }
 
-    if (status === "online" && previousStatus === "offline") {
+    if (status === "online" && hasShownOfflineToastRef.current) {
       toast.success("Sistema conectado novamente.");
       hasShownOfflineToastRef.current = false;
       void queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] !== API_HEALTH_QUERY_KEY[0],
       });
     }
-
-    previousStatusRef.current = status;
   }, [queryClient, status]);
 
-  const value: ApiHealthContextValue = {
-    status,
-    isOffline: status === "offline",
-    retry: async () => {
-      setIsManualRetrying(true);
+  const retry = useCallback(async () => {
+    setIsManualRetrying(true);
 
-      try {
-        await healthQuery.refetch();
-      } finally {
-        setIsManualRetrying(false);
-      }
-    },
-  };
+    try {
+      await refetch();
+    } finally {
+      setIsManualRetrying(false);
+    }
+  }, [refetch]);
+
+  const value = useMemo<ApiHealthContextValue>(() => {
+    return {
+      status,
+      isOffline: status === "offline",
+      retry,
+    };
+  }, [retry, status]);
 
   return (
     <ApiHealthContext.Provider value={value}>

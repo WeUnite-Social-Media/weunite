@@ -23,7 +23,7 @@ RUN groupadd --system spring && useradd --system --gid spring spring
 WORKDIR /app
 RUN chown spring:spring /app
 
-COPY --from=builder --chown=spring:spring /workspace/target/*.jar app.jar
+COPY --from=builder --chown=spring:spring /workspace/target/*-SNAPSHOT.jar app.jar
 
 USER spring:spring
 

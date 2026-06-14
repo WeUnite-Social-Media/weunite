@@ -37,7 +37,7 @@ export function FeedHome() {
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  if (isOffline) {
+  if (isOffline && posts.length === 0) {
     return (
       <div className="flex min-h-[80vh] items-center justify-center px-4 text-center">
         <div className="max-w-md space-y-3">

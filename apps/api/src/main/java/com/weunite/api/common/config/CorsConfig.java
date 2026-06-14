@@ -1,5 +1,7 @@
 package com.weunite.api.common.config;
 
+import java.util.Arrays;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +23,7 @@ public class CorsConfig implements WebMvcConfigurer {
   public void addCorsMappings(CorsRegistry registry) {
     registry
         .addMapping("/**")
-        .allowedOrigins(allowedOrigins)
+        .allowedOrigins(resolvedAllowedOrigins())
         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
         .allowedHeaders("Content-Type", "Authorization")
         .allowCredentials(true);
@@ -30,13 +32,23 @@ public class CorsConfig implements WebMvcConfigurer {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(java.util.List.of(allowedOrigins));
-    configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-    configuration.setAllowedHeaders(java.util.List.of("Content-Type", "Authorization"));
+    configuration.setAllowedOrigins(Arrays.asList(resolvedAllowedOrigins()));
+    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(List.of("Content-Type", "Authorization"));
     configuration.setAllowCredentials(true);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
     return source;
+  }
+
+  private String[] resolvedAllowedOrigins() {
+    if (allowedOrigins == null) {
+      return new String[0];
+    }
+
+    return Arrays.stream(allowedOrigins)
+        .filter(origin -> origin != null && !origin.isBlank())
+        .toArray(String[]::new);
   }
 }
