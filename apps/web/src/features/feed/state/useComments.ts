@@ -102,7 +102,10 @@ export const useUpdateComments = () => {
   });
 };
 
-export const useGetComments = (postId: number) => {
+export const useGetComments = (
+  postId: number,
+  options?: { enabled?: boolean },
+) => {
   return useInfiniteQuery({
     queryKey: commentKeys.listByPost(postId),
     queryFn: ({ pageParam }) =>
@@ -120,7 +123,7 @@ export const useGetComments = (postId: number) => {
         : undefined;
     },
     staleTime: 5 * 60 * 1000,
-    enabled: !!postId,
+    enabled: (options?.enabled ?? true) && !!postId,
   });
 };
 
