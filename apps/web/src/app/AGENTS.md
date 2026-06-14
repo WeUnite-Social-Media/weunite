@@ -24,6 +24,8 @@ This area owns web bootstrap, top-level providers, and route guards in `apps/web
 - `routes/PublicRoutes.tsx`
 - `providers/WebSocketProvider.tsx`
 - `providers/useAppWebSocket.ts`
+- `providers/ApiHealthProvider.tsx`
+- `providers/apiHealthContext.ts`
 
 ## Working rules
 

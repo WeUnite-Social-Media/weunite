@@ -1,7 +1,8 @@
-.git
-*.md
-*.log
 target/
-docker-compose.yml
 .env
-*.properties
+.env.*
+uploads/
+.git/
+.idea/
+.vscode/
+*.iml

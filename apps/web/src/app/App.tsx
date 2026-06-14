@@ -8,23 +8,26 @@ import { OpportunityRoutes } from "@/features/opportunities/routes/OpportunityRo
 import { ChatRoutes } from "@/features/chat/routes/ChatRoutes";
 import { AdminRoutes } from "@/features/admin/routes/AdminRoutes";
 import { WebSocketProvider } from "@/app/providers/WebSocketProvider";
+import { ApiHealthProvider } from "@/app/providers/ApiHealthProvider";
 import { TermsOfUsePage } from "@/features/legal/pages/TermsOfUsePage";
 
 function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-      <WebSocketProvider>
-        <Routes>
-          <Route path="/auth/*" element={<AuthRoutes />} />
-          <Route path="/home/*" element={<HomeRoutes />} />
-          <Route path="/profile/*" element={<ProfileRoutes />} />
-          <Route path="/opportunity/*" element={<OpportunityRoutes />} />
-          <Route path="/chat/*" element={<ChatRoutes />} />
-          <Route path="/admin/*" element={<AdminRoutes />} />
-          <Route path="/terms" element={<TermsOfUsePage />} />
-          <Route path="/*" element={<Navigate to="/home" replace />} />
-        </Routes>
-      </WebSocketProvider>
+      <ApiHealthProvider>
+        <WebSocketProvider>
+          <Routes>
+            <Route path="/auth/*" element={<AuthRoutes />} />
+            <Route path="/home/*" element={<HomeRoutes />} />
+            <Route path="/profile/*" element={<ProfileRoutes />} />
+            <Route path="/opportunity/*" element={<OpportunityRoutes />} />
+            <Route path="/chat/*" element={<ChatRoutes />} />
+            <Route path="/admin/*" element={<AdminRoutes />} />
+            <Route path="/terms" element={<TermsOfUsePage />} />
+            <Route path="/*" element={<Navigate to="/home" replace />} />
+          </Routes>
+        </WebSocketProvider>
+      </ApiHealthProvider>
     </ThemeProvider>
   );
 }
