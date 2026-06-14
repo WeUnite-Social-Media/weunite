@@ -143,8 +143,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             u.name AS userName,
             u.username AS username,
             u.profile_img AS userProfileImg,
-            COUNT(DISTINCT l.id) AS likesCount,
-            COUNT(DISTINCT c.id) AS commentsCount,
+            (SELECT COUNT(*) FROM tb_post_like l WHERE l.post_id = p.id) AS likesCount,
+            (SELECT COUNT(*) FROM comment c WHERE c.post_id = p.id AND c.deleted = false) AS commentsCount,
             CASE
               WHEN :viewerId IS NOT NULL AND EXISTS (
                 SELECT 1
@@ -184,26 +184,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
           JOIN tb_user u ON u.id = p.user_id
           LEFT JOIN tb_post_repost r ON r.id = feed.repost_id
           LEFT JOIN tb_user ru ON ru.id = r.user_id
-          LEFT JOIN tb_post_like l ON l.post_id = p.id
-          LEFT JOIN comment c ON c.post_id = p.id AND c.deleted = false
-          GROUP BY
-            feed.post_id,
-            feed.repost_id,
-            feed.feed_timestamp,
-            p.id,
-            p.text,
-            p.image_url,
-            p.created_at,
-            p.updated_at,
-            u.id,
-            u.name,
-            u.username,
-            u.profile_img,
-            ru.id,
-            ru.name,
-            ru.username,
-            ru.profile_img,
-            r.created_at
           ORDER BY feed.feed_timestamp DESC, feed.post_id DESC, COALESCE(feed.repost_id, 0) DESC
           """,
       countQuery =
@@ -239,8 +219,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             u.name AS userName,
             u.username AS username,
             u.profile_img AS userProfileImg,
-            COUNT(DISTINCT l.id) AS likesCount,
-            COUNT(DISTINCT c.id) AS commentsCount,
+            (SELECT COUNT(*) FROM tb_post_like l WHERE l.post_id = p.id) AS likesCount,
+            (SELECT COUNT(*) FROM comment c WHERE c.post_id = p.id AND c.deleted = false) AS commentsCount,
             CASE
               WHEN :viewerId IS NOT NULL AND EXISTS (
                 SELECT 1
@@ -282,26 +262,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
           JOIN tb_user u ON u.id = p.user_id
           LEFT JOIN tb_post_repost r ON r.id = feed.repost_id
           LEFT JOIN tb_user ru ON ru.id = r.user_id
-          LEFT JOIN tb_post_like l ON l.post_id = p.id
-          LEFT JOIN comment c ON c.post_id = p.id AND c.deleted = false
-          GROUP BY
-            feed.post_id,
-            feed.repost_id,
-            feed.feed_timestamp,
-            p.id,
-            p.text,
-            p.image_url,
-            p.created_at,
-            p.updated_at,
-            u.id,
-            u.name,
-            u.username,
-            u.profile_img,
-            ru.id,
-            ru.name,
-            ru.username,
-            ru.profile_img,
-            r.created_at
           ORDER BY feed.feed_timestamp DESC, feed.post_id DESC, COALESCE(feed.repost_id, 0) DESC
           """,
       countQuery =

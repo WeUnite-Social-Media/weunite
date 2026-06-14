@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import type { Comment as CommentType } from "@/shared/types/comment.types";
-import type { Post as PostType } from "@/shared/types/post.types";
+import type { PostCard } from "@/shared/types/post.types";
 
 interface FeedProfileProps {
   profileUsername?: string;
@@ -54,7 +54,7 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("publicacoes");
   const posts = (postsResponse?.pages.flatMap((page) => page.data ?? []) ||
-    []) as PostType[];
+    []) as PostCard[];
   const comments = (commentsResponse?.pages.flatMap(
     (page) => page.data ?? [],
   ) || []) as CommentType[];

@@ -101,7 +101,9 @@ public class PostService {
 
   @Transactional(readOnly = true)
   public List<FeedPostSummaryDTO> getPostsByUser(Long viewerId, Long userId, int page, int size) {
-    userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+    if (!userRepository.existsById(userId)) {
+      throw new UserNotFoundException();
+    }
 
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(size, 1), 100);

@@ -36,7 +36,7 @@ export const createPostRequest = async (data: CreatePost, userId: number) => {
 
     return {
       success: true,
-      data: response.data as FeedPostSummary[],
+      data: response.data.data as Post,
       message: response.data.message || "Publicacao criada com sucesso!",
       error: null,
     };
@@ -77,7 +77,7 @@ export const updatePostRequest = async (
 
     return {
       success: true,
-      data: response.data as FeedPostSummary[],
+      data: response.data.data as Post,
       message: response.data.message || "Publicacao atualizada com sucesso!",
       error: null,
     };
@@ -129,7 +129,7 @@ export const getPostsRequest = async ({
 
     return {
       success: true,
-      data: response.data,
+      data: response.data as FeedPostSummary[],
       message: response.data.message || "Publicacoes consultadas com sucesso!",
       error: null,
     };
@@ -159,7 +159,7 @@ export const getPostsByUserRequest = async (
 
     return {
       success: true,
-      data: response.data,
+      data: response.data as FeedPostSummary[],
       message: response.data.message || "Publicacoes consultadas com sucesso!",
       error: null,
     };
