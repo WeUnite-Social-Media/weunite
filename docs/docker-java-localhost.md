@@ -108,13 +108,14 @@ services:
     ports:
       - "${API_DB_HOST_PORT:-5433}:5432"
     environment:
-      POSTGRES_DB: weunite
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${DB_NAME:-weunite}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     volumes:
       - weunite_api_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d weunite"]
+      test:
+        ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -128,17 +129,17 @@ services:
       db:
         condition: service_healthy
     env_file:
-      - ../../apps/api/.env
+      - ../../.env
     environment:
-      SERVER_PORT: 8080
+      SERVER_PORT: ${SERVER_PORT:-8080}
       DB_HOST: db
       DB_PORT: 5432
-      DB_NAME: weunite
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173
+      DB_NAME: ${DB_NAME:-weunite}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
     ports:
-      - "${API_HOST_PORT:-8081}:8080"
+      - "${API_ONLY_HOST_PORT:-8081}:8080"
 
 volumes:
   weunite_api_postgres_data:
@@ -146,10 +147,10 @@ volumes:
 
 Key details:
 
-- `ports: "${API_HOST_PORT:-8081}:8080"` maps host port `8081` to container port `8080` unless `API_HOST_PORT` overrides it.
+- `ports: "${API_ONLY_HOST_PORT:-8081}:8080"` maps host port `8081` to container port `8080` unless `API_ONLY_HOST_PORT` overrides it.
 - `ports: "${API_DB_HOST_PORT:-5433}:5432"` lets host tools connect to this PostgreSQL container through `localhost:5433` unless `API_DB_HOST_PORT` overrides it.
 - `DB_HOST=db` is correct inside Compose because service names resolve through Docker DNS.
-- `env_file` loads secrets and local placeholders from `apps/api/.env`.
+- `env_file` loads secrets and local placeholders from the root `.env`.
 - `environment` overrides values that must change inside Docker, especially `DB_HOST`.
 - The database health check prevents the API from starting before PostgreSQL accepts connections.
 - The named volume preserves PostgreSQL data when containers are recreated.
@@ -200,16 +201,16 @@ Use either properties or YAML in a project, not both for the same keys.
 
 ## Environment Variables
 
-For local development, copy the env example:
+For local development, copy the root env example:
 
 ```powershell
-Copy-Item apps/api/.env.example apps/api/.env
+Copy-Item .env.example .env
 ```
 
 Alternative on macOS/Linux:
 
 ```bash
-cp apps/api/.env.example apps/api/.env
+cp .env.example .env
 ```
 
 For local API execution, keep:
@@ -258,7 +259,7 @@ docker build -t weunite-api:local apps/api
 Run the image directly against a host database:
 
 ```bash
-docker run --rm -p 8081:8080 --env-file apps/api/.env -e DB_HOST=host.docker.internal weunite-api:local
+docker run --rm -p 8081:8080 --env-file .env -e DB_HOST=host.docker.internal weunite-api:local
 ```
 
 Run the API and database with Docker Compose:
@@ -278,14 +279,14 @@ Override the host port when needed:
 Windows PowerShell:
 
 ```powershell
-$env:API_HOST_PORT = "8090"
+$env:API_ONLY_HOST_PORT = "8090"
 pnpm dev:api:docker
 ```
 
 macOS/Linux:
 
 ```bash
-API_HOST_PORT=8090 pnpm dev:api:docker
+API_ONLY_HOST_PORT=8090 pnpm dev:api:docker
 ```
 
 Stop the Docker API stack:
@@ -388,12 +389,12 @@ Fix:
 Typical message:
 
 ```text
-env file ... apps/api/.env not found
+env file ... .env not found
 ```
 
 Fix:
 
-- Copy `apps/api/.env.example` to `apps/api/.env`.
+- Copy `.env.example` to `.env` in the repository root.
 - Fill in required values such as JWT keys, mail placeholders, Cloudinary URL, and database credentials.
 
 ### API Starts but Browser Cannot Reach It

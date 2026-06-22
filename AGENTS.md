@@ -40,6 +40,10 @@ This repository uses `AGENTS.md` files as local operating notes for humans and c
 - Local infrastructure (native PostgreSQL): `pnpm dev:infra:local`
 - Dockerized API + PostgreSQL: `pnpm dev:api:docker`
 - Stop dockerized API + PostgreSQL: `pnpm dev:api:docker:down`
+- Dockerized API against native PostgreSQL: `pnpm dev:docker:api:local-db`
+- Dockerized web against native PostgreSQL workflow: `pnpm dev:docker:web:local-db`
+- Dockerized web + API against native PostgreSQL: `pnpm dev:docker:all:local-db`
+- Stop native-DB Docker app stack: `pnpm dev:docker:local-db:down`
 - Web + api dev: `pnpm dev`
 - Web only: `pnpm dev:web`
 - API only: `pnpm dev:api`

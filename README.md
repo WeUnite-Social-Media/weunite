@@ -64,34 +64,39 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
    corepack pnpm install
    ```
 
-4. Create the local env files:
+4. Create the root local env file:
 
    Windows PowerShell:
 
    ```powershell
-   Copy-Item apps/api/.env.example apps/api/.env
-   Copy-Item apps/web/.env.example apps/web/.env
+   Copy-Item .env.example .env
    ```
 
    macOS/Linux:
 
    ```bash
-   cp apps/api/.env.example apps/api/.env
-   cp apps/web/.env.example apps/web/.env
+   cp .env.example .env
    ```
 
-5. Fill in `apps/api/.env` and `apps/web/.env`.
+5. Fill in `.env`.
 
    Minimum Docker-first values to review:
-   - `apps/web/.env`: keep `VITE_API_URL=http://localhost:8080`. The web client adds `/api` internally for HTTP calls.
-   - `apps/web/.env`: keep `VITE_WS_URL=http://localhost:8080/ws`.
-   - `apps/web/.env`: keep `VITE_MEDIA_URL=http://localhost:8080`.
-   - `apps/api/.env`: for the default Docker database, keep `DB_USERNAME=postgres` and `DB_PASSWORD=postgres`.
-   - `apps/api/.env`: `DB_HOST`, `DB_PORT`, and `DB_NAME` can be omitted or kept as `localhost`, `5432`, and `weunite` when the API runs locally. When the API runs in Docker, Compose injects `DB_HOST=db`.
-   - `apps/api/.env`: keep `CORS_ALLOWED_ORIGINS=http://localhost:5173` or include it in the existing comma-separated list.
-   - `apps/api/.env`: `MAIL_USERNAME`, `MAIL_PASSWORD`, and `MAIL_PORT` only need to exist for the API to boot locally; the placeholder values from `.env.example` are fine until you test email flows.
-   - `apps/api/.env`: `CLOUDINARY_URL` only needs a valid placeholder format until you test image upload flows.
-   - `apps/api/.env`: `JWT_PUBLIC_KEY` and `JWT_PRIVATE_KEY` must be real base64-encoded full RSA PEM values.
+   - `VITE_API_URL=http://localhost:8080`. The web client adds `/api` internally for HTTP calls.
+   - `VITE_WS_URL=http://localhost:8080/ws`.
+   - `VITE_MEDIA_URL=http://localhost:8080`.
+   - `WEB_HOST_PORT=3000`, because the Vite dev server is configured for port `3000`.
+   - `API_HOST_PORT=8080`.
+   - `API_ONLY_HOST_PORT=8081` if you use the dedicated API-only Docker stack and want it to coexist with a local API on `8080`.
+   - `DB_PASSWORD` is the active password used when the API runs locally through Maven.
+   - For local API + DB Docker, set `DB_PASSWORD` to the same value as `DB_DOCKER_PASSWORD`.
+   - For local API + native PostgreSQL, set `DB_PASSWORD` to the same value as `DB_LOCAL_PASSWORD`.
+   - `DB_DOCKER_PASSWORD` is used by Compose when it creates the PostgreSQL container and when the Dockerized API connects to that container.
+   - `DB_LOCAL_PASSWORD` is used by the Dockerized API when it connects to PostgreSQL running natively on the host.
+   - `DB_HOST`, `DB_PORT`, and `DB_NAME` can stay as `localhost`, `5432`, and `weunite` when the API runs locally. Compose overrides database connection values when the API runs in Docker.
+   - Keep `CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173` or include your custom local web ports in the comma-separated list.
+   - `MAIL_USERNAME`, `MAIL_PASSWORD`, and `MAIL_PORT` only need to exist for the API to boot locally; the placeholder values from `.env.example` are fine until you test email flows.
+   - `CLOUDINARY_URL` only needs a valid placeholder format until you test image upload flows.
+   - `JWT_PUBLIC_KEY` and `JWT_PRIVATE_KEY` must be real base64-encoded full RSA PEM values.
 
 6. Start the database in Docker:
 
@@ -105,7 +110,7 @@ If you are inside `apps/api` or `apps/web`, go back to the root first:
    corepack pnpm dev
    ```
 
-- Web: `http://localhost:5173`
+- Web: `http://localhost:3000`
 - API: `http://localhost:8080/api`
 - PostgreSQL: `localhost:5432`
 
@@ -115,7 +120,7 @@ The development Compose file is [infra/docker/compose.dev.yml](infra/docker/comp
 
 - PostgreSQL: `localhost:5432`
 - API: `localhost:8080`
-- Web: `localhost:5173`
+- Web: `localhost:3000`
 
 The database service is named `db` inside Docker. That means:
 
@@ -123,7 +128,77 @@ The database service is named `db` inside Docker. That means:
 - API running in Docker connects to PostgreSQL through `db:5432`.
 - Web always calls `http://localhost:8080`, because the React code runs in the user's browser even when Vite is served from a container.
 
-#### 1. Web local + API Docker + DB Docker
+#### DB Docker scenarios
+
+Use these when PostgreSQL should run in Docker.
+
+| Scenario                            | Commands                                                     |
+| ----------------------------------- | ------------------------------------------------------------ |
+| Web local + API local + DB Docker   | `corepack pnpm dev:infra`, then `corepack pnpm dev`          |
+| Web local + API Docker + DB Docker  | `corepack pnpm dev:docker:api`, then `corepack pnpm dev:web` |
+| Web Docker + API local + DB Docker  | `corepack pnpm dev:docker:web`, then `corepack pnpm dev:api` |
+| Web Docker + API Docker + DB Docker | `corepack pnpm dev:docker:all`                               |
+
+Stop the DB Docker development stack with:
+
+```powershell
+corepack pnpm dev:docker:down
+```
+
+Network behavior:
+
+- Browser opens `http://localhost:3000`.
+- Web calls `http://localhost:8080/api`.
+- API local connects to PostgreSQL at `localhost:5432`.
+- API Docker connects to PostgreSQL at `db:5432`.
+
+#### Native PostgreSQL scenarios
+
+Use these when PostgreSQL is installed and running directly on the host machine.
+
+First, create the database referenced by `DB_NAME` in `.env` and run the local preflight:
+
+```powershell
+corepack pnpm dev:infra:local
+```
+
+Then choose the app runtime combination:
+
+| Scenario                           | Commands                                                              |
+| ---------------------------------- | --------------------------------------------------------------------- |
+| Web local + API local + DB local   | `corepack pnpm dev`                                                   |
+| Web local + API Docker + DB local  | `corepack pnpm dev:docker:api:local-db`, then `corepack pnpm dev:web` |
+| Web Docker + API local + DB local  | `corepack pnpm dev:docker:web:local-db`, then `corepack pnpm dev:api` |
+| Web Docker + API Docker + DB local | `corepack pnpm dev:docker:all:local-db`                               |
+
+Stop the local-DB Docker app stack with:
+
+```powershell
+corepack pnpm dev:docker:local-db:down
+```
+
+Network behavior:
+
+- Browser opens `http://localhost:3000`.
+- Web calls `http://localhost:8080/api`.
+- API local connects to PostgreSQL at `localhost:5432`.
+- API Docker connects to PostgreSQL through `LOCAL_DB_HOST_FOR_DOCKER`, which defaults to `host.docker.internal`.
+
+For native PostgreSQL scenarios using the existing app env files, `apps/api/.env` must include the active database credentials read by Spring:
+
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=weunite
+DB_USERNAME=postgres
+DB_PASSWORD=your-native-postgres-password
+```
+
+When the API runs in Docker, Compose overrides only `DB_HOST` to `host.docker.internal`; the other database values still come from `apps/api/.env`.
+
+#### Detailed examples
+
+##### Web local + API Docker + DB Docker
 
 Start API and database in Docker:
 
@@ -139,12 +214,12 @@ corepack pnpm dev:web
 
 Network behavior:
 
-- Browser opens `http://localhost:5173`.
+- Browser opens `http://localhost:3000`.
 - Web calls `http://localhost:8080/api`.
 - Host port `8080` forwards to the API container.
 - API container talks to PostgreSQL at `db:5432`.
 
-#### 2. Web Docker + API Docker + DB Docker
+##### Web Docker + API Docker + DB Docker
 
 Start everything in Docker:
 
@@ -154,12 +229,12 @@ corepack pnpm dev:docker:all
 
 Network behavior:
 
-- Browser opens `http://localhost:5173`.
+- Browser opens `http://localhost:3000`.
 - Vite runs in Docker, but its port is published to the host.
 - Web calls `http://localhost:8080/api`.
 - API container talks to PostgreSQL at `db:5432`.
 
-#### 3. Web Docker + API Local + DB Docker
+##### Web Docker + API Local + DB Docker
 
 Start web and database in Docker:
 
@@ -175,12 +250,12 @@ corepack pnpm dev:api
 
 Network behavior:
 
-- Browser opens `http://localhost:5173`.
+- Browser opens `http://localhost:3000`.
 - Web container serves Vite through the published host port.
 - Web calls the local API at `http://localhost:8080/api`.
 - API local connects to PostgreSQL at `localhost:5432`.
 
-#### 4. Web Local + API Local + DB Docker
+##### Web Local + API Local + DB Docker
 
 Start only the database in Docker:
 
@@ -196,23 +271,9 @@ corepack pnpm dev
 
 Network behavior:
 
-- Browser opens `http://localhost:5173`.
+- Browser opens `http://localhost:3000`.
 - Web local calls API local at `http://localhost:8080/api`.
 - API local connects to PostgreSQL at `localhost:5432`.
-
-### Optional Native PostgreSQL
-
-The recommended development flow keeps PostgreSQL in Docker. If you intentionally want a native PostgreSQL instance, create the database referenced by `DB_NAME` in `apps/api/.env` and run the local preflight:
-
-```powershell
-corepack pnpm dev:infra:local
-```
-
-Then start the local apps:
-
-```powershell
-corepack pnpm dev
-```
 
 ## Core commands
 
@@ -223,6 +284,10 @@ corepack pnpm dev
 - `corepack pnpm dev:docker:web`: start PostgreSQL and web in Docker.
 - `corepack pnpm dev:docker:all`: start PostgreSQL, API, and web in Docker.
 - `corepack pnpm dev:docker:down`: stop the Docker development stack.
+- `corepack pnpm dev:docker:api:local-db`: start API in Docker against native PostgreSQL.
+- `corepack pnpm dev:docker:web:local-db`: start web in Docker for a native PostgreSQL workflow.
+- `corepack pnpm dev:docker:all:local-db`: start web and API in Docker against native PostgreSQL.
+- `corepack pnpm dev:docker:local-db:down`: stop the native-DB Docker app stack.
 - `corepack pnpm dev`: start the web and api apps together.
 - `corepack pnpm dev:web`: start only the web app.
 - `corepack pnpm dev:api`: start only the api app.
@@ -235,10 +300,14 @@ corepack pnpm dev
 
 ## Environment
 
+- The recommended local configuration source is the root `.env`, copied from [.env.example](.env.example).
+- `apps/api/.env` and `apps/web/.env` are optional app-level overrides for local Maven or Vite runs.
+- Docker Compose reads the root `.env`.
 - Web uses `VITE_API_URL` as the API origin. In Docker-first development, keep it as `http://localhost:8080`; the shared HTTP client appends `/api`.
 - Mobile uses `EXPO_PUBLIC_API_URL`.
-- API uses the variables documented in [apps/api/.env.example](apps/api/.env.example).
+- API uses the variables documented in [.env.example](.env.example).
 - API database configuration falls back to `localhost:5432/weunite`, so a local API can talk to the Docker database without changing code.
+- When the API runs in Docker and PostgreSQL runs natively on the host, Compose sets `DB_HOST` from `LOCAL_DB_HOST_FOR_DOCKER`, which defaults to `host.docker.internal`.
 - Dockerized API setup and localhost networking are documented in [docs/docker-java-localhost.md](docs/docker-java-localhost.md).
 
 ## CI and merge requirements

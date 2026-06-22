@@ -29,6 +29,8 @@ This folder owns local development infrastructure files under `infra/`.
 
 - `pnpm dev:infra`
 - `pnpm dev:infra:local`
+- `pnpm dev:docker:all`
+- `pnpm dev:docker:all:local-db`
 
 ## Keep this file updated when
 
