@@ -27,10 +27,14 @@ This folder owns local development infrastructure files under `infra/`.
 
 ## Validation
 
-- `pnpm dev:infra`
-- `pnpm dev:infra:local`
-- `pnpm dev:docker:all`
-- `pnpm dev:docker:all:local-db`
+- `pnpm dev:local:check-db`
+- `pnpm dev:docker`
+- `pnpm dev:docker:db`
+- `pnpm dev:docker:api`
+- `pnpm dev:docker:web`
+- `pnpm dev:docker:api-db`
+- `pnpm dev:docker:web-db`
+- `pnpm dev:docker:web-api`
 
 ## Keep this file updated when
 

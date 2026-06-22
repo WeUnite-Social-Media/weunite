@@ -248,8 +248,8 @@ async function main() {
 
   console.log("\nPróximos comandos:");
   console.log("- pnpm dev");
-  console.log("- pnpm dev:web");
-  console.log("- pnpm dev:api");
+  console.log("- pnpm dev:local:web");
+  console.log("- pnpm dev:local:api");
 }
 
 main().catch((error) => {

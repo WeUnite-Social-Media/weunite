@@ -31,9 +31,9 @@ This folder owns the runnable applications under `apps/`.
 ## Validation
 
 - `pnpm dev`
-- `pnpm dev:web`
-- `pnpm dev:api`
-- `pnpm dev:mobile`
+- `pnpm dev:local:web`
+- `pnpm dev:local:api`
+- `pnpm dev:local:mobile`
 
 ## Keep this file updated when
 
