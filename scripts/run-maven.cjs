@@ -63,8 +63,10 @@ function parseEnvFile(filePath) {
   return env;
 }
 
-const envPath = path.join(cwd(), ".env");
-const dotenvValues = existsSync(envPath) ? parseEnvFile(envPath) : {};
+const repoEnvPath = path.resolve(__dirname, "..", ".env");
+const appEnvPath = path.join(cwd(), ".env");
+const repoDotenvValues = existsSync(repoEnvPath) ? parseEnvFile(repoEnvPath) : {};
+const appDotenvValues = existsSync(appEnvPath) ? parseEnvFile(appEnvPath) : {};
 
 const javaToolOptions = mergeOptionValue(process.env.JAVA_TOOL_OPTIONS, [
   "-Dfile.encoding=UTF-8",
@@ -77,7 +79,8 @@ const result = spawnSync(command, args, {
   stdio: "inherit",
   shell: false,
   env: {
-    ...dotenvValues,
+    ...repoDotenvValues,
+    ...appDotenvValues,
     ...process.env,
     JAVA_TOOL_OPTIONS: javaToolOptions,
   },

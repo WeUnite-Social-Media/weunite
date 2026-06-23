@@ -4,6 +4,7 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 
 const repoRoot = path.resolve(__dirname, "..");
+const rootEnvPath = path.join(repoRoot, ".env");
 const apiEnvPath = path.join(repoRoot, "apps", "api", ".env");
 const webEnvPath = path.join(repoRoot, "apps", "web", ".env");
 
@@ -90,6 +91,13 @@ function validateJwtPem(env, keyName, type, errors) {
     return;
   }
 
+  if (env[keyName].includes("base64_of_full_rsa")) {
+    errors.push(
+      `${keyName}: substitua o placeholder rodando \`pnpm dev:local:jwt-keys\`.`,
+    );
+    return;
+  }
+
   try {
     const pem = decodeBase64Utf8(env[keyName], keyName);
     const beginMarker =
@@ -161,31 +169,39 @@ async function main() {
   const errors = [];
   const info = [];
 
+  const rootEnvExists = fs.existsSync(rootEnvPath);
   const apiEnvExists = fs.existsSync(apiEnvPath);
   const webEnvExists = fs.existsSync(webEnvPath);
 
-  if (!apiEnvExists) {
+  if (!rootEnvExists && !apiEnvExists) {
     errors.push(
-      "API: `apps/api/.env` não existe. Crie o arquivo a partir de `apps/api/.env.example`.",
+      "API: crie `.env` na raiz a partir de `.env.example` ou crie `apps/api/.env` a partir de `apps/api/.env.example`.",
     );
   }
 
-  if (!webEnvExists) {
+  if (!rootEnvExists && !webEnvExists) {
     errors.push(
-      "Web: `apps/web/.env` não existe. Crie o arquivo a partir de `apps/web/.env.example`.",
+      "Web: crie `.env` na raiz a partir de `.env.example` ou crie `apps/web/.env` a partir de `apps/web/.env.example`.",
     );
   }
 
-  const apiEnv = apiEnvExists ? parseEnvFile(apiEnvPath) : {};
-  const webEnv = webEnvExists ? parseEnvFile(webEnvPath) : {};
+  const rootEnv = rootEnvExists ? parseEnvFile(rootEnvPath) : {};
+  const apiEnv = {
+    ...rootEnv,
+    ...(apiEnvExists ? parseEnvFile(apiEnvPath) : {}),
+  };
+  const webEnv = {
+    ...rootEnv,
+    ...(webEnvExists ? parseEnvFile(webEnvPath) : {}),
+  };
 
-  if (apiEnvExists) {
+  if (rootEnvExists || apiEnvExists) {
     validateRequiredVars(apiEnv, requiredApiVars, "API", errors);
     validateJwtPem(apiEnv, "JWT_PUBLIC_KEY", "public", errors);
     validateJwtPem(apiEnv, "JWT_PRIVATE_KEY", "private", errors);
   }
 
-  if (webEnvExists) {
+  if (rootEnvExists || webEnvExists) {
     validateRequiredVars(webEnv, requiredWebVars, "Web", errors);
   }
 
@@ -223,7 +239,7 @@ async function main() {
 
     console.error("\nAções recomendadas:");
     console.error(
-      "- Revise os arquivos `.env` a partir dos exemplos em `apps/api` e `apps/web`.",
+      "- Revise o arquivo `.env` da raiz a partir de `.env.example`.",
     );
     console.error(
       `- Garanta que o PostgreSQL local esteja ativo em ${dbHost}:${dbPort || 5432}.`,
@@ -239,8 +255,8 @@ async function main() {
 
   console.log("\nPróximos comandos:");
   console.log("- pnpm dev");
-  console.log("- pnpm dev:web");
-  console.log("- pnpm dev:api");
+  console.log("- pnpm dev:local:web");
+  console.log("- pnpm dev:local:api");
 }
 
 main().catch((error) => {
