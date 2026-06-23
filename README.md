@@ -59,6 +59,7 @@ Main local URLs:
 - `corepack pnpm dev:local:api`: start only the API locally.
 - `corepack pnpm dev:local:mobile`: start the mobile shell.
 - `corepack pnpm dev:local:check-db`: validate native PostgreSQL setup.
+- `corepack pnpm dev:local:jwt-keys`: generate local RSA JWT keys into `.env`.
 - `corepack pnpm dev:docker`: start web, API, and PostgreSQL in Docker.
 - `corepack pnpm dev:docker:db`: start only PostgreSQL in Docker.
 - `corepack pnpm dev:docker:down`: stop the default Docker development stack.

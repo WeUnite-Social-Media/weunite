@@ -88,6 +88,7 @@ pnpm dev
 - `pnpm dev:local:api`: start only the API locally.
 - `pnpm dev:local:mobile`: start the mobile shell.
 - `pnpm dev:local:check-db`: validate native PostgreSQL setup.
+- `pnpm dev:local:jwt-keys`: generate local RSA JWT keys into `.env`.
 
 ## Validation
 

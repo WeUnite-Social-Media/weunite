@@ -91,6 +91,13 @@ function validateJwtPem(env, keyName, type, errors) {
     return;
   }
 
+  if (env[keyName].includes("base64_of_full_rsa")) {
+    errors.push(
+      `${keyName}: substitua o placeholder rodando \`pnpm dev:local:jwt-keys\`.`,
+    );
+    return;
+  }
+
   try {
     const pem = decodeBase64Utf8(env[keyName], keyName);
     const beginMarker =

@@ -29,7 +29,7 @@ Inside Docker, the API connects to the Docker database through `db:5432`. When t
 | Docker API only      | `corepack pnpm dev:docker:api`   |
 | Docker web only      | `corepack pnpm dev:docker:web`   |
 
-`dev:docker:api` starts only the API container and does not start dependencies. Use it when PostgreSQL is already reachable from the Compose network, for example after `dev:docker:db`, or when you intentionally manage the database separately.
+`dev:docker:api` starts only the API container and connects to PostgreSQL running on the host through `LOCAL_DB_HOST_FOR_DOCKER`, which defaults to `host.docker.internal`.
 
 `dev:docker:web` starts only the web container. The React code runs in the browser and calls the API origin configured by `VITE_API_URL`.
 
@@ -114,7 +114,9 @@ corepack pnpm dev:docker:local-db:down
 
 ## Environment
 
-The root `.env` is the recommended configuration source for Docker. Start from:
+The root `.env` is the recommended configuration source for Docker. All `dev:docker:*` scripts pass it to Compose with `--env-file .env`, so the same file is used for `${...}` interpolation and for container environment values.
+
+Start from:
 
 ```powershell
 Copy-Item .env.example .env
@@ -132,6 +134,14 @@ Review these values:
 - `DB_DOCKER_PASSWORD=postgres`
 - `DB_LOCAL_PASSWORD=<your-native-postgres-password>`
 - `LOCAL_DB_HOST_FOR_DOCKER=host.docker.internal`
+- `JWT_PUBLIC_KEY=<base64-encoded-public-pem>`
+- `JWT_PRIVATE_KEY=<base64-encoded-private-pem>`
+
+For local development, generate valid RSA JWT keys with:
+
+```powershell
+corepack pnpm dev:local:jwt-keys
+```
 
 For native PostgreSQL scenarios, the root `.env` should include the active database credentials read by Spring:
 

@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_DOCKER_NAME:-weunite}
       POSTGRES_USER: ${DB_DOCKER_USERNAME:-postgres}
-      POSTGRES_PASSWORD: ${DB_DOCKER_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${DB_DOCKER_PASSWORD:-23552}
     volumes:
       - weunite_postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -37,7 +37,7 @@ services:
       DB_PORT: 5432
       DB_NAME: ${DB_DOCKER_NAME:-weunite}
       DB_USERNAME: ${DB_DOCKER_USERNAME:-postgres}
-      DB_PASSWORD: ${DB_DOCKER_PASSWORD:-postgres}
+      DB_PASSWORD: ${DB_DOCKER_PASSWORD:-23552}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
     ports:
       - "${API_HOST_PORT:-8080}:8080"
