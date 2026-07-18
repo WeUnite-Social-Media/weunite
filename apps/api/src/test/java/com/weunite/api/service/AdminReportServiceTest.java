@@ -118,7 +118,7 @@ class AdminReportServiceTest {
 
     PostDTO mappedPostDTO =
         new PostDTO(
-            "10", "post text", null, List.of(), List.of(), List.of(), null, null, null, null, null);
+            "10", "post text", null, null, List.of(), List.of(), List.of(), null, null, null, null, null);
     ReportDTO pendingReportDTO =
         new ReportDTO("1", null, "POST", existingPostId, "reason", "pending", null);
     ReportDTO deletedReportDTO =

@@ -4,6 +4,7 @@ import com.weunite.api.common.exception.UnauthorizedException;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.storage.service.CloudinaryService;
 import com.weunite.api.posts.domain.Post;
+import com.weunite.api.posts.domain.PostMediaType;
 import com.weunite.api.posts.domain.Repost;
 import com.weunite.api.posts.dto.PostDTO;
 import com.weunite.api.posts.dto.PostRequestDTO;
@@ -50,12 +51,14 @@ public class PostService {
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
     String imageUrl = null;
+    PostMediaType mediaType = null;
 
     if (image != null && !image.isEmpty()) {
       imageUrl = cloudinaryService.uploadPost(image, userId);
+      mediaType = getMediaType(image);
     }
 
-    Post createdPost = new Post(user, post.text(), imageUrl);
+    Post createdPost = new Post(user, post.text(), imageUrl, mediaType);
 
     postRepository.save(createdPost);
 
@@ -73,13 +76,16 @@ public class PostService {
     }
 
     String imageUrl = existingPost.getImageUrl();
+    PostMediaType mediaType = existingPost.getMediaType();
 
     if (image != null && !image.isEmpty()) {
       imageUrl = cloudinaryService.uploadPost(image, userId);
+      mediaType = getMediaType(image);
     }
 
     existingPost.setText(updatedPost.text());
     existingPost.setImageUrl(imageUrl);
+    existingPost.setMediaType(mediaType);
     postRepository.save(existingPost);
 
     return postMapper.toResponseDTO("Publicação atualizada com sucesso!", existingPost);
@@ -180,5 +186,19 @@ public class PostService {
 
   private boolean isRepostEntry(String entryType) {
     return "REPOST".equalsIgnoreCase(entryType);
+  }
+
+  private PostMediaType getMediaType(MultipartFile file) {
+    String contentType = file.getContentType();
+
+    if (contentType != null && contentType.startsWith("video/")) {
+      return PostMediaType.VIDEO;
+    }
+
+    if (contentType != null && contentType.startsWith("image/")) {
+      return PostMediaType.IMAGE;
+    }
+
+    return null;
   }
 }

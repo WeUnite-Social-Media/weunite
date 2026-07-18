@@ -117,6 +117,7 @@ public class AdminReportService {
                         null,
                         List.of(),
                         List.of(),
+                        List.of(),
                         placeholderTimestamp,
                         placeholderTimestamp,
                         new UserDTO(

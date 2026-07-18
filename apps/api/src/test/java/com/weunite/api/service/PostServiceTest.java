@@ -8,6 +8,7 @@ import com.weunite.api.common.exception.UnauthorizedException;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.storage.service.CloudinaryService;
 import com.weunite.api.posts.domain.Post;
+import com.weunite.api.posts.domain.PostMediaType;
 import com.weunite.api.posts.domain.Repost;
 import com.weunite.api.posts.dto.PostDTO;
 import com.weunite.api.posts.dto.PostRequestDTO;
@@ -88,6 +89,7 @@ public class PostServiceTest {
             "1",
             "This is a test post",
             "http://image.url/test.jpg",
+            PostMediaType.IMAGE,
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
@@ -102,6 +104,7 @@ public class PostServiceTest {
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
     when(image.isEmpty()).thenReturn(false);
+    when(image.getContentType()).thenReturn("image/jpeg");
     when(cloudinaryService.uploadPost(image, userId)).thenReturn("http://image.url/test.jpg");
     when(postRepository.save(any(Post.class))).thenReturn(createdPost);
     when(postMapper.toResponseDTO(eq("Publicação criada com sucesso!"), any(Post.class)))
@@ -154,6 +157,7 @@ public class PostServiceTest {
         new PostDTO(
             "1",
             "This is a test post without image",
+            null,
             null,
             new ArrayList<>(),
             new ArrayList<>(),
@@ -242,6 +246,7 @@ public class PostServiceTest {
             "1",
             "Updated post text",
             "http://new-image.url",
+            PostMediaType.IMAGE,
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
@@ -256,6 +261,7 @@ public class PostServiceTest {
 
     when(postRepository.findByIdAndDeletedFalse(postId)).thenReturn(Optional.of(existingPost));
     when(image.isEmpty()).thenReturn(false);
+    when(image.getContentType()).thenReturn("image/jpeg");
     when(cloudinaryService.uploadPost(image, userId)).thenReturn("http://new-image.url");
     when(postRepository.save(existingPost)).thenReturn(existingPost);
     when(postMapper.toResponseDTO(eq("Publicação atualizada com sucesso!"), eq(existingPost)))
@@ -358,6 +364,7 @@ public class PostServiceTest {
             "1",
             "Post to be deleted",
             null,
+            null,
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
@@ -457,6 +464,7 @@ public class PostServiceTest {
             "1",
             "Original post",
             null,
+            null,
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
@@ -470,6 +478,7 @@ public class PostServiceTest {
         new PostDTO(
             "1",
             "Original post",
+            null,
             null,
             new ArrayList<>(),
             new ArrayList<>(),

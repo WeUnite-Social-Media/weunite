@@ -21,6 +21,13 @@ public class Post {
     this.imageUrl = imageUrl;
   }
 
+  public Post(User user, String text, String imageUrl, PostMediaType mediaType) {
+    this.user = user;
+    this.text = text;
+    this.imageUrl = imageUrl;
+    this.mediaType = mediaType;
+  }
+
   public Post(User user, String text) {
     this.user = user;
     this.text = text;
@@ -44,6 +51,10 @@ public class Post {
 
   @Column(length = 500)
   private String imageUrl;
+
+  @Enumerated(EnumType.STRING)
+  @Column(length = 20)
+  private PostMediaType mediaType;
 
   @Column(nullable = false)
   private boolean deleted;

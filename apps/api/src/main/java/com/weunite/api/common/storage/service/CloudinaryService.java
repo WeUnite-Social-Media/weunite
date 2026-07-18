@@ -21,6 +21,23 @@ public class CloudinaryService {
 
   public String uploadPost(MultipartFile file, Long userId) {
     try {
+      if (isVideo(file)) {
+        Map<?, ?> uploadResult =
+            cloudinary
+                .uploader()
+                .upload(
+                    file.getBytes(),
+                    Map.of(
+                        "folder",
+                        "posts/" + userId,
+                        "tags",
+                        "post, user_content, video",
+                        "resource_type",
+                        "video"));
+
+        return (String) uploadResult.get("secure_url");
+      }
+
       // Primeiro, fazemos upload temporário para analisar dimensões
       Map<?, ?> tempUpload =
           cloudinary.uploader().upload(file.getBytes(), Map.of("resource_type", "auto"));
@@ -173,5 +190,10 @@ public class CloudinaryService {
   /** Get the configured height values for different image types */
   public CloudinaryImageProperties getImageProperties() {
     return imageProperties;
+  }
+
+  private boolean isVideo(MultipartFile file) {
+    String contentType = file.getContentType();
+    return contentType != null && contentType.startsWith("video/");
   }
 }

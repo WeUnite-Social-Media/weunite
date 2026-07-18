@@ -48,6 +48,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import Comments from "@/features/feed/components/post/Comments/Comments";
 import { EditPost } from "@/features/feed/components/post/EditPost";
+import PostMedia from "@/features/feed/components/post/PostMedia";
 import { useToggleLike } from "@/features/feed/state/useLikes";
 import { useDeletePost } from "@/features/feed/state/usePosts";
 import { ReportModal } from "@/features/reporting/components/ReportModal";
@@ -240,18 +241,14 @@ export default function Post({ post }: { post: Post }) {
 
         <CardContent className="mt-[-18px] w-full">
           <div className="flex w-full items-center justify-center">
-            {post.imageUrl ? (
-              <img
-                src={post.imageUrl}
-                alt="Post media"
-                className="mb-2 rounded-sm"
-              />
-            ) : null}
+            <PostMedia mediaUrl={post.imageUrl} mediaType={post.mediaType} />
           </div>
 
           {postText ? (
             <div className="space-y-2">
-              <p className="whitespace-pre-wrap break-words">{visiblePostText}</p>
+              <p className="whitespace-pre-wrap break-words">
+                {visiblePostText}
+              </p>
 
               {shouldTruncate ? (
                 <button

@@ -12,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { UIEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import Post from "@/features/feed/components/post/Post";
+import PostMedia from "@/features/feed/components/post/PostMedia";
 import Comment from "@/features/feed/components/post/Comments/Comment";
 import {
   Avatar,
@@ -280,10 +281,10 @@ export default function Comments({
         <div className="flex h-full w-full">
           {post.imageUrl ? (
             <div className="flex h-full w-1/2 items-center justify-center bg-black">
-              <img
-                src={post.imageUrl}
-                alt="Post"
-                className="h-full w-full object-cover"
+              <PostMedia
+                mediaUrl={post.imageUrl}
+                mediaType={post.mediaType}
+                className="mb-0 h-full w-full object-contain"
               />
             </div>
           ) : null}

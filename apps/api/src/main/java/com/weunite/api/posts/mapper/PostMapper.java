@@ -25,6 +25,7 @@ public interface PostMapper {
   @Mapping(target = "id", source = "post.id", resultType = String.class)
   @Mapping(target = "text", source = "post.text")
   @Mapping(target = "imageUrl", source = "post.imageUrl")
+  @Mapping(target = "mediaType", source = "post.mediaType")
   @Mapping(target = "likes", source = "post.likes", qualifiedByName = "mapLikesWithoutPost")
   @Mapping(
       target = "comments",
@@ -41,6 +42,7 @@ public interface PostMapper {
   @Mapping(target = "id", source = "repost.post.id", resultType = String.class)
   @Mapping(target = "text", source = "repost.post.text")
   @Mapping(target = "imageUrl", source = "repost.post.imageUrl")
+  @Mapping(target = "mediaType", source = "repost.post.mediaType")
   @Mapping(target = "likes", source = "repost.post.likes", qualifiedByName = "mapLikesWithoutPost")
   @Mapping(
       target = "comments",
