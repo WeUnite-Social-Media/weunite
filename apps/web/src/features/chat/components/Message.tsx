@@ -35,6 +35,11 @@ export const Message = ({ message }: MessageProps) => {
     return text.startsWith("/uploads/") || text.startsWith("http");
   };
 
+  const resolveFileUrl = (text: string) => {
+    if (text.startsWith("http")) return text;
+    return `${mediaBaseUrl}${text}`;
+  };
+
   const getFileName = (url: string) => {
     return url.split("/").pop() || "arquivo";
   };
@@ -54,7 +59,7 @@ export const Message = ({ message }: MessageProps) => {
 
   const renderContent = () => {
     if (isFileUrl(message.text)) {
-      const fullUrl = `${mediaBaseUrl}${message.text}`;
+      const fullUrl = resolveFileUrl(message.text);
 
       if (isImageUrl(message.text)) {
         return (

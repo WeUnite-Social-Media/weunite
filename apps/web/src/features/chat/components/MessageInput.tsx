@@ -6,11 +6,12 @@ import EmojiPicker, { type EmojiClickData, Theme } from "emoji-picker-react";
 import { useUploadMessageFile } from "@/features/chat/state/useChat";
 import { toast } from "sonner";
 import { AudioRecorder } from "@/features/chat/components/AudioRecorder";
+import type { MessageType } from "@/shared/types/chat.types";
 
 interface MessageInputProps {
   conversationId: number;
   senderId: number;
-  onSendMessage: (message: string, type?: string) => void;
+  onSendMessage: (message: string, type?: MessageType) => void;
 }
 
 interface FilePreview {
@@ -156,7 +157,7 @@ export const MessageInput = ({
       });
 
       if (result.success && result.data) {
-        onSendMessage(result.data.fileUrl, "AUDIO");
+        onSendMessage(result.data.fileUrl, "FILE");
       }
     } catch (error) {
       console.error("Erro ao enviar áudio:", error);
