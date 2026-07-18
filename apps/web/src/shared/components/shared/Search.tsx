@@ -64,8 +64,8 @@ export function Search({
             : "animate-in slide-in-from-left"
         } duration-500`}
         style={{
-          left: "5rem",
-          width: "320px",
+          left: "4.5rem",
+          width: "24rem",
         }}
         onAnimationEnd={() => {
           if (isAnimating && !isCurrentlyOpen) {

@@ -181,16 +181,7 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
 
   const renderProfileActions = () => {
     if (isOwnProfile) {
-      return (
-        <Button
-          variant="outline"
-          className="flex items-center gap-2"
-          onClick={handleEditProfileOpen}
-        >
-          <Pencil className="h-4 w-4" />
-          Editar perfil
-        </Button>
-      );
+      return;
     }
 
     return (
