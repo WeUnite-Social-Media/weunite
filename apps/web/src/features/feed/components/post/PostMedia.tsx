@@ -24,7 +24,10 @@ export default function PostMedia({
         controls
         playsInline
         preload="metadata"
-        className={cn("mb-2 rounded-sm", className)}
+        className={cn(
+          "mb-2 max-h-[500px] max-w-full rounded-sm object-contain",
+          className,
+        )}
       />
     );
   }
@@ -33,7 +36,10 @@ export default function PostMedia({
     <img
       src={mediaUrl}
       alt="Post media"
-      className={cn("mb-2 rounded-sm", className)}
+      className={cn(
+        "mb-2 max-h-[500px] max-w-full rounded-sm object-contain",
+        className,
+      )}
     />
   );
 }

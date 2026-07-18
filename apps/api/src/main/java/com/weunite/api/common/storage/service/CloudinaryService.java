@@ -60,17 +60,17 @@ public class CloudinaryService {
                 .width(imageProperties.getPost().getWidth()) // 1280px
                 .height(imageProperties.getPost().getHeight()) // 720px
                 .crop("limit") // Mantém proporção
-                .quality("auto")
+                .quality("auto:best")
                 .fetchFormat("auto");
         tags = "post, user_content, horizontal";
       } else {
         // IMAGEM VERTICAL - usa limites reduzidos
         transformation =
             new Transformation()
-                .width(imageProperties.getPost().getVerticalMaxWidth()) // 375px
-                .height(imageProperties.getPost().getVerticalMaxHeight()) // 500px
+                .width(imageProperties.getPost().getVerticalMaxWidth()) // 720px
+                .height(imageProperties.getPost().getVerticalMaxHeight()) // 960px
                 .crop("limit") // Mantém proporção
-                .quality("auto")
+                .quality("auto:best")
                 .fetchFormat("auto");
         tags = "post, user_content, vertical";
       }

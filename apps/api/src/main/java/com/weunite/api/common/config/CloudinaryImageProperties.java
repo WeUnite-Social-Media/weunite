@@ -32,7 +32,7 @@ public class CloudinaryImageProperties {
   public static class Post {
     private int height = 720;
     private int width = 1280; // 16:9 aspect ratio - HD resolution
-    private int verticalMaxHeight = 500; // For vertical images
-    private int verticalMaxWidth = 375; // For vertical images
+    private int verticalMaxHeight = 960; // For vertical images
+    private int verticalMaxWidth = 720; // For vertical images
   }
 }

@@ -280,11 +280,11 @@ export default function Comments({
 
         <div className="flex h-full w-full">
           {post.imageUrl ? (
-            <div className="flex h-full w-1/2 items-center justify-center bg-black">
+            <div className="flex h-full w-1/2 items-center justify-center bg-muted/40 p-6">
               <PostMedia
                 mediaUrl={post.imageUrl}
                 mediaType={post.mediaType}
-                className="mb-0 h-full w-full object-contain"
+                className="mb-0 max-h-[72vh] max-w-[92%] rounded-md object-contain shadow-sm"
               />
             </div>
           ) : null}
