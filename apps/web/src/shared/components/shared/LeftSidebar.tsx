@@ -120,10 +120,13 @@ export function LeftSidebar() {
   ];
 
   useEffect(() => {
-    if (isSearchOpen && state === "expanded") {
+    if (
+      (isSearchOpen && state === "expanded") ||
+      (isNotificationsOpen && state === "expanded")
+    ) {
       setOpen(false);
     }
-  }, [isSearchOpen, setOpen, state]);
+  }, [isSearchOpen, isNotificationsOpen, setOpen, state]);
 
   useEffect(() => {
     if (isSmallDesktop && !previousDesktop.current) {
@@ -133,7 +136,9 @@ export function LeftSidebar() {
     previousDesktop.current = isSmallDesktop;
   }, [isSmallDesktop, setOpen]);
 
-  const CustomSidebarTrigger = (props: ComponentProps<typeof SidebarTrigger>) => {
+  const CustomSidebarTrigger = (
+    props: ComponentProps<typeof SidebarTrigger>,
+  ) => {
     const handleClick = (
       event: ReactMouseEvent<HTMLButtonElement, MouseEvent>,
     ) => {
@@ -187,7 +192,9 @@ export function LeftSidebar() {
 
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel className={state === "collapsed" ? "text-center" : ""}>
+            <SidebarGroupLabel
+              className={state === "collapsed" ? "text-center" : ""}
+            >
               {state !== "collapsed" && !isMobile && "Navegação"}
             </SidebarGroupLabel>
 
@@ -303,7 +310,10 @@ export function LeftSidebar() {
                     }`}
                   >
                     <Avatar className={state === "collapsed" ? "mx-auto" : ""}>
-                      <AvatarImage src={user?.profileImg} alt={user?.username} />
+                      <AvatarImage
+                        src={user?.profileImg}
+                        alt={user?.username}
+                      />
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     {state !== "collapsed" && <p>{user?.username}</p>}
@@ -319,7 +329,9 @@ export function LeftSidebar() {
                 >
                   <div className="mb-1 border-b px-3 py-2">
                     <p className="font-medium">{user?.username}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user?.email}
+                    </p>
                   </div>
 
                   <div className="space-y-1 py-1">
