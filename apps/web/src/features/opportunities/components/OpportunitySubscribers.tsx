@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { ExternalLink, Loader2, Mail, Users } from "lucide-react";
 import { useGetOpportunitySubscribers } from "@/features/opportunities/state/useOpportunities";
 import {
@@ -23,7 +22,6 @@ export function OpportunitySubscribers({
   opportunityId,
   subscribers: subscribersProp,
 }: OpportunitySubscribersProps) {
-  const navigate = useNavigate();
   const { data, isLoading } = useGetOpportunitySubscribers(
     opportunityId || 0,
     Boolean(opportunityId) && !subscribersProp,
@@ -67,9 +65,6 @@ export function OpportunitySubscribers({
         const athlete = subscriber.athlete;
         const athleteName = athlete?.name || "Atleta";
         const athleteUsername = athlete?.username || "atleta";
-        const athleteProfilePath = athlete?.username
-          ? `/profile/${athlete.username}`
-          : "/profile";
 
         return (
           <Card key={subscriber.id}>
