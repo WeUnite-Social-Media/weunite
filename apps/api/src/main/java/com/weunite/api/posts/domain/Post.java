@@ -1,6 +1,5 @@
 package com.weunite.api.posts.domain;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.weunite.api.users.domain.User;
 import jakarta.persistence.*;
 import java.time.Instant;
@@ -56,7 +55,6 @@ public class Post {
   private Set<Repost> reposts = new HashSet<>();
 
   @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-  @JsonManagedReference
   private List<Comment> comments = new ArrayList<>();
 
   public void addLike(Like like) {
