@@ -3,7 +3,10 @@ import { useWebSocket } from "@/features/chat/hooks/useWebSocket";
 import { instance as axios } from "@/shared/api/http";
 
 /**
- * Hook para rastrear o status online de um usuário específico
+ * Hook para rastrear o status online de um usuário específico.
+ *
+ * 1. Fetches the initial status via REST on mount.
+ * 2. Subscribes to real-time WebSocket status updates for the given user.
  */
 export const useOnlineStatus = (userId: number | undefined): boolean => {
   const [isOnline, setIsOnline] = useState(false);
@@ -12,37 +15,25 @@ export const useOnlineStatus = (userId: number | undefined): boolean => {
   useEffect(() => {
     if (!userId || !isConnected) return;
 
-    console.log(`👤 Buscando status inicial do usuário ${userId}`);
-
-    // 1️⃣ Busca o status inicial via REST API
     const fetchInitialStatus = async () => {
       try {
         const response = await axios.get(`/users/${userId}/status`);
-        const initialStatus = response.data.status;
-        console.log(`🔍 Status inicial do usuário ${userId}: ${initialStatus}`);
+        const initialStatus = response.data.status as string;
         setIsOnline(initialStatus === "ONLINE");
-      } catch (error) {
-        console.warn(
-          `⚠️ Erro ao buscar status inicial do usuário ${userId}:`,
-          error,
-        );
+      } catch {
         setIsOnline(false);
       }
     };
 
-    fetchInitialStatus();
+    void fetchInitialStatus();
 
-    // 2️⃣ Inscreve-se no status do usuário para receber atualizações em tempo real
-    console.log(`👤 Inscrevendo no status do usuário ${userId}`);
     const unsubscribe = subscribeToUserStatus(userId, (status) => {
-      console.log(`📊 Status atualizado para usuário ${userId}: ${status}`);
       setIsOnline(status === "ONLINE");
     });
 
     return () => {
-      console.log(`📴 Desinscrevendo do status do usuário ${userId}`);
       if (unsubscribe) unsubscribe();
-      setIsOnline(false); // Reset ao desinscrever
+      setIsOnline(false);
     };
   }, [userId, subscribeToUserStatus, isConnected]);
 

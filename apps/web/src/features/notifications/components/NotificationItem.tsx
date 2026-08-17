@@ -85,7 +85,6 @@ export const NotificationItem = ({
 
   const openPostContext = async (postId: number) => {
     try {
-      console.log("Opening post with ID:", postId);
       const { queryKey, queryFn, staleTime, retry } =
         postDetailQueryOptions(postId);
       const postResponse = await queryClient.fetchQuery({
@@ -95,19 +94,14 @@ export const NotificationItem = ({
         retry,
       });
 
-      console.log("Post response:", postResponse);
-
       if (postResponse.success && postResponse.data) {
-        console.log("Setting selected post and opening comments");
         setSelectedPost(postResponse.data);
         setIsCommentsOpen(true);
         return;
       }
 
-      console.warn("Post fetch failed or returned no data");
       navigate("/home");
-    } catch (error) {
-      console.error("Error in openPostContext:", error);
+    } catch {
       navigate("/home");
     }
   };
@@ -123,23 +117,16 @@ export const NotificationItem = ({
         retry,
       });
 
-      console.log("Comment response:", commentResponse);
-
       const comment = commentResponse.success ? commentResponse.data : null;
 
-      console.log("Extracted comment:", comment);
-
       if (comment?.post?.id) {
-        console.log("Opening post with ID:", comment.post.id);
         await openPostContext(Number(comment.post.id));
         setTargetCommentId(commentId);
         return;
       }
 
-      console.warn("No post found in comment, navigating to home");
       navigate("/home");
-    } catch (error) {
-      console.error("Error in openCommentContext:", error);
+    } catch {
       navigate("/home");
     }
   };
@@ -165,12 +152,6 @@ export const NotificationItem = ({
 
   const handleClick = async () => {
     try {
-      console.log(
-        "Notification clicked:",
-        notification.type,
-        notification.relatedEntityId,
-      );
-
       if (!notification.isRead) {
         onMarkAsRead(notification.id);
       }
@@ -205,8 +186,7 @@ export const NotificationItem = ({
           setTargetCommentId(null);
           navigate("/home");
       }
-    } catch (error) {
-      console.error("Error in handleClick:", error);
+    } catch {
       navigate("/home");
     }
   };
