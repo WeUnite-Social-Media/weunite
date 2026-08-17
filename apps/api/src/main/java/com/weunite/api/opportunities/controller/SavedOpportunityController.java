@@ -38,10 +38,13 @@ public class SavedOpportunityController {
 
   @GetMapping("/athlete/{athleteId}")
   public ResponseEntity<List<SavedOpportunityDTO>> getSavedOpportunities(
-      @AuthenticationPrincipal Jwt jwt, @PathVariable Long athleteId) {
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long athleteId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
     Long authenticatedUserId = authenticatedUserService.requireMatchingUserId(jwt, athleteId);
     List<SavedOpportunityDTO> result =
-        savedOpportunityService.getSavedOpportunitiesByAthlete(authenticatedUserId);
+        savedOpportunityService.getSavedOpportunitiesByAthlete(authenticatedUserId, page, size);
     return ResponseEntity.status(HttpStatus.OK).body(result);
   }
 

@@ -11,6 +11,8 @@ import {
 } from "@/features/chat/state/useChat";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useOnlineStatus } from "@/features/chat/hooks/useOnlineStatus";
+import { useChatStore } from "@/features/chat/stores/useChatStore";
+import { formatBrazilTime } from "@/shared/utils/formatBrazilTime";
 
 interface Conversation {
   id: number;
@@ -25,12 +27,14 @@ interface ChatContainerProps {
   activeConversation: Conversation | undefined;
   onBack?: () => void;
   isMobile?: boolean;
+  pendingMessageId?: number | null;
 }
 
 export const ChatContainer = ({
   activeConversation,
   onBack,
   isMobile = false,
+  pendingMessageId,
 }: ChatContainerProps) => {
   const userId = useAuthStore((state) => state.user?.id);
   const [isOtherTyping] = useState(false);
@@ -57,8 +61,11 @@ export const ChatContainer = ({
   const { mutate: markAsRead } = useMarkMessagesAsRead();
 
   const { isConnected, subscribeToConversation, sendMessage } = useWebSocket();
+  const highlightedMessageId = useChatStore((state) => state.pendingMessageId);
 
   const messages = messagesData?.success ? messagesData.data || [] : [];
+  const targetMessageId = pendingMessageId || highlightedMessageId;
+  const shouldAutoScrollToBottom = !targetMessageId;
 
   // ✅ Inscreve no WebSocket para receber mensagens em tempo real
   useEffect(() => {
@@ -91,6 +98,10 @@ export const ChatContainer = ({
 
   // ✅ Auto-scroll quando novas mensagens chegam
   useEffect(() => {
+    if (!shouldAutoScrollToBottom) {
+      return;
+    }
+
     if (messageAreaRef.current) {
       messageAreaRef.current.scrollTop = messageAreaRef.current.scrollHeight;
     }
@@ -98,7 +109,7 @@ export const ChatContainer = ({
     if (messages.length > 0) {
       console.log("📨 Total de mensagens:", messages.length);
     }
-  }, [messages]);
+  }, [messages, shouldAutoScrollToBottom]);
 
   // Handle touch events for swipe and pull-to-refresh
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -206,7 +217,7 @@ export const ChatContainer = ({
       {/* Área de mensagens com scroll */}
       <div
         ref={messageAreaRef}
-        className={`absolute top-16 left-0 right-0 overflow-y-auto bg-background custom-scrollbar ${isMobile ? "bottom-20" : "bottom-[80px]"}`}
+        className={`absolute top-16 left-0 right-0 overflow-y-auto bg-background custom-scrollbar ${isMobile ? "bottom-20" : "bottom-20"}`}
         style={{
           transform:
             pullDistance > 0
@@ -239,12 +250,11 @@ export const ChatContainer = ({
             id: msg.id,
             text: msg.content,
             sender: msg.senderId === Number(userId) ? "me" : "other",
-            time: new Date(msg.createdAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
+            time: formatBrazilTime(msg.createdAt),
             read: msg.isRead,
           }))}
+          highlightedMessageId={targetMessageId || null}
+          autoScrollToBottom={shouldAutoScrollToBottom}
         />
         <TypingIndicator
           isTyping={isOtherTyping}

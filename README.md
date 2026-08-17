@@ -1,188 +1,97 @@
 # WeUnite Monorepo
 
-WeUnite is a social platform that connects athletes, companies, opportunities, and community interaction through one shared monorepo.
+WeUnite is a social platform for athletes, companies, opportunities, and community interaction. This repository contains the web app, Spring Boot API, mobile shell, shared contracts, tooling packages, docs, and local infrastructure.
 
-## Repo shape
+## Project Shape
 
 - `apps/web`: Vite + React web client.
-- `apps/api`: Spring Boot API.
-- `apps/mobile`: Expo mobile shell and future mobile app.
-- `packages/contracts`: placeholder shared TypeScript contracts for web and mobile.
-- `packages/eslint-config`: shared flat ESLint config package.
-- `packages/typescript-config`: shared TypeScript config package.
-- `docs`: stable repository docs that belong in Git.
-- `tmp`: local-only planning and runtime space. This directory is ignored by Git.
-
-## Tech snapshot
-
-- Web: React, TypeScript, Vite, TanStack Query, Zustand, React Hook Form, and Zod.
-- API: Java 17, Spring Boot 3, Spring Security, JPA + PostgreSQL, Cloudinary, mail, and WebSocket support.
-- Tooling: pnpm workspaces, Turbo, Husky, and shared workspace config packages.
+- `apps/api`: Spring Boot API for auth, domain logic, persistence, moderation, reporting, chat, and WebSocket flows.
+- `apps/mobile`: Expo mobile shell.
+- `packages/contracts`: shared TypeScript contracts for web and mobile.
+- `packages/eslint-config`: shared ESLint flat configs.
+- `packages/typescript-config`: shared TypeScript configs.
+- `docs`: stable architecture notes and runbooks.
+- `infra`: Docker and local development infrastructure.
+- `tmp`: ignored local notes and runtime files.
 
 ## Prerequisites
 
 - Node.js 22 with Corepack enabled.
-- pnpm 10.x available locally. Recommended: run `corepack enable` once and use the pinned workspace version (`pnpm@10.6.3`).
+- pnpm 10.x through the pinned version in `package.json`.
 - Java 17+.
-- PostgreSQL 15+ locally or through Docker.
-- Docker and Docker Compose are optional, but useful for local infrastructure.
+- Docker Desktop with Docker Compose.
+- PostgreSQL 15+ only when using a native database instead of Docker.
 
-Helpful installers and version managers:
+## Quick Start
 
-- Node.js: [nodejs.org](https://nodejs.org/) or a version manager such as [fnm](https://github.com/Schniz/fnm) or [nvm](https://github.com/nvm-sh/nvm).
-- Java 17: [Eclipse Temurin 17](https://adoptium.net/temurin/releases/?version=17).
-- PostgreSQL: [postgresql.org/download](https://www.postgresql.org/download/).
-- Docker Desktop: [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/).
+Run commands from the repository root.
 
-## Quick start
+```powershell
+corepack enable
+corepack pnpm install
+Copy-Item .env.example .env
+```
 
-All workspace scripts should be run from the repository root: `weunite/`.
+Fill in `.env`, then choose a runtime:
 
-If you are inside `apps/api` or `apps/web`, go back to the root first:
+```powershell
+corepack pnpm dev
+```
 
-- Windows PowerShell: `cd ..\..`
-- macOS/Linux: `cd ../..`
+This starts the web and API locally. Use Docker for PostgreSQL when you do not have a native database running:
 
-### Local native PostgreSQL
+```powershell
+corepack pnpm dev:docker:db
+corepack pnpm dev
+```
 
-1. Go to the repository root:
+Main local URLs:
 
-   ```powershell
-   cd /path/to/your/weunite-repository
-   ```
-
-2. If `pnpm` is not available yet, enable Corepack through as a root terminal and confirm the pinned version:
-
-   ```powershell
-   corepack enable
-   corepack pnpm --version
-   ```
-
-3. Install dependencies:
-
-   ```powershell
-   corepack pnpm install
-   ```
-
-4. Create the local env files:
-
-   Windows PowerShell:
-
-   ```powershell
-   Copy-Item apps/api/.env.example apps/api/.env
-   Copy-Item apps/web/.env.example apps/web/.env
-   ```
-
-   macOS/Linux:
-
-   ```bash
-   cp apps/api/.env.example apps/api/.env
-   cp apps/web/.env.example apps/web/.env
-   ```
-
-5. Fill in `apps/api/.env` and `apps/web/.env`.
-
-   Minimum local values to review:
-   - `apps/web/.env`: keep `VITE_API_URL=http://localhost:8080/api` for the default local API.
-   - `apps/api/.env`: if you are using the default local setup, keep `DB_HOST=localhost`, `DB_PORT=5432`, `DB_NAME=weunite`, and `CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173`.
-   - `apps/api/.env`: set `DB_USERNAME` and `DB_PASSWORD` to your local PostgreSQL credentials.
-   - `apps/api/.env`: `MAIL_USERNAME`, `MAIL_PASSWORD`, and `MAIL_PORT` only need to exist for the API to boot locally; the placeholder values from `.env.example` are fine until you test email flows.
-   - `apps/api/.env`: `CLOUDINARY_URL` only needs a valid placeholder format until you test image upload flows.
-   - `apps/api/.env`: `JWT_PUBLIC_KEY` and `JWT_PRIVATE_KEY` must be real base64-encoded full RSA PEM values; `corepack pnpm dev:infra:local` validates them before startup.
-
-6. Create the PostgreSQL database referenced by `DB_NAME` in `apps/api/.env` (`weunite` by default):
-
-   ```bash
-   createdb weunite
-   ```
-
-   Alternative with `psql`:
-
-   ```bash
-   psql -U postgres -c "CREATE DATABASE weunite;"
-   ```
-
-7. Run the local preflight:
-
-   ```powershell
-   corepack pnpm dev:infra:local
-   ```
-
-8. Start web and api:
-
-   ```powershell
-   corepack pnpm dev
-   ```
-
-### Local with Docker
-
-1. Go to the repository root.
-2. If `pnpm` is not available yet, run `corepack enable` once and confirm it with `corepack pnpm --version`.
-3. Install dependencies with `corepack pnpm install`.
-4. Create the local env files:
-
-   Windows PowerShell:
-
-   ```powershell
-   Copy-Item apps/api/.env.example apps/api/.env
-   Copy-Item apps/web/.env.example apps/web/.env
-   ```
-
-   macOS/Linux:
-
-   ```bash
-   cp apps/api/.env.example apps/api/.env
-   cp apps/web/.env.example apps/web/.env
-   ```
-
-5. Start the bundled PostgreSQL container:
-
-   ```powershell
-   corepack pnpm dev:infra
-   ```
-
-   The Docker workflow already provisions PostgreSQL, so you do not need to create the database manually.
-
-6. Start web and api:
-
-   ```powershell
-   corepack pnpm dev
-   ```
-
-- Web: `http://localhost:5173`
+- Web: `http://localhost:3000`
 - API: `http://localhost:8080/api`
+- PostgreSQL: `localhost:5432`
 
-## Core commands
+## Main Commands
 
-- `corepack pnpm install`: install workspace dependencies.
-- `corepack pnpm dev:infra`: start local Postgres.
-- `corepack pnpm dev:infra:local`: validate the native PostgreSQL local setup.
-- `corepack pnpm dev`: start the web and api apps together.
-- `corepack pnpm dev:web`: start only the web app.
-- `corepack pnpm dev:api`: start only the api app.
-- `corepack pnpm dev:mobile`: start the mobile shell.
-- `corepack pnpm lint`: run workspace lint checks.
-- `corepack pnpm typecheck`: run workspace type checks.
-- `corepack pnpm test`: run workspace tests.
+- `corepack pnpm dev`: start web and API locally.
+- `corepack pnpm dev:local`: start web and API locally.
+- `corepack pnpm dev:local:web`: start only the web app locally.
+- `corepack pnpm dev:local:api`: start only the API locally.
+- `corepack pnpm dev:local:mobile`: start the mobile shell.
+- `corepack pnpm dev:local:check-db`: validate native PostgreSQL setup.
+- `corepack pnpm dev:local:jwt-keys`: generate local RSA JWT keys into `.env`.
+- `corepack pnpm dev:docker`: start web, API, and PostgreSQL in Docker.
+- `corepack pnpm dev:docker:db`: start only PostgreSQL in Docker.
+- `corepack pnpm dev:docker:down`: stop the default Docker development stack.
+- `corepack pnpm lint`: run lint checks.
+- `corepack pnpm typecheck`: run type checks.
+- `corepack pnpm test`: run tests.
 - `corepack pnpm build`: build the workspace.
-- `corepack pnpm check`: run lint, typecheck, test, and build in sequence.
+- `corepack pnpm check`: run lint, typecheck, test, and build.
+
+For every Docker combination, environment details, and troubleshooting notes, see [Docker Development Guide](docs/docker.md).
 
 ## Environment
 
-- Web uses `VITE_API_URL` and falls back to `/api` for local proxy-based development.
-- Mobile uses `EXPO_PUBLIC_API_URL`.
-- API uses the variables documented in [apps/api/.env.example](apps/api/.env.example).
+The recommended local configuration source is the root `.env`, copied from [.env.example](.env.example). Docker Compose reads this root file. App-level `.env` files under `apps/api` and `apps/web` can be used for local app overrides.
 
-## CI and merge requirements
+Important defaults:
 
-- `.github/workflows/ci.yml` runs workspace lint, typecheck, test, and build jobs.
-- `.github/workflows/pr-quality.yml` runs focused web and API validation on pull requests to `main`.
-- Recommended protected branch checks are `validate`, `frontend`, `backend`, and `copilot-review`.
+- `VITE_API_URL=http://localhost:8080`
+- `VITE_WS_URL=http://localhost:8080/ws`
+- `VITE_MEDIA_URL=http://localhost:8080`
+- `WEB_HOST_PORT=3000`
+- `API_HOST_PORT=8080`
+- `DB_HOST=localhost`
+- `DB_PORT=5432`
+- `DB_NAME=weunite`
 
-## Documentation model
+## Documentation
 
-- `AGENTS.md`: ownership, boundaries, commands, and maintenance rules.
-- `docs/`: stable shared docs for the team and remote repository.
-- `tmp/`: local working notes, progress logs, and runtime logs.
+- [Docker Development Guide](docs/docker.md)
+- [Local Development Notes](docs/local-development.md)
+- [Java API Local and Docker Runtime Guide](docs/docker-java-localhost.md)
+- [Architecture Notes](docs/architecture/)
+- [Domain Notes](docs/domains/)
 
-Start with [AGENTS.md](AGENTS.md) for repository-wide guidance.
+Start with [AGENTS.md](AGENTS.md) for repository-wide operating notes.

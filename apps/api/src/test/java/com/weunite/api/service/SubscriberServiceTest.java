@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -40,6 +41,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class SubscriberServiceTest {
@@ -234,7 +237,9 @@ class SubscriberServiceTest {
 
     when(opportunityRepository.findByIdAndDeletedFalse(opportunityId))
         .thenReturn(Optional.of(opportunity));
-    when(subscribersRepository.findByOpportunityId(opportunityId)).thenReturn(List.of(subscriber));
+    when(subscribersRepository.findReadModelsByOpportunityId(
+            eq(opportunityId), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(subscriber)));
     when(subscribersMapper.mapSubscribersToList(List.of(subscriber)))
         .thenReturn(List.of(subscriberDTO));
 
@@ -265,7 +270,7 @@ class SubscriberServiceTest {
         UnauthorizedException.class,
         () -> subscribersService.getSubscribersByOpportunity(requesterId, opportunityId));
 
-    verify(subscribersRepository, never()).findByOpportunityId(opportunityId);
+    verify(subscribersRepository, never()).findReadModelsByOpportunityId(opportunityId);
   }
 
   @Test
@@ -313,8 +318,9 @@ class SubscriberServiceTest {
         new SubscriberDTO(5L, buildAthleteDTO(athlete), buildOpportunityDTO(opportunity));
 
     when(athleteRepository.findById(athleteId)).thenReturn(Optional.of(athlete));
-    when(subscribersRepository.findByAthleteIdAndOpportunityDeletedFalse(athleteId))
-        .thenReturn(List.of(subscriber));
+    when(subscribersRepository.findReadModelsByAthleteIdAndOpportunityDeletedFalse(
+            eq(athleteId), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(subscriber)));
     when(subscribersMapper.mapSubscribersToList(List.of(subscriber)))
         .thenReturn(List.of(subscriberDTO));
 

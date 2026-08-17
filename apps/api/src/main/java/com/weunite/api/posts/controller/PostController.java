@@ -2,6 +2,7 @@ package com.weunite.api.posts.controller;
 
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.security.service.AuthenticatedUserService;
+import com.weunite.api.posts.dto.FeedPostSummaryDTO;
 import com.weunite.api.posts.dto.PostDTO;
 import com.weunite.api.posts.dto.PostRequestDTO;
 import com.weunite.api.posts.dto.RepostDTO;
@@ -67,18 +68,23 @@ public class PostController {
   }
 
   @GetMapping("/get")
-  public ResponseEntity<List<PostDTO>> getPosts(
-      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-    List<PostDTO> posts = postService.getPosts(page, size);
+  public ResponseEntity<List<FeedPostSummaryDTO>> getPosts(
+      @AuthenticationPrincipal Jwt jwt,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    Long viewerId = authenticatedUserService.getUserIdOrNull(jwt);
+    List<FeedPostSummaryDTO> posts = postService.getPosts(viewerId, page, size);
     return ResponseEntity.status(HttpStatus.OK).body(posts);
   }
 
   @GetMapping("/get/user/{userId}")
-  public ResponseEntity<List<PostDTO>> getPostsByUser(
+  public ResponseEntity<List<FeedPostSummaryDTO>> getPostsByUser(
+      @AuthenticationPrincipal Jwt jwt,
       @PathVariable Long userId,
       @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "50") int size) {
-    List<PostDTO> posts = postService.getPostsByUser(userId, page, size);
+      @RequestParam(defaultValue = "10") int size) {
+    Long viewerId = authenticatedUserService.getUserIdOrNull(jwt);
+    List<FeedPostSummaryDTO> posts = postService.getPostsByUser(viewerId, userId, page, size);
     return ResponseEntity.status(HttpStatus.OK).body(posts);
   }
 

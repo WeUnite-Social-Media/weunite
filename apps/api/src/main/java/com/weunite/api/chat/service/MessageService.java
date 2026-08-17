@@ -17,6 +17,7 @@ import com.weunite.api.users.repository.UserRepository;
 import java.time.Instant;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +35,7 @@ public class MessageService {
   public MessageDTO sendMessage(SendMessageRequestDTO request) {
     Conversation conversation =
         conversationRepository
-            .findById(request.conversationId())
+            .findByIdWithParticipants(request.conversationId())
             .orElseThrow(
                 () ->
                     new NotFoundResourceException(
@@ -87,7 +88,7 @@ public class MessageService {
   public List<MessageDTO> getConversationMessages(Long conversationId, Long userId) {
     Conversation conversation =
         conversationRepository
-            .findById(conversationId)
+            .findByIdWithParticipants(conversationId)
             .orElseThrow(
                 () ->
                     new NotFoundResourceException(
@@ -101,7 +102,25 @@ public class MessageService {
     }
 
     List<Message> messages =
-        messageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId);
+        messageRepository.findByConversationIdWithSenderOrderByCreatedAtAsc(conversationId);
+    return messageMapper.toDTOList(messages);
+  }
+
+  @Transactional(readOnly = true)
+  public List<MessageDTO> searchMessages(Long userId, String query) {
+    if (!userRepository.existsById(userId)) {
+      throw new NotFoundResourceException("User not found with id: " + userId);
+    }
+
+    String normalizedQuery = query == null ? "" : query.trim();
+
+    if (normalizedQuery.isEmpty()) {
+      return List.of();
+    }
+
+    List<Message> messages =
+        messageRepository.searchMessagesByContentForUser(
+            userId, normalizedQuery, PageRequest.of(0, 10));
     return messageMapper.toDTOList(messages);
   }
 
@@ -125,7 +144,7 @@ public class MessageService {
   public MessageDTO deleteMessage(Long messageId, Long userId) {
     Message message =
         messageRepository
-            .findById(messageId)
+            .findByIdWithSender(messageId)
             .orElseThrow(
                 () -> new NotFoundResourceException("Message not found with id: " + messageId));
 
@@ -148,7 +167,7 @@ public class MessageService {
   public MessageDTO editMessage(Long messageId, Long userId, String newContent) {
     Message message =
         messageRepository
-            .findById(messageId)
+            .findByIdWithSender(messageId)
             .orElseThrow(
                 () -> new NotFoundResourceException("Message not found with id: " + messageId));
 

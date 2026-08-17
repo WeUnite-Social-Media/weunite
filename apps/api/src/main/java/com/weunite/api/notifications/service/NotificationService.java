@@ -81,16 +81,9 @@ public class NotificationService {
   }
 
   @Transactional
-  public void markAsRead(Long notificationId) {
-    Notification notification =
-        notificationRepository
-            .findById(notificationId)
-            .orElseThrow(
-                () ->
-                    new NotFoundResourceException(
-                        "Notification not found with id: " + notificationId));
+  public void markAsRead(Long userId, Long notificationId) {
+    Notification notification = requireOwnedNotification(userId, notificationId);
     notification.setRead(true);
-    notificationRepository.save(notification);
   }
 
   @Transactional
@@ -100,18 +93,23 @@ public class NotificationService {
   }
 
   @Transactional
-  public void deleteNotification(Long notificationId) {
-    if (!notificationRepository.existsById(notificationId)) {
-      throw new NotFoundResourceException("Notification not found with id: " + notificationId);
-    }
-
-    notificationRepository.deleteById(notificationId);
+  public void deleteNotification(Long userId, Long notificationId) {
+    Notification notification = requireOwnedNotification(userId, notificationId);
+    notificationRepository.delete(notification);
   }
 
   private void ensureUserExists(Long userId) {
     if (!userRepository.existsById(userId)) {
       throw new UserNotFoundException();
     }
+  }
+
+  private Notification requireOwnedNotification(Long userId, Long notificationId) {
+    return notificationRepository
+        .findByIdAndUserId(notificationId, userId)
+        .orElseThrow(
+            () ->
+                new NotFoundResourceException("Notification not found with id: " + notificationId));
   }
 
   private String generateMessage(NotificationType type) {

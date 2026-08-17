@@ -26,6 +26,20 @@ public class AuthenticatedUserService {
     return authenticatedUserId;
   }
 
+  public String requireMatchingUsername(Jwt jwt, String requestedUsername) {
+    Long authenticatedUserId = requireUserId(jwt);
+    User authenticatedUser =
+        userRepository
+            .findById(authenticatedUserId)
+            .orElseThrow(() -> new UnauthorizedException("Usuario autenticado nao encontrado"));
+
+    if (!authenticatedUser.getUsername().equalsIgnoreCase(requestedUsername)) {
+      throw new UnauthorizedException("Acao nao permitida para outro usuario");
+    }
+
+    return authenticatedUser.getUsername();
+  }
+
   public Long requireUserId(Jwt jwt) {
     if (jwt == null) {
       throw new UnauthorizedException("Usuario autenticado nao encontrado");
@@ -49,11 +63,19 @@ public class AuthenticatedUserService {
     throw new UnauthorizedException("Token sem identificador de usuario");
   }
 
+  public Long getUserIdOrNull(Jwt jwt) {
+    if (jwt == null) {
+      return null;
+    }
+
+    return requireUserId(jwt);
+  }
+
   public Long requireAdminUserId(Jwt jwt) {
     Long authenticatedUserId = requireUserId(jwt);
     User user =
         userRepository
-            .findById(authenticatedUserId)
+            .findByIdWithRoles(authenticatedUserId)
             .orElseThrow(() -> new UnauthorizedException("Usuario autenticado nao encontrado"));
 
     boolean isAdmin =

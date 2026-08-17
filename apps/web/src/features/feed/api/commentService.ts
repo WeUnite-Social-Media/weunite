@@ -1,9 +1,26 @@
 import { AxiosError } from "axios";
 import { instance as axios } from "@/shared/api/http";
 import type {
+  Comment,
   CreateComment,
   UpdateComment,
 } from "@/shared/types/comment.types";
+
+export const COMMENTS_PAGE_SIZE = 10;
+
+interface GetCommentsRequestParams {
+  page?: number;
+  size?: number;
+}
+
+export interface CommentsPage {
+  content: Comment[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+}
 
 export const createCommentRequest = async (
   data: CreateComment,
@@ -79,14 +96,25 @@ export const updateCommentRequest = async (
   }
 };
 
-export const getCommentsPostRequest = async (postId: number) => {
+export const getCommentsPostRequest = async (
+  postId: number,
+  { page = 0, size = COMMENTS_PAGE_SIZE }: GetCommentsRequestParams = {},
+) => {
   try {
-    const response = await axios.get(`/comment/get/${postId}`);
+    const response = await axios.get<CommentsPage>(
+      `/comment/get/${postId}/page`,
+      {
+        params: {
+          page,
+          size,
+        },
+      },
+    );
 
     return {
       success: true,
       data: response.data,
-      message: response.data.message || "Comentários consultados com sucesso!",
+      message: "Comentários consultados com sucesso!",
       error: null,
     };
   } catch (err) {
@@ -101,9 +129,17 @@ export const getCommentsPostRequest = async (postId: number) => {
   }
 };
 
-export const getCommentsUserId = async (userId: number) => {
+export const getCommentsUserId = async (
+  userId: number,
+  { page = 0, size = COMMENTS_PAGE_SIZE }: GetCommentsRequestParams = {},
+) => {
   try {
-    const response = await axios.get(`/comment/get/user/${userId}`);
+    const response = await axios.get(`/comment/get/user/${userId}`, {
+      params: {
+        page,
+        size,
+      },
+    });
 
     return {
       success: true,

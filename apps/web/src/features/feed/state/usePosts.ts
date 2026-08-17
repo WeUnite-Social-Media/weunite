@@ -108,9 +108,20 @@ export const useGetPost = (postId: number, options?: { enabled?: boolean }) => {
 };
 
 export const useGetPostsByUser = (userId: number) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: postKeys.list(`user-${userId}`),
-    queryFn: () => getPostsByUserRequest(userId),
+    queryFn: ({ pageParam }) =>
+      getPostsByUserRequest(userId, { page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.success || !lastPage.data) {
+        return undefined;
+      }
+
+      return lastPage.data.length < FEED_POSTS_PAGE_SIZE
+        ? undefined
+        : allPages.length;
+    },
     enabled: userId > 0,
     staleTime: 5 * 60 * 1000,
     retry: 2,

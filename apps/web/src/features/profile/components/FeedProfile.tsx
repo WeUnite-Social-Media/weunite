@@ -1,5 +1,5 @@
 import { CircleAlert, FileText, Info, MessageSquareText } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Comment from "@/features/feed/components/post/Comments/Comment";
 import Post from "@/features/feed/components/post/Post";
 import PostSkeleton from "@/features/feed/components/post/PostSkeleton";
@@ -10,9 +10,10 @@ import CompanyOpportunities from "@/features/profile/components/CompanyOpportuni
 import { useUserProfile } from "@/features/profile/hooks/useUserProfile";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { Card, CardContent } from "@/shared/components/ui/card";
+import { Button } from "@/shared/components/ui/button";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import type { Comment as CommentType } from "@/shared/types/comment.types";
-import type { Post as PostType } from "@/shared/types/post.types";
+import type { PostCard } from "@/shared/types/post.types";
 
 interface FeedProfileProps {
   profileUsername?: string;
@@ -22,6 +23,7 @@ type ActiveTab = "publicacoes" | "comentarios" | "oportunidades" | "sobre";
 
 export default function FeedProfile({ profileUsername }: FeedProfileProps) {
   const { user } = useAuthStore();
+  const commentsLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const {
     data: profileUser,
     isError: isProfileError,
@@ -35,18 +37,66 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
   const userId = displayUser?.id ? Number(displayUser.id) : 0;
   const {
     data: postsResponse,
+    fetchNextPage: fetchNextPostsPage,
+    hasNextPage: hasNextPostsPage,
     isError: isPostsError,
+    isFetchingNextPage: isFetchingNextPostsPage,
     isLoading: isPostsLoading,
   } = useGetPostsByUser(userId);
   const {
     data: commentsResponse,
+    fetchNextPage: fetchNextCommentsPage,
+    hasNextPage: hasNextCommentsPage,
     isError: isCommentsError,
+    isFetchingNextPage: isFetchingNextCommentsPage,
     isLoading: isCommentsLoading,
   } = useGetCommentsByUserId(userId);
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("publicacoes");
-  const posts = (postsResponse?.data || []) as PostType[];
-  const comments = (commentsResponse?.data || []) as CommentType[];
+  const posts = (postsResponse?.pages.flatMap((page) => page.data ?? []) ||
+    []) as PostCard[];
+  const comments = (commentsResponse?.pages.flatMap(
+    (page) => page.data ?? [],
+  ) || []) as CommentType[];
+
+  useEffect(() => {
+    const loadMoreElement = commentsLoadMoreRef.current;
+
+    if (
+      activeTab !== "comentarios" ||
+      !loadMoreElement ||
+      !hasNextCommentsPage ||
+      isFetchingNextCommentsPage
+    ) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (
+          entry?.isIntersecting &&
+          hasNextCommentsPage &&
+          !isFetchingNextCommentsPage
+        ) {
+          void fetchNextCommentsPage();
+        }
+      },
+      { rootMargin: "160px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    activeTab,
+    comments.length,
+    fetchNextCommentsPage,
+    hasNextCommentsPage,
+    isFetchingNextCommentsPage,
+  ]);
 
   if (!isOwnProfile && isProfileLoading) {
     return <FeedProfileSkeleton />;
@@ -113,7 +163,25 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
               tone="error"
             />
           ) : posts.length > 0 ? (
-            posts.map((post) => <Post key={post.id} post={post} />)
+            <>
+              {posts.map((post) => (
+                <Post key={post.id} post={post} />
+              ))}
+
+              {hasNextPostsPage && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="my-6"
+                  onClick={() => void fetchNextPostsPage()}
+                  disabled={isFetchingNextPostsPage}
+                >
+                  {isFetchingNextPostsPage
+                    ? "Carregando..."
+                    : "Carregar mais publicacoes"}
+                </Button>
+              )}
+            </>
           ) : (
             <ProfileSectionState
               icon={FileText}
@@ -138,9 +206,20 @@ export default function FeedProfile({ profileUsername }: FeedProfileProps) {
               tone="error"
             />
           ) : comments.length > 0 ? (
-            comments.map((comment) => (
-              <Comment key={comment.id} comment={comment} />
-            ))
+            <>
+              {comments.map((comment) => (
+                <Comment key={comment.id} comment={comment} />
+              ))}
+
+              {hasNextCommentsPage && (
+                <div
+                  ref={commentsLoadMoreRef}
+                  className="my-6 text-sm text-muted-foreground"
+                >
+                  {isFetchingNextCommentsPage ? "Carregando..." : null}
+                </div>
+              )}
+            </>
           ) : (
             <ProfileSectionState
               icon={MessageSquareText}

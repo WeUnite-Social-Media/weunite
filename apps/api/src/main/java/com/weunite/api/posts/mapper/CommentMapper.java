@@ -28,7 +28,7 @@ public interface CommentMapper {
   @Mapping(
       target = "parentComment",
       source = "comment.parentComment",
-      qualifiedByName = "mapParentComment")
+      qualifiedByName = "mapVisibleParentComment")
   @Mapping(target = "comments", source = "comment.comments", qualifiedByName = "mapCommentsToList")
   @Mapping(target = "createdAt", source = "comment.createdAt")
   @Mapping(target = "updatedAt", source = "comment.updatedAt")
@@ -63,13 +63,21 @@ public interface CommentMapper {
   @Mapping(target = "updatedAt", source = "comment.updatedAt")
   CommentDTO mapParentComment(Comment comment);
 
+  @Named("mapVisibleParentComment")
+  default CommentDTO mapVisibleParentComment(Comment comment) {
+    return comment == null || comment.isDeleted() ? null : mapParentComment(comment);
+  }
+
   @Named("mapCommentsToList")
   default List<CommentDTO> mapCommentsToList(List<Comment> comments) {
     if (comments == null || comments.isEmpty()) {
       return List.of();
     }
 
-    return comments.stream().map(this::toCommentDTO).collect(Collectors.toList());
+    return comments.stream()
+        .filter(comment -> !comment.isDeleted())
+        .map(this::toCommentDTO)
+        .collect(Collectors.toList());
   }
 
   default ResponseDTO<CommentDTO> toResponseDTO(String message, Comment comment) {

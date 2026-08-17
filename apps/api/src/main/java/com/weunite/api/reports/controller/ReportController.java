@@ -1,6 +1,7 @@
 package com.weunite.api.reports.controller;
 
 import com.weunite.api.common.response.ResponseDTO;
+import com.weunite.api.common.security.service.AuthenticatedUserService;
 import com.weunite.api.reports.dto.ReportDTO;
 import com.weunite.api.reports.dto.ReportRequestDTO;
 import com.weunite.api.reports.service.ReportService;
@@ -8,6 +9,8 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,15 +20,22 @@ import org.springframework.web.bind.annotation.*;
 public class ReportController {
 
   private final ReportService reportService;
+  private final AuthenticatedUserService authenticatedUserService;
 
-  public ReportController(ReportService reportService) {
+  public ReportController(
+      ReportService reportService, AuthenticatedUserService authenticatedUserService) {
     this.reportService = reportService;
+    this.authenticatedUserService = authenticatedUserService;
   }
 
   @PostMapping("/create/{userId}")
   public ResponseEntity<ResponseDTO<ReportDTO>> createReport(
-      @PathVariable Long userId, @RequestBody @Valid ReportRequestDTO reportRequestDTO) {
-    ResponseDTO<ReportDTO> report = reportService.createReport(userId, reportRequestDTO);
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long userId,
+      @RequestBody @Valid ReportRequestDTO reportRequestDTO) {
+    Long authenticatedUserId = authenticatedUserService.requireMatchingUserId(jwt, userId);
+    ResponseDTO<ReportDTO> report =
+        reportService.createReport(authenticatedUserId, reportRequestDTO);
     return ResponseEntity.status(HttpStatus.CREATED).body(report);
   }
 

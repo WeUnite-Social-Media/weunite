@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ExternalLink, Loader2, Mail, Users } from "lucide-react";
 import { useGetOpportunitySubscribers } from "@/features/opportunities/state/useOpportunities";
 import {
@@ -7,11 +8,10 @@ import {
 } from "@/shared/components/ui/avatar";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
+import ProfilePreview from "@/features/profile/components/ProfilePreview";
 import { getInitials } from "@/shared/utils/getInitials";
 import type { Subscriber } from "@/shared/types/opportunity.types";
 import type { User } from "@/shared/types/user.types";
-import { useState } from "react";
-import ProfilePreview from "@/features/profile/components/ProfilePreview";
 
 interface OpportunitySubscribersProps {
   opportunityId?: number;
@@ -22,19 +22,56 @@ export function OpportunitySubscribers({
   opportunityId,
   subscribers: subscribersProp,
 }: OpportunitySubscribersProps) {
-  const { data, isLoading } = useGetOpportunitySubscribers(
-    opportunityId || 0,
-    Boolean(opportunityId) && !subscribersProp,
-  );
-
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [selectedAthlete, setSelectedAthlete] = useState<User | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useGetOpportunitySubscribers(
+      opportunityId || 0,
+      Boolean(opportunityId) && !subscribersProp,
+    );
 
+  const pagedSubscribers = useMemo(
+    () => data?.pages.flatMap((page) => page.data ?? []) ?? [],
+    [data],
+  );
   const subscribers = Array.isArray(subscribersProp)
     ? subscribersProp
-    : Array.isArray(data?.data)
-      ? data.data
-      : [];
+    : pagedSubscribers;
+
+  useEffect(() => {
+    if (subscribersProp) {
+      return;
+    }
+
+    const loadMoreElement = loadMoreRef.current;
+
+    if (!loadMoreElement || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    subscribers.length,
+    subscribersProp,
+  ]);
 
   if (isLoading) {
     return (
@@ -111,9 +148,20 @@ export function OpportunitySubscribers({
         isOpen={isPreviewOpen}
         onOpenChange={(open) => {
           setIsPreviewOpen(open);
-          if (!open) setSelectedAthlete(null);
+          if (!open) {
+            setSelectedAthlete(null);
+          }
         }}
       />
+
+      {!subscribersProp && hasNextPage ? (
+        <div
+          ref={loadMoreRef}
+          className="py-4 text-center text-sm text-muted-foreground"
+        >
+          {isFetchingNextPage ? "Carregando..." : null}
+        </div>
+      ) : null}
     </div>
   );
 }

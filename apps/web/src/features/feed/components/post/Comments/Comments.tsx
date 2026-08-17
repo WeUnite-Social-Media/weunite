@@ -6,9 +6,10 @@ import {
   DrawerTitle,
 } from "@/shared/components/ui/drawer";
 import { Button } from "@/shared/components/ui/button";
-import type { Post as PostType } from "@/shared/types/post.types";
+import type { PostCard } from "@/shared/types/post.types";
 import { X as CloseIcon } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { UIEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import Post from "@/features/feed/components/post/Post";
 import Comment from "@/features/feed/components/post/Comments/Comment";
@@ -20,21 +21,24 @@ import {
 import { Textarea } from "@/shared/components/ui/textarea";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
-import { Dialog, DialogContent } from "@/shared/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 import {
   useCreateComment,
   useGetComments,
 } from "@/features/feed/state/useComments";
 import type { Comment as CommentType } from "@/shared/types/comment.types";
 import { getInitials } from "@/shared/utils/getInitials";
-import { useEffect, useRef } from "react";
 
 const COMMENT_LIMIT = 500;
 
 interface CommentsProps {
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
-  post: PostType;
+  post: PostCard;
   targetCommentId?: number | null;
 }
 
@@ -45,7 +49,8 @@ export default function Comments({
   targetCommentId,
 }: CommentsProps) {
   const [commentText, setCommentText] = useState("");
-  const commentListRef = useRef<HTMLDivElement | null>(null);
+  const commentsScrollRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -56,11 +61,15 @@ export default function Comments({
   const { commentDesktop } = useBreakpoints();
   const {
     data,
+    fetchNextPage,
+    hasNextPage,
     isError: isCommentsError,
+    isFetchingNextPage,
     isLoading: isCommentsLoading,
-  } = useGetComments(Number(post.id));
+  } = useGetComments(Number(post.id), { enabled: isOpen === true });
 
-  const comments = (data?.data || []) as CommentType[];
+  const comments = (data?.pages.flatMap((page) => page.data?.content ?? []) ||
+    []) as CommentType[];
   const createComment = useCreateComment();
 
   useEffect(() => {
@@ -78,6 +87,46 @@ export default function Comments({
 
     commentElement.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [comments.length, isOpen, targetCommentId]);
+
+  const loadNextCommentsPage = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  const handleCommentsScroll = (event: UIEvent<HTMLDivElement>) => {
+    const target = event.currentTarget;
+    const distanceFromBottom =
+      target.scrollHeight - target.scrollTop - target.clientHeight;
+
+    if (distanceFromBottom < 240) {
+      loadNextCommentsPage();
+    }
+  };
+
+  useEffect(() => {
+    const loadMoreElement = loadMoreRef.current;
+
+    if (!loadMoreElement || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          loadNextCommentsPage();
+        }
+      },
+      { root: commentsScrollRef.current, rootMargin: "160px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasNextPage, isFetchingNextPage, loadNextCommentsPage, comments.length]);
 
   const handleCreateComment = () => {
     if (!user || !commentText.trim()) return;
@@ -137,6 +186,21 @@ export default function Comments({
     ));
   };
 
+  const renderCommentsSentinel = () => {
+    if (!hasNextPage || !comments.length) {
+      return null;
+    }
+
+    return (
+      <div
+        ref={loadMoreRef}
+        className="flex justify-center py-4 text-sm text-muted-foreground"
+      >
+        {isFetchingNextPage ? "Carregando..." : null}
+      </div>
+    );
+  };
+
   if (!commentDesktop) {
     return (
       <Drawer open={isOpen} onOpenChange={onOpenChange}>
@@ -148,7 +212,11 @@ export default function Comments({
             <DrawerTitle>Comentários</DrawerTitle>
           </DrawerHeader>
 
-          <div className="scrollbar-thumb flex w-full flex-col items-center overflow-y-auto">
+          <div
+            ref={commentsScrollRef}
+            onScroll={handleCommentsScroll}
+            className="scrollbar-thumb flex w-full flex-col items-center overflow-y-auto"
+          >
             <Post post={post} />
 
             <div className="flex w-full max-w-[45em] gap-4 border-y border-foreground/30 px-4 py-3">
@@ -170,31 +238,23 @@ export default function Comments({
                 </p>
 
                 <Textarea
-                  placeholder="Poste sua resposta"
-                  className="custom-scrollbar min-h-[8vh] max-h-[11vh] w-full resize-none break-all border-none bg-transparent p-2 text-base focus-visible:ring-2"
+                  placeholder="Postar sua resposta"
+                  className="max-h-[30vh] min-h-[6em] w-full resize-none border-none p-0 text-sm shadow-none focus-visible:ring-0"
                   value={commentText}
-                  onChange={(event) => setCommentText(event.target.value)}
+                  maxLength={COMMENT_LIMIT}
+                  onChange={(e) => setCommentText(e.target.value)}
                 />
 
-                <div className="mt-3 flex items-center justify-end gap-2">
-                  <span
-                    className={`text-xs font-medium text-muted-foreground ${
-                      commentText.length > COMMENT_LIMIT ? "text-red-500" : ""
-                    }`}
-                  >
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-muted-foreground">
                     {commentText.length}/{COMMENT_LIMIT}
-                  </span>
+                  </div>
 
                   <Button
+                    className="bg-primary hover:bg-primary/90"
                     size="sm"
-                    variant="third"
-                    className="w-[7em] rounded-full bg-third text-foreground hover:bg-third-hover"
                     onClick={handleCreateComment}
-                    disabled={
-                      createComment.isPending ||
-                      !commentText.trim() ||
-                      commentText.length > COMMENT_LIMIT
-                    }
+                    disabled={createComment.isPending || !commentText.trim()}
                     aria-busy={createComment.isPending}
                   >
                     {createComment.isPending ? "Publicando..." : "Publicar"}
@@ -203,8 +263,9 @@ export default function Comments({
               </div>
             </div>
 
-            <div ref={commentListRef} className="w-full max-w-[45em] p-2">
+            <div className="w-full max-w-[45em] p-2">
               {renderCommentsList()}
+              {renderCommentsSentinel()}
             </div>
           </div>
         </DrawerContent>
@@ -218,7 +279,10 @@ export default function Comments({
         className={`${
           post.imageUrl ? "max-w-6xl" : "max-w-3xl"
         } h-[90vh] w-[90vw] overflow-hidden rounded-xl p-0`}
+        aria-describedby={undefined}
       >
+        <DialogTitle className="sr-only">Comentários da publicação</DialogTitle>
+
         <DrawerClose className="absolute right-4 top-4 z-10 rounded-sm transition-opacity">
           <CloseIcon className="h-5 w-5 hover:cursor-pointer" />
         </DrawerClose>
@@ -242,7 +306,7 @@ export default function Comments({
                 className="hover:cursor-pointer"
                 onClick={handlePostAuthorClick}
               >
-                <AvatarImage src={post.user.profileImg} />
+                <AvatarImage src={post.user.profileImg ?? undefined} />
                 <AvatarFallback>{postAuthorInitials}</AvatarFallback>
               </Avatar>
 
@@ -261,53 +325,45 @@ export default function Comments({
             </div>
 
             <div
-              ref={commentListRef}
-              className="custom-scrollbar flex-1 max-h-[66vh] overflow-y-auto p-4"
+              ref={commentsScrollRef}
+              onScroll={handleCommentsScroll}
+              className="scrollbar-thumb flex-1 max-h-[62vh] overflow-y-auto p-4"
             >
-              <div className="space-y-4">{renderCommentsList()}</div>
+              <div className="space-y-4">
+                {renderCommentsList()}
+                {renderCommentsSentinel()}
+              </div>
             </div>
 
-            <div className="border-t border-foreground/30 px-4 py-3">
-              <div className="flex gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.profileImg} />
-                  <AvatarFallback className="text-xs">
-                    {currentUserInitials}
-                  </AvatarFallback>
-                </Avatar>
+            <div className="flex gap-4 border-t bg-card p-4">
+              <Avatar>
+                <AvatarImage src={user?.profileImg} />
+                <AvatarFallback>{currentUserInitials}</AvatarFallback>
+              </Avatar>
 
-                <div className="min-w-0 flex-1">
-                  <Textarea
-                    placeholder="Poste sua resposta"
-                    className="custom-scrollbar min-h-[8vh] max-h-[8vh] w-full resize-none break-all border-none bg-transparent p-2 text-base focus-visible:ring-2"
-                    value={commentText}
-                    onChange={(event) => setCommentText(event.target.value)}
-                  />
+              <div className="flex-1">
+                <Textarea
+                  placeholder="Postar sua resposta"
+                  className="max-h-[20vh] min-h-[4em] w-full resize-none border-none p-0 text-sm shadow-none focus-visible:ring-0"
+                  value={commentText}
+                  maxLength={COMMENT_LIMIT}
+                  onChange={(e) => setCommentText(e.target.value)}
+                />
 
-                  <div className="mt-3 flex items-center justify-end gap-2">
-                    <span
-                      className={`text-xs font-medium text-muted-foreground ${
-                        commentText.length > COMMENT_LIMIT ? "text-red-500" : ""
-                      }`}
-                    >
-                      {commentText.length}/{COMMENT_LIMIT}
-                    </span>
-
-                    <Button
-                      size="sm"
-                      variant="third"
-                      className="w-[7em] rounded-full bg-third text-background hover:bg-third-hover"
-                      onClick={handleCreateComment}
-                      disabled={
-                        createComment.isPending ||
-                        !commentText.trim() ||
-                        commentText.length > COMMENT_LIMIT
-                      }
-                      aria-busy={createComment.isPending}
-                    >
-                      {createComment.isPending ? "Publicando..." : "Publicar"}
-                    </Button>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-muted-foreground">
+                    {commentText.length}/{COMMENT_LIMIT}
                   </div>
+
+                  <Button
+                    className="bg-primary hover:bg-primary/90"
+                    size="sm"
+                    onClick={handleCreateComment}
+                    disabled={createComment.isPending || !commentText.trim()}
+                    aria-busy={createComment.isPending}
+                  >
+                    {createComment.isPending ? "Publicando..." : "Publicar"}
+                  </Button>
                 </div>
               </div>
             </div>

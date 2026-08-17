@@ -61,6 +61,55 @@ class AuthenticatedUserServiceTest {
   }
 
   @Test
+  @DisplayName("Should validate mutation usernames against the authenticated user id")
+  void requireMatchingUsernameUsesAuthenticatedUserId() {
+    authenticatedUserService = new AuthenticatedUserService(userRepository);
+
+    Jwt jwt =
+        Jwt.withTokenValue("token")
+            .header("alg", "none")
+            .subject("stale-username")
+            .claim("id", "15")
+            .build();
+
+    User user = new User();
+    user.setId(15L);
+    user.setUsername("current-username");
+
+    when(userRepository.findById(15L)).thenReturn(Optional.of(user));
+
+    String result = authenticatedUserService.requireMatchingUsername(jwt, "current-username");
+
+    assertEquals("current-username", result);
+  }
+
+  @Test
+  @DisplayName("Should reject mutation usernames owned by another user")
+  void requireMatchingUsernameRejectsMismatch() {
+    authenticatedUserService = new AuthenticatedUserService(userRepository);
+
+    Jwt jwt =
+        Jwt.withTokenValue("token")
+            .header("alg", "none")
+            .subject("test-user")
+            .claim("id", "15")
+            .build();
+
+    User user = new User();
+    user.setId(15L);
+    user.setUsername("authenticated-user");
+
+    when(userRepository.findById(15L)).thenReturn(Optional.of(user));
+
+    UnauthorizedException exception =
+        assertThrows(
+            UnauthorizedException.class,
+            () -> authenticatedUserService.requireMatchingUsername(jwt, "other-user"));
+
+    assertEquals("Acao nao permitida para outro usuario", exception.getMessage());
+  }
+
+  @Test
   @DisplayName("Should require admin role for admin-only actions")
   void requireAdminUserIdRejectsNonAdminUser() {
     authenticatedUserService = new AuthenticatedUserService(userRepository);
@@ -76,7 +125,7 @@ class AuthenticatedUserServiceTest {
     user.setId(15L);
     user.setRole(java.util.Set.of(new Role(4L, "ATHLETE")));
 
-    when(userRepository.findById(15L)).thenReturn(Optional.of(user));
+    when(userRepository.findByIdWithRoles(15L)).thenReturn(Optional.of(user));
 
     UnauthorizedException exception =
         assertThrows(

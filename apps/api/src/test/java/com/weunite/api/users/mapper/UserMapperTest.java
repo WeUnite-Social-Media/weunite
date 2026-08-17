@@ -1,0 +1,82 @@
+package com.weunite.api.users.mapper;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import com.weunite.api.users.domain.Athlete;
+import com.weunite.api.users.domain.AthleteProfile;
+import com.weunite.api.users.domain.Company;
+import com.weunite.api.users.domain.CompanyProfile;
+import com.weunite.api.users.service.AthleteProfileService;
+import com.weunite.api.users.service.CompanyProfileService;
+import java.time.LocalDate;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
+import org.springframework.test.util.ReflectionTestUtils;
+
+class UserMapperTest {
+
+  private final UserMapper mapper = Mappers.getMapper(UserMapper.class);
+
+  @BeforeEach
+  void setUp() {
+    ReflectionTestUtils.setField(
+        mapper, "athleteProfileService", new AthleteProfileService(null, null));
+    ReflectionTestUtils.setField(mapper, "companyProfileService", new CompanyProfileService());
+  }
+
+  @Test
+  @DisplayName("Should prefer split athlete profile values when mapping user profile fields")
+  void mapAthleteFieldsFromSplitProfile() {
+    Athlete athlete = new Athlete();
+    AthleteProfile profile = new AthleteProfile(athlete);
+    profile.setHeight(1.91);
+    profile.setWeight(86.4);
+    profile.setFootDomain("LEFT");
+    profile.setPosition("MIDFIELDER");
+    profile.setBirthDate(LocalDate.of(1998, 5, 19));
+
+    athlete.setProfile(profile);
+
+    assertEquals(1.91, mapper.mapHeight(athlete));
+    assertEquals(86.4, mapper.mapWeight(athlete));
+    assertEquals("LEFT", mapper.mapFootDomain(athlete));
+    assertEquals("MIDFIELDER", mapper.mapPosition(athlete));
+    assertEquals(LocalDate.of(1998, 5, 19), mapper.mapBirthDate(athlete));
+  }
+
+  @Test
+  @DisplayName("Should not map legacy athlete subtype fields when split profile is missing")
+  void ignoreLegacyAthleteFieldsWhenSplitProfileIsMissing() {
+    Athlete athlete = new Athlete();
+
+    assertNull(athlete.getProfile());
+    assertNull(mapper.mapHeight(athlete));
+    assertNull(mapper.mapWeight(athlete));
+    assertNull(mapper.mapFootDomain(athlete));
+    assertNull(mapper.mapPosition(athlete));
+    assertNull(mapper.mapBirthDate(athlete));
+  }
+
+  @Test
+  @DisplayName("Should prefer split company profile values when mapping company identifier")
+  void mapCompanyCnpjFromSplitProfile() {
+    Company company = new Company();
+    CompanyProfile profile = new CompanyProfile(company);
+    profile.setCNPJ("12345678000199");
+    company.setProfile(profile);
+
+    assertEquals("12345678000199", mapper.mapCnpj(company));
+  }
+
+  @Test
+  @DisplayName("Should not map legacy company identifier when split profile is missing")
+  void ignoreLegacyCompanyCnpjWhenSplitProfileIsMissing() {
+    Company company = new Company();
+
+    assertNull(company.getProfile());
+    assertNull(mapper.mapCnpj(company));
+  }
+}

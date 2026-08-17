@@ -2,6 +2,8 @@ package com.weunite.api.chat.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -16,15 +18,16 @@ import lombok.Setter;
 @NoArgsConstructor
 public class UserPresence {
 
-  public UserPresence(Long userId, String status) {
+  public UserPresence(Long userId, UserStatus status) {
     this.userId = userId;
-    this.status = status;
+    this.status = status != null ? status : UserStatus.OFFLINE;
   }
 
   @Id private Long userId;
 
+  @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
-  private String status;
+  private UserStatus status = UserStatus.OFFLINE;
 
   @Column(nullable = false)
   private LocalDateTime updatedAt;
@@ -33,5 +36,9 @@ public class UserPresence {
   @PreUpdate
   protected void updateTimestamp() {
     this.updatedAt = LocalDateTime.now();
+  }
+
+  public String getStatusValue() {
+    return status.name();
   }
 }

@@ -1,6 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
+  COMMENTS_PAGE_SIZE,
   createCommentRequest,
   deleteCommentRequest,
   getCommentByIdRequest,
@@ -101,19 +106,45 @@ export const useUpdateComments = () => {
   });
 };
 
-export const useGetComments = (postId: number) => {
-  return useQuery({
+export const useGetComments = (
+  postId: number,
+  options?: { enabled?: boolean },
+) => {
+  return useInfiniteQuery({
     queryKey: commentKeys.listByPost(postId),
-    queryFn: () => getCommentsPostRequest(postId),
+    queryFn: ({ pageParam }) =>
+      getCommentsPostRequest(postId, { page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.success || !lastPage.data) {
+        return undefined;
+      }
+
+      const loadedFullPage = lastPage.data.content.length >= COMMENTS_PAGE_SIZE;
+
+      return lastPage.data.hasNext || loadedFullPage
+        ? lastPage.data.page + 1
+        : undefined;
+    },
     staleTime: 5 * 60 * 1000,
-    enabled: !!postId,
+    enabled: (options?.enabled ?? true) && !!postId,
   });
 };
 
 export const useGetCommentsByUserId = (userId: number) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: commentKeys.listByUser(userId),
-    queryFn: () => getCommentsUserId(userId),
+    queryFn: ({ pageParam }) => getCommentsUserId(userId, { page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.success || !lastPage.data) {
+        return undefined;
+      }
+
+      return lastPage.data.length < COMMENTS_PAGE_SIZE
+        ? undefined
+        : allPages.length;
+    },
     staleTime: 5 * 60 * 1000,
     enabled: !!userId,
   });

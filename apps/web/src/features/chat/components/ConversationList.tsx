@@ -1,9 +1,13 @@
-import { useState, memo } from "react";
-import { Search, Plus, Loader2 } from "lucide-react";
+import { useMemo, useState, memo } from "react";
+import { Search, Plus, Loader2, MessageCircle } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
 import { useSearchUsers } from "@/features/profile/hooks/useSearchUsers";
 import { useCreateConversation } from "@/features/chat/state/useChat";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
+import { useSearchMessages } from "@/features/chat/hooks/useSearchMessages";
+import { formatMessagePreview } from "@/shared/utils/formatMessagePreview";
+import { formatBrazilTime } from "@/shared/utils/formatBrazilTime";
+import { useChatStore } from "@/features/chat/stores/useChatStore";
 
 interface Conversation {
   id: number;
@@ -33,9 +37,25 @@ export const ConversationList = memo(
     const [searchQuery, setSearchQuery] = useState("");
     const userId = useAuthStore((state) => state.user?.id);
 
-    const { data: searchResults, isLoading: isSearching } =
+    const { data: searchResults, isLoading: isSearchingUsers } =
       useSearchUsers(searchQuery);
+    const { data: messageResults, isLoading: isSearchingMessages } =
+      useSearchMessages(searchQuery, Number(userId) || 0);
     const createConversation = useCreateConversation();
+    const setPendingConversationId = useChatStore(
+      (state) => state.setPendingConversationId,
+    );
+    const setPendingMessageId = useChatStore(
+      (state) => state.setPendingMessageId,
+    );
+
+    const conversationsById = useMemo(
+      () =>
+        new Map(
+          conversations.map((conversation) => [conversation.id, conversation]),
+        ),
+      [conversations],
+    );
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearchQuery(e.target.value);
@@ -77,6 +97,17 @@ export const ConversationList = memo(
       }
     };
 
+    const openMessageConversation = (
+      conversationId: number,
+      messageId: number,
+    ) => {
+      setPendingConversationId(conversationId);
+      setPendingMessageId(messageId);
+
+      setSearchQuery("");
+      onSelectConversation(conversationId);
+    };
+
     return (
       <div
         className={`${isMobile ? "w-full h-full min-h-0" : "w-80 md:w-96 h-full"} ${!isMobile ? "border-r border-border" : ""} bg-card flex flex-col overflow-hidden`}
@@ -89,7 +120,7 @@ export const ConversationList = memo(
               value={searchQuery}
               onChange={handleSearch}
               className="pl-9"
-              placeholder="Pesquisar usuários..."
+              placeholder="Pesquisar usuários ou mensagens..."
             />
             <Search
               size={18}
@@ -103,64 +134,130 @@ export const ConversationList = memo(
             <div className="p-3 bg-muted text-sm text-muted-foreground font-medium">
               Resultados da pesquisa
             </div>
-            {isSearching ? (
+            {isSearchingUsers || isSearchingMessages ? (
               <div className="flex items-center justify-center p-8">
                 <Loader2 size={24} className="animate-spin text-primary" />
               </div>
-            ) : searchResults && searchResults.length > 0 ? (
-              searchResults
-                .filter((user) => user.id !== String(userId))
-                .map((user) => {
-                  const userName = user.name || "Usuário desconhecido";
-                  const initials =
-                    userName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .toUpperCase()
-                      .slice(0, 2) || "??";
-
-                  return (
-                    <div
-                      key={user.id}
-                      className="flex items-center p-3 hover:bg-muted cursor-pointer border-b border-border"
-                      onClick={() => user.id && startNewConversation(user.id)}
-                    >
-                      {user.profileImg ? (
-                        <img
-                          src={user.profileImg}
-                          alt={userName}
-                          className="w-10 h-10 rounded-full object-cover mr-3"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300 flex items-center justify-center mr-3">
-                          <span className="font-medium">{initials}</span>
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <div className="font-medium">{userName}</div>
-                        {user.username && (
-                          <div className="text-xs text-muted-foreground">
-                            @{user.username}
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        className="p-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20"
-                        disabled={createConversation.isPending}
-                      >
-                        {createConversation.isPending ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          <Plus size={16} />
-                        )}
-                      </button>
+            ) : (searchResults && searchResults.length > 0) ||
+              (messageResults && messageResults.length > 0) ? (
+              <div className="flex flex-col">
+                {searchResults && searchResults.length > 0 && (
+                  <div>
+                    <div className="px-3 py-2 bg-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Usuários
                     </div>
-                  );
-                })
+                    {searchResults
+                      .filter((user) => user.id !== String(userId))
+                      .map((user) => {
+                        const userName = user.name || "Usuário desconhecido";
+                        const initials =
+                          userName
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                            .slice(0, 2) || "??";
+
+                        return (
+                          <div
+                            key={user.id}
+                            className="flex items-center p-3 hover:bg-muted cursor-pointer border-b border-border"
+                            onClick={() =>
+                              user.id && startNewConversation(user.id)
+                            }
+                          >
+                            {user.profileImg ? (
+                              <img
+                                src={user.profileImg}
+                                alt={userName}
+                                className="w-10 h-10 rounded-full object-cover mr-3"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300 flex items-center justify-center mr-3">
+                                <span className="font-medium">{initials}</span>
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <div className="font-medium">{userName}</div>
+                              {user.username && (
+                                <div className="text-xs text-muted-foreground">
+                                  @{user.username}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              className="p-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20"
+                              disabled={createConversation.isPending}
+                            >
+                              {createConversation.isPending ? (
+                                <Loader2 size={16} className="animate-spin" />
+                              ) : (
+                                <Plus size={16} />
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+
+                {messageResults && messageResults.length > 0 && (
+                  <div>
+                    <div className="px-3 py-2 bg-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Mensagens
+                    </div>
+                    {messageResults.map((message) => {
+                      const conversation = conversationsById.get(
+                        message.conversationId,
+                      );
+
+                      return (
+                        <button
+                          key={message.id}
+                          type="button"
+                          className="w-full flex items-start gap-3 p-3 text-left hover:bg-muted border-b border-border"
+                          onClick={() =>
+                            openMessageConversation(
+                              message.conversationId,
+                              message.id,
+                            )
+                          }
+                        >
+                          <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <MessageCircle size={16} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium truncate">
+                              {conversation?.name || "Conversa"}
+                            </div>
+                            <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                              <span>
+                                {message.senderId === Number(userId)
+                                  ? "Você"
+                                  : "Mensagem encontrada"}
+                              </span>
+                              <span>{formatBrazilTime(message.createdAt)}</span>
+                            </div>
+                            <p className="mt-1 text-sm text-muted-foreground truncate">
+                              {formatMessagePreview(message.content)}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {(!searchResults || searchResults.length === 0) &&
+                  (!messageResults || messageResults.length === 0) && (
+                    <div className="p-4 text-center text-muted-foreground">
+                      Nenhum usuário ou mensagem encontrada
+                    </div>
+                  )}
+              </div>
             ) : (
               <div className="p-4 text-center text-muted-foreground">
-                Nenhum usuário encontrado
+                Nenhum usuário ou mensagem encontrada
               </div>
             )}
           </div>
@@ -225,7 +322,8 @@ export const ConversationList = memo(
                   Nenhuma conversa ainda
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Use a barra de pesquisa acima para encontrar usuários
+                  Use a barra de pesquisa acima para encontrar usuários ou
+                  mensagens
                 </p>
               </div>
             )}

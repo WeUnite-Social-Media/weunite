@@ -2,6 +2,13 @@ import type { Like } from "./like.types";
 import type { User } from "./user.types";
 import type { Comment } from "./comment.types";
 
+export interface UserSummary {
+  id?: string;
+  name: string;
+  username: string;
+  profileImg?: string | null;
+}
+
 export interface CreatePost {
   text: string | null;
   media?: File | null;
@@ -36,3 +43,19 @@ export interface Post {
   repostedBy?: User | null;
   repostedAt?: string | null;
 }
+
+export interface FeedPostSummary {
+  id: string;
+  text: string | null;
+  imageUrl: string | null;
+  likesCount: number;
+  commentsCount: number;
+  likedByViewer: boolean;
+  createdAt: string;
+  updatedAt: string | null;
+  user: UserSummary;
+  repostedBy?: UserSummary | null;
+  repostedAt?: string | null;
+}
+
+export type PostCard = Post | FeedPostSummary;

@@ -3,7 +3,10 @@ import { ImageUp, Loader2, Pencil, Send } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
-import { useCreateConversation, useGetUserConversations } from "@/features/chat/state/useChat";
+import {
+  useCreateConversation,
+  useGetUserConversations,
+} from "@/features/chat/state/useChat";
 import { useChatStore } from "@/features/chat/stores/useChatStore";
 import EditBanner from "@/features/profile/components/EditBanner";
 import EditProfile from "@/features/profile/components/EditProfile";
@@ -12,8 +15,8 @@ import Following from "@/features/profile/components/Following";
 import { useFollowAction } from "@/features/profile/hooks/useFollowAction";
 import { useUserProfile } from "@/features/profile/hooks/useUserProfile";
 import {
-  useGetFollowers,
-  useGetFollowing,
+  useGetFollowersCount,
+  useGetFollowingCount,
 } from "@/features/profile/state/useFollow";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -47,20 +50,22 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
   const displayUserId = Number(displayUser?.id) || 0;
   const currentUserId = Number(user?.id) || 0;
 
-  const { data: followersData } = useGetFollowers(displayUserId);
-  const { data: followingData } = useGetFollowing(displayUserId);
+  const { data: followersCountData } = useGetFollowersCount(displayUserId);
+  const { data: followingCountData } = useGetFollowingCount(displayUserId);
   const { data: conversationsData } = useGetUserConversations(currentUserId);
   const { mutateAsync: createConversation, isPending: isCreatingConversation } =
     useCreateConversation();
 
   const followersCount =
-    followersData?.success && followersData?.data?.data
-      ? followersData.data.data.length
+    followersCountData?.success &&
+    typeof followersCountData?.data?.data === "number"
+      ? followersCountData.data.data
       : 0;
 
   const followingCount =
-    followingData?.success && followingData?.data?.data
-      ? followingData.data.data.length
+    followingCountData?.success &&
+    typeof followingCountData?.data?.data === "number"
+      ? followingCountData.data.data
       : 0;
 
   const {
@@ -220,9 +225,7 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
   }, [theme]);
 
   const isUsernameTruncated = Boolean(
-    !isDesktop &&
-      displayUser?.username &&
-      displayUser.username.length > 10,
+    !isDesktop && displayUser?.username && displayUser.username.length > 10,
   );
 
   const displayedUsername = isUsernameTruncated

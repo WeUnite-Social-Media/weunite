@@ -1,32 +1,44 @@
 # Local Development
 
+This page covers the host-local workflow. For Docker combinations, see [Docker Development Guide](docker.md).
+
 ## Prerequisites
 
 - Node.js 22 LTS
-- pnpm 10
+- pnpm 10 through Corepack
 - Java 17
-- PostgreSQL 15+ local, or Docker Desktop / compatible Docker runtime
+- PostgreSQL 15+ locally, or PostgreSQL in Docker
 
 ## Install
+
+Run from the repository root:
 
 ```bash
 pnpm install
 ```
-
-Run the workspace scripts from the repository root (`weunite/`).
 
 If you are inside `apps/api` or `apps/web`, go back first:
 
 - Windows PowerShell: `cd ..\..`
 - macOS/Linux: `cd ../..`
 
-## Environment files
+## Environment
 
-- Web: `apps/web/.env.example`
-- API: `apps/api/.env.example`
-- Mobile: `apps/mobile/.env.example`
+The root `.env` is the recommended local configuration source:
 
-## Local workflow with native PostgreSQL
+```powershell
+Copy-Item .env.example .env
+```
+
+Alternative on macOS/Linux:
+
+```bash
+cp .env.example .env
+```
+
+App-level `.env` files under `apps/api` and `apps/web` can be used as overrides for local app runs.
+
+## Native PostgreSQL
 
 1. Install and start PostgreSQL locally.
 
@@ -42,58 +54,41 @@ Alternative with `psql`:
 psql -U postgres -c "CREATE DATABASE weunite;"
 ```
 
-3. Copy the example env files and fill them in:
-
-```powershell
-Copy-Item apps/api/.env.example apps/api/.env
-Copy-Item apps/web/.env.example apps/web/.env
-```
-
-Alternative on macOS/Linux:
+3. Validate the local database configuration:
 
 ```bash
-cp apps/api/.env.example apps/api/.env
-cp apps/web/.env.example apps/web/.env
+pnpm dev:local:check-db
 ```
 
-4. Run the local preflight:
-
-```bash
-pnpm dev:infra:local
-```
-
-5. Start web and api together:
+4. Start web and API locally:
 
 ```bash
 pnpm dev
 ```
 
-6. Start mobile separately when needed:
+## Docker PostgreSQL With Local Apps
+
+Start only PostgreSQL in Docker:
 
 ```bash
-pnpm dev:mobile
+pnpm dev:docker:db
 ```
 
-`pnpm dev:infra:local` validates:
-
-- `apps/api/.env` and `apps/web/.env`
-- required API env vars
-- base64 RSA JWT keys
-- TCP connectivity to PostgreSQL using `DB_HOST` / `DB_PORT`
-
-## Local workflow with Docker
-
-1. Start the bundled PostgreSQL container:
-
-```bash
-pnpm dev:infra
-```
-
-2. Start web and api:
+Then start web and API locally:
 
 ```bash
 pnpm dev
 ```
+
+## Local Commands
+
+- `pnpm dev`: start web and API locally.
+- `pnpm dev:local`: start web and API locally.
+- `pnpm dev:local:web`: start only the web app locally.
+- `pnpm dev:local:api`: start only the API locally.
+- `pnpm dev:local:mobile`: start the mobile shell.
+- `pnpm dev:local:check-db`: validate native PostgreSQL setup.
+- `pnpm dev:local:jwt-keys`: generate local RSA JWT keys into `.env`.
 
 ## Validation
 

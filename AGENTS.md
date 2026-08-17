@@ -36,12 +36,22 @@ This repository uses `AGENTS.md` files as local operating notes for humans and c
 ## Standard commands
 
 - Install: `pnpm install`
-- Local infrastructure (Docker): `pnpm dev:infra`
-- Local infrastructure (native PostgreSQL): `pnpm dev:infra:local`
-- Web + api dev: `pnpm dev`
-- Web only: `pnpm dev:web`
-- API only: `pnpm dev:api`
-- Mobile only: `pnpm dev:mobile`
+- Local web + API: `pnpm dev` or `pnpm dev:local`
+- Local web only: `pnpm dev:local:web`
+- Local API only: `pnpm dev:local:api`
+- Local mobile only: `pnpm dev:local:mobile`
+- Validate native PostgreSQL: `pnpm dev:local:check-db`
+- Docker web + API + PostgreSQL: `pnpm dev:docker`
+- Docker database only: `pnpm dev:docker:db`
+- Docker API only: `pnpm dev:docker:api`
+- Docker web only: `pnpm dev:docker:web`
+- Docker API + PostgreSQL: `pnpm dev:docker:api-db`
+- Docker web + PostgreSQL: `pnpm dev:docker:web-db`
+- Docker web + API against native PostgreSQL: `pnpm dev:docker:web-api`
+- Docker API against native PostgreSQL: `pnpm dev:docker:api-local-db`
+- Docker web against local API: `pnpm dev:docker:web-local-api`
+- Stop Docker development stack: `pnpm dev:docker:down`
+- Stop native-DB Docker app stack: `pnpm dev:docker:local-db:down`
 - Lint: `pnpm lint`
 - Typecheck: `pnpm typecheck`
 - Test: `pnpm test`

@@ -17,6 +17,7 @@ This folder owns cross-feature web code in `apps/web/src/shared`.
 ## Key entrypoints
 
 - `api/http.ts`
+- `api/health.ts`
 - `components/ui/*`
 - `components/shared/*`
 - `hooks/*`

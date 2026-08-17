@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.weunite.api.chat.domain.UserPresence;
+import com.weunite.api.chat.domain.UserStatus;
 import com.weunite.api.chat.repository.UserPresenceRepository;
 import com.weunite.api.chat.service.UserStatusService;
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,7 +29,7 @@ class UserStatusServiceTest {
   @Test
   @DisplayName("Should persist normalized user presence")
   void updateUserStatusPersistsPresence() {
-    UserPresence savedPresence = new UserPresence(7L, "ONLINE");
+    UserPresence savedPresence = new UserPresence(7L, UserStatus.ONLINE);
     savedPresence.setUpdatedAt(LocalDateTime.now());
 
     when(userPresenceRepository.save(org.mockito.ArgumentMatchers.any(UserPresence.class)))
@@ -38,7 +40,10 @@ class UserStatusServiceTest {
     assertEquals(7L, result.getUserId());
     assertEquals("ONLINE", result.getStatus());
     assertNotNull(result.getTimestamp());
-    verify(userPresenceRepository).save(org.mockito.ArgumentMatchers.any(UserPresence.class));
+
+    ArgumentCaptor<UserPresence> presenceCaptor = ArgumentCaptor.forClass(UserPresence.class);
+    verify(userPresenceRepository).save(presenceCaptor.capture());
+    assertEquals(UserStatus.ONLINE, presenceCaptor.getValue().getStatus());
   }
 
   @Test
@@ -51,5 +56,71 @@ class UserStatusServiceTest {
     assertEquals(7L, result.getUserId());
     assertEquals("OFFLINE", result.getStatus());
     assertNotNull(result.getTimestamp());
+  }
+
+  @Test
+  @DisplayName("Should treat stale online presence as offline")
+  void getUserStatusReturnsOfflineWhenOnlinePresenceIsStale() {
+    UserPresence stalePresence = new UserPresence(7L, UserStatus.ONLINE);
+    stalePresence.setUpdatedAt(LocalDateTime.now().minusMinutes(3));
+    when(userPresenceRepository.findById(7L)).thenReturn(Optional.of(stalePresence));
+
+    var result = userStatusService.getUserStatus(7L);
+
+    assertEquals(7L, result.getUserId());
+    assertEquals("OFFLINE", result.getStatus());
+  }
+
+  @Test
+  @DisplayName("Should keep recent online presence online")
+  void getUserStatusReturnsOnlineWhenOnlinePresenceIsFresh() {
+    UserPresence freshPresence = new UserPresence(7L, UserStatus.ONLINE);
+    freshPresence.setUpdatedAt(LocalDateTime.now().minusSeconds(30));
+    when(userPresenceRepository.findById(7L)).thenReturn(Optional.of(freshPresence));
+
+    var result = userStatusService.getUserStatus(7L);
+
+    assertEquals(7L, result.getUserId());
+    assertEquals("ONLINE", result.getStatus());
+  }
+
+  @Test
+  @DisplayName("Should ask repository to expire stale online presence")
+  void markStaleOnlineUsersOfflineDelegatesToRepository() {
+    when(userPresenceRepository.markStaleOnlineUsersOffline(
+            org.mockito.ArgumentMatchers.eq(UserStatus.ONLINE),
+            org.mockito.ArgumentMatchers.eq(UserStatus.OFFLINE),
+            org.mockito.ArgumentMatchers.any(LocalDateTime.class),
+            org.mockito.ArgumentMatchers.any(LocalDateTime.class)))
+        .thenReturn(2);
+
+    int updated = userStatusService.markStaleOnlineUsersOffline();
+
+    assertEquals(2, updated);
+    verify(userPresenceRepository)
+        .markStaleOnlineUsersOffline(
+            org.mockito.ArgumentMatchers.eq(UserStatus.ONLINE),
+            org.mockito.ArgumentMatchers.eq(UserStatus.OFFLINE),
+            org.mockito.ArgumentMatchers.any(LocalDateTime.class),
+            org.mockito.ArgumentMatchers.any(LocalDateTime.class));
+  }
+
+  @Test
+  @DisplayName("Should ask repository to clear online presence")
+  void markOnlineUsersOfflineDelegatesToRepository() {
+    when(userPresenceRepository.markOnlineUsersOffline(
+            org.mockito.ArgumentMatchers.eq(UserStatus.ONLINE),
+            org.mockito.ArgumentMatchers.eq(UserStatus.OFFLINE),
+            org.mockito.ArgumentMatchers.any(LocalDateTime.class)))
+        .thenReturn(5);
+
+    int updated = userStatusService.markOnlineUsersOffline();
+
+    assertEquals(5, updated);
+    verify(userPresenceRepository)
+        .markOnlineUsersOffline(
+            org.mockito.ArgumentMatchers.eq(UserStatus.ONLINE),
+            org.mockito.ArgumentMatchers.eq(UserStatus.OFFLINE),
+            org.mockito.ArgumentMatchers.any(LocalDateTime.class));
   }
 }

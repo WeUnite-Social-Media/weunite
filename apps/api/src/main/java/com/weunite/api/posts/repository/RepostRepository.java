@@ -15,6 +15,8 @@ public interface RepostRepository extends JpaRepository<Repost, Long> {
 
   Optional<Repost> findByUserAndPost(User user, Post post);
 
+  void deleteByPostId(Long postId);
+
   @Query(
       "SELECT r FROM Repost r "
           + "JOIN FETCH r.user "

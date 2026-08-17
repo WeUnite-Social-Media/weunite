@@ -20,7 +20,6 @@ public interface OpportunityMapper {
   @Mapping(target = "description", source = "description")
   @Mapping(target = "location", source = "location")
   @Mapping(target = "dateEnd", source = "dateEnd")
-  @Mapping(target = "skills", source = "skills")
   Opportunity toEntity(OpportunityDTO dto);
 
   @Mapping(target = "id", source = "opportunity.id", resultType = String.class)

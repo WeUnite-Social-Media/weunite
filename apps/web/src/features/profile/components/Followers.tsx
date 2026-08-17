@@ -18,6 +18,7 @@ import {
 import CardFollowing from "./CardFollowing";
 import { useGetFollowers } from "@/features/profile/state/useFollow";
 import type { Follower } from "@/shared/types/follower.type";
+import { useEffect, useRef } from "react";
 
 interface FollowersProps {
   isOpen?: boolean;
@@ -31,7 +32,36 @@ export default function Followers({
   userId,
 }: FollowersProps) {
   const { isDesktop, isTablet } = useBreakpoints();
-  const { data: followersData, error } = useGetFollowers(userId);
+  const {
+    data: followersData,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useGetFollowers(userId);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const loadMoreElement = loadMoreRef.current;
+
+    if (!loadMoreElement || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "160px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, followersData]);
 
   const handleClose = () => {
     if (onOpenChange) onOpenChange(false);
@@ -41,22 +71,42 @@ export default function Followers({
     if (error) {
       return <p>Erro ao carregar seguidores.</p>;
     }
-    if (!followersData?.success) {
+    if (isLoading) {
+      return <p>Carregando seguidores...</p>;
+    }
+
+    const pages = followersData?.pages ?? [];
+    const hasFailedPage = pages.some((page) => !page.success);
+
+    if (hasFailedPage) {
       return <p>Erro ao buscar seguidores.</p>;
     }
 
-    const followers = followersData?.data?.data;
+    const followers = pages.flatMap((page) => page.data?.data ?? []);
     if (!followers || !Array.isArray(followers) || followers.length === 0) {
       return <p>Nenhum seguidor encontrado.</p>;
     }
 
-    return followers.map((follower: Follower) => (
-      <CardFollowing
-        key={follower.id}
-        user={follower.follower}
-        onUserClick={handleClose}
-      />
-    ));
+    return (
+      <>
+        {followers.map((follower: Follower) => (
+          <CardFollowing
+            key={follower.id}
+            user={follower.follower}
+            onUserClick={handleClose}
+          />
+        ))}
+
+        {hasNextPage ? (
+          <div
+            ref={loadMoreRef}
+            className="py-4 text-center text-sm text-muted-foreground"
+          >
+            {isFetchingNextPage ? "Carregando..." : null}
+          </div>
+        ) : null}
+      </>
+    );
   };
 
   if (!isDesktop && isTablet) {
@@ -94,7 +144,10 @@ export default function Followers({
   }
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="h-[80vh] w-[70vw] xl:max-w-[50vw] flex flex-col">
+      <DialogContent
+        className="h-[80vh] w-[70vw] xl:max-w-[50vw] flex flex-col"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
           <DialogTitle>Seguidores</DialogTitle>
           <DialogClose />

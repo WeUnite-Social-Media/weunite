@@ -49,6 +49,7 @@ export const normalizeUser = (user?: UserLike | null): User | null => {
     bannerImg: user.bannerImg ?? undefined,
     createdAt: user.createdAt ?? undefined,
     updatedAt: user.updatedAt ?? undefined,
+    cnpj: user.cnpj ?? undefined,
     height: user.height ?? undefined,
     weight: user.weight ?? undefined,
     footDomain: user.footDomain ?? undefined,

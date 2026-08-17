@@ -23,6 +23,7 @@ import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.repository.UserRepository;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
@@ -85,7 +86,8 @@ public class MessageServiceTest {
             false,
             null);
 
-    when(conversationRepository.findById(conversationId)).thenReturn(Optional.of(conversation));
+    when(conversationRepository.findByIdWithParticipants(conversationId))
+        .thenReturn(Optional.of(conversation));
     when(userRepository.findById(senderId)).thenReturn(Optional.of(sender));
     when(messageRepository.save(any(Message.class))).thenReturn(savedMessage);
     when(conversationRepository.save(conversation)).thenReturn(conversation);
@@ -128,7 +130,7 @@ public class MessageServiceTest {
             true,
             Instant.now());
 
-    when(messageRepository.findById(messageId)).thenReturn(Optional.of(message));
+    when(messageRepository.findByIdWithSender(messageId)).thenReturn(Optional.of(message));
     when(messageRepository.save(message)).thenReturn(message);
     when(messageMapper.toDTO(message)).thenReturn(expectedMessage);
 
@@ -169,7 +171,7 @@ public class MessageServiceTest {
             false,
             null);
 
-    when(messageRepository.findById(messageId)).thenReturn(Optional.of(message));
+    when(messageRepository.findByIdWithSender(messageId)).thenReturn(Optional.of(message));
     when(messageRepository.save(message)).thenReturn(message);
     when(messageMapper.toDTO(message)).thenReturn(expectedMessage);
 
@@ -194,7 +196,7 @@ public class MessageServiceTest {
     message.setContent("secret");
     message.setType(Message.MessageType.TEXT);
 
-    when(messageRepository.findById(messageId)).thenReturn(Optional.of(message));
+    when(messageRepository.findByIdWithSender(messageId)).thenReturn(Optional.of(message));
 
     UnauthorizedException exception =
         assertThrows(
@@ -202,5 +204,38 @@ public class MessageServiceTest {
 
     assertTrue(exception.getMessage().contains("apagar esta mensagem"));
     verifyNoInteractions(messageMapper);
+  }
+
+  @Test
+  @DisplayName("Should search messages within the user's conversations")
+  void searchMessagesSuccess() {
+    Long userId = 10L;
+
+    Message message = new Message();
+    message.setId(1L);
+    message.setContent("hello world");
+
+    MessageDTO expectedMessage =
+        new MessageDTO(
+            1L,
+            2L,
+            userId,
+            "hello world",
+            false,
+            Instant.now(),
+            null,
+            Message.MessageType.TEXT,
+            false,
+            false,
+            null);
+
+    when(userRepository.existsById(userId)).thenReturn(true);
+    when(messageRepository.searchMessagesByContentForUser(any(), any(), any()))
+        .thenReturn(List.of(message));
+    when(messageMapper.toDTOList(List.of(message))).thenReturn(List.of(expectedMessage));
+
+    List<MessageDTO> result = messageService.searchMessages(userId, "hello");
+
+    assertEquals(List.of(expectedMessage), result);
   }
 }

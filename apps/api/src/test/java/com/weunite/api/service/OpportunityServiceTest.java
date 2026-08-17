@@ -16,11 +16,13 @@ import com.weunite.api.opportunities.domain.Opportunity;
 import com.weunite.api.opportunities.domain.Skill;
 import com.weunite.api.opportunities.dto.OpportunityDTO;
 import com.weunite.api.opportunities.dto.OpportunityRequestDTO;
+import com.weunite.api.opportunities.dto.SkillDTO;
 import com.weunite.api.opportunities.exception.OpportunityNotFoundException;
 import com.weunite.api.opportunities.mapper.OpportunityMapper;
 import com.weunite.api.opportunities.repository.OpportunityRepository;
 import com.weunite.api.opportunities.repository.SavedOpportunityRepository;
 import com.weunite.api.opportunities.repository.SkillRepository;
+import com.weunite.api.opportunities.repository.SubscribersRepository;
 import com.weunite.api.opportunities.service.OpportunityService;
 import com.weunite.api.users.domain.Company;
 import com.weunite.api.users.exception.UserNotFoundException;
@@ -37,6 +39,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class OpportunityServiceTest {
@@ -45,6 +49,7 @@ class OpportunityServiceTest {
   @Mock private SkillRepository skillRepository;
   @Mock private OpportunityRepository opportunityRepository;
   @Mock private SavedOpportunityRepository savedOpportunityRepository;
+  @Mock private SubscribersRepository subscribersRepository;
   @Mock private OpportunityMapper opportunityMapper;
 
   @InjectMocks private OpportunityService opportunityService;
@@ -54,6 +59,7 @@ class OpportunityServiceTest {
   void createOpportunitySuccess() {
     Long companyId = 1L;
     Set<Skill> skills = Set.of(new Skill("Perna Esquerda"));
+    Set<SkillDTO> skillDtos = Set.of(new SkillDTO(1L, "Perna Esquerda"));
 
     OpportunityRequestDTO request =
         new OpportunityRequestDTO(
@@ -75,7 +81,7 @@ class OpportunityServiceTest {
                 request.description(),
                 request.location(),
                 request.dateEnd(),
-                skills,
+                skillDtos,
                 Instant.now(),
                 null,
                 null));
@@ -124,6 +130,7 @@ class OpportunityServiceTest {
     Long opportunityId = 1L;
     Set<Skill> updatedSkills = new HashSet<>();
     updatedSkills.add(new Skill("Python"));
+    Set<SkillDTO> updatedSkillDtos = Set.of(new SkillDTO(1L, "Python"));
 
     OpportunityRequestDTO request =
         new OpportunityRequestDTO(
@@ -148,7 +155,7 @@ class OpportunityServiceTest {
             request.description(),
             request.location(),
             request.dateEnd(),
-            updatedSkills,
+            updatedSkillDtos,
             null,
             Instant.now(),
             null);
@@ -267,6 +274,7 @@ class OpportunityServiceTest {
 
     assertEquals(expectedResponse, result);
     verify(savedOpportunityRepository).deleteByOpportunityId(opportunityId);
+    verify(subscribersRepository).deleteByOpportunityId(opportunityId);
     verify(opportunityRepository).delete(existingOpportunity);
   }
 
@@ -306,13 +314,14 @@ class OpportunityServiceTest {
             null,
             null);
 
-    when(opportunityRepository.findAllActiveOrderedByCreationDate())
-        .thenReturn(List.of(opportunity));
+    when(opportunityRepository.findAllActiveForReadModelOrderedByCreationDate(any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(opportunity)));
     when(opportunityMapper.toOpportunityDTOList(List.of(opportunity))).thenReturn(List.of(dto));
 
     List<OpportunityDTO> result = opportunityService.getOpportunities();
 
     assertEquals(List.of(dto), result);
-    verify(opportunityRepository).findAllActiveOrderedByCreationDate();
+    verify(opportunityRepository)
+        .findAllActiveForReadModelOrderedByCreationDate(any(Pageable.class));
   }
 }

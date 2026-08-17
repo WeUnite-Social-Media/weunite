@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "saved_opportunities")
+@Table(
+    name = "saved_opportunities",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"athlete_id", "opportunity_id"}))
 @Getter
 @Setter
 @NoArgsConstructor

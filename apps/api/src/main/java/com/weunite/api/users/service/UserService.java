@@ -5,10 +5,8 @@ import com.weunite.api.auth.exception.InvalidTokenException;
 import com.weunite.api.common.exception.NotFoundResourceException;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.storage.service.CloudinaryService;
-import com.weunite.api.opportunities.domain.Skill;
-import com.weunite.api.opportunities.dto.SkillDTO;
-import com.weunite.api.opportunities.repository.SkillRepository;
 import com.weunite.api.users.domain.Athlete;
+import com.weunite.api.users.domain.Company;
 import com.weunite.api.users.domain.Role;
 import com.weunite.api.users.domain.User;
 import com.weunite.api.users.dto.CreateUserRequestDTO;
@@ -21,7 +19,6 @@ import com.weunite.api.users.repository.RoleRepository;
 import com.weunite.api.users.repository.UserRepository;
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,7 +37,8 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
   private final RoleRepository roleRepository;
   private final CloudinaryService cloudinaryService;
-  private final SkillRepository skillRepository;
+  private final AthleteProfileService athleteProfileService;
+  private final CompanyProfileService companyProfileService;
 
   public UserService(
       UserRepository userRepository,
@@ -48,13 +46,15 @@ public class UserService {
       PasswordEncoder passwordEncoder,
       RoleRepository roleRepository,
       CloudinaryService cloudinaryService,
-      SkillRepository skillRepository) {
+      AthleteProfileService athleteProfileService,
+      CompanyProfileService companyProfileService) {
     this.userRepository = userRepository;
     this.userMapper = userMapper;
     this.passwordEncoder = passwordEncoder;
     this.roleRepository = roleRepository;
     this.cloudinaryService = cloudinaryService;
-    this.skillRepository = skillRepository;
+    this.athleteProfileService = athleteProfileService;
+    this.companyProfileService = companyProfileService;
   }
 
   @Transactional
@@ -71,6 +71,9 @@ public class UserService {
     User newUser = userMapper.toEntity(userDTO);
 
     newUser.setPassword(encodedPassword);
+    if (newUser instanceof Company company) {
+      companyProfileService.applyRegistrationDetails(company, userDTO.cnpj());
+    }
 
     Role roleUser = roleRepository.findByName(userDTO.role().toUpperCase());
     if (roleUser == null) {
@@ -87,7 +90,9 @@ public class UserService {
   @Transactional(isolation = Isolation.REPEATABLE_READ)
   public ResponseDTO<UserDTO> deleteUser(String username) {
     User user =
-        userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException());
+        userRepository
+            .findByUsernameWithRoles(username)
+            .orElseThrow(() -> new UserNotFoundException());
 
     user.getRole().clear();
 
@@ -110,14 +115,15 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public ResponseDTO<UserDTO> getUser(Long id) {
-    User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
+    User user = userRepository.findByIdWithRoles(id).orElseThrow(UserNotFoundException::new);
 
     return userMapper.toResponseDTO("Usuario encontrado com sucesso", user);
   }
 
   @Transactional(readOnly = true)
   public ResponseDTO<UserDTO> getUser(String username) {
-    User user = userRepository.findByUsername(username).orElseThrow(UserNotFoundException::new);
+    User user =
+        userRepository.findByUsernameWithRoles(username).orElseThrow(UserNotFoundException::new);
 
     return userMapper.toResponseDTO("Usuario encontrado com sucesso", user);
   }
@@ -155,45 +161,12 @@ public class UserService {
     }
 
     if (user instanceof Athlete athlete) {
-      applyAthleteProfileUpdates(athlete, requestDTO);
+      athleteProfileService.applyProfileUpdates(athlete, requestDTO);
     }
 
     userRepository.save(user);
 
     return userMapper.toResponseDTO("Usuario atualizado com sucesso!", user);
-  }
-
-  private void applyAthleteProfileUpdates(Athlete athlete, UpdateUserRequestDTO requestDTO) {
-    athlete.setHeight(requestDTO.height());
-    athlete.setWeight(requestDTO.weight());
-    athlete.setFootDomain(blankToNull(requestDTO.footDomain()));
-    athlete.setPosition(blankToNull(requestDTO.position()));
-    athlete.setBirthDate(requestDTO.birthDate());
-
-    if (requestDTO.skills() != null) {
-      athlete.setSkills(resolveSkills(requestDTO.skills()));
-    }
-  }
-
-  private LinkedHashSet<Skill> resolveSkills(List<SkillDTO> requestedSkills) {
-    LinkedHashSet<Skill> resolvedSkills = new LinkedHashSet<>();
-
-    for (SkillDTO requestedSkill : requestedSkills) {
-      String skillName = blankToNull(requestedSkill.name());
-      if (skillName == null) {
-        continue;
-      }
-
-      Skill existingSkill = skillRepository.findByName(skillName);
-      if (existingSkill != null) {
-        resolvedSkills.add(existingSkill);
-        continue;
-      }
-
-      resolvedSkills.add(skillRepository.save(new Skill(skillName)));
-    }
-
-    return resolvedSkills;
   }
 
   private String valueOrCurrent(String value, String currentValue) {
@@ -216,7 +189,7 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public User findUserEntityByUsername(String username) {
-    return userRepository.findByUsername(username).orElseThrow(UserNotFoundException::new);
+    return userRepository.findByUsernameWithRoles(username).orElseThrow(UserNotFoundException::new);
   }
 
   @Transactional(readOnly = true)
@@ -226,7 +199,7 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public User findUserEntityByEmail(String email) {
-    return userRepository.findByEmail(email).orElseThrow(UserNotFoundException::new);
+    return userRepository.findByEmailWithRoles(email).orElseThrow(UserNotFoundException::new);
   }
 
   @Transactional(readOnly = true)
@@ -267,7 +240,7 @@ public class UserService {
   @Transactional(readOnly = true)
   public ResponseDTO<List<UserDTO>> searchUsers(String query) {
 
-    List<User> users = userRepository.searchUsers(query.trim());
+    List<User> users = userRepository.searchUsersWithRoles(query.trim());
 
     return userMapper.toSearchResponseDTO("Usuarios encontrados com sucesso", users);
   }

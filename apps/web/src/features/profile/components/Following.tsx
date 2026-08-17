@@ -15,7 +15,7 @@ import {
 import { X as CloseIcon } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
 import CardFollowing from "./CardFollowing";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { useGetFollowing } from "@/features/profile/state/useFollow";
 import type { Follower } from "@/shared/types/follower.type";
@@ -32,31 +32,81 @@ export default function Following({
   userId,
 }: FollowingProps) {
   const { isDesktop, isTablet } = useBreakpoints();
-  const { data: followingData, error } = useGetFollowing(userId);
+  const {
+    data: followingData,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useGetFollowing(userId);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const handleClose = useCallback(() => {
     if (onOpenChange) onOpenChange(false);
   }, [onOpenChange]);
 
-  const renderFollowingList = () => {
-    if (error) {
-      return <p>Erro ao carregar usuários seguidos.</p>;
-    }
-    if (!followingData?.success) {
-      return <p>Erro ao buscar usuários seguidos.</p>;
-    }
-    const following = followingData?.data?.data;
-    if (!following || !Array.isArray(following) || following.length === 0) {
-      return <p>Você não está seguindo ninguém.</p>;
+  useEffect(() => {
+    const loadMoreElement = loadMoreRef.current;
+
+    if (!loadMoreElement || !hasNextPage || isFetchingNextPage) {
+      return;
     }
 
-    return following.map((followingItem: Follower) => (
-      <CardFollowing
-        key={followingItem.id}
-        user={followingItem.followed}
-        onUserClick={handleClose}
-      />
-    ));
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "160px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => observer.disconnect();
+  }, [fetchNextPage, followingData, hasNextPage, isFetchingNextPage]);
+
+  const renderFollowingList = () => {
+    if (error) {
+      return <p>Erro ao carregar usuarios seguidos.</p>;
+    }
+    if (isLoading) {
+      return <p>Carregando usuarios seguidos...</p>;
+    }
+
+    const pages = followingData?.pages ?? [];
+    const hasFailedPage = pages.some((page) => !page.success);
+
+    if (hasFailedPage) {
+      return <p>Erro ao buscar usuarios seguidos.</p>;
+    }
+
+    const following = pages.flatMap((page) => page.data?.data ?? []);
+    if (!following || !Array.isArray(following) || following.length === 0) {
+      return <p>Voce nao esta seguindo ninguem.</p>;
+    }
+
+    return (
+      <>
+        {following.map((followingItem: Follower) => (
+          <CardFollowing
+            key={followingItem.id}
+            user={followingItem.followed}
+            onUserClick={handleClose}
+          />
+        ))}
+
+        {hasNextPage ? (
+          <div
+            ref={loadMoreRef}
+            className="py-4 text-center text-sm text-muted-foreground"
+          >
+            {isFetchingNextPage ? "Carregando..." : null}
+          </div>
+        ) : null}
+      </>
+    );
   };
 
   if (!isDesktop && isTablet) {
@@ -95,7 +145,10 @@ export default function Following({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="h-[80vh] w-[70vw] xl:max-w-[50vw] flex flex-col">
+      <DialogContent
+        className="h-[80vh] w-[70vw] xl:max-w-[50vw] flex flex-col"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
           <DialogTitle>Seguindo</DialogTitle>
           <DialogClose />

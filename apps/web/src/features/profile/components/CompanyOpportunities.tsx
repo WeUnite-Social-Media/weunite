@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useRef } from "react";
 import { BriefcaseBusiness, CircleAlert, Loader2 } from "lucide-react";
 import OpportunityCard from "@/features/opportunities/components/OpportunityCard";
 import { useGetOpportunitiesCompany } from "@/features/opportunities/state/useOpportunities";
@@ -11,9 +12,45 @@ interface CompanyOpportunitiesProps {
 export default function CompanyOpportunities({
   companyId,
 }: CompanyOpportunitiesProps) {
-  const { data, isLoading, isError } = useGetOpportunitiesCompany(companyId, {
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isLoading,
+  } = useGetOpportunitiesCompany(companyId, {
     enabled: companyId > 0,
   });
+  const opportunities = useMemo(
+    () => data?.pages.flatMap((page) => page.data ?? []) ?? [],
+    [data],
+  );
+
+  useEffect(() => {
+    const loadMoreElement = loadMoreRef.current;
+
+    if (!loadMoreElement || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, opportunities.length]);
 
   if (isLoading) {
     return (
@@ -34,14 +71,23 @@ export default function CompanyOpportunities({
     );
   }
 
-  const opportunities = data?.data || [];
-
   return (
     <div className="flex flex-col items-center justify-center gap-4">
       {opportunities.length > 0 ? (
-        opportunities.map((opportunity: Opportunity) => (
-          <OpportunityCard key={opportunity.id} opportunity={opportunity} />
-        ))
+        <>
+          {opportunities.map((opportunity: Opportunity) => (
+            <OpportunityCard key={opportunity.id} opportunity={opportunity} />
+          ))}
+
+          {hasNextPage ? (
+            <div
+              ref={loadMoreRef}
+              className="py-4 text-center text-sm text-muted-foreground"
+            >
+              {isFetchingNextPage ? "Carregando..." : null}
+            </div>
+          ) : null}
+        </>
       ) : (
         <ProfileCompanyState
           icon={BriefcaseBusiness}

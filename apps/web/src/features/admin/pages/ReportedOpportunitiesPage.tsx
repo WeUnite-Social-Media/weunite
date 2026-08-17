@@ -61,6 +61,10 @@ function normalizeStatus(status: string): Report["status"] {
   }
 }
 
+function statusPriority(status: Report["status"]) {
+  return status === "pending" || status === "under_review" ? 0 : 1;
+}
+
 export function ReportedOpportunitiesPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -111,7 +115,8 @@ export function ReportedOpportunitiesPage() {
       reportedUser: {
         id: reportedOpportunity.opportunity.company?.id,
         name:
-          reportedOpportunity.opportunity.company?.name || "Empresa desconhecida",
+          reportedOpportunity.opportunity.company?.name ||
+          "Empresa desconhecida",
         username:
           reportedOpportunity.opportunity.company?.username || "empresa",
         profileImg: reportedOpportunity.opportunity.company?.profileImg,
@@ -168,23 +173,40 @@ export function ReportedOpportunitiesPage() {
     toast.error(response.error || "Erro ao descartar denúncias");
   };
 
-  const filteredOpportunities = reportedOpportunities.filter((item) => {
-    const normalizedStatus = normalizeStatus(item.status);
-    const matchesStatus =
-      statusFilter === "all" || normalizedStatus === statusFilter;
-    const query = searchQuery.trim().toLowerCase();
+  const filteredOpportunities = reportedOpportunities
+    .filter((item) => {
+      const normalizedStatus = normalizeStatus(item.status);
+      const matchesStatus =
+        statusFilter === "all" || normalizedStatus === statusFilter;
+      const query = searchQuery.trim().toLowerCase();
 
-    if (!query) {
-      return matchesStatus;
-    }
+      if (!query) {
+        return matchesStatus;
+      }
 
-    return (
-      matchesStatus &&
-      (item.opportunity.title.toLowerCase().includes(query) ||
-        item.opportunity.description.toLowerCase().includes(query) ||
-        (item.opportunity.company?.name || "").toLowerCase().includes(query))
-    );
-  });
+      return (
+        matchesStatus &&
+        (item.opportunity.title.toLowerCase().includes(query) ||
+          item.opportunity.description.toLowerCase().includes(query) ||
+          (item.opportunity.company?.name || "").toLowerCase().includes(query))
+      );
+    })
+    .sort((left, right) => {
+      if (statusFilter === "all") {
+        const priorityDelta =
+          statusPriority(normalizeStatus(left.status)) -
+          statusPriority(normalizeStatus(right.status));
+
+        if (priorityDelta !== 0) {
+          return priorityDelta;
+        }
+      }
+
+      return (
+        new Date(right.reports[0]?.createdAt ?? 0).getTime() -
+        new Date(left.reports[0]?.createdAt ?? 0).getTime()
+      );
+    });
 
   const totalReports = reportedOpportunities.reduce(
     (count, item) => count + item.totalReports,
@@ -310,78 +332,87 @@ export function ReportedOpportunitiesPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredOpportunities.map((item) => (
-                      <TableRow key={item.opportunity.id}>
-                        <TableCell className="max-w-md">
-                          <div className="space-y-1">
-                            <p className="font-medium">{item.opportunity.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Por {item.opportunity.company?.name || "Empresa"}
-                            </p>
-                            <p className="truncate text-sm text-muted-foreground">
-                              {item.opportunity.description}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="destructive" className="bg-red-600">
-                            {item.totalReports} denúncia
-                            {item.totalReports === 1 ? "" : "s"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {getReportStatusBadge(normalizeStatus(item.status))}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(item.reports[0]?.createdAt).toLocaleDateString(
-                            "pt-BR",
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleReview(item)}
-                            >
-                              Revisar
-                            </Button>
+                    filteredOpportunities.map((item) => {
+                      const status = normalizeStatus(item.status);
+                      const isActionable =
+                        status === "pending" || status === "under_review";
 
-                            {normalizeStatus(item.status) === "deleted" ? (
+                      return (
+                        <TableRow key={item.opportunity.id}>
+                          <TableCell className="max-w-md">
+                            <div className="space-y-1">
+                              <p className="font-medium">
+                                {item.opportunity.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Por{" "}
+                                {item.opportunity.company?.name || "Empresa"}
+                              </p>
+                              <p className="truncate text-sm text-muted-foreground">
+                                {item.opportunity.description}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="destructive" className="bg-red-600">
+                              {item.totalReports} denúncia
+                              {item.totalReports === 1 ? "" : "s"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{getReportStatusBadge(status)}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(
+                              item.reports[0]?.createdAt,
+                            ).toLocaleDateString("pt-BR")}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleRestore(Number(item.opportunity.id))}
+                                onClick={() => handleReview(item)}
                               >
-                                <RotateCcw className="mr-2 h-4 w-4" />
-                                Restaurar
+                                {isActionable ? "Revisar" : "Ver detalhes"}
                               </Button>
-                            ) : (
-                              <>
+
+                              {status === "deleted" ? (
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() =>
-                                    handleDismiss(Number(item.opportunity.id))
+                                    handleRestore(Number(item.opportunity.id))
                                   }
                                 >
-                                  Descartar
+                                  <RotateCcw className="mr-2 h-4 w-4" />
+                                  Restaurar
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() =>
-                                    handleDelete(Number(item.opportunity.id))
-                                  }
-                                >
-                                  Deletar
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                              ) : isActionable ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      handleDismiss(Number(item.opportunity.id))
+                                    }
+                                  >
+                                    Descartar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() =>
+                                      handleDelete(Number(item.opportunity.id))
+                                    }
+                                  >
+                                    Deletar
+                                  </Button>
+                                </>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>

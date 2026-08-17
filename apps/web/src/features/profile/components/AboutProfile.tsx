@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { differenceInYears, parseISO } from "date-fns";
 import {
+  Building2,
   Calendar,
   Footprints,
   Ruler,
@@ -23,6 +24,7 @@ interface AboutProfileProps {
 
 export default function AboutProfile({ user }: AboutProfileProps) {
   const isAthlete = user?.role === "athlete";
+  const isCompany = user?.role === "company";
   const age =
     user?.birthDate && !Number.isNaN(Date.parse(user.birthDate))
       ? differenceInYears(new Date(), parseISO(user.birthDate))
@@ -80,6 +82,23 @@ export default function AboutProfile({ user }: AboutProfileProps) {
           </>
         )}
 
+        {isCompany && (
+          <>
+            <Separator />
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-foreground">
+                Informacoes da empresa
+              </h3>
+
+              <CharacteristicItem
+                icon={<Building2 className="h-4 w-4" />}
+                label="CNPJ"
+                value={formatCnpj(user?.cnpj)}
+              />
+            </div>
+          </>
+        )}
+
         {!!user?.skills?.length && (
           <>
             <Separator />
@@ -104,6 +123,18 @@ export default function AboutProfile({ user }: AboutProfileProps) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function formatCnpj(cnpj?: string) {
+  const digits = cnpj?.replace(/\D/g, "");
+  if (!digits || digits.length !== 14) {
+    return cnpj || "N/A";
+  }
+
+  return digits.replace(
+    /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+    "$1.$2.$3/$4-$5",
   );
 }
 

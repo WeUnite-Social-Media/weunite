@@ -12,6 +12,7 @@ import com.weunite.api.opportunities.mapper.OpportunityMapper;
 import com.weunite.api.opportunities.repository.OpportunityRepository;
 import com.weunite.api.opportunities.repository.SavedOpportunityRepository;
 import com.weunite.api.opportunities.repository.SkillRepository;
+import com.weunite.api.opportunities.repository.SubscribersRepository;
 import com.weunite.api.users.domain.Company;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.CompanyRepository;
@@ -19,6 +20,7 @@ import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -27,6 +29,7 @@ public class OpportunityService {
   private final CompanyRepository companyRepository;
   private final OpportunityRepository opportunityRepository;
   private final SavedOpportunityRepository savedOpportunityRepository;
+  private final SubscribersRepository subscribersRepository;
   private final OpportunityMapper opportunityMapper;
   private final SkillRepository skillRepository;
 
@@ -34,11 +37,13 @@ public class OpportunityService {
       CompanyRepository companyRepository,
       OpportunityRepository opportunityRepository,
       SavedOpportunityRepository savedOpportunityRepository,
+      SubscribersRepository subscribersRepository,
       OpportunityMapper opportunityMapper,
       SkillRepository skillRepository) {
     this.companyRepository = companyRepository;
     this.opportunityRepository = opportunityRepository;
     this.savedOpportunityRepository = savedOpportunityRepository;
+    this.subscribersRepository = subscribersRepository;
     this.opportunityMapper = opportunityMapper;
     this.skillRepository = skillRepository;
   }
@@ -128,6 +133,7 @@ public class OpportunityService {
     }
 
     savedOpportunityRepository.deleteByOpportunityId(opportunityId);
+    subscribersRepository.deleteByOpportunityId(opportunityId);
     opportunityRepository.delete(existingOpportunity);
 
     return opportunityMapper.toResponseDTO(
@@ -138,7 +144,7 @@ public class OpportunityService {
   public ResponseDTO<OpportunityDTO> getOpportunity(Long opportunityId) {
     Opportunity opportunity =
         opportunityRepository
-            .findByIdAndDeletedFalse(opportunityId)
+            .findReadModelByIdAndDeletedFalse(opportunityId)
             .orElseThrow(OpportunityNotFoundException::new);
 
     return opportunityMapper.toResponseDTO("Oportunidade encontrada com sucesso!", opportunity);
@@ -146,16 +152,37 @@ public class OpportunityService {
 
   @Transactional
   public List<OpportunityDTO> getOpportunities() {
-    List<Opportunity> opportunities = opportunityRepository.findAllActiveOrderedByCreationDate();
+    return getOpportunities(0, 10);
+  }
+
+  @Transactional
+  public List<OpportunityDTO> getOpportunities(int page, int size) {
+    PageRequest pageable = pageRequest(page, size);
+    List<Opportunity> opportunities =
+        opportunityRepository.findAllActiveForReadModelOrderedByCreationDate(pageable).getContent();
     return opportunityMapper.toOpportunityDTOList(opportunities);
   }
 
   @Transactional
   public List<OpportunityDTO> getOpportunitiesByCompanyId(Long userId) {
+    return getOpportunitiesByCompanyId(userId, 0, 10);
+  }
+
+  @Transactional
+  public List<OpportunityDTO> getOpportunitiesByCompanyId(Long userId, int page, int size) {
     companyRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
-    List<Opportunity> opportunities = opportunityRepository.findActiveByCompanyId(userId);
+    List<Opportunity> opportunities =
+        opportunityRepository
+            .findActiveReadModelsByCompanyId(userId, pageRequest(page, size))
+            .getContent();
     return opportunityMapper.toOpportunityDTOList(opportunities);
+  }
+
+  private PageRequest pageRequest(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 100);
+    return PageRequest.of(safePage, safeSize);
   }
 
   private void validateOpportunityRequest(OpportunityRequestDTO opportunityDTO) {

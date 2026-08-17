@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bookmark, Briefcase, Calendar, Loader2, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import OpportunityDetailModal from "@/features/opportunities/components/OpportunityDetailModal";
 import { useGetSavedOpportunities } from "@/features/opportunities/state/useOpportunities";
+import { compareOpportunityDeadlineAsc } from "@/features/opportunities/utils/opportunityDates";
 import { Button } from "@/shared/components/ui/button";
 import {
   Card,
@@ -22,12 +23,70 @@ export function SavedOpportunitiesPage() {
   const [selectedOpportunity, setSelectedOpportunity] =
     useState<Opportunity | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [companyFilter, setCompanyFilter] = useState("all");
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  const { data, isLoading } = useGetSavedOpportunities(Number(user?.id), {
-    enabled: Boolean(user?.id) && user?.role === "athlete",
-  });
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useGetSavedOpportunities(Number(user?.id), {
+      enabled: Boolean(user?.id) && user?.role === "athlete",
+    });
 
-  const savedOpportunities = (data?.data ?? []) as Opportunity[];
+  const savedOpportunities = useMemo<Opportunity[]>(
+    () =>
+      data?.pages.flatMap((page) => (page.data ?? []) as Opportunity[]) ?? [],
+    [data],
+  );
+  const savedCompanies = useMemo(() => {
+    const companies = new Map<string, string>();
+
+    savedOpportunities.forEach((opportunity) => {
+      const company = opportunity.company;
+      const companyId = company?.id;
+      const companyName = company?.name || company?.username;
+
+      if (companyId && companyName) {
+        companies.set(String(companyId), companyName);
+      }
+    });
+
+    return Array.from(companies, ([id, name]) => ({ id, name }));
+  }, [savedOpportunities]);
+  const filteredSavedOpportunities = savedOpportunities
+    .filter(
+      (opportunity) =>
+        companyFilter === "all" ||
+        String(opportunity.company?.id ?? "") === companyFilter,
+    )
+    .sort(compareOpportunityDeadlineAsc);
+
+  useEffect(() => {
+    const loadMoreElement = loadMoreRef.current;
+
+    if (!loadMoreElement || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(loadMoreElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    savedOpportunities.length,
+  ]);
 
   const handleViewDetails = (opportunity: Opportunity) => {
     setSelectedOpportunity(opportunity);
@@ -62,13 +121,36 @@ export function SavedOpportunitiesPage() {
         <div className="mb-8">
           <div className="mb-2 flex items-center gap-3">
             <Bookmark className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">Oportunidades salvas</h1>
+            <h1 className="text-3xl font-bold">
+              Oportunidades salvas - {savedOpportunities.length}
+            </h1>
           </div>
           <p className="text-muted-foreground">
             {savedOpportunities.length} oportunidade
             {savedOpportunities.length === 1 ? "" : "s"} salva
             {savedOpportunities.length === 1 ? "" : "s"}
           </p>
+          {savedOpportunities.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant={companyFilter === "all" ? "default" : "outline"}
+                onClick={() => setCompanyFilter("all")}
+              >
+                Todos ({savedOpportunities.length})
+              </Button>
+              {savedCompanies.map((company) => (
+                <Button
+                  key={company.id}
+                  size="sm"
+                  variant={companyFilter === company.id ? "default" : "outline"}
+                  onClick={() => setCompanyFilter(company.id)}
+                >
+                  {company.name}
+                </Button>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         {savedOpportunities.length === 0 ? (
@@ -88,7 +170,15 @@ export function SavedOpportunitiesPage() {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {savedOpportunities.map((opportunity) => (
+            {filteredSavedOpportunities.length === 0 ? (
+              <Card className="border-2 border-dashed">
+                <CardContent className="py-10 text-center text-muted-foreground">
+                  Nenhuma oportunidade salva encontrada para este clube.
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {filteredSavedOpportunities.map((opportunity) => (
               <Card
                 key={opportunity.id}
                 className="transition-shadow hover:shadow-lg"
@@ -105,7 +195,8 @@ export function SavedOpportunitiesPage() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Briefcase className="h-4 w-4" />
                       <span className="truncate">
-                        {opportunity.company.name || opportunity.company.username}
+                        {opportunity.company.name ||
+                          opportunity.company.username}
                       </span>
                     </div>
                   ) : null}
@@ -127,7 +218,8 @@ export function SavedOpportunitiesPage() {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span>
-                        Até {format(new Date(opportunity.dateEnd), "dd/MM/yyyy")}
+                        Até{" "}
+                        {format(new Date(opportunity.dateEnd), "dd/MM/yyyy")}
                       </span>
                     </div>
                   </div>
@@ -160,6 +252,15 @@ export function SavedOpportunitiesPage() {
                 </CardContent>
               </Card>
             ))}
+
+            {hasNextPage ? (
+              <div
+                ref={loadMoreRef}
+                className="py-4 text-center text-sm text-muted-foreground"
+              >
+                {isFetchingNextPage ? "Carregando..." : null}
+              </div>
+            ) : null}
           </div>
         )}
 

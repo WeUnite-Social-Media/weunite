@@ -42,6 +42,10 @@ export function ReportDetailsModal({
     return null;
   }
 
+  const normalizedStatus = report.status.toLowerCase();
+  const isActionable =
+    normalizedStatus === "pending" || normalizedStatus === "under_review";
+
   const getReportTarget = () => {
     if (
       report.entityId === undefined ||
@@ -130,7 +134,7 @@ export function ReportDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[700px]">
+      <DialogContent className="max-h-[85vh] scrollbar-thumb overflow-y-auto sm:max-w-[700px]">
         <DialogHeader className="space-y-3">
           <DialogTitle className="text-xl">Detalhes da Denúncia</DialogTitle>
           <p className="text-sm text-muted-foreground">
@@ -244,7 +248,13 @@ export function ReportDetailsModal({
           <div>
             <h4 className="mb-3 text-sm font-medium">Ações de moderação</h4>
             <div className="space-y-2">
-              {report.status === "pending" ? (
+              {!isActionable ? (
+                <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+                  Esta denuncia ja foi finalizada e nao possui acoes pendentes.
+                </div>
+              ) : null}
+
+              {normalizedStatus === "pending" ? (
                 <Button
                   variant="outline"
                   className="w-full justify-start gap-2 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/20"
@@ -256,25 +266,29 @@ export function ReportDetailsModal({
                 </Button>
               ) : null}
 
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 hover:border-green-200 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-950/20"
-                onClick={handleResolve}
-                disabled={isLoading}
-              >
-                <CheckCircle className="h-4 w-4" />
-                {isLoading ? "Processando..." : "Resolver denúncia"}
-              </Button>
+              {isActionable ? (
+                <>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2 hover:border-green-200 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-950/20"
+                    onClick={handleResolve}
+                    disabled={isLoading}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    {isLoading ? "Processando..." : "Resolver denúncia"}
+                  </Button>
 
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20"
-                onClick={handleReject}
-                disabled={isLoading}
-              >
-                <XCircle className="h-4 w-4" />
-                {isLoading ? "Processando..." : "Rejeitar denúncia"}
-              </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20"
+                    onClick={handleReject}
+                    disabled={isLoading}
+                  >
+                    <XCircle className="h-4 w-4" />
+                    {isLoading ? "Processando..." : "Rejeitar denúncia"}
+                  </Button>
+                </>
+              ) : null}
             </div>
           </div>
         </div>

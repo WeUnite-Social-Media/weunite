@@ -31,6 +31,7 @@ This module owns in-app notifications in `com.weunite.api.notifications`.
 
 - Keep trigger decisions in the owning feature service and centralize persistence/delivery here.
 - Keep notification DTOs and mappings inside this module.
+- Scope notification reads, read-state changes, and deletions to the authenticated recipient.
 - Preserve notification endpoint contracts unless explicitly requested.
 
 ## Validation

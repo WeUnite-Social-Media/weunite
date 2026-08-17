@@ -1,0 +1,52 @@
+services:
+  api:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+      target: dev
+    container_name: weunite-api
+    profiles:
+      - api
+    env_file:
+      - ../../.env
+    environment:
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      DB_HOST: ${LOCAL_DB_HOST_FOR_DOCKER:-host.docker.internal}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${API_HOST_PORT:-8080}:8080"
+    volumes:
+      - ../../apps/api:/workspace
+      - weunite_maven_repo:/root/.m2
+
+  web:
+    image: node:22-alpine
+    container_name: weunite-web
+    profiles:
+      - web
+    working_dir: /workspace
+    command: >
+      sh -c "corepack enable &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @weunite/web dev --host 0.0.0.0 --port 3000"
+    env_file:
+      - ../../.env
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+      VITE_WS_URL: ${VITE_WS_URL:-http://localhost:8080/ws}
+      VITE_MEDIA_URL: ${VITE_MEDIA_URL:-http://localhost:8080}
+    ports:
+      - "${WEB_HOST_PORT:-3000}:3000"
+    volumes:
+      - ../../:/workspace
+      - weunite_node_modules:/workspace/node_modules
+      - weunite_web_node_modules:/workspace/apps/web/node_modules
+      - weunite_pnpm_store:/root/.local/share/pnpm/store
+
+volumes:
+  weunite_maven_repo:
+  weunite_node_modules:
+  weunite_web_node_modules:
+  weunite_pnpm_store:

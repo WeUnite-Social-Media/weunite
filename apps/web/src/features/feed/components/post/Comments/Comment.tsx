@@ -57,6 +57,11 @@ import { getInitials } from "@/shared/utils/getInitials";
 
 const actions = [{ icon: Heart }, { icon: MessageCircle }, { icon: Repeat2 }];
 
+const sameId = (
+  left?: string | number | null,
+  right?: string | number | null,
+) => String(left ?? "") === String(right ?? "");
+
 export default function Comment({ comment }: { comment: Comment }) {
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -72,7 +77,7 @@ export default function Comment({ comment }: { comment: Comment }) {
 
   const [likesCount, setLikesCount] = useState(comment.likes?.length || 0);
   const [isLikedState, setIsLikedState] = useState(
-    (comment.likes || []).some((like) => like.user.id === user?.id),
+    (comment.likes || []).some((like) => sameId(like.user.id, user?.id)),
   );
 
   useEffect(() => {
@@ -82,7 +87,9 @@ export default function Comment({ comment }: { comment: Comment }) {
 
     if (serverLikes.length > 0 || likesData?.success) {
       setLikesCount(serverLikes.length);
-      setIsLikedState(serverLikes.some((like) => like.user.id === user?.id));
+      setIsLikedState(
+        serverLikes.some((like) => sameId(like.user.id, user?.id)),
+      );
     }
   }, [likesData, user?.id]);
 
@@ -94,13 +101,30 @@ export default function Comment({ comment }: { comment: Comment }) {
   const handleLikeClick = () => {
     if (!user?.id) return;
 
-    setIsLikedState(!isLikedState);
-    setLikesCount(isLikedState ? likesCount - 1 : likesCount + 1);
+    const nextIsLiked = !isLikedState;
+    const nextLikesCount = Math.max(0, likesCount + (nextIsLiked ? 1 : -1));
 
-    toggleLike.mutate({
-      userId: user.id,
-      commentId: comment.id,
-    });
+    setIsLikedState(nextIsLiked);
+    setLikesCount(nextLikesCount);
+
+    toggleLike.mutate(
+      {
+        userId: user.id,
+        commentId: comment.id,
+      },
+      {
+        onError: () => {
+          setIsLikedState(isLikedState);
+          setLikesCount(likesCount);
+        },
+        onSuccess: (result) => {
+          if (!result.success) {
+            setIsLikedState(isLikedState);
+            setLikesCount(likesCount);
+          }
+        },
+      },
+    );
   };
 
   const handleDelete = () => {

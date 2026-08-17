@@ -17,6 +17,7 @@ This folder owns stable repository documentation that should stay tracked in Git
 ## Key entrypoints
 
 - `architecture/`
+- `docker.md`
 - `domains/`
 
 ## Working rules

@@ -1,11 +1,13 @@
 import { useEffect, useRef } from "react";
-import type { Post as PostType } from "@/shared/types/post.types";
+import type { PostCard } from "@/shared/types/post.types";
 import Post from "@/features/feed/components/post/Post";
 import PostSkeleton from "@/features/feed/components/post/PostSkeleton";
 import { useGetPosts } from "@/features/feed/state/usePosts";
+import { useApiHealthStatus } from "@/app/providers/apiHealthContext";
 
 export function FeedHome() {
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const { isOffline, retry } = useApiHealthStatus();
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useGetPosts();
   const posts = data?.pages.flatMap((page) => page.data ?? []) ?? [];
@@ -35,6 +37,29 @@ export function FeedHome() {
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
+  if (isOffline && posts.length === 0) {
+    return (
+      <div className="flex min-h-[80vh] items-center justify-center px-4 text-center">
+        <div className="max-w-md space-y-3">
+          <p className="text-lg font-semibold">Sistema fora do ar</p>
+          <p className="text-sm text-muted-foreground">
+            Nao foi possivel carregar as publicacoes porque o servidor nao esta
+            respondendo.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              void retry();
+            }}
+            className="text-sm font-medium text-third hover:cursor-pointer hover:underline"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex justify-center w-full">
@@ -58,7 +83,7 @@ export function FeedHome() {
   return (
     <div className="flex justify-center w-full">
       <div className="max-w-[700px] w-full flex flex-col items-center">
-        {posts.map((post: PostType) => (
+        {posts.map((post: PostCard) => (
           <Post key={post.id} post={post} />
         ))}
 
@@ -78,4 +103,3 @@ export function FeedHome() {
     </div>
   );
 }
-

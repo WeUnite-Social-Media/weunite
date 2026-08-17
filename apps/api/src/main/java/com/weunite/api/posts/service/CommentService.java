@@ -7,6 +7,7 @@ import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.posts.domain.Comment;
 import com.weunite.api.posts.domain.Post;
 import com.weunite.api.posts.dto.CommentDTO;
+import com.weunite.api.posts.dto.CommentPageDTO;
 import com.weunite.api.posts.dto.CommentRequestDTO;
 import com.weunite.api.posts.exception.CommentNotFoundException;
 import com.weunite.api.posts.exception.PostNotFoundException;
@@ -17,6 +18,9 @@ import com.weunite.api.users.domain.User;
 import com.weunite.api.users.exception.UserNotFoundException;
 import com.weunite.api.users.repository.UserRepository;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -48,7 +52,8 @@ public class CommentService {
       Long userId, Long postId, CommentRequestDTO comment) {
     User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
 
-    Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+    Post post =
+        postRepository.findByIdAndDeletedFalse(postId).orElseThrow(PostNotFoundException::new);
 
     Comment newComment = new Comment(user, post, comment.text(), comment.image());
 
@@ -59,22 +64,37 @@ public class CommentService {
     return commentMapper.toResponseDTO("Comentário criado com sucesso!", newComment);
   }
 
-  @Transactional
-  public List<CommentDTO> getCommentsByPost(Long postId) {
-    if (!postRepository.existsById(postId)) {
+  @Transactional(readOnly = true)
+  public List<CommentDTO> getCommentsByPost(Long postId, int page, int size) {
+    return getCommentsPageByPost(postId, page, size).content();
+  }
+
+  @Transactional(readOnly = true)
+  public CommentPageDTO getCommentsPageByPost(Long postId, int page, int size) {
+    if (!postRepository.existsByIdAndDeletedFalse(postId)) {
       throw new PostNotFoundException();
     }
 
-    List<Comment> comments = commentRepository.findByPostId(postId);
-    return commentMapper.mapCommentsToList(comments);
+    Pageable pageable = pageRequest(page, size);
+    Page<Comment> commentsPage = commentRepository.findByPostIdAndDeletedFalse(postId, pageable);
+    List<CommentDTO> comments = commentMapper.mapCommentsToList(commentsPage.getContent());
+
+    return new CommentPageDTO(
+        comments,
+        commentsPage.getNumber(),
+        commentsPage.getSize(),
+        commentsPage.getTotalElements(),
+        commentsPage.getTotalPages(),
+        commentsPage.hasNext());
   }
 
-  @Transactional
-  public List<CommentDTO> getCommentsByUser(Long userId) {
+  @Transactional(readOnly = true)
+  public List<CommentDTO> getCommentsByUser(Long userId, int page, int size) {
     if (!userRepository.existsById(userId)) {
       throw new UserNotFoundException();
     }
-    List<Comment> comments = commentRepository.findByUserId(userId);
+    List<Comment> comments =
+        commentRepository.findByUserIdAndDeletedFalse(userId, pageRequest(page, size)).getContent();
     return commentMapper.mapCommentsToList(comments);
   }
 
@@ -90,7 +110,9 @@ public class CommentService {
   public ResponseDTO<CommentDTO> updateComment(
       Long userId, Long commentId, CommentRequestDTO updatedComment, MultipartFile image) {
     Comment existingComment =
-        commentRepository.findById(commentId).orElseThrow(CommentNotFoundException::new);
+        commentRepository
+            .findByIdAndDeletedFalse(commentId)
+            .orElseThrow(CommentNotFoundException::new);
 
     if (!userId.equals(existingComment.getUser().getId())) {
       throw new UnauthorizedException("Você precisa estar logado para atualizar este comentário");
@@ -106,14 +128,22 @@ public class CommentService {
   @Transactional
   public ResponseDTO<CommentDTO> deleteComment(Long userId, Long commentId) {
     Comment comment =
-        commentRepository.findById(commentId).orElseThrow(CommentNotFoundException::new);
+        commentRepository
+            .findByIdAndDeletedFalse(commentId)
+            .orElseThrow(CommentNotFoundException::new);
 
     if (!userId.equals(comment.getUser().getId())) {
       throw new UnauthorizedException("Você precisa estar logado para deletar esse comentário!");
     }
 
-    commentRepository.delete(comment);
+    comment.setDeleted(true);
 
     return commentMapper.toResponseDTO("Comentário excluído com sucesso", comment);
+  }
+
+  private Pageable pageRequest(int page, int size) {
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 100);
+    return PageRequest.of(safePage, safeSize);
   }
 }

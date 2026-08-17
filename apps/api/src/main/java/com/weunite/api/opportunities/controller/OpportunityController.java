@@ -59,15 +59,19 @@ public class OpportunityController {
   }
 
   @GetMapping("/get")
-  public ResponseEntity<List<OpportunityDTO>> getOpportunities() {
-    List<OpportunityDTO> opportunities = opportunityService.getOpportunities();
+  public ResponseEntity<List<OpportunityDTO>> getOpportunities(
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+    List<OpportunityDTO> opportunities = opportunityService.getOpportunities(page, size);
     return ResponseEntity.status(HttpStatus.OK).body(opportunities);
   }
 
   @GetMapping("/get/company/{companyId}")
   public ResponseEntity<List<OpportunityDTO>> getOpportunitiesByCompanyId(
-      @PathVariable Long companyId) {
-    List<OpportunityDTO> opportunities = opportunityService.getOpportunitiesByCompanyId(companyId);
+      @PathVariable Long companyId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    List<OpportunityDTO> opportunities =
+        opportunityService.getOpportunitiesByCompanyId(companyId, page, size);
     return ResponseEntity.status(HttpStatus.OK).body(opportunities);
   }
 

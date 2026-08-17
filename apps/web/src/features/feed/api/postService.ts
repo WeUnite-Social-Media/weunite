@@ -1,8 +1,13 @@
-import type { CreatePost, Post, UpdatePost } from "@/shared/types/post.types";
+import type {
+  CreatePost,
+  FeedPostSummary,
+  Post,
+  UpdatePost,
+} from "@/shared/types/post.types";
 import { instance as axios } from "@/shared/api/http";
 import { AxiosError } from "axios";
 
-export const FEED_POSTS_PAGE_SIZE = 20;
+export const FEED_POSTS_PAGE_SIZE = 10;
 
 interface GetPostsRequestParams {
   page?: number;
@@ -31,7 +36,7 @@ export const createPostRequest = async (data: CreatePost, userId: number) => {
 
     return {
       success: true,
-      data: response.data,
+      data: response.data.data as Post,
       message: response.data.message || "Publicacao criada com sucesso!",
       error: null,
     };
@@ -72,7 +77,7 @@ export const updatePostRequest = async (
 
     return {
       success: true,
-      data: response.data,
+      data: response.data.data as Post,
       message: response.data.message || "Publicacao atualizada com sucesso!",
       error: null,
     };
@@ -124,7 +129,7 @@ export const getPostsRequest = async ({
 
     return {
       success: true,
-      data: response.data,
+      data: response.data as FeedPostSummary[],
       message: response.data.message || "Publicacoes consultadas com sucesso!",
       error: null,
     };
@@ -140,18 +145,21 @@ export const getPostsRequest = async ({
   }
 };
 
-export const getPostsByUserRequest = async (userId: number) => {
+export const getPostsByUserRequest = async (
+  userId: number,
+  { page = 0, size = FEED_POSTS_PAGE_SIZE }: GetPostsRequestParams = {},
+) => {
   try {
     const response = await axios.get(`/posts/get/user/${userId}`, {
       params: {
-        page: 0,
-        size: 50,
+        page,
+        size,
       },
     });
 
     return {
       success: true,
-      data: response.data,
+      data: response.data as FeedPostSummary[],
       message: response.data.message || "Publicacoes consultadas com sucesso!",
       error: null,
     };

@@ -36,9 +36,13 @@ This module owns chat conversations, messages, and user chat presence in `com.we
 - Keep transport concerns in controllers and domain logic in services.
 - Keep chat DTO/entity mappings inside this module.
 - Preserve existing message and conversation contracts unless explicitly requested.
+- Keep `UserStatus` as the availability value exposed by chat flows and `UserPresence` as the
+  persisted latest-status record mapped to the existing presence table.
 - Keep message deletion semantics explicit: if a transport flag advertises "delete for everyone",
   the service must honor that mode or reject unsupported alternatives instead of treating every
   delete request the same way.
+- Keep default chat relationships lazy and use repository-owned fetch plans when a use case needs
+  participants or senders.
 - For conversation/message HTTP endpoints that receive a user id, validate that id against the JWT
   before delegating to services.
 - Derive websocket presence user ids from the authenticated websocket session instead of trusting

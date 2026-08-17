@@ -82,7 +82,7 @@ public class ConversationService {
   public ConversationDTO getConversationById(Long conversationId, Long userId) {
     Conversation conversation =
         conversationRepository
-            .findById(conversationId)
+            .findByIdWithParticipants(conversationId)
             .orElseThrow(
                 () ->
                     new NotFoundResourceException(

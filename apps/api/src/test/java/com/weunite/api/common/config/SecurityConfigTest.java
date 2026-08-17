@@ -1,5 +1,6 @@
 package com.weunite.api.common.config;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -26,11 +27,35 @@ class SecurityConfigTest {
   }
 
   @Test
+  @DisplayName("Should require authentication for user profile mutation endpoints")
+  void userProfileMutationEndpointsRequireAuthentication() throws Exception {
+    mockMvc.perform(put("/api/user/update/me")).andExpect(status().isUnauthorized());
+    mockMvc.perform(delete("/api/user/delete/me")).andExpect(status().isUnauthorized());
+    mockMvc.perform(delete("/api/user/banner/delete/me")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
   @DisplayName("Should require authentication for sensitive report endpoints")
   void sensitiveReportEndpointsRequireAuthentication() throws Exception {
     mockMvc.perform(get("/api/reports/all")).andExpect(status().isUnauthorized());
     mockMvc.perform(get("/api/reports/status/PENDING")).andExpect(status().isUnauthorized());
     mockMvc.perform(get("/api/reports/pending")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @DisplayName("Should deny report queue endpoints to authenticated non-admin users")
+  void reportQueueEndpointsRequireAdminRole() throws Exception {
+    mockMvc
+        .perform(get("/api/reports/all").with(jwt().jwt(token -> token.claim("role", "USER"))))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(
+            get("/api/reports/status/PENDING")
+                .with(jwt().jwt(token -> token.claim("role", "USER"))))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(get("/api/reports/pending").with(jwt().jwt(token -> token.claim("role", "USER"))))
+        .andExpect(status().isForbidden());
   }
 
   @Test
@@ -63,5 +88,13 @@ class SecurityConfigTest {
     mockMvc
         .perform(get("/api/saved-opportunities/isSaved/1/2"))
         .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @DisplayName("Should require authentication for follow mutation endpoints")
+  void followMutationEndpointsRequireAuthentication() throws Exception {
+    mockMvc.perform(post("/api/follow/followAndUnfollow/1/2")).andExpect(status().isUnauthorized());
+    mockMvc.perform(put("/api/follow/accept/1/2")).andExpect(status().isUnauthorized());
+    mockMvc.perform(put("/api/follow/decline/1/2")).andExpect(status().isUnauthorized());
   }
 }

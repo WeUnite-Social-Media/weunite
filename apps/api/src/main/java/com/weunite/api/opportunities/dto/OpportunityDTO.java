@@ -1,6 +1,5 @@
 package com.weunite.api.opportunities.dto;
 
-import com.weunite.api.opportunities.domain.Skill;
 import com.weunite.api.users.dto.UserDTO;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -12,7 +11,7 @@ public record OpportunityDTO(
     String description,
     String location,
     LocalDate dateEnd,
-    Set<Skill> skills,
+    Set<SkillDTO> skills,
     Instant createdAt,
     Instant updatedAt,
     UserDTO company,
@@ -24,7 +23,7 @@ public record OpportunityDTO(
       String description,
       String location,
       LocalDate dateEnd,
-      Set<Skill> skills,
+      Set<SkillDTO> skills,
       Instant createdAt,
       Instant updatedAt,
       UserDTO company) {
