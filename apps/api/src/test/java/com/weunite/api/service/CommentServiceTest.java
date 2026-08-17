@@ -144,7 +144,8 @@ public class CommentServiceTest {
     verify(commentMapper)
         .toResponseDTO(eq("Coment\u00E1rio criado com sucesso!"), any(Comment.class));
     verify(notificationService)
-        .createNotification(eq(postOwner.getId()), eq(NotificationType.POST_COMMENT), eq(userId), any(), isNull());
+        .createNotification(
+            eq(postOwner.getId()), eq(NotificationType.POST_COMMENT), eq(userId), any(), isNull());
   }
 
   @Test

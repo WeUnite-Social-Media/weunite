@@ -59,7 +59,7 @@ public class CommentService {
 
     commentRepository.save(newComment);
     notificationService.createNotification(
-      post.getUser().getId(), NotificationType.POST_COMMENT, userId, newComment.getId(), null);
+        post.getUser().getId(), NotificationType.POST_COMMENT, userId, newComment.getId(), null);
 
     return commentMapper.toResponseDTO("Comentário criado com sucesso!", newComment);
   }

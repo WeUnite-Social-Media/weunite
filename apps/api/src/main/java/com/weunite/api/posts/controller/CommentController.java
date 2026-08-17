@@ -72,7 +72,8 @@ public class CommentController {
   @GetMapping("/get/detail/{commentId}")
   public ResponseEntity<ResponseDTO<CommentDTO>> getCommentById(@PathVariable Long commentId) {
     CommentDTO comment = commentService.getCommentById(commentId);
-    return ResponseEntity.status(HttpStatus.OK).body(new ResponseDTO<>("Comentário consultado com sucesso!", comment));
+    return ResponseEntity.status(HttpStatus.OK)
+        .body(new ResponseDTO<>("Comentário consultado com sucesso!", comment));
   }
 
   @PutMapping("/update/{userId}/{commentId}")
