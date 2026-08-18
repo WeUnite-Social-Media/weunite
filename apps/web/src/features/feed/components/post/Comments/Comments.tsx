@@ -39,12 +39,14 @@ interface CommentsProps {
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   post: PostCard;
+  targetCommentId?: number | null;
 }
 
 export default function Comments({
   isOpen,
   onOpenChange,
   post,
+  targetCommentId,
 }: CommentsProps) {
   const [commentText, setCommentText] = useState("");
   const commentsScrollRef = useRef<HTMLDivElement | null>(null);
@@ -69,6 +71,22 @@ export default function Comments({
   const comments = (data?.pages.flatMap((page) => page.data?.content ?? []) ||
     []) as CommentType[];
   const createComment = useCreateComment();
+
+  useEffect(() => {
+    if (!isOpen || !targetCommentId || comments.length === 0) {
+      return;
+    }
+
+    const commentElement = document.getElementById(
+      `comment-${targetCommentId}`,
+    );
+
+    if (!commentElement) {
+      return;
+    }
+
+    commentElement.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [comments.length, isOpen, targetCommentId]);
 
   const loadNextCommentsPage = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -220,31 +238,23 @@ export default function Comments({
                 </p>
 
                 <Textarea
-                  placeholder="Poste sua resposta"
-                  className="custom-scrollbar min-h-[8vh] max-h-[11vh] w-full resize-none break-all border-none bg-transparent p-2 text-base focus-visible:ring-2"
+                  placeholder="Postar sua resposta"
+                  className="max-h-[30vh] min-h-[6em] w-full resize-none border-none p-0 text-sm shadow-none focus-visible:ring-0"
                   value={commentText}
-                  onChange={(event) => setCommentText(event.target.value)}
+                  maxLength={COMMENT_LIMIT}
+                  onChange={(e) => setCommentText(e.target.value)}
                 />
 
-                <div className="mt-3 flex items-center justify-end gap-2">
-                  <span
-                    className={`text-xs font-medium text-muted-foreground ${
-                      commentText.length > COMMENT_LIMIT ? "text-red-500" : ""
-                    }`}
-                  >
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-muted-foreground">
                     {commentText.length}/{COMMENT_LIMIT}
-                  </span>
+                  </div>
 
                   <Button
+                    className="bg-primary hover:bg-primary/90"
                     size="sm"
-                    variant="third"
-                    className="w-[7em] rounded-full bg-third text-foreground hover:bg-third-hover"
                     onClick={handleCreateComment}
-                    disabled={
-                      createComment.isPending ||
-                      !commentText.trim() ||
-                      commentText.length > COMMENT_LIMIT
-                    }
+                    disabled={createComment.isPending || !commentText.trim()}
                     aria-busy={createComment.isPending}
                   >
                     {createComment.isPending ? "Publicando..." : "Publicar"}
@@ -325,47 +335,35 @@ export default function Comments({
               </div>
             </div>
 
-            <div className="border-t border-foreground/30 px-4 py-3">
-              <div className="flex gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.profileImg} />
-                  <AvatarFallback className="text-xs">
-                    {currentUserInitials}
-                  </AvatarFallback>
-                </Avatar>
+            <div className="flex gap-4 border-t bg-card p-4">
+              <Avatar>
+                <AvatarImage src={user?.profileImg} />
+                <AvatarFallback>{currentUserInitials}</AvatarFallback>
+              </Avatar>
 
-                <div className="min-w-0 flex-1">
-                  <Textarea
-                    placeholder="Poste sua resposta"
-                    className="custom-scrollbar min-h-[8vh] max-h-[8vh] w-full resize-none break-all border-none bg-transparent p-2 text-base focus-visible:ring-2"
-                    value={commentText}
-                    onChange={(event) => setCommentText(event.target.value)}
-                  />
+              <div className="flex-1">
+                <Textarea
+                  placeholder="Postar sua resposta"
+                  className="max-h-[20vh] min-h-[4em] w-full resize-none border-none p-0 text-sm shadow-none focus-visible:ring-0"
+                  value={commentText}
+                  maxLength={COMMENT_LIMIT}
+                  onChange={(e) => setCommentText(e.target.value)}
+                />
 
-                  <div className="mt-2 flex items-center justify-end gap-2">
-                    <span
-                      className={`text-xs font-medium text-muted-foreground ${
-                        commentText.length > COMMENT_LIMIT ? "text-red-500" : ""
-                      }`}
-                    >
-                      {commentText.length}/{COMMENT_LIMIT}
-                    </span>
-
-                    <Button
-                      size="sm"
-                      variant="third"
-                      className="w-[7em] rounded-full bg-third text-background hover:bg-third-hover"
-                      onClick={handleCreateComment}
-                      disabled={
-                        createComment.isPending ||
-                        !commentText.trim() ||
-                        commentText.length > COMMENT_LIMIT
-                      }
-                      aria-busy={createComment.isPending}
-                    >
-                      {createComment.isPending ? "Publicando..." : "Publicar"}
-                    </Button>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-muted-foreground">
+                    {commentText.length}/{COMMENT_LIMIT}
                   </div>
+
+                  <Button
+                    className="bg-primary hover:bg-primary/90"
+                    size="sm"
+                    onClick={handleCreateComment}
+                    disabled={createComment.isPending || !commentText.trim()}
+                    aria-busy={createComment.isPending}
+                  >
+                    {createComment.isPending ? "Publicando..." : "Publicar"}
+                  </Button>
                 </div>
               </div>
             </div>

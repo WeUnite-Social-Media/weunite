@@ -73,6 +73,19 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    let presenceIntervalId: number | undefined;
+
+    const sendOnlineStatus = () => {
+      if (userId && clientRef.current?.connected) {
+        clientRef.current.publish({
+          destination: "/app/user.status",
+          body: JSON.stringify({
+            status: "ONLINE",
+          }),
+        });
+      }
+    };
+
     const client = new Client({
       webSocketFactory: () => new SockJS(webSocketUrl),
       connectHeaders: {
@@ -83,20 +96,15 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       heartbeatOutgoing: 4000,
       onConnect: () => {
         setIsConnected(true);
-
-        if (userId) {
-          window.setTimeout(() => {
-            client.publish({
-              destination: "/app/user.status",
-              body: JSON.stringify({
-                status: "ONLINE",
-              }),
-            });
-          }, 500);
-        }
+        sendOnlineStatus();
+        presenceIntervalId = window.setInterval(sendOnlineStatus, 45000);
       },
       onDisconnect: () => {
         setIsConnected(false);
+        if (presenceIntervalId) {
+          window.clearInterval(presenceIntervalId);
+          presenceIntervalId = undefined;
+        }
       },
       onStompError: (frame) => {
         if (frame.body?.includes("expired")) {
@@ -106,6 +114,10 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       },
       onWebSocketClose: () => {
         setIsConnected(false);
+        if (presenceIntervalId) {
+          window.clearInterval(presenceIntervalId);
+          presenceIntervalId = undefined;
+        }
       },
     });
 
@@ -126,6 +138,9 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
+      if (presenceIntervalId) {
+        window.clearInterval(presenceIntervalId);
+      }
       handleBeforeUnload();
       window.removeEventListener("beforeunload", handleBeforeUnload);
       client.deactivate();

@@ -47,7 +47,10 @@ import {
   getReportedOpportunitiesDetailsRequest,
   getReportedPostsDetailsRequest,
 } from "@/features/admin/api/adminService";
-import { getReportReasonBadge, getReportStatusBadge } from "@/features/admin/utils/adminBadges";
+import {
+  getReportReasonBadge,
+  getReportStatusBadge,
+} from "@/features/admin/utils/adminBadges";
 import { ReportDetailsModal } from "@/features/admin/components/ReportDetailsModal";
 
 const typeLabels: Record<NonNullable<Report["entityType"]>, string> = {
@@ -153,9 +156,9 @@ export function ReportsView() {
                   reportedOpportunity.opportunity.company?.name ||
                   "Empresa desconhecida",
                 username:
-                  reportedOpportunity.opportunity.company?.username || "empresa",
-                profileImg:
-                  reportedOpportunity.opportunity.company?.profileImg,
+                  reportedOpportunity.opportunity.company?.username ||
+                  "empresa",
+                profileImg: reportedOpportunity.opportunity.company?.profileImg,
               },
               reason: report.reason,
               description: `Oportunidade denunciada ${reportedOpportunity.totalReports} vez(es).`,
@@ -195,10 +198,30 @@ export function ReportsView() {
         });
       });
 
-      allReports.sort(
-        (left, right) =>
-          new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
-      );
+      const STATUS_PRIORITY: Record<string, number> = {
+        pending: 0,
+        under_review: 1,
+        reviewed: 1,
+        resolved: 2,
+        dismissed: 2,
+        deleted: 2,
+        hidden: 2,
+      };
+
+      allReports.sort((left, right) => {
+        const priorityDiff =
+          (STATUS_PRIORITY[left.status] ?? 3) -
+          (STATUS_PRIORITY[right.status] ?? 3);
+
+        if (priorityDiff !== 0) {
+          return priorityDiff;
+        }
+
+        return (
+          new Date(right.createdAt).getTime() -
+          new Date(left.createdAt).getTime()
+        );
+      });
 
       setReportsData(allReports);
       setLoading(false);
@@ -227,7 +250,9 @@ export function ReportsView() {
     );
   });
 
-  const pendingCount = reportsData.filter((report) => report.status === "pending").length;
+  const pendingCount = reportsData.filter(
+    (report) => report.status === "pending",
+  ).length;
   const underReviewCount = reportsData.filter(
     (report) => report.status === "under_review",
   ).length;
@@ -275,7 +300,9 @@ export function ReportsView() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{resolvedCount}</div>
-            <p className="text-xs text-muted-foreground">Fechadas pela equipe</p>
+            <p className="text-xs text-muted-foreground">
+              Fechadas pela equipe
+            </p>
           </CardContent>
         </Card>
 
@@ -387,7 +414,9 @@ export function ReportsView() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{report.reportedUser.name}</p>
+                          <p className="font-medium">
+                            {report.reportedUser.name}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             @{report.reportedUser.username}
                           </p>

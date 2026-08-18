@@ -1,10 +1,10 @@
+import { AxiosError } from "axios";
 import { instance as axios } from "@/shared/api/http";
 import type {
   Comment,
   CreateComment,
   UpdateComment,
 } from "@/shared/types/comment.types";
-import { AxiosError } from "axios";
 
 export const COMMENTS_PAGE_SIZE = 10;
 
@@ -159,6 +159,28 @@ export const getCommentsUserId = async (
       error:
         error.response?.data?.message ||
         "Erro ao consultar comentários do usuário",
+    };
+  }
+};
+
+export const getCommentByIdRequest = async (commentId: number) => {
+  try {
+    const response = await axios.get(`/comment/get/detail/${commentId}`);
+
+    return {
+      success: true,
+      data: response.data.data,
+      message: response.data.message || "Comentário consultado com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error: error.response?.data?.message || "Erro ao consultar comentário",
     };
   }
 };

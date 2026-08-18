@@ -102,6 +102,7 @@ export function OpportunitySubscribers({
         const athlete = subscriber.athlete;
         const athleteName = athlete?.name || "Atleta";
         const athleteUsername = athlete?.username || "atleta";
+
         return (
           <Card key={subscriber.id}>
             <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">

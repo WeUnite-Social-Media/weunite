@@ -144,7 +144,8 @@ public class CommentServiceTest {
     verify(commentMapper)
         .toResponseDTO(eq("Coment\u00E1rio criado com sucesso!"), any(Comment.class));
     verify(notificationService)
-        .createNotification(postOwner.getId(), NotificationType.POST_COMMENT, userId, postId, null);
+        .createNotification(
+            eq(postOwner.getId()), eq(NotificationType.POST_COMMENT), eq(userId), any(), isNull());
   }
 
   @Test
@@ -241,7 +242,6 @@ public class CommentServiceTest {
     ResponseDTO<CommentDTO> expectedResponse =
         new ResponseDTO<>("Coment\u00E1rio atualizado com sucesso!", updatedCommentDTO);
 
-    when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
     when(commentRepository.findByIdAndDeletedFalse(commentId))
         .thenReturn(Optional.of(existingComment));
     when(commentRepository.save(existingComment)).thenReturn(existingComment);
@@ -256,30 +256,10 @@ public class CommentServiceTest {
     assertEquals("Coment\u00E1rio atualizado com sucesso!", result.message());
     assertNotNull(result.data());
 
-    verify(userRepository).findById(userId);
     verify(commentRepository).findByIdAndDeletedFalse(commentId);
     verify(commentRepository).save(existingComment);
     verify(commentMapper)
         .toResponseDTO(eq("Coment\u00E1rio atualizado com sucesso!"), eq(existingComment));
-  }
-
-  @Test
-  @DisplayName("Should throw UserNotFoundException when user does not exist during update")
-  void updateCommentWithNonExistentUser() {
-    Long userId = 999L;
-    Long commentId = 1L;
-    CommentRequestDTO updatedCommentRequest = new CommentRequestDTO("Updated comment text", null);
-
-    when(userRepository.findById(userId)).thenReturn(Optional.empty());
-
-    UserNotFoundException exception =
-        assertThrows(
-            UserNotFoundException.class,
-            () -> commentService.updateComment(userId, commentId, updatedCommentRequest, null));
-
-    assertNotNull(exception);
-    verify(userRepository).findById(userId);
-    verifyNoInteractions(commentRepository, commentMapper);
   }
 
   @Test
@@ -289,11 +269,6 @@ public class CommentServiceTest {
     Long commentId = 999L;
     CommentRequestDTO updatedCommentRequest = new CommentRequestDTO("Updated comment text", null);
 
-    User mockUser = new User();
-    mockUser.setId(userId);
-    mockUser.setUsername("testuser");
-
-    when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
     when(commentRepository.findByIdAndDeletedFalse(commentId)).thenReturn(Optional.empty());
 
     CommentNotFoundException exception =
@@ -302,7 +277,6 @@ public class CommentServiceTest {
             () -> commentService.updateComment(userId, commentId, updatedCommentRequest, null));
 
     assertNotNull(exception);
-    verify(userRepository).findById(userId);
     verify(commentRepository).findByIdAndDeletedFalse(commentId);
     verifyNoInteractions(commentMapper);
   }
@@ -315,10 +289,6 @@ public class CommentServiceTest {
     Long commentId = 1L;
     CommentRequestDTO updatedCommentRequest = new CommentRequestDTO("Updated comment text", null);
 
-    User currentUser = new User();
-    currentUser.setId(userId);
-    currentUser.setUsername("currentuser");
-
     User commentOwner = new User();
     commentOwner.setId(ownerId);
     commentOwner.setUsername("owner");
@@ -327,7 +297,6 @@ public class CommentServiceTest {
     existingComment.setId(commentId);
     existingComment.setUser(commentOwner);
 
-    when(userRepository.findById(userId)).thenReturn(Optional.of(currentUser));
     when(commentRepository.findByIdAndDeletedFalse(commentId))
         .thenReturn(Optional.of(existingComment));
 
@@ -339,7 +308,6 @@ public class CommentServiceTest {
     assertEquals(
         "Voc\u00EA precisa estar logado para atualizar este coment\u00E1rio",
         exception.getMessage());
-    verify(userRepository).findById(userId);
     verify(commentRepository).findByIdAndDeletedFalse(commentId);
     verify(commentRepository, never()).save(any());
     verifyNoInteractions(commentMapper);

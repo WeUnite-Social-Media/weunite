@@ -12,10 +12,15 @@ import {
   Trash2,
   UserPlus,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/shared/components/ui/avatar";
 import { Button } from "@/shared/components/ui/button";
 import Comments from "@/features/feed/components/post/Comments/Comments";
 import { postDetailQueryOptions } from "@/features/feed/state/usePosts";
+import { commentDetailQueryOptions } from "@/features/feed/state/useComments";
 import OpportunityDetailModal from "@/features/opportunities/components/OpportunityDetailModal";
 import { opportunityDetailQueryOptions } from "@/features/opportunities/state/useOpportunities";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
@@ -64,6 +69,7 @@ export const NotificationItem = ({
   const { isMobile } = useBreakpoints();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [targetCommentId, setTargetCommentId] = useState<number | null>(null);
   const [selectedOpportunity, setSelectedOpportunity] =
     useState<Opportunity | null>(null);
   const [isOpportunityOpen, setIsOpportunityOpen] = useState(false);
@@ -78,21 +84,51 @@ export const NotificationItem = ({
   };
 
   const openPostContext = async (postId: number) => {
-    const { queryKey, queryFn, staleTime, retry } = postDetailQueryOptions(postId);
-    const postResponse = await queryClient.fetchQuery({
-      queryKey,
-      queryFn,
-      staleTime,
-      retry,
-    });
+    try {
+      const { queryKey, queryFn, staleTime, retry } =
+        postDetailQueryOptions(postId);
+      const postResponse = await queryClient.fetchQuery({
+        queryKey,
+        queryFn,
+        staleTime,
+        retry,
+      });
 
-    if (postResponse.success && postResponse.data) {
-      setSelectedPost(postResponse.data);
-      setIsCommentsOpen(true);
-      return;
+      if (postResponse.success && postResponse.data) {
+        setSelectedPost(postResponse.data);
+        setIsCommentsOpen(true);
+        return;
+      }
+
+      navigate("/home");
+    } catch {
+      navigate("/home");
     }
+  };
 
-    navigate("/home");
+  const openCommentContext = async (commentId: number) => {
+    try {
+      const { queryKey, queryFn, staleTime, retry } =
+        commentDetailQueryOptions(commentId);
+      const commentResponse = await queryClient.fetchQuery({
+        queryKey,
+        queryFn,
+        staleTime,
+        retry,
+      });
+
+      const comment = commentResponse.success ? commentResponse.data : null;
+
+      if (comment?.post?.id) {
+        await openPostContext(Number(comment.post.id));
+        setTargetCommentId(commentId);
+        return;
+      }
+
+      navigate("/home");
+    } catch {
+      navigate("/home");
+    }
   };
 
   const openOpportunityContext = async (opportunityId: number) => {
@@ -115,29 +151,43 @@ export const NotificationItem = ({
   };
 
   const handleClick = async () => {
-    if (!notification.isRead) {
-      onMarkAsRead(notification.id);
-    }
+    try {
+      if (!notification.isRead) {
+        onMarkAsRead(notification.id);
+      }
 
-    switch (notification.type) {
-      case "POST_LIKE":
-      case "POST_COMMENT":
-      case "POST_REPOST":
-        await openPostContext(notification.relatedEntityId);
-        return;
-      case "OPPORTUNITY_SUBSCRIPTION":
-        await openOpportunityContext(notification.relatedEntityId);
-        return;
-      case "NEW_FOLLOWER":
-        navigate(`/profile/${notification.actorUsername}`);
-        return;
-      case "NEW_MESSAGE":
-        navigate("/chat");
-        return;
-      case "COMMENT_LIKE":
-      case "COMMENT_REPLY":
-      default:
-        navigate("/home");
+      switch (notification.type) {
+        case "POST_LIKE":
+        case "POST_REPOST":
+          setTargetCommentId(null);
+          await openPostContext(notification.relatedEntityId);
+          return;
+        case "POST_COMMENT":
+          setTargetCommentId(null);
+          await openCommentContext(notification.relatedEntityId);
+          return;
+        case "OPPORTUNITY_SUBSCRIPTION":
+          setTargetCommentId(null);
+          await openOpportunityContext(notification.relatedEntityId);
+          return;
+        case "NEW_FOLLOWER":
+          setTargetCommentId(null);
+          navigate(`/profile/${notification.actorUsername}`);
+          return;
+        case "NEW_MESSAGE":
+          setTargetCommentId(null);
+          navigate("/chat");
+          return;
+        case "COMMENT_LIKE":
+        case "COMMENT_REPLY":
+          await openCommentContext(notification.relatedEntityId);
+          return;
+        default:
+          setTargetCommentId(null);
+          navigate("/home");
+      }
+    } catch {
+      navigate("/home");
     }
   };
 
@@ -148,6 +198,7 @@ export const NotificationItem = ({
           isOpen={isCommentsOpen}
           onOpenChange={setIsCommentsOpen}
           post={selectedPost}
+          targetCommentId={targetCommentId}
         />
       )}
 
@@ -193,7 +244,7 @@ export const NotificationItem = ({
             )}
           </div>
 
-          <p className="mt-0.5 text-sm text-foreground/85 break-words">
+          <p className="mt-0.5 text-sm text-foreground/85 wrap-break-word">
             {notification.message}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
