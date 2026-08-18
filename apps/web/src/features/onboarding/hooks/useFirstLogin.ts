@@ -6,18 +6,19 @@ const getFirstLoginStorageKey = (userId?: string) => {
 
 export function useFirstLogin(userId?: string) {
   const [isReady, setIsReady] = useState(false);
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(true);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
 
   useEffect(() => {
     const storageKey = getFirstLoginStorageKey(userId);
 
-    if (!storageKey || typeof window === "undefined") {
+    if (!userId || !storageKey || typeof window === "undefined") {
       setHasSeenOnboarding(true);
       setIsReady(true);
       return;
     }
 
-    setHasSeenOnboarding(window.localStorage.getItem(storageKey) === "true");
+    const seen = window.localStorage.getItem(storageKey) === "true";
+    setHasSeenOnboarding(seen);
     setIsReady(true);
   }, [userId]);
 
@@ -32,9 +33,21 @@ export function useFirstLogin(userId?: string) {
     setHasSeenOnboarding(true);
   }, [userId]);
 
+  const resetOnboardingSeen = useCallback(() => {
+    const storageKey = getFirstLoginStorageKey(userId);
+
+    if (!storageKey || typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.removeItem(storageKey);
+    setHasSeenOnboarding(false);
+  }, [userId]);
+
   return {
     isReady,
     hasSeenOnboarding,
     markOnboardingSeen,
+    resetOnboardingSeen,
   };
 }

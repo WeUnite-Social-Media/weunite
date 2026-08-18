@@ -1,9 +1,9 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { FirstLoginModal } from "@/features/onboarding/components/FirstLoginModal";
 import { GuidedTourModal } from "@/features/onboarding/components/GuidedTourModal";
-import { ONBOARDING_STEPS } from "@/features/onboarding/constants/tourSteps";
+import { getOnboardingSteps } from "@/features/onboarding/constants/tourSteps";
 import { useFirstLogin } from "@/features/onboarding/hooks/useFirstLogin";
 import { useOnboardingStore } from "@/features/onboarding/state/useOnboardingStore";
 
@@ -13,7 +13,9 @@ export function OnboardingController() {
   const { hasSeenOnboarding, isReady, markOnboardingSeen } = useFirstLogin(
     user?.id,
   );
-  const currentStepIndex = useOnboardingStore((state) => state.currentStepIndex);
+  const currentStepIndex = useOnboardingStore(
+    (state) => state.currentStepIndex,
+  );
   const isFirstLoginModalOpen = useOnboardingStore(
     (state) => state.isFirstLoginModalOpen,
   );
@@ -28,6 +30,10 @@ export function OnboardingController() {
   const openTourAtStep = useOnboardingStore((state) => state.openTourAtStep);
   const resetUi = useOnboardingStore((state) => state.resetUi);
   const startTour = useOnboardingStore((state) => state.startTour);
+
+  const steps = useMemo(() => {
+    return getOnboardingSteps(user?.role);
+  }, [user?.role]);
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id || !isReady) {
@@ -54,7 +60,7 @@ export function OnboardingController() {
       return;
     }
 
-    const step = ONBOARDING_STEPS[currentStepIndex];
+    const step = steps[currentStepIndex];
 
     if (!step) {
       closeTourUi();
@@ -63,7 +69,7 @@ export function OnboardingController() {
     }
 
     navigate(step.route);
-  }, [closeTourUi, currentStepIndex, isTourOpen, navigate]);
+  }, [closeTourUi, currentStepIndex, isTourOpen, navigate, steps]);
 
   const closeTour = useCallback(() => {
     closeFirstLoginModal();
@@ -84,13 +90,13 @@ export function OnboardingController() {
   const handleNextStep = useCallback(() => {
     const nextStepIndex = currentStepIndex + 1;
 
-    if (nextStepIndex >= ONBOARDING_STEPS.length) {
+    if (nextStepIndex >= steps.length) {
       closeTour();
       return;
     }
 
     openTourAtStep(nextStepIndex);
-  }, [closeTour, currentStepIndex, openTourAtStep]);
+  }, [closeTour, currentStepIndex, openTourAtStep, steps.length]);
 
   const handlePreviousStep = useCallback(() => {
     const previousStepIndex = currentStepIndex - 1;
@@ -110,6 +116,7 @@ export function OnboardingController() {
     <>
       <FirstLoginModal
         open={isFirstLoginModalOpen}
+        userRole={user?.role}
         onSkipTour={handleSkipTour}
         onStartTour={handleStartTour}
       />
@@ -117,8 +124,8 @@ export function OnboardingController() {
       <GuidedTourModal
         currentStepIndex={currentStepIndex}
         open={isTourOpen}
-        step={ONBOARDING_STEPS[currentStepIndex]}
-        totalSteps={ONBOARDING_STEPS.length}
+        step={steps[currentStepIndex]}
+        totalSteps={steps.length}
         onPrevious={handlePreviousStep}
         onNext={handleNextStep}
         onFinish={closeTour}
