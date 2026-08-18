@@ -23,11 +23,11 @@ export function ApiHealthProvider({ children }: { children: ReactNode }) {
     queryKey: API_HEALTH_QUERY_KEY,
     queryFn: checkApiHealth,
     refetchInterval: HEALTH_CHECK_INTERVAL_MS,
-    refetchIntervalInBackground: true,
+    refetchIntervalInBackground: false,
     refetchOnReconnect: true,
     refetchOnWindowFocus: true,
-    retry: false,
-    staleTime: 0,
+    retry: 2,
+    staleTime: 10_000,
   });
   const { refetch } = healthQuery;
 
