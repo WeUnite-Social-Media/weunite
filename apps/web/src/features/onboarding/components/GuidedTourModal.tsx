@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import type { OnboardingStep } from "@/features/onboarding/constants/tourSteps";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -14,7 +14,7 @@ import { Progress } from "@/shared/components/ui/progress";
 type GuidedTourModalProps = {
   currentStepIndex: number;
   open: boolean;
-  step: OnboardingStep;
+  step?: OnboardingStep;
   totalSteps: number;
   onPrevious: () => void;
   onNext: () => void;
@@ -32,6 +32,10 @@ export function GuidedTourModal({
   onFinish,
   onSkip,
 }: GuidedTourModalProps) {
+  if (!step) {
+    return null;
+  }
+
   const StepIcon = step.icon;
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === totalSteps - 1;
@@ -41,58 +45,83 @@ export function GuidedTourModal({
     <Dialog open={open}>
       <DialogContent
         showCloseButton={false}
-        className="sm:max-w-lg"
+        className="sm:max-w-lg border-primary/20 bg-background/95 backdrop-blur-md shadow-2xl"
         onEscapeKeyDown={(event) => event.preventDefault()}
         onPointerDownOutside={(event) => event.preventDefault()}
       >
-        <DialogHeader>
-          <div className="mb-2 flex items-center justify-between gap-4">
+        <DialogHeader className="space-y-3">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <StepIcon className="h-5 w-5" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-4 ring-emerald-500/5">
+                <StepIcon className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                  Passo {currentStepIndex + 1} de {totalSteps}
-                </p>
-                <DialogTitle className="mt-1 text-2xl">{step.title}</DialogTitle>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                    Passo {currentStepIndex + 1} de {totalSteps}
+                  </span>
+                  {step.categoryTag && (
+                    <span className="text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                      {step.categoryTag}
+                    </span>
+                  )}
+                </div>
+                <DialogTitle className="mt-1 text-2xl font-bold tracking-tight">
+                  {step.title}
+                </DialogTitle>
               </div>
             </div>
 
-            <Button type="button" variant="ghost" size="sm" onClick={onSkip}>
-              Pular
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-xs text-muted-foreground hover:text-foreground"
+              onClick={onSkip}
+            >
+              Pular tour
             </Button>
           </div>
 
-          <Progress value={progress} />
+          <Progress value={progress} className="h-1.5 bg-muted" />
 
-          <DialogDescription className="pt-2 text-base leading-relaxed text-foreground">
+          <DialogDescription className="pt-2 text-base leading-relaxed text-foreground font-normal">
             {step.description}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
-          {step.helperText}
+        <div className="rounded-xl border bg-muted/30 p-4 text-sm leading-relaxed text-muted-foreground flex gap-3 items-start">
+          <Sparkles className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+          <div>{step.helperText}</div>
         </div>
 
-        <DialogFooter className="items-center justify-between gap-2 sm:flex-row">
+        <DialogFooter className="items-center justify-between gap-3 pt-2 sm:flex-row">
           <Button
             type="button"
             variant="outline"
             onClick={onPrevious}
             disabled={isFirstStep}
+            className="gap-2 text-xs font-semibold"
           >
             <ArrowLeft className="h-4 w-4" />
-            Voltar
+            Anterior
           </Button>
 
           {isLastStep ? (
-            <Button type="button" onClick={onFinish}>
+            <Button
+              type="button"
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-md"
+              onClick={onFinish}
+            >
               <CheckCircle2 className="h-4 w-4" />
-              Concluir tour
+              Concluir Apresentação
             </Button>
           ) : (
-            <Button type="button" onClick={onNext}>
+            <Button
+              type="button"
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-md"
+              onClick={onNext}
+            >
               Próximo
               <ArrowRight className="h-4 w-4" />
             </Button>
