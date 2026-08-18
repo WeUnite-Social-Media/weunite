@@ -6,7 +6,7 @@ export interface ApiHealthResponse {
 
 export const checkApiHealth = async () => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 4000);
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   try {
     const response = await fetch(resolveApiHealthUrl(), {
