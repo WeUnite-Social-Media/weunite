@@ -5,7 +5,6 @@ import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useChatStore } from "@/features/chat/stores/useChatStore";
 import { NotificationSync } from "@/features/notifications/components/NotificationSync";
-import { OnboardingController } from "@/features/onboarding/components/OnboardingController";
 import { Navigate, Outlet } from "react-router-dom";
 import { HeaderMobile } from "@/shared/components/shared/HeaderMobile";
 import { useSessionGuard } from "@/app/routes/useSessionGuard";
@@ -28,7 +27,6 @@ export function PrivateRoutes() {
     <SidebarProvider>
       <div className="min-h-screen w-full">
         <NotificationSync />
-        <OnboardingController />
         {!maxLeftSideBar && <LeftSidebar />}
         {maxLeftSideBar && <HeaderMobile />}
 
