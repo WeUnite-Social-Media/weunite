@@ -1,0 +1,69 @@
+import 'package:dio/dio.dart';
+
+import '../../../core/network/api_client.dart';
+import 'auth_models.dart';
+
+class AuthRemoteDataSource {
+  const AuthRemoteDataSource(this._dio);
+
+  final Dio _dio;
+
+  Future<AuthSessionDto> login({
+    required String username,
+    required String password,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/auth/login',
+        data: {'username': username, 'password': password},
+      );
+      return AuthSessionDto.fromJson(response.data ?? {});
+    } catch (error) {
+      throw mapDioError(error);
+    }
+  }
+
+  Future<void> signUpAthlete({
+    required String name,
+    required String username,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      await _dio.post<void>(
+        '/auth/signup',
+        data: {
+          'name': name,
+          'username': username,
+          'email': email,
+          'password': password,
+          'role': 'athlete',
+        },
+      );
+    } catch (error) {
+      throw mapDioError(error);
+    }
+  }
+
+  Future<void> signUpCompany({
+    required String name,
+    required String username,
+    required String email,
+    required String cnpj,
+  }) async {
+    try {
+      await _dio.post<void>(
+        '/auth/signup/company',
+        data: {
+          'name': name,
+          'username': username,
+          'email': email,
+          'cnpj': cnpj,
+          'role': 'company',
+        },
+      );
+    } catch (error) {
+      throw mapDioError(error);
+    }
+  }
+}

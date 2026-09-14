@@ -1,0 +1,43 @@
+import 'package:equatable/equatable.dart';
+
+class Profile extends Equatable {
+  const Profile({
+    required this.id,
+    required this.name,
+    required this.username,
+    required this.role,
+    this.email,
+    this.bio,
+    this.profileImg,
+    this.bannerImg,
+    this.followersCount = 0,
+    this.followingCount = 0,
+  });
+
+  final int id;
+  final String name;
+  final String username;
+  final String role;
+  final String? email;
+  final String? bio;
+  final String? profileImg;
+  final String? bannerImg;
+  final int followersCount;
+  final int followingCount;
+
+  bool get isCompany => role.toUpperCase().contains('COMPANY');
+
+  @override
+  List<Object?> get props => [
+        id,
+        name,
+        username,
+        role,
+        email,
+        bio,
+        profileImg,
+        bannerImg,
+        followersCount,
+        followingCount,
+      ];
+}

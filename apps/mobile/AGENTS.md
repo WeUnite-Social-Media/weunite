@@ -2,39 +2,38 @@
 
 ## Scope
 
-This package owns the Expo mobile shell in `apps/mobile`.
+This package owns the Flutter mobile client in `apps/mobile`.
 
 ## Responsibilities
 
-- Hold the React Native mobile bootstrap and runtime configuration.
-- Prepare the workspace for future mobile navigation, auth, and API integration.
+- Render the mobile application for auth, feed, opportunities, chat, and profile flows.
+- Consume the Spring API through explicit REST clients under `lib/core/network`.
+- Keep feature code organized with Clean Architecture boundaries: `data`, `domain`, and `presentation`.
+- Mirror mobile-facing design patterns from `apps/web`, especially header/bottom navigation, cards, badges, forms, and color tokens.
 
 ## Does not own
 
 - Backend business rules.
 - Web-specific rendering logic.
-- Shared config packages.
+- Shared JavaScript or TypeScript tooling packages.
 
 ## Key entrypoints
 
-- `App.tsx`: current app shell.
-- `src/lib/env.ts`: mobile runtime config parsing.
-- `app.json`: Expo app config.
+- `lib/main.dart`: Flutter bootstrap, dependency graph, and root app.
+- `lib/core`: configuration, Dio client, token storage, theme, widgets, and error handling.
+- `lib/features/*`: feature-owned data, domain, and presentation code.
+- `pubspec.yaml`: Flutter dependencies and assets.
 
 ## Working rules
 
-- Keep runtime config Expo-safe and rely on `EXPO_PUBLIC_*` values only.
-- Keep this package lightweight until real mobile features land.
-- Consume the API through explicit base URLs, not Vite proxy assumptions.
+- Keep the app frontend-only; backend domain behavior must stay in `apps/api`.
+- Read API contracts from `apps/api` and mirror existing web client requests before adding mobile endpoints.
+- Configure API hosts with `--dart-define=WEUNITE_API_URL=...`; do not assume Vite proxy behavior.
+- Keep secure session state in `flutter_secure_storage`, not plain preferences.
+- Update this file when navigation, auth/session bootstrap, or runtime configuration rules change.
 
 ## Validation
 
 - `pnpm --filter @weunite/mobile lint`
 - `pnpm --filter @weunite/mobile typecheck`
 - `pnpm --filter @weunite/mobile build`
-
-## Keep this file updated when
-
-- Navigation is introduced.
-- Mobile auth/bootstrap changes.
-- Runtime config rules change.

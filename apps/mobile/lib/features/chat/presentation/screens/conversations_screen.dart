@@ -1,0 +1,69 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../core/widgets/async_state_view.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../cubit/chat_cubit.dart';
+
+class ConversationsScreen extends StatefulWidget {
+  const ConversationsScreen({super.key});
+
+  @override
+  State<ConversationsScreen> createState() => _ConversationsScreenState();
+}
+
+class _ConversationsScreenState extends State<ConversationsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    final userId = context.read<AuthCubit>().state.user?.id;
+    if (userId != null) {
+      context.read<ChatCubit>().loadConversations(userId);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ChatCubit, ChatState>(
+      builder: (context, state) {
+        return AsyncStateView(
+          isLoading: state.isLoading,
+          errorMessage: state.errorMessage,
+          onRetry: () {
+            final userId = context.read<AuthCubit>().state.user?.id;
+            if (userId != null) {
+              context.read<ChatCubit>().loadConversations(userId);
+            }
+          },
+          child: ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: state.conversations.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final conversation = state.conversations[index];
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: conversation.peerAvatar == null
+                      ? null
+                      : NetworkImage(conversation.peerAvatar!),
+                  child: conversation.peerAvatar == null
+                      ? Text(_initial(conversation.peerName))
+                      : null,
+                ),
+                title: Text(conversation.peerName),
+                subtitle: Text(conversation.lastMessage ?? '@${conversation.peerUsername}'),
+                trailing: conversation.unreadCount == 0
+                    ? null
+                    : Badge(label: Text('${conversation.unreadCount}')),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  String _initial(String value) {
+    return value.trim().isEmpty ? '?' : value.trim()[0].toUpperCase();
+  }
+}
