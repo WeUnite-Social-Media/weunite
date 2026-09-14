@@ -1,6 +1,9 @@
 import { create } from "zustand";
 
+type OnboardingSurface = "notifications" | null;
+
 type OnboardingStore = {
+  activeSurface: OnboardingSurface;
   currentStepIndex: number;
   isFirstLoginModalOpen: boolean;
   isTourOpen: boolean;
@@ -9,10 +12,12 @@ type OnboardingStore = {
   openFirstLoginModal: () => void;
   openTourAtStep: (stepIndex: number) => void;
   resetUi: () => void;
+  setActiveSurface: (surface: OnboardingSurface) => void;
   startTour: () => void;
 };
 
 export const useOnboardingStore = create<OnboardingStore>()((set) => ({
+  activeSurface: null,
   currentStepIndex: 0,
   isFirstLoginModalOpen: false,
   isTourOpen: false,
@@ -24,6 +29,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set) => ({
 
   closeTour: () =>
     set({
+      activeSurface: null,
       currentStepIndex: 0,
       isTourOpen: false,
     }),
@@ -42,13 +48,20 @@ export const useOnboardingStore = create<OnboardingStore>()((set) => ({
 
   resetUi: () =>
     set({
+      activeSurface: null,
       currentStepIndex: 0,
       isFirstLoginModalOpen: false,
       isTourOpen: false,
     }),
 
+  setActiveSurface: (surface: OnboardingSurface) =>
+    set({
+      activeSurface: surface,
+    }),
+
   startTour: () =>
     set({
+      activeSurface: null,
       currentStepIndex: 0,
       isFirstLoginModalOpen: false,
       isTourOpen: true,

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ComponentProps, MouseEvent as ReactMouseEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -71,6 +71,10 @@ export function LeftSidebar() {
   const navigate = useNavigate();
   const { isMobile, isSmallDesktop } = useBreakpoints();
   const previousDesktop = useRef(isSmallDesktop);
+  const activeOnboardingSurface = useOnboardingStore(
+    (state) => state.activeSurface,
+  );
+  const isOnboardingTourOpen = useOnboardingStore((state) => state.isTourOpen);
   const startOnboardingTour = useOnboardingStore((state) => state.startTour);
 
   const { data: unreadCountResponse } = useGetUnreadCount(
@@ -92,13 +96,13 @@ export function LeftSidebar() {
     setIsSearchOpen(true);
   };
 
-  const handleNotificationsOpen = () => {
+  const handleNotificationsOpen = useCallback(() => {
     if (state === "expanded") {
       setOpen(false);
     }
     setIsSearchOpen(false);
     setIsNotificationsOpen(true);
-  };
+  }, [setOpen, state]);
 
   const handleCreatePostOpen = () => {
     setIsCreatePostOpen(true);
@@ -116,6 +120,7 @@ export function LeftSidebar() {
     { title: "Chat", url: "/chat", icon: MessageCircleMore },
     { title: "Pesquisar", url: "#", icon: SearchIcon },
     { title: "Criar Publicação", url: "#", icon: DiamondPlus },
+    { title: "Tour da plataforma", url: "#", icon: Sparkles },
     { title: "Modo de cor", url: "#", icon: themeIcon },
   ];
 
@@ -126,6 +131,19 @@ export function LeftSidebar() {
   }, [isSearchOpen, setOpen, state]);
 
   useEffect(() => {
+    if (!isOnboardingTourOpen) {
+      return;
+    }
+
+    if (activeOnboardingSurface === "notifications") {
+      handleNotificationsOpen();
+      return;
+    }
+
+    setIsNotificationsOpen(false);
+  }, [activeOnboardingSurface, handleNotificationsOpen, isOnboardingTourOpen]);
+
+  useEffect(() => {
     if (isSmallDesktop && !previousDesktop.current) {
       setOpen(false);
     }
@@ -133,7 +151,9 @@ export function LeftSidebar() {
     previousDesktop.current = isSmallDesktop;
   }, [isSmallDesktop, setOpen]);
 
-  const CustomSidebarTrigger = (props: ComponentProps<typeof SidebarTrigger>) => {
+  const CustomSidebarTrigger = (
+    props: ComponentProps<typeof SidebarTrigger>,
+  ) => {
     const handleClick = (
       event: ReactMouseEvent<HTMLButtonElement, MouseEvent>,
     ) => {
@@ -187,7 +207,9 @@ export function LeftSidebar() {
 
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel className={state === "collapsed" ? "text-center" : ""}>
+            <SidebarGroupLabel
+              className={state === "collapsed" ? "text-center" : ""}
+            >
               {state !== "collapsed" && !isMobile && "Navegação"}
             </SidebarGroupLabel>
 
@@ -230,6 +252,11 @@ export function LeftSidebar() {
 
                         if (item.title === "Criar Publicação") {
                           handleCreatePostOpen();
+                          return;
+                        }
+
+                        if (item.title === "Tour da plataforma") {
+                          startOnboardingTour();
                           return;
                         }
 
@@ -303,7 +330,10 @@ export function LeftSidebar() {
                     }`}
                   >
                     <Avatar className={state === "collapsed" ? "mx-auto" : ""}>
-                      <AvatarImage src={user?.profileImg} alt={user?.username} />
+                      <AvatarImage
+                        src={user?.profileImg}
+                        alt={user?.username}
+                      />
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     {state !== "collapsed" && <p>{user?.username}</p>}
@@ -319,7 +349,9 @@ export function LeftSidebar() {
                 >
                   <div className="mb-1 border-b px-3 py-2">
                     <p className="font-medium">{user?.username}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user?.email}
+                    </p>
                   </div>
 
                   <div className="space-y-1 py-1">

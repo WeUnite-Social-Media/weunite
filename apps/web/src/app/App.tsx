@@ -10,12 +10,14 @@ import { AdminRoutes } from "@/features/admin/routes/AdminRoutes";
 import { WebSocketProvider } from "@/app/providers/WebSocketProvider";
 import { ApiHealthProvider } from "@/app/providers/ApiHealthProvider";
 import { TermsOfUsePage } from "@/features/legal/pages/TermsOfUsePage";
+import { OnboardingController } from "@/features/onboarding/components/OnboardingController";
 
 function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <ApiHealthProvider>
         <WebSocketProvider>
+          <OnboardingController />
           <Routes>
             <Route path="/auth/*" element={<AuthRoutes />} />
             <Route path="/home/*" element={<HomeRoutes />} />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -16,17 +16,32 @@ import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useBreakpoints } from "@/shared/hooks/useBreakpoints";
 import { NotificationList } from "@/features/notifications/components/NotificationList";
 import { useGetUnreadCount } from "@/features/notifications/state/useNotifications";
+import { useOnboardingStore } from "@/features/onboarding/state/useOnboardingStore";
 
 export const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
   const userId = useAuthStore((state) => state.user?.id);
   const { maxLeftSideBar } = useBreakpoints();
+  const activeOnboardingSurface = useOnboardingStore(
+    (state) => state.activeSurface,
+  );
+  const isOnboardingTourOpen = useOnboardingStore((state) => state.isTourOpen);
 
-  const { data: unreadCountResponse } = useGetUnreadCount(userId ? Number(userId) : 0);
+  const { data: unreadCountResponse } = useGetUnreadCount(
+    userId ? Number(userId) : 0,
+  );
   const unreadCount =
     unreadCountResponse?.success && unreadCountResponse.data
       ? unreadCountResponse.data.unreadCount
       : 0;
+
+  useEffect(() => {
+    if (!isOnboardingTourOpen || !maxLeftSideBar) {
+      return;
+    }
+
+    setIsOpen(activeOnboardingSurface === "notifications");
+  }, [activeOnboardingSurface, isOnboardingTourOpen, maxLeftSideBar]);
 
   const bellButton = (
     <Button
