@@ -66,4 +66,20 @@ class AuthRemoteDataSource {
       throw mapDioError(error, stackTrace);
     }
   }
+
+  Future<AuthSessionDto> verifyEmail({
+    required String email,
+    required String verificationToken,
+  }) async {
+    try {
+      final encodedEmail = Uri.encodeComponent(email);
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/auth/verify-email/$encodedEmail',
+        data: {'verificationToken': verificationToken},
+      );
+      return AuthSessionDto.fromJson(response.data ?? {});
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
 }

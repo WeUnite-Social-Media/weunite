@@ -104,11 +104,7 @@ AppException mapDioError(Object error, [StackTrace? stackTrace]) {
     return const AppException('Resposta do servidor em formato inesperado.');
   }
   if (error is DioException) {
-    final responseData = error.response?.data;
-    final message = responseData is Map<String, dynamic>
-        ? responseData['message']?.toString() ??
-            responseData['error']?.toString()
-        : null;
+    final message = _extractApiErrorMessage(error.response?.data);
 
     final status = error.response?.statusCode;
     final fallback = switch (error.type) {
@@ -133,4 +129,29 @@ AppException mapDioError(Object error, [StackTrace? stackTrace]) {
   }
 
   return const AppException('Nao foi possivel processar os dados recebidos.');
+}
+
+String? _extractApiErrorMessage(Object? data) {
+  if (data is! Map) {
+    return null;
+  }
+
+  final message = data['message']?.toString();
+  if (message != null && message.trim().isNotEmpty) {
+    return message;
+  }
+
+  final error = data['error']?.toString();
+  if (error != null && error.trim().isNotEmpty) {
+    return error;
+  }
+
+  for (final value in data.values) {
+    final fieldMessage = value?.toString();
+    if (fieldMessage != null && fieldMessage.trim().isNotEmpty) {
+      return fieldMessage;
+    }
+  }
+
+  return null;
 }
