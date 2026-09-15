@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
+import 'comment_models.dart';
 import 'feed_models.dart';
 
 class FeedRemoteDataSource {
@@ -31,7 +34,12 @@ class FeedRemoteDataSource {
     try {
       await _dio.post<void>(
         '/posts/create/$userId',
-        data: FormData.fromMap({'content': content}),
+        data: FormData.fromMap({
+          'post': MultipartFile.fromString(
+            jsonEncode({'text': content}),
+            contentType: DioMediaType('application', 'json'),
+          ),
+        }),
       );
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
@@ -41,6 +49,41 @@ class FeedRemoteDataSource {
   Future<void> toggleLike({required int userId, required int postId}) async {
     try {
       await _dio.post<void>('/likes/toggleLike/$userId/$postId');
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
+  Future<List<CommentDto>> getComments({
+    required int postId,
+    int page = 0,
+  }) async {
+    try {
+      final response = await _dio.get<List<dynamic>>(
+        '/comment/get/$postId',
+        queryParameters: {'page': page, 'size': 20},
+      );
+      final items = response.data ?? [];
+
+      return items
+          .map((item) => CommentDto.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
+  Future<void> createComment({
+    required int userId,
+    required int postId,
+    required String content,
+  }) async {
+    try {
+      await _dio.post<void>(
+        '/comment/create',
+        queryParameters: {'userId': userId, 'postId': postId},
+        data: {'text': content},
+      );
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
     }
