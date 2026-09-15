@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:weunite_mobile/core/error/app_exception.dart';
 import 'package:weunite_mobile/core/network/api_diagnostics.dart';
+import 'package:weunite_mobile/features/auth/data/auth_remote_data_source.dart';
 import 'package:weunite_mobile/features/chat/data/chat_remote_data_source.dart';
 import 'package:weunite_mobile/features/feed/data/feed_remote_data_source.dart';
 import 'package:weunite_mobile/features/opportunities/data/opportunity_remote_data_source.dart';
@@ -137,6 +138,34 @@ void main() {
       expect(profile.role, 'athlete');
     });
 
+    test('verifies email with the backend ResponseDTO session', () async {
+      final dataSource = AuthRemoteDataSource(
+        _dio({
+          '/api/auth/verify-email/matheus%40example.com': {
+            'message': 'Email verificado com sucesso!',
+            'data': {
+              'jwt': 'jwt-token',
+              'user': {
+                'id': '7',
+                'name': 'Matheus',
+                'username': 'matheus',
+                'email': 'matheus@example.com',
+                'role': 'athlete',
+              },
+            },
+          },
+        }),
+      );
+
+      final session = await dataSource.verifyEmail(
+        email: 'matheus@example.com',
+        verificationToken: '123456',
+      );
+
+      expect(session.jwt, 'jwt-token');
+      expect(session.user.email, 'matheus@example.com');
+    });
+
     test('maps unexpected response shapes as server format errors', () async {
       final dataSource = FeedRemoteDataSource(
         _dio({
@@ -151,6 +180,58 @@ void main() {
             (error) => error.message,
             'message',
             contains('formato inesperado'),
+          ),
+        ),
+      );
+    });
+
+    test('surfaces backend auth error messages', () async {
+      final dataSource = AuthRemoteDataSource(
+        _dio({
+          '/api/auth/login': const _FakeResponse(
+            statusCode: 401,
+            body: {
+              'message': 'Usuario ou senha invalidos',
+              'error': 'UNAUTHORIZED',
+            },
+          ),
+        }),
+      );
+
+      expect(
+        () => dataSource.login(username: 'matheus', password: 'wrong-pass'),
+        throwsA(
+          isA<AppException>().having(
+            (error) => error.message,
+            'message',
+            'Usuario ou senha invalidos',
+          ),
+        ),
+      );
+    });
+
+    test('surfaces backend validation field messages', () async {
+      final dataSource = AuthRemoteDataSource(
+        _dio({
+          '/api/auth/verify-email/matheus%40example.com': const _FakeResponse(
+            statusCode: 400,
+            body: {
+              'verificationToken': 'O codigo deve conter 6 digitos',
+            },
+          ),
+        }),
+      );
+
+      expect(
+        () => dataSource.verifyEmail(
+          email: 'matheus@example.com',
+          verificationToken: '123',
+        ),
+        throwsA(
+          isA<AppException>().having(
+            (error) => error.message,
+            'message',
+            'O codigo deve conter 6 digitos',
           ),
         ),
       );
@@ -211,7 +292,7 @@ class _FakeAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
-    final body = responses[options.uri.path];
+    final response = responses[options.uri.path];
     if (!responses.containsKey(options.uri.path)) {
       return ResponseBody.fromString(
         jsonEncode({'message': 'not found'}),
@@ -221,9 +302,11 @@ class _FakeAdapter implements HttpClientAdapter {
         },
       );
     }
+    final statusCode = response is _FakeResponse ? response.statusCode : 200;
+    final body = response is _FakeResponse ? response.body : response;
     return ResponseBody.fromString(
       jsonEncode(body),
-      200,
+      statusCode,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
       },
@@ -232,4 +315,14 @@ class _FakeAdapter implements HttpClientAdapter {
 
   @override
   void close({bool force = false}) {}
+}
+
+class _FakeResponse {
+  const _FakeResponse({
+    required this.statusCode,
+    required this.body,
+  });
+
+  final int statusCode;
+  final Object? body;
 }

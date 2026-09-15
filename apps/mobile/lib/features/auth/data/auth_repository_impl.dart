@@ -91,6 +91,26 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<AppUser> verifyEmail({
+    required String email,
+    required String verificationToken,
+  }) async {
+    final session = await _remoteDataSource.verifyEmail(
+      email: email,
+      verificationToken: verificationToken,
+    );
+
+    if (session.jwt.isEmpty || session.user.id == 0) {
+      throw const AppException('Resposta de verificacao invalida.');
+    }
+
+    await _tokenStorage.saveTokens(accessToken: session.jwt);
+    await _tokenStorage.saveUserJson(jsonEncode(session.user.toJson()));
+    _currentUser = session.user.toEntity();
+    return _currentUser!;
+  }
+
+  @override
   Future<void> logout() async {
     _currentUser = null;
     await _tokenStorage.clear();

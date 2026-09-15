@@ -15,5 +15,9 @@ abstract class AuthRepository {
     required String email,
     required String cnpj,
   });
+  Future<AppUser> verifyEmail({
+    required String email,
+    required String verificationToken,
+  });
   Future<void> logout();
 }
