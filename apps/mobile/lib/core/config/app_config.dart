@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class AppConfig {
   const AppConfig({
     required this.apiBaseUrl,
@@ -7,19 +9,30 @@ class AppConfig {
   factory AppConfig.fromEnvironment() {
     const apiBaseUrl = String.fromEnvironment(
       'WEUNITE_API_URL',
-      defaultValue: 'http://localhost:8080/api',
     );
     const websocketBaseUrl = String.fromEnvironment(
       'WEUNITE_WS_URL',
-      defaultValue: 'http://localhost:8080/ws',
     );
 
-    return const AppConfig(
-      apiBaseUrl: apiBaseUrl,
-      websocketBaseUrl: websocketBaseUrl,
+    return AppConfig(
+      apiBaseUrl: apiBaseUrl.isNotEmpty ? apiBaseUrl : _defaultApiBaseUrl,
+      websocketBaseUrl: websocketBaseUrl.isNotEmpty
+          ? websocketBaseUrl
+          : _defaultWebsocketBaseUrl,
     );
   }
 
   final String apiBaseUrl;
   final String websocketBaseUrl;
+
+  static String get _hostBaseUrl {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8080';
+    }
+    return 'http://localhost:8080';
+  }
+
+  static String get _defaultApiBaseUrl => '$_hostBaseUrl/api';
+
+  static String get _defaultWebsocketBaseUrl => '$_hostBaseUrl/ws';
 }
