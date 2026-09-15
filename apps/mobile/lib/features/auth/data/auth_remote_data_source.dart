@@ -18,8 +18,8 @@ class AuthRemoteDataSource {
         data: {'username': username, 'password': password},
       );
       return AuthSessionDto.fromJson(response.data ?? {});
-    } catch (error) {
-      throw mapDioError(error);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 
@@ -40,8 +40,8 @@ class AuthRemoteDataSource {
           'role': 'athlete',
         },
       );
-    } catch (error) {
-      throw mapDioError(error);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 
@@ -62,8 +62,8 @@ class AuthRemoteDataSource {
           'role': 'company',
         },
       );
-    } catch (error) {
-      throw mapDioError(error);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 }

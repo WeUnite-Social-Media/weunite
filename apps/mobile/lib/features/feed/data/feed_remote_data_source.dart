@@ -10,41 +10,39 @@ class FeedRemoteDataSource {
 
   Future<List<PostDto>> getTimeline({int page = 0}) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
+      final response = await _dio.get<List<dynamic>>(
         '/posts/get',
         queryParameters: {'page': page, 'size': 20},
       );
-      final body = response.data ?? {};
-      final data = body['data'];
-      final items = data is Map<String, dynamic>
-          ? (data['content'] as List? ?? data['data'] as List? ?? [])
-          : data as List? ?? body['content'] as List? ?? [];
+      final items = response.data ?? [];
 
       return items
-          .whereType<Map>()
-          .map((item) => PostDto.fromJson(item.cast<String, dynamic>()))
+          .map((item) => PostDto.fromJson(item as Map<String, dynamic>))
           .toList();
-    } catch (error) {
-      throw mapDioError(error);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 
-  Future<void> createPost({required int userId, required String content}) async {
+  Future<void> createPost({
+    required int userId,
+    required String content,
+  }) async {
     try {
       await _dio.post<void>(
         '/posts/create/$userId',
         data: FormData.fromMap({'content': content}),
       );
-    } catch (error) {
-      throw mapDioError(error);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 
   Future<void> toggleLike({required int userId, required int postId}) async {
     try {
       await _dio.post<void>('/likes/toggleLike/$userId/$postId');
-    } catch (error) {
-      throw mapDioError(error);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 }

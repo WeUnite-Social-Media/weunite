@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../config/app_config.dart';
 import '../error/app_exception.dart';
 import '../storage/token_storage.dart';
+import 'api_diagnostics.dart';
 
 class ApiClient {
   ApiClient({
@@ -20,6 +22,7 @@ class ApiClient {
           ),
         ),
         _tokenStorage = tokenStorage {
+    if (kDebugMode) dio.interceptors.add(ApiDiagnostics());
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -85,7 +88,21 @@ class ApiClient {
   }
 }
 
-AppException mapDioError(Object error) {
+AppException mapDioError(Object error, [StackTrace? stackTrace]) {
+  if (error is AppException) {
+    return error;
+  }
+  final cause = error is DioException ? error.error : error;
+  if (kDebugMode) {
+    debugPrint('[API] Mapping failure: ${error.runtimeType}; '
+        'cause=${cause.runtimeType}');
+    if (stackTrace != null) {
+      debugPrintStack(stackTrace: stackTrace, maxFrames: 8);
+    }
+  }
+  if (cause is TypeError || cause is FormatException) {
+    return const AppException('Resposta do servidor em formato inesperado.');
+  }
   if (error is DioException) {
     final responseData = error.response?.data;
     final message = responseData is Map<String, dynamic>
@@ -93,11 +110,27 @@ AppException mapDioError(Object error) {
             responseData['error']?.toString()
         : null;
 
-    return AppException(
-      message ?? error.message ?? 'Erro ao conectar com o servidor.',
-      statusCode: error.response?.statusCode,
-    );
+    final status = error.response?.statusCode;
+    final fallback = switch (error.type) {
+      DioExceptionType.connectionTimeout ||
+      DioExceptionType.sendTimeout ||
+      DioExceptionType.receiveTimeout =>
+        'O servidor demorou para responder.',
+      DioExceptionType.connectionError =>
+        'Nao foi possivel conectar ao servidor.',
+      DioExceptionType.badCertificate =>
+        'Nao foi possivel validar a conexao segura.',
+      DioExceptionType.cancel => 'Requisicao cancelada.',
+      _ => switch (status) {
+          401 => 'Sessao expirada. Entre novamente.',
+          403 => 'Voce nao tem permissao para acessar este recurso.',
+          404 => 'Recurso nao encontrado no servidor.',
+          null => 'Nao foi possivel processar a resposta do servidor.',
+          _ => 'O servidor retornou um erro (HTTP $status).',
+        },
+    };
+    return AppException(message ?? fallback, statusCode: status);
   }
 
-  return AppException(error.toString());
+  return const AppException('Nao foi possivel processar os dados recebidos.');
 }

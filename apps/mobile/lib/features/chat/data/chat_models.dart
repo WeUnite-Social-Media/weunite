@@ -17,10 +17,11 @@ class ConversationDto {
 
     return ConversationDto(
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
-      peerName: peer['name']?.toString() ?? peer['username']?.toString() ?? 'Contato',
+      peerName:
+          peer['name']?.toString() ?? peer['username']?.toString() ?? 'Contato',
       peerUsername: peer['username']?.toString() ?? '',
       peerAvatar: peer['profileImg']?.toString(),
-      lastMessage: json['lastMessage']?.toString(),
+      lastMessage: (json['lastMessage'] as Map?)?['content']?.toString(),
       unreadCount: int.tryParse(json['unreadCount']?.toString() ?? '') ?? 0,
     );
   }
@@ -65,7 +66,7 @@ class ChatMessageDto {
       content: json['content']?.toString() ?? json['message']?.toString() ?? '',
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
           DateTime.now(),
-      read: json['read'] == true,
+      read: json['isRead'] == true,
     );
   }
 

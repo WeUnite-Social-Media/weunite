@@ -13,7 +13,7 @@ class OpportunityRemoteDataSource {
     int page = 0,
   }) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
+      final response = await _dio.get<List<dynamic>>(
         '/opportunities/get',
         queryParameters: {
           'page': page,
@@ -21,18 +21,13 @@ class OpportunityRemoteDataSource {
           if (skill != null && skill.isNotEmpty) 'skill': skill,
         },
       );
-      final body = response.data ?? {};
-      final data = body['data'];
-      final items = data is Map<String, dynamic>
-          ? (data['content'] as List? ?? data['data'] as List? ?? [])
-          : data as List? ?? body['content'] as List? ?? [];
+      final items = response.data ?? [];
 
       return items
-          .whereType<Map>()
-          .map((item) => OpportunityDto.fromJson(item.cast<String, dynamic>()))
+          .map((item) => OpportunityDto.fromJson(item as Map<String, dynamic>))
           .toList();
-    } catch (error) {
-      throw mapDioError(error);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 
@@ -41,9 +36,10 @@ class OpportunityRemoteDataSource {
     required int opportunityId,
   }) async {
     try {
-      await _dio.post<void>('/saved-opportunities/toggle/$athleteId/$opportunityId');
-    } catch (error) {
-      throw mapDioError(error);
+      await _dio
+          .post<void>('/saved-opportunities/toggle/$athleteId/$opportunityId');
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 
@@ -52,9 +48,10 @@ class OpportunityRemoteDataSource {
     required int opportunityId,
   }) async {
     try {
-      await _dio.post<void>('/subscriber/toggleSubscriber/$athleteId/$opportunityId');
-    } catch (error) {
-      throw mapDioError(error);
+      await _dio
+          .post<void>('/subscriber/toggleSubscriber/$athleteId/$opportunityId');
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 }

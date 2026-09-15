@@ -30,6 +30,8 @@ This package owns the Flutter mobile client in `apps/mobile`.
 - Read API contracts from `apps/api` and mirror existing web client requests before adding mobile endpoints.
 - Configure API hosts with `--dart-define=WEUNITE_API_URL=...`; do not assume Vite proxy behavior.
 - Keep secure session state in `flutter_secure_storage`, not plain preferences.
+- Collection reads for posts, opportunities, conversations, and messages return top-level JSON arrays; profile reads use `ResponseDTO.data`.
+- Debug HTTP diagnostics live in `core/network/api_diagnostics.dart`. Log metadata and error types only, never credentials, headers, query values, or message bodies.
 - Update this file when navigation, auth/session bootstrap, or runtime configuration rules change.
 
 ## Validation

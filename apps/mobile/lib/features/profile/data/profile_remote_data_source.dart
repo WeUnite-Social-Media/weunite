@@ -10,10 +10,11 @@ class ProfileRemoteDataSource {
 
   Future<ProfileDto> getProfileByUsername(String username) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>('/user/username/$username');
+      final response =
+          await _dio.get<Map<String, dynamic>>('/user/username/$username');
       return ProfileDto.fromJson(response.data ?? {});
-    } catch (error) {
-      throw mapDioError(error);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 
@@ -21,8 +22,8 @@ class ProfileRemoteDataSource {
     try {
       final response = await _dio.get<Map<String, dynamic>>('/user/id/$userId');
       return ProfileDto.fromJson(response.data ?? {});
-    } catch (error) {
-      throw mapDioError(error);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 
@@ -31,9 +32,10 @@ class ProfileRemoteDataSource {
     required int followedId,
   }) async {
     try {
-      await _dio.post<void>('/follow/followAndUnfollow/$followerId/$followedId');
-    } catch (error) {
-      throw mapDioError(error);
+      await _dio
+          .post<void>('/follow/followAndUnfollow/$followerId/$followedId');
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 }

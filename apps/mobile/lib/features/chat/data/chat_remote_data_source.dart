@@ -10,14 +10,14 @@ class ChatRemoteDataSource {
 
   Future<List<ConversationDto>> getConversations(int userId) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>('/conversations/user/$userId');
-      final items = response.data?['data'] as List? ?? response.data?['content'] as List? ?? [];
+      final response =
+          await _dio.get<List<dynamic>>('/conversations/user/$userId');
+      final items = response.data ?? [];
       return items
-          .whereType<Map>()
-          .map((item) => ConversationDto.fromJson(item.cast<String, dynamic>()))
+          .map((item) => ConversationDto.fromJson(item as Map<String, dynamic>))
           .toList();
-    } catch (error) {
-      throw mapDioError(error);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 
@@ -26,16 +26,15 @@ class ChatRemoteDataSource {
     required int userId,
   }) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
+      final response = await _dio.get<List<dynamic>>(
         '/conversations/$conversationId/messages/$userId',
       );
-      final items = response.data?['data'] as List? ?? response.data?['content'] as List? ?? [];
+      final items = response.data ?? [];
       return items
-          .whereType<Map>()
-          .map((item) => ChatMessageDto.fromJson(item.cast<String, dynamic>()))
+          .map((item) => ChatMessageDto.fromJson(item as Map<String, dynamic>))
           .toList();
-    } catch (error) {
-      throw mapDioError(error);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
     }
   }
 }
