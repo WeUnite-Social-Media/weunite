@@ -25,7 +25,7 @@ class AppTheme {
         elevation: 0,
         centerTitle: false,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.card,
         elevation: 0,
         margin: EdgeInsets.zero,
@@ -58,7 +58,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.muted,
-        selectedColor: AppColors.accentGreen.withOpacity(0.14),
+        selectedColor: AppColors.accentGreen.withValues(alpha: 0.14),
         labelStyle: const TextStyle(fontWeight: FontWeight.w600),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       ),

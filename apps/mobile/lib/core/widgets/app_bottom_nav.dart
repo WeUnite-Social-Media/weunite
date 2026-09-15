@@ -20,7 +20,7 @@ class AppBottomNav extends StatelessWidget {
       selectedIndex: AppTab.values.indexOf(currentTab),
       height: 64,
       backgroundColor: AppColors.sidebar,
-      indicatorColor: AppColors.accentGreen.withOpacity(0.14),
+      indicatorColor: AppColors.accentGreen.withValues(alpha: 0.14),
       onDestinationSelected: (index) => onTabSelected(AppTab.values[index]),
       destinations: const [
         NavigationDestination(

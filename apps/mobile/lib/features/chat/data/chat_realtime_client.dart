@@ -20,7 +20,7 @@ class ChatRealtimeClient {
   }) async {
     final token = await _tokenStorage.readAccessToken();
     _client = StompClient(
-      config: StompConfig.SockJS(
+      config: StompConfig.sockJS(
         url: _config.websocketBaseUrl,
         stompConnectHeaders: {
           if (token != null) 'Authorization': 'Bearer $token',
