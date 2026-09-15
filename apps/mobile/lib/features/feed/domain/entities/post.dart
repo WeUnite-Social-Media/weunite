@@ -11,6 +11,7 @@ class Post extends Equatable {
     this.mediaUrl,
     this.likesCount = 0,
     this.commentsCount = 0,
+    this.likedByViewer = false,
   });
 
   final int id;
@@ -22,6 +23,26 @@ class Post extends Equatable {
   final DateTime createdAt;
   final int likesCount;
   final int commentsCount;
+  final bool likedByViewer;
+
+  Post copyWith({
+    int? likesCount,
+    int? commentsCount,
+    bool? likedByViewer,
+  }) {
+    return Post(
+      id: id,
+      content: content,
+      authorName: authorName,
+      authorUsername: authorUsername,
+      createdAt: createdAt,
+      authorAvatar: authorAvatar,
+      mediaUrl: mediaUrl,
+      likesCount: likesCount ?? this.likesCount,
+      commentsCount: commentsCount ?? this.commentsCount,
+      likedByViewer: likedByViewer ?? this.likedByViewer,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -34,5 +55,6 @@ class Post extends Equatable {
         createdAt,
         likesCount,
         commentsCount,
+        likedByViewer,
       ];
 }

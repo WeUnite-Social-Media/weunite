@@ -5,9 +5,16 @@ import '../../../../core/widgets/weunite_card.dart';
 import '../../domain/entities/post.dart';
 
 class PostCard extends StatelessWidget {
-  const PostCard({required this.post, super.key});
+  const PostCard({
+    required this.post,
+    this.onLike,
+    this.onComments,
+    super.key,
+  });
 
   final Post post;
+  final VoidCallback? onLike;
+  final VoidCallback? onComments;
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +25,12 @@ class PostCard extends StatelessWidget {
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: CircleAvatar(
-              backgroundImage:
-                  post.authorAvatar == null ? null : NetworkImage(post.authorAvatar!),
-              child: post.authorAvatar == null ? Text(_initials(post.authorName)) : null,
+              backgroundImage: post.authorAvatar == null
+                  ? null
+                  : NetworkImage(post.authorAvatar!),
+              child: post.authorAvatar == null
+                  ? Text(_initials(post.authorName))
+                  : null,
             ),
             title: Text(post.authorName),
             subtitle: Text('@${post.authorUsername}'),
@@ -38,29 +48,24 @@ class PostCard extends StatelessWidget {
           Row(
             children: [
               IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.favorite_border),
+                onPressed: onLike,
+                icon: Icon(
+                  post.likedByViewer ? Icons.favorite : Icons.favorite_border,
+                ),
+                color: post.likedByViewer
+                    ? Theme.of(context).colorScheme.error
+                    : null,
               ),
               Text('${post.likesCount}'),
               const SizedBox(width: 16),
               IconButton(
-                onPressed: () => _openComments(context),
+                onPressed: onComments,
                 icon: const Icon(Icons.mode_comment_outlined),
               ),
               Text('${post.commentsCount}'),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  void _openComments(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (_) => const SizedBox(
-        height: 320,
-        child: Center(child: Text('Comentarios')),
       ),
     );
   }

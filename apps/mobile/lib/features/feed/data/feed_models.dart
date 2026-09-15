@@ -11,6 +11,7 @@ class PostDto {
     this.mediaUrl,
     this.likesCount = 0,
     this.commentsCount = 0,
+    this.likedByViewer = false,
   });
 
   factory PostDto.fromJson(Map<String, dynamic> json) {
@@ -24,9 +25,8 @@ class PostDto {
           json['description']?.toString() ??
           json['text']?.toString() ??
           '',
-      authorName: user['name']?.toString() ??
-          user['username']?.toString() ??
-          'Usuario',
+      authorName:
+          user['name']?.toString() ?? user['username']?.toString() ?? 'Usuario',
       authorUsername: user['username']?.toString() ?? '',
       authorAvatar: user['profileImg']?.toString(),
       mediaUrl: json['imageUrl']?.toString() ??
@@ -42,6 +42,7 @@ class PostDto {
             (json['commentsCount'] ?? json['comments']?.length ?? 0).toString(),
           ) ??
           0,
+      likedByViewer: json['likedByViewer'] == true,
     );
   }
 
@@ -54,6 +55,7 @@ class PostDto {
   final DateTime createdAt;
   final int likesCount;
   final int commentsCount;
+  final bool likedByViewer;
 
   Post toEntity() {
     return Post(
@@ -66,6 +68,7 @@ class PostDto {
       createdAt: createdAt,
       likesCount: likesCount,
       commentsCount: commentsCount,
+      likedByViewer: likedByViewer,
     );
   }
 }

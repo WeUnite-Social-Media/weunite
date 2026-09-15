@@ -22,6 +22,7 @@ void main() {
               'imageUrl': 'https://example.com/post.png',
               'likesCount': 3,
               'commentsCount': 1,
+              'likedByViewer': true,
               'createdAt': '2026-09-15T12:00:00Z',
               'user': {
                 'id': '7',
@@ -40,6 +41,32 @@ void main() {
       expect(posts.single.content, 'Treino aberto hoje');
       expect(posts.single.authorName, 'Matheus');
       expect(posts.single.likesCount, 3);
+      expect(posts.single.likedByViewer, isTrue);
+    });
+
+    test('parses raw comments list returned by the API', () async {
+      final dataSource = FeedRemoteDataSource(
+        _dio({
+          '/api/comment/get/10': [
+            {
+              'id': '4',
+              'text': 'Boa!',
+              'createdAt': '2026-09-15T12:20:00Z',
+              'user': {
+                'name': 'Ana',
+                'username': 'ana',
+                'profileImg': 'https://example.com/ana.png',
+              },
+            },
+          ],
+        }),
+      );
+
+      final comments = await dataSource.getComments(postId: 10);
+
+      expect(comments, hasLength(1));
+      expect(comments.single.content, 'Boa!');
+      expect(comments.single.authorUsername, 'ana');
     });
 
     test('parses raw opportunities list returned by the API', () async {
