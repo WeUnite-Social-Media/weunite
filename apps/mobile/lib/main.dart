@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/config/app_config.dart';
 import 'core/network/api_client.dart';
+import 'core/session/session_events.dart';
 import 'core/storage/token_storage.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/data/auth_remote_data_source.dart';
@@ -31,7 +32,12 @@ import 'features/profile/presentation/cubit/profile_cubit.dart';
 void main() {
   final config = AppConfig.fromEnvironment();
   final tokenStorage = SecureTokenStorage();
-  final apiClient = ApiClient(config: config, tokenStorage: tokenStorage);
+  final sessionEvents = SessionEvents();
+  final apiClient = ApiClient(
+    config: config,
+    tokenStorage: tokenStorage,
+    sessionEvents: sessionEvents,
+  );
 
   final authRepository = AuthRepositoryImpl(
     remoteDataSource: AuthRemoteDataSource(apiClient.dio),
@@ -59,6 +65,7 @@ void main() {
       opportunityRepository: opportunityRepository,
       chatRepository: chatRepository,
       profileRepository: profileRepository,
+      sessionEvents: sessionEvents,
     ),
   );
 }
@@ -70,6 +77,7 @@ class WeUniteMobileApp extends StatelessWidget {
     required this.opportunityRepository,
     required this.chatRepository,
     required this.profileRepository,
+    required this.sessionEvents,
     super.key,
   });
 
@@ -78,6 +86,7 @@ class WeUniteMobileApp extends StatelessWidget {
   final OpportunityRepository opportunityRepository;
   final ChatRepository chatRepository;
   final ProfileRepository profileRepository;
+  final SessionEvents sessionEvents;
 
   @override
   Widget build(BuildContext context) {
@@ -92,11 +101,13 @@ class WeUniteMobileApp extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (_) => AuthCubit(authRepository)..restoreSession(),
+            create: (_) =>
+                AuthCubit(authRepository, sessionEvents)..restoreSession(),
           ),
           BlocProvider(create: (_) => FeedCubit(feedRepository)),
           BlocProvider(
-              create: (_) => OpportunitiesCubit(opportunityRepository),),
+            create: (_) => OpportunitiesCubit(opportunityRepository),
+          ),
           BlocProvider(create: (_) => ChatCubit(chatRepository)),
           BlocProvider(create: (_) => ProfileCubit(profileRepository)),
         ],
