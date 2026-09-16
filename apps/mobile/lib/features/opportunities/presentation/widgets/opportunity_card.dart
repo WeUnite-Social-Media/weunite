@@ -5,18 +5,25 @@ import '../../../../core/widgets/weunite_card.dart';
 import '../../domain/entities/opportunity.dart';
 
 class OpportunityCard extends StatelessWidget {
-  const OpportunityCard({required this.opportunity, super.key});
+  const OpportunityCard({
+    required this.opportunity,
+    this.onTap,
+    this.onSave,
+    this.onApply,
+    this.canApply = false,
+    super.key,
+  });
 
   final Opportunity opportunity;
+  final VoidCallback? onTap;
+  final VoidCallback? onSave;
+  final VoidCallback? onApply;
+  final bool canApply;
 
   @override
   Widget build(BuildContext context) {
     return WeUniteCard(
-      onTap: () => showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        builder: (_) => _OpportunityDetail(opportunity: opportunity),
-      ),
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -33,11 +40,17 @@ class OpportunityCard extends StatelessWidget {
             title: Text(opportunity.title),
             subtitle: Text(opportunity.companyName),
             trailing: IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.bookmark_border),
+              onPressed: onSave,
+              icon: Icon(
+                opportunity.isSaved ? Icons.bookmark : Icons.bookmark_border,
+              ),
             ),
           ),
-          Text(opportunity.description, maxLines: 3, overflow: TextOverflow.ellipsis),
+          Text(
+            opportunity.description,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -57,6 +70,16 @@ class OpportunityCard extends StatelessWidget {
               Text('${opportunity.subscribersCount} inscritos'),
             ],
           ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton(
+              onPressed: canApply ? onApply : null,
+              child: Text(
+                opportunity.isSubscribed ? 'Inscrito' : 'Candidatar-se',
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -67,10 +90,17 @@ class OpportunityCard extends StatelessWidget {
   }
 }
 
-class _OpportunityDetail extends StatelessWidget {
-  const _OpportunityDetail({required this.opportunity});
+class OpportunityDetailSheet extends StatelessWidget {
+  const OpportunityDetailSheet({
+    required this.opportunity,
+    this.onApply,
+    this.canApply = false,
+    super.key,
+  });
 
   final Opportunity opportunity;
+  final VoidCallback? onApply;
+  final bool canApply;
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +113,10 @@ class _OpportunityDetail extends StatelessWidget {
           controller: controller,
           padding: const EdgeInsets.all(20),
           children: [
-            Text(opportunity.title, style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              opportunity.title,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             const SizedBox(height: 8),
             Text(opportunity.companyName),
             const SizedBox(height: 16),
@@ -91,12 +124,16 @@ class _OpportunityDetail extends StatelessWidget {
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
-              children: opportunity.skills.map((skill) => Chip(label: Text(skill))).toList(),
+              children: opportunity.skills
+                  .map((skill) => Chip(label: Text(skill)))
+                  .toList(),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {},
-              child: const Text('Candidatar-se'),
+              onPressed: canApply ? onApply : null,
+              child: Text(
+                opportunity.isSubscribed ? 'Inscrito' : 'Candidatar-se',
+              ),
             ),
           ],
         );
