@@ -13,7 +13,7 @@ class ChatCubit extends Cubit<ChatState> {
 
   final ChatRepository _repository;
 
-  Future<void> loadConversations(int userId) async {
+  Future<void> loadConversations() async {
     final hadConversations = state.conversations.isNotEmpty;
     emit(
       state.copyWith(
@@ -23,7 +23,7 @@ class ChatCubit extends Cubit<ChatState> {
       ),
     );
     try {
-      final conversations = await _repository.getConversations(userId);
+      final conversations = await _repository.getConversations();
       emit(
         state.copyWith(
           isLoading: false,

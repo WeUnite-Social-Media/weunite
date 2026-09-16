@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/async_state_view.dart';
-import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../cubit/chat_cubit.dart';
 
 class ConversationsScreen extends StatefulWidget {
@@ -17,10 +16,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   void initState() {
     super.initState();
     if (!context.read<ChatCubit>().state.hasLoaded) {
-      final userId = context.read<AuthCubit>().state.user?.id;
-      if (userId != null) {
-        context.read<ChatCubit>().loadConversations(userId);
-      }
+      context.read<ChatCubit>().loadConversations();
     }
   }
 
@@ -39,12 +35,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
         return AsyncStateView(
           isLoading: state.isLoading,
           errorMessage: state.loadErrorMessage,
-          onRetry: () {
-            final userId = context.read<AuthCubit>().state.user?.id;
-            if (userId != null) {
-              context.read<ChatCubit>().loadConversations(userId);
-            }
-          },
+          onRetry: () => context.read<ChatCubit>().loadConversations(),
           child: ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: state.conversations.length,

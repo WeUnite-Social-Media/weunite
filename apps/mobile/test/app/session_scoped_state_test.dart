@@ -148,7 +148,7 @@ class _FakeOpportunityRepository implements OpportunityRepository {
 
 class _FakeChatRepository implements ChatRepository {
   @override
-  Future<List<Conversation>> getConversations(int userId) async => const [];
+  Future<List<Conversation>> getConversations() async => const [];
 
   @override
   Future<List<ChatMessage>> getMessages({

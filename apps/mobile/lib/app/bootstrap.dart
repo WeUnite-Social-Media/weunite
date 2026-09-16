@@ -66,6 +66,7 @@ AppDependencies bootstrap() {
       remoteDataSource: ChatRemoteDataSource(apiClient.dio),
       config: config,
       tokenStorage: tokenStorage,
+      currentUserProvider: currentUserProvider,
     ),
     profileRepository: ProfileRepositoryImpl(
       remoteDataSource: ProfileRemoteDataSource(apiClient.dio),
