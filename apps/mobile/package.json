@@ -3,11 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "flutter run --dart-define=WEUNITE_API_URL=http://localhost:8080/api",
+    "dev": "flutter run --dart-define-from-file=config/dev.json",
     "lint": "flutter analyze",
     "typecheck": "flutter analyze",
-    "test": "node -e \"console.log('No mobile tests configured yet')\"",
-    "build": "flutter build apk --dart-define=WEUNITE_API_URL=http://localhost:8080/api",
+    "test": "flutter test",
+    "build": "flutter build apk --dart-define-from-file=config/dev.json",
     "format": "dart format --set-exit-if-changed lib test"
   }
 }

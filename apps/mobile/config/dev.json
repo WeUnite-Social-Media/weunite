@@ -1,6 +1,3 @@
-# Flutter dart-define configuration
-# Copy to config/dev.json and adjust values as needed
-
 {
   "WEUNITE_API_URL": "http://10.0.2.2:8080/api",
   "WEUNITE_WS_URL": "http://10.0.2.2:8080/ws"
