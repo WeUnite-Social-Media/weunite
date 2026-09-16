@@ -51,8 +51,9 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                       : null,
                 ),
                 title: Text(conversation.peerName),
-                subtitle: Text(conversation.lastMessage ??
-                    '@${conversation.peerUsername}',),
+                subtitle: Text(
+                  conversation.lastMessage ?? '@${conversation.peerUsername}',
+                ),
                 trailing: conversation.unreadCount == 0
                     ? null
                     : Badge(label: Text('${conversation.unreadCount}')),

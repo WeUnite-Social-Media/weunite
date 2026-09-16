@@ -132,7 +132,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ElevatedButton(
                     onPressed: state.isLoading ? null : _submit,
                     child: Text(
-                        _isCompany ? 'Cadastrar empresa' : 'Cadastrar atleta',),
+                      _isCompany ? 'Cadastrar empresa' : 'Cadastrar atleta',
+                    ),
                   ),
                 ],
               ),
