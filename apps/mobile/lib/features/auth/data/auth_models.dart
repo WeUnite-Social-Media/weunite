@@ -62,7 +62,11 @@ class AppUserDto {
 }
 
 class AuthSessionDto {
-  const AuthSessionDto({required this.jwt, required this.user});
+  const AuthSessionDto({
+    required this.jwt,
+    required this.user,
+    this.expiresInMillis,
+  });
 
   factory AuthSessionDto.fromJson(Map<String, dynamic> json) {
     final data = json['data'] is Map<String, dynamic>
@@ -74,9 +78,11 @@ class AuthSessionDto {
       user: AppUserDto.fromJson(
         (data['user'] as Map?)?.cast<String, dynamic>() ?? {},
       ),
+      expiresInMillis: int.tryParse(data['expiresIn']?.toString() ?? ''),
     );
   }
 
   final String jwt;
   final AppUserDto user;
+  final int? expiresInMillis;
 }

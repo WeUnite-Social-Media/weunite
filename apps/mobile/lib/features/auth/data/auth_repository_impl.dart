@@ -24,9 +24,15 @@ class AuthRepositoryImpl implements AuthRepository {
     if (token == null || token.isEmpty) {
       return null;
     }
+    final expiresAt = await _tokenStorage.readAccessTokenExpiresAt();
+    if (expiresAt != null && expiresAt.isBefore(DateTime.now())) {
+      await _tokenStorage.clear();
+      return null;
+    }
     final userJson = await _tokenStorage.readUserJson();
     if (userJson == null || userJson.isEmpty) {
-      return _currentUser;
+      await _tokenStorage.clear();
+      return null;
     }
     try {
       final user = AppUserDto.fromJson(
@@ -54,7 +60,14 @@ class AuthRepositoryImpl implements AuthRepository {
       throw const AppException('Resposta de login invalida.');
     }
 
-    await _tokenStorage.saveTokens(accessToken: session.jwt);
+    final expiresInMillis = session.expiresInMillis;
+    final expiresAt = expiresInMillis != null
+        ? DateTime.now().add(Duration(milliseconds: expiresInMillis))
+        : null;
+    await _tokenStorage.saveTokens(
+      accessToken: session.jwt,
+      expiresAt: expiresAt,
+    );
     await _tokenStorage.saveUserJson(jsonEncode(session.user.toJson()));
     _currentUser = session.user.toEntity();
     return _currentUser!;
