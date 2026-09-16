@@ -137,8 +137,10 @@ class _RequestRecorder {
   String? get lastPath => lastOptions?.uri.path;
 }
 
-Dio _dio(_RequestRecorder recorder,
-    {Object? response = const <String, Object?>{}}) {
+Dio _dio(
+  _RequestRecorder recorder, {
+  Object? response = const <String, Object?>{},
+}) {
   return Dio(BaseOptions(baseUrl: 'http://localhost/api'))
     ..httpClientAdapter = _RecordingAdapter(recorder, response);
 }
