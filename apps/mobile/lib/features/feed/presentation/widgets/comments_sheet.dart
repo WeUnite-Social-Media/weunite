@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../domain/entities/comment.dart';
+import '../cubit/comments_cubit.dart';
 import '../cubit/feed_cubit.dart';
 
 class CommentsSheet extends StatefulWidget {
@@ -19,11 +20,13 @@ class CommentsSheet extends StatefulWidget {
 
 class _CommentsSheetState extends State<CommentsSheet> {
   final _controller = TextEditingController();
+  late int _lastHandledCommentCreatedTick;
 
   @override
   void initState() {
     super.initState();
-    context.read<FeedCubit>().loadComments(postId: widget.postId);
+    _lastHandledCommentCreatedTick =
+        context.read<CommentsCubit>().state.commentCreatedTick;
   }
 
   @override
@@ -32,16 +35,13 @@ class _CommentsSheetState extends State<CommentsSheet> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  void _submit(BuildContext context) {
     final content = _controller.text.trim();
     if (content.isEmpty) {
       return;
     }
 
-    await context.read<FeedCubit>().createComment(
-          postId: widget.postId,
-          content: content,
-        );
+    context.read<CommentsCubit>().createComment(content: content);
     _controller.clear();
   }
 
@@ -53,9 +53,21 @@ class _CommentsSheetState extends State<CommentsSheet> {
       minChildSize: 0.44,
       maxChildSize: 0.92,
       builder: (context, scrollController) {
-        return BlocBuilder<FeedCubit, FeedState>(
+        return BlocConsumer<CommentsCubit, CommentsState>(
+          listener: (context, state) {
+            if (state.commentCreatedTick != _lastHandledCommentCreatedTick) {
+              _lastHandledCommentCreatedTick = state.commentCreatedTick;
+              context.read<FeedCubit>().onCommentAdded(widget.postId);
+            }
+            if (state.actionErrorMessage != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.actionErrorMessage!)),
+              );
+              context.read<CommentsCubit>().dismissActionError();
+            }
+          },
           builder: (context, state) {
-            final comments = state.commentsByPost[widget.postId] ?? const [];
+            final comments = state.comments;
 
             return Padding(
               padding: EdgeInsets.only(
@@ -84,17 +96,23 @@ class _CommentsSheetState extends State<CommentsSheet> {
                   ),
                   const SizedBox(height: 12),
                   Expanded(
-                    child: comments.isEmpty
-                        ? const Center(child: Text('Ainda sem comentarios.'))
-                        : ListView.separated(
-                            controller: scrollController,
-                            itemCount: comments.length,
-                            separatorBuilder: (_, __) =>
-                                const Divider(height: 24),
-                            itemBuilder: (context, index) {
-                              return _CommentTile(comment: comments[index]);
-                            },
-                          ),
+                    child: state.loadErrorMessage != null
+                        ? Center(child: Text(state.loadErrorMessage!))
+                        : comments.isEmpty
+                            ? const Center(
+                                child: Text('Ainda sem comentarios.'),
+                              )
+                            : ListView.separated(
+                                controller: scrollController,
+                                itemCount: comments.length,
+                                separatorBuilder: (_, __) =>
+                                    const Divider(height: 24),
+                                itemBuilder: (context, index) {
+                                  return _CommentTile(
+                                    comment: comments[index],
+                                  );
+                                },
+                              ),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -108,12 +126,13 @@ class _CommentsSheetState extends State<CommentsSheet> {
                             hintText: 'Escreva um comentario...',
                           ),
                           textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => _submit(),
+                          onSubmitted: (_) => _submit(context),
                         ),
                       ),
                       const SizedBox(width: 8),
                       IconButton.filled(
-                        onPressed: state.isSubmitting ? null : _submit,
+                        onPressed:
+                            state.isSubmitting ? null : () => _submit(context),
                         icon: state.isSubmitting
                             ? const SizedBox.square(
                                 dimension: 18,

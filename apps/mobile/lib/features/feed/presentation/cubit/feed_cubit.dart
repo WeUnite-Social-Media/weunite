@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/app_exception.dart';
-import '../../domain/entities/comment.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/repositories/feed_repository.dart';
+import '../../feed_constants.dart';
 
 part 'feed_state.dart';
 
@@ -33,7 +33,7 @@ class FeedCubit extends Cubit<FeedState> {
           hasLoaded: true,
           posts: posts,
           page: 0,
-          hasMore: posts.length >= 20,
+          hasMore: posts.length >= kFeedPageSize,
         ),
       );
     } on AppException catch (error) {
@@ -62,7 +62,7 @@ class FeedCubit extends Cubit<FeedState> {
           isLoadingMore: false,
           posts: [...state.posts, ...posts],
           page: nextPage,
-          hasMore: posts.length >= 20,
+          hasMore: posts.length >= kFeedPageSize,
         ),
       );
     } on AppException catch (error) {
@@ -75,23 +75,11 @@ class FeedCubit extends Cubit<FeedState> {
     }
   }
 
-  Future<void> createPost({required String content}) async {
-    emit(state.copyWith(isSubmitting: true, actionErrorMessage: () => null));
-    try {
-      await _repository.createPost(content: content);
-      emit(state.copyWith(isSubmitting: false));
-      await loadTimeline();
-    } on AppException catch (error) {
-      emit(
-        state.copyWith(
-          isSubmitting: false,
-          actionErrorMessage: () => error.message,
-        ),
-      );
-    }
-  }
-
   Future<void> toggleLike({required int postId}) async {
+    if (state.pendingLikes.contains(postId)) {
+      return;
+    }
+
     final previousPosts = state.posts;
     final nextPosts = previousPosts.map((post) {
       if (post.id != postId) {
@@ -105,72 +93,43 @@ class FeedCubit extends Cubit<FeedState> {
       );
     }).toList();
 
-    emit(state.copyWith(posts: nextPosts, actionErrorMessage: () => null));
+    emit(
+      state.copyWith(
+        posts: nextPosts,
+        pendingLikes: {...state.pendingLikes, postId},
+        actionErrorMessage: () => null,
+      ),
+    );
     try {
       await _repository.toggleLike(postId: postId);
+      emit(
+        state.copyWith(
+          pendingLikes: {...state.pendingLikes}..remove(postId),
+        ),
+      );
     } on AppException catch (error) {
       emit(
         state.copyWith(
           posts: previousPosts,
+          pendingLikes: {...state.pendingLikes}..remove(postId),
           actionErrorMessage: () => error.message,
         ),
       );
     }
   }
 
-  Future<void> loadComments({required int postId}) async {
-    emit(state.copyWith(actionErrorMessage: () => null));
-    try {
-      final comments = await _repository.getComments(postId: postId);
-      emit(
-        state.copyWith(
-          commentsByPost: {
-            ...state.commentsByPost,
-            postId: comments,
-          },
-        ),
-      );
-    } on AppException catch (error) {
-      emit(state.copyWith(actionErrorMessage: () => error.message));
-    }
+  void onCommentAdded(int postId) {
+    final posts = state.posts.map((post) {
+      if (post.id != postId) {
+        return post;
+      }
+      return post.copyWith(commentsCount: post.commentsCount + 1);
+    }).toList();
+    emit(state.copyWith(posts: posts));
   }
 
-  Future<void> createComment({
-    required int postId,
-    required String content,
-  }) async {
-    emit(state.copyWith(isSubmitting: true, actionErrorMessage: () => null));
-    try {
-      await _repository.createComment(
-        postId: postId,
-        content: content,
-      );
-      final comments = await _repository.getComments(postId: postId);
-      final posts = state.posts.map((post) {
-        if (post.id != postId) {
-          return post;
-        }
-        return post.copyWith(commentsCount: post.commentsCount + 1);
-      }).toList();
-
-      emit(
-        state.copyWith(
-          isSubmitting: false,
-          posts: posts,
-          commentsByPost: {
-            ...state.commentsByPost,
-            postId: comments,
-          },
-        ),
-      );
-    } on AppException catch (error) {
-      emit(
-        state.copyWith(
-          isSubmitting: false,
-          actionErrorMessage: () => error.message,
-        ),
-      );
-    }
+  void onPostCreated() {
+    loadTimeline();
   }
 
   void dismissActionError() {

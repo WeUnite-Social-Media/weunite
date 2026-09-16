@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/async_state_view.dart';
+import '../../domain/repositories/feed_repository.dart';
+import '../cubit/comments_cubit.dart';
+import '../cubit/create_post_cubit.dart';
 import '../cubit/feed_cubit.dart';
 import '../widgets/create_post_sheet.dart';
 import '../widgets/comments_sheet.dart';
@@ -84,8 +87,16 @@ class _FeedScreenState extends State<FeedScreen> {
                     onComments: () => showModalBottomSheet<void>(
                       context: context,
                       isScrollControlled: true,
-                      builder: (_) => BlocProvider.value(
-                        value: context.read<FeedCubit>(),
+                      builder: (_) => MultiBlocProvider(
+                        providers: [
+                          BlocProvider.value(value: context.read<FeedCubit>()),
+                          BlocProvider(
+                            create: (context) => CommentsCubit(
+                              postId: post.id,
+                              repository: context.read<FeedRepository>(),
+                            )..loadComments(),
+                          ),
+                        ],
                         child: CommentsSheet(postId: post.id),
                       ),
                     ),
@@ -98,8 +109,14 @@ class _FeedScreenState extends State<FeedScreen> {
             onPressed: () => showModalBottomSheet<void>(
               context: context,
               isScrollControlled: true,
-              builder: (_) => BlocProvider.value(
-                value: context.read<FeedCubit>(),
+              builder: (_) => MultiBlocProvider(
+                providers: [
+                  BlocProvider.value(value: context.read<FeedCubit>()),
+                  BlocProvider(
+                    create: (context) =>
+                        CreatePostCubit(context.read<FeedRepository>()),
+                  ),
+                ],
                 child: const CreatePostSheet(),
               ),
             ),
