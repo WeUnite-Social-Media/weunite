@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
+import '../feed_constants.dart';
 import 'comment_models.dart';
 import 'feed_models.dart';
 
@@ -15,7 +16,7 @@ class FeedRemoteDataSource {
     try {
       final response = await _dio.get<List<dynamic>>(
         '/posts/get',
-        queryParameters: {'page': page, 'size': 20},
+        queryParameters: {'page': page, 'size': kFeedPageSize},
       );
       final items = response.data ?? [];
 
@@ -61,7 +62,7 @@ class FeedRemoteDataSource {
     try {
       final response = await _dio.get<List<dynamic>>(
         '/comment/get/$postId',
-        queryParameters: {'page': page, 'size': 20},
+        queryParameters: {'page': page, 'size': kFeedPageSize},
       );
       final items = response.data ?? [];
 
