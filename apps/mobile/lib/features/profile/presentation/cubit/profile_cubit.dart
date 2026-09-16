@@ -13,7 +13,7 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   final ProfileRepository _repository;
 
-  Future<void> loadProfile(int userId) async {
+  Future<void> loadMyProfile() async {
     final hadProfile = state.profile != null;
     emit(
       state.copyWith(
@@ -23,7 +23,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       ),
     );
     try {
-      final profile = await _repository.getProfileById(userId);
+      final profile = await _repository.getMyProfile();
       emit(
         state.copyWith(isLoading: false, hasLoaded: true, profile: profile),
       );

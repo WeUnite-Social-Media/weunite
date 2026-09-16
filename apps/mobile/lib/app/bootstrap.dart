@@ -70,6 +70,7 @@ AppDependencies bootstrap() {
     ),
     profileRepository: ProfileRepositoryImpl(
       remoteDataSource: ProfileRemoteDataSource(apiClient.dio),
+      currentUserProvider: currentUserProvider,
     ),
     sessionEvents: sessionEvents,
   );

@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/async_state_view.dart';
-import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../cubit/profile_cubit.dart';
 import '../widgets/profile_header.dart';
 
@@ -19,10 +18,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     if (!context.read<ProfileCubit>().state.hasLoaded) {
-      final userId = context.read<AuthCubit>().state.user?.id;
-      if (userId != null) {
-        context.read<ProfileCubit>().loadProfile(userId);
-      }
+      context.read<ProfileCubit>().loadMyProfile();
     }
   }
 
@@ -41,12 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return AsyncStateView(
           isLoading: state.isLoading,
           errorMessage: state.loadErrorMessage,
-          onRetry: () {
-            final userId = context.read<AuthCubit>().state.user?.id;
-            if (userId != null) {
-              context.read<ProfileCubit>().loadProfile(userId);
-            }
-          },
+          onRetry: () => context.read<ProfileCubit>().loadMyProfile(),
           child: DefaultTabController(
             length: state.profile?.isCompany == true ? 3 : 2,
             child: ListView(

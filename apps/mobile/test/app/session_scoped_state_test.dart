@@ -172,7 +172,7 @@ class _FakeProfileRepository implements ProfileRepository {
   }
 
   @override
-  Future<Profile> getProfileById(int userId) async {
+  Future<Profile> getProfile(int userId) async {
     return Profile(
       id: userId,
       name: 'User $userId',
@@ -182,10 +182,12 @@ class _FakeProfileRepository implements ProfileRepository {
   }
 
   @override
-  Future<void> toggleFollow({
-    required int followerId,
-    required int followedId,
-  }) async {}
+  Future<Profile> getMyProfile() async {
+    return const Profile(id: 0, name: 'Me', username: 'me', role: 'ATHLETE');
+  }
+
+  @override
+  Future<void> toggleFollow({required int followedId}) async {}
 }
 
 Future<_FakeFeedRepository> _pumpAuthenticatedApp(WidgetTester tester) async {
