@@ -53,6 +53,8 @@ void main() {
               'location': 'Sao Paulo',
               'dateEnd': '2026-10-01',
               'subscribersCount': 12,
+              'isSubscribed': true,
+              'isSaved': true,
               'company': {'name': 'WeUnite FC', 'username': 'weunite'},
               'skills': [
                 {'name': 'Velocidade'},
@@ -69,6 +71,36 @@ void main() {
       expect(opportunities.single.title, 'Peneira sub-20');
       expect(opportunities.single.companyName, 'WeUnite FC');
       expect(opportunities.single.skills, ['Velocidade', 'Passe']);
+      expect(opportunities.single.isSubscribed, isTrue);
+      expect(opportunities.single.isSaved, isTrue);
+    });
+
+    test('parses opportunity detail ResponseDTO.data returned by the API',
+        () async {
+      final dataSource = OpportunityRemoteDataSource(
+        _dio({
+          '/api/opportunities/get/4': {
+            'message': 'ok',
+            'data': {
+              'id': 4,
+              'title': 'Peneira sub-20',
+              'description': 'Selecao para atletas',
+              'location': 'Sao Paulo',
+              'dateEnd': '2026-10-01',
+              'company': {'name': 'WeUnite FC', 'username': 'weunite'},
+              'skills': [
+                {'name': 'Velocidade'},
+              ],
+            },
+          },
+        }),
+      );
+
+      final opportunity = await dataSource.getOpportunity(opportunityId: 4);
+
+      expect(opportunity.id, 4);
+      expect(opportunity.title, 'Peneira sub-20');
+      expect(opportunity.skills, ['Velocidade']);
     });
 
     test('parses raw conversation and message lists returned by the API',

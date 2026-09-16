@@ -11,6 +11,8 @@ class OpportunityDto {
     this.location,
     this.skills = const [],
     this.subscribersCount = 0,
+    this.isSubscribed = false,
+    this.isSaved = false,
   });
 
   factory OpportunityDto.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,8 @@ class OpportunityDto {
                 .toString(),
           ) ??
           0,
+      isSubscribed: json['isSubscribed'] == true,
+      isSaved: json['isSaved'] == true,
     );
   }
 
@@ -50,6 +54,8 @@ class OpportunityDto {
   final DateTime dateEnd;
   final List<String> skills;
   final int subscribersCount;
+  final bool isSubscribed;
+  final bool isSaved;
 
   Opportunity toEntity() {
     return Opportunity(
@@ -62,6 +68,8 @@ class OpportunityDto {
       dateEnd: dateEnd,
       skills: skills,
       subscribersCount: subscribersCount,
+      isSubscribed: isSubscribed,
+      isSaved: isSaved,
     );
   }
 }

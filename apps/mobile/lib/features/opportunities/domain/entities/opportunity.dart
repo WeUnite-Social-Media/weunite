@@ -11,6 +11,8 @@ class Opportunity extends Equatable {
     this.location,
     this.skills = const [],
     this.subscribersCount = 0,
+    this.isSubscribed = false,
+    this.isSaved = false,
   });
 
   final int id;
@@ -22,6 +24,28 @@ class Opportunity extends Equatable {
   final DateTime dateEnd;
   final List<String> skills;
   final int subscribersCount;
+  final bool isSubscribed;
+  final bool isSaved;
+
+  Opportunity copyWith({
+    int? subscribersCount,
+    bool? isSubscribed,
+    bool? isSaved,
+  }) {
+    return Opportunity(
+      id: id,
+      title: title,
+      description: description,
+      companyName: companyName,
+      dateEnd: dateEnd,
+      companyAvatar: companyAvatar,
+      location: location,
+      skills: skills,
+      subscribersCount: subscribersCount ?? this.subscribersCount,
+      isSubscribed: isSubscribed ?? this.isSubscribed,
+      isSaved: isSaved ?? this.isSaved,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -34,5 +58,7 @@ class Opportunity extends Equatable {
         dateEnd,
         skills,
         subscribersCount,
+        isSubscribed,
+        isSaved,
       ];
 }
