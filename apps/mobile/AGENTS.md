@@ -32,6 +32,7 @@ This package owns the Flutter mobile client in `apps/mobile`.
 - Keep secure session state in `flutter_secure_storage`, not plain preferences.
 - Collection reads for posts, opportunities, conversations, and messages return top-level JSON arrays; profile reads use `ResponseDTO.data`.
 - Debug HTTP diagnostics live in `core/network/api_diagnostics.dart`. Log metadata and error types only, never credentials, headers, query values, or message bodies.
+- There is no `/auth/refresh` endpoint on the API today (only `jwt` + `expiresIn` are issued on login). `ApiClient` does not retry on 401: an authenticated request that gets 401 clears the stored token and notifies `core/session/session_events.dart` (`SessionEvents.onExpired`), except for `/auth/login`, whose 401 means a bad credential, not an expired session. `AuthCubit` listens to `onExpired` and moves to `unauthenticated` with a session-expired message. `TokenStorage` also persists the access token's expiry instant so `AuthRepositoryImpl.restoreSession` treats an expired or orphaned (token without cached user) token as no session.
 - Update this file when navigation, auth/session bootstrap, or runtime configuration rules change.
 
 ## Validation
