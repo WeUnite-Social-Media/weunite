@@ -3,13 +3,17 @@ import 'package:flutter/foundation.dart';
 
 import '../config/app_config.dart';
 import '../error/app_exception.dart';
+import '../session/session_events.dart';
 import '../storage/token_storage.dart';
 import 'api_diagnostics.dart';
+
+const _loginPath = '/auth/login';
 
 class ApiClient {
   ApiClient({
     required AppConfig config,
     required TokenStorage tokenStorage,
+    required SessionEvents sessionEvents,
   })  : dio = Dio(
           BaseOptions(
             baseUrl: config.apiBaseUrl,
@@ -21,7 +25,8 @@ class ApiClient {
             },
           ),
         ),
-        _tokenStorage = tokenStorage {
+        _tokenStorage = tokenStorage,
+        _sessionEvents = sessionEvents {
     if (kDebugMode) dio.interceptors.add(ApiDiagnostics());
     dio.interceptors.add(
       InterceptorsWrapper(
@@ -34,19 +39,14 @@ class ApiClient {
         },
         onError: (error, handler) async {
           final statusCode = error.response?.statusCode;
-          if (statusCode == 401) {
-            final refreshed = await _tryRefreshToken();
-            if (refreshed) {
-              final nextToken = await _tokenStorage.readAccessToken();
-              if (nextToken != null && nextToken.isNotEmpty) {
-                error.requestOptions.headers['Authorization'] =
-                    'Bearer $nextToken';
-              }
-              final response = await dio.fetch<dynamic>(error.requestOptions);
-              handler.resolve(response);
-              return;
-            }
+          final isLoginRequest = error.requestOptions.path == _loginPath;
+          if (statusCode == 401 && !isLoginRequest) {
+            // TODO(api): implementar refresh quando /auth/refresh existir.
+            // Quando existir, usar `options.extra['retried']` para evitar
+            // loop de retry e compartilhar um unico Future de refresh entre
+            // 401 simultaneos, em vez de expirar a sessao imediatamente.
             await _tokenStorage.clear();
+            _sessionEvents.notifyExpired();
           }
           handler.next(error);
         },
@@ -56,36 +56,7 @@ class ApiClient {
 
   final Dio dio;
   final TokenStorage _tokenStorage;
-
-  Future<bool> _tryRefreshToken() async {
-    final refreshToken = await _tokenStorage.readRefreshToken();
-    if (refreshToken == null || refreshToken.isEmpty) {
-      return false;
-    }
-
-    try {
-      final response = await Dio(dio.options).post<Map<String, dynamic>>(
-        '/auth/refresh',
-        data: {'refreshToken': refreshToken},
-      );
-      final data = response.data?['data'] as Map<String, dynamic>? ??
-          response.data ??
-          {};
-      final accessToken =
-          data['jwt']?.toString() ?? data['accessToken']?.toString();
-      final nextRefreshToken = data['refreshToken']?.toString();
-      if (accessToken == null || accessToken.isEmpty) {
-        return false;
-      }
-      await _tokenStorage.saveTokens(
-        accessToken: accessToken,
-        refreshToken: nextRefreshToken ?? refreshToken,
-      );
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
+  final SessionEvents _sessionEvents;
 }
 
 AppException mapDioError(Object error, [StackTrace? stackTrace]) {
