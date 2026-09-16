@@ -7,6 +7,9 @@ import 'package:weunite_mobile/features/auth/presentation/cubit/auth_cubit.dart'
 
 class _FakeAuthRepository implements AuthRepository {
   @override
+  AppUser? currentUser;
+
+  @override
   Future<AppUser?> restoreSession() async => null;
 
   @override

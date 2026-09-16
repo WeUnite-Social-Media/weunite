@@ -19,6 +19,9 @@ class AuthRepositoryImpl implements AuthRepository {
   AppUser? _currentUser;
 
   @override
+  AppUser? get currentUser => _currentUser;
+
+  @override
   Future<AppUser?> restoreSession() async {
     final token = await _tokenStorage.readAccessToken();
     if (token == null || token.isEmpty) {

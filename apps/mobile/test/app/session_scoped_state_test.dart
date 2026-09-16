@@ -33,6 +33,7 @@ const _bob = AppUser(
 );
 
 class _FakeAuthRepository implements AuthRepository {
+  @override
   AppUser? currentUser;
 
   @override

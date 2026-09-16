@@ -1,6 +1,8 @@
 import '../entities/app_user.dart';
 
 abstract class AuthRepository {
+  AppUser? get currentUser;
+
   Future<AppUser?> restoreSession();
   Future<AppUser> login({required String username, required String password});
   Future<void> signUpAthlete({
