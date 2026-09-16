@@ -16,19 +16,29 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   @override
   void initState() {
     super.initState();
-    final userId = context.read<AuthCubit>().state.user?.id;
-    if (userId != null) {
-      context.read<ChatCubit>().loadConversations(userId);
+    if (!context.read<ChatCubit>().state.hasLoaded) {
+      final userId = context.read<AuthCubit>().state.user?.id;
+      if (userId != null) {
+        context.read<ChatCubit>().loadConversations(userId);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ChatCubit, ChatState>(
+    return BlocConsumer<ChatCubit, ChatState>(
+      listener: (context, state) {
+        if (state.actionErrorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.actionErrorMessage!)),
+          );
+          context.read<ChatCubit>().dismissActionError();
+        }
+      },
       builder: (context, state) {
         return AsyncStateView(
           isLoading: state.isLoading,
-          errorMessage: state.errorMessage,
+          errorMessage: state.loadErrorMessage,
           onRetry: () {
             final userId = context.read<AuthCubit>().state.user?.id;
             if (userId != null) {

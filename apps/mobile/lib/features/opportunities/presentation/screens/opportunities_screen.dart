@@ -18,16 +18,26 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<OpportunitiesCubit>().loadOpportunities();
+    if (!context.read<OpportunitiesCubit>().state.hasLoaded) {
+      context.read<OpportunitiesCubit>().loadOpportunities();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<OpportunitiesCubit, OpportunitiesState>(
+    return BlocConsumer<OpportunitiesCubit, OpportunitiesState>(
+      listener: (context, state) {
+        if (state.actionErrorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.actionErrorMessage!)),
+          );
+          context.read<OpportunitiesCubit>().dismissActionError();
+        }
+      },
       builder: (context, state) {
         return AsyncStateView(
           isLoading: state.isLoading,
-          errorMessage: state.errorMessage,
+          errorMessage: state.loadErrorMessage,
           onRetry: context.read<OpportunitiesCubit>().loadOpportunities,
           child: RefreshIndicator(
             onRefresh: context.read<OpportunitiesCubit>().loadOpportunities,

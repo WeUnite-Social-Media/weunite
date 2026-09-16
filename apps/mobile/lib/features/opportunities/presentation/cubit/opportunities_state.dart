@@ -5,29 +5,46 @@ class OpportunitiesState extends Equatable {
     this.opportunities = const [],
     this.selectedSkill,
     this.isLoading = false,
-    this.errorMessage,
+    this.hasLoaded = false,
+    this.loadErrorMessage,
+    this.actionErrorMessage,
   });
 
   final List<Opportunity> opportunities;
   final String? selectedSkill;
   final bool isLoading;
-  final String? errorMessage;
+  final bool hasLoaded;
+  final String? loadErrorMessage;
+  final String? actionErrorMessage;
 
   OpportunitiesState copyWith({
     List<Opportunity>? opportunities,
     String? selectedSkill,
     bool? isLoading,
-    String? errorMessage,
+    bool? hasLoaded,
+    ValueGetter<String?>? loadErrorMessage,
+    ValueGetter<String?>? actionErrorMessage,
   }) {
     return OpportunitiesState(
       opportunities: opportunities ?? this.opportunities,
       selectedSkill: selectedSkill ?? this.selectedSkill,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
+      hasLoaded: hasLoaded ?? this.hasLoaded,
+      loadErrorMessage:
+          loadErrorMessage != null ? loadErrorMessage() : this.loadErrorMessage,
+      actionErrorMessage: actionErrorMessage != null
+          ? actionErrorMessage()
+          : this.actionErrorMessage,
     );
   }
 
   @override
-  List<Object?> get props =>
-      [opportunities, selectedSkill, isLoading, errorMessage];
+  List<Object?> get props => [
+        opportunities,
+        selectedSkill,
+        isLoading,
+        hasLoaded,
+        loadErrorMessage,
+        actionErrorMessage,
+      ];
 }

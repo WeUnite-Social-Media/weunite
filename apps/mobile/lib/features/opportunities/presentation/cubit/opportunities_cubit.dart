@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/app_exception.dart';
@@ -13,18 +14,40 @@ class OpportunitiesCubit extends Cubit<OpportunitiesState> {
   final OpportunityRepository _repository;
 
   Future<void> loadOpportunities({String? skill}) async {
+    final hadOpportunities = state.opportunities.isNotEmpty;
     emit(
       state.copyWith(
-        isLoading: true,
+        isLoading: !hadOpportunities,
         selectedSkill: skill,
-        errorMessage: null,
+        loadErrorMessage: () => null,
+        actionErrorMessage: () => null,
       ),
     );
     try {
       final opportunities = await _repository.getOpportunities(skill: skill);
-      emit(state.copyWith(isLoading: false, opportunities: opportunities));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          hasLoaded: true,
+          opportunities: opportunities,
+        ),
+      );
     } on AppException catch (error) {
-      emit(state.copyWith(isLoading: false, errorMessage: error.message));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          hasLoaded: true,
+          loadErrorMessage: hadOpportunities ? null : () => error.message,
+          actionErrorMessage: hadOpportunities ? () => error.message : null,
+        ),
+      );
     }
+  }
+
+  void dismissActionError() {
+    if (state.actionErrorMessage == null) {
+      return;
+    }
+    emit(state.copyWith(actionErrorMessage: () => null));
   }
 }

@@ -21,7 +21,9 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<FeedCubit>().loadTimeline();
+    if (!context.read<FeedCubit>().state.hasLoaded) {
+      context.read<FeedCubit>().loadTimeline();
+    }
     _scrollController.addListener(_onScroll);
   }
 
@@ -45,13 +47,21 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<FeedCubit, FeedState>(
+    return BlocConsumer<FeedCubit, FeedState>(
+      listener: (context, state) {
+        if (state.actionErrorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.actionErrorMessage!)),
+          );
+          context.read<FeedCubit>().dismissActionError();
+        }
+      },
       builder: (context, state) {
         final userId = context.read<AuthCubit>().state.user?.id;
         return Scaffold(
           body: AsyncStateView(
             isLoading: state.isLoading,
-            errorMessage: state.errorMessage,
+            errorMessage: state.loadErrorMessage,
             onRetry: context.read<FeedCubit>().loadTimeline,
             child: RefreshIndicator(
               onRefresh: context.read<FeedCubit>().loadTimeline,
@@ -79,7 +89,10 @@ class _FeedScreenState extends State<FeedScreen> {
                     onComments: () => showModalBottomSheet<void>(
                       context: context,
                       isScrollControlled: true,
-                      builder: (_) => CommentsSheet(postId: post.id),
+                      builder: (_) => BlocProvider.value(
+                        value: context.read<FeedCubit>(),
+                        child: CommentsSheet(postId: post.id),
+                      ),
                     ),
                   );
                 },
@@ -92,7 +105,10 @@ class _FeedScreenState extends State<FeedScreen> {
                 : () => showModalBottomSheet<void>(
                       context: context,
                       isScrollControlled: true,
-                      builder: (_) => CreatePostSheet(userId: userId),
+                      builder: (_) => BlocProvider.value(
+                        value: context.read<FeedCubit>(),
+                        child: CreatePostSheet(userId: userId),
+                      ),
                     ),
             child: const Icon(Icons.add),
           ),

@@ -7,9 +7,11 @@ class FeedState extends Equatable {
     this.isLoading = false,
     this.isLoadingMore = false,
     this.isSubmitting = false,
+    this.hasLoaded = false,
     this.page = 0,
     this.hasMore = true,
-    this.errorMessage,
+    this.loadErrorMessage,
+    this.actionErrorMessage,
   });
 
   final List<Post> posts;
@@ -17,9 +19,11 @@ class FeedState extends Equatable {
   final bool isLoading;
   final bool isLoadingMore;
   final bool isSubmitting;
+  final bool hasLoaded;
   final int page;
   final bool hasMore;
-  final String? errorMessage;
+  final String? loadErrorMessage;
+  final String? actionErrorMessage;
 
   FeedState copyWith({
     List<Post>? posts,
@@ -27,9 +31,11 @@ class FeedState extends Equatable {
     bool? isLoading,
     bool? isLoadingMore,
     bool? isSubmitting,
+    bool? hasLoaded,
     int? page,
     bool? hasMore,
-    String? errorMessage,
+    ValueGetter<String?>? loadErrorMessage,
+    ValueGetter<String?>? actionErrorMessage,
   }) {
     return FeedState(
       posts: posts ?? this.posts,
@@ -37,9 +43,14 @@ class FeedState extends Equatable {
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isSubmitting: isSubmitting ?? this.isSubmitting,
+      hasLoaded: hasLoaded ?? this.hasLoaded,
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
-      errorMessage: errorMessage,
+      loadErrorMessage:
+          loadErrorMessage != null ? loadErrorMessage() : this.loadErrorMessage,
+      actionErrorMessage: actionErrorMessage != null
+          ? actionErrorMessage()
+          : this.actionErrorMessage,
     );
   }
 
@@ -50,8 +61,10 @@ class FeedState extends Equatable {
         isLoading,
         isLoadingMore,
         isSubmitting,
+        hasLoaded,
         page,
         hasMore,
-        errorMessage,
+        loadErrorMessage,
+        actionErrorMessage,
       ];
 }

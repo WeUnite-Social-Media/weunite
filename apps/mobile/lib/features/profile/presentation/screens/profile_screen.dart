@@ -18,19 +18,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    final userId = context.read<AuthCubit>().state.user?.id;
-    if (userId != null) {
-      context.read<ProfileCubit>().loadProfile(userId);
+    if (!context.read<ProfileCubit>().state.hasLoaded) {
+      final userId = context.read<AuthCubit>().state.user?.id;
+      if (userId != null) {
+        context.read<ProfileCubit>().loadProfile(userId);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ProfileCubit, ProfileState>(
+    return BlocConsumer<ProfileCubit, ProfileState>(
+      listener: (context, state) {
+        if (state.actionErrorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.actionErrorMessage!)),
+          );
+          context.read<ProfileCubit>().dismissActionError();
+        }
+      },
       builder: (context, state) {
         return AsyncStateView(
           isLoading: state.isLoading,
-          errorMessage: state.errorMessage,
+          errorMessage: state.loadErrorMessage,
           onRetry: () {
             final userId = context.read<AuthCubit>().state.user?.id;
             if (userId != null) {

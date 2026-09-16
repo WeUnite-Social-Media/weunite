@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/app_exception.dart';
@@ -14,12 +15,14 @@ class FeedCubit extends Cubit<FeedState> {
   final FeedRepository _repository;
 
   Future<void> loadTimeline() async {
+    final hadPosts = state.posts.isNotEmpty;
     emit(
       state.copyWith(
-        isLoading: true,
+        isLoading: !hadPosts,
         page: 0,
         hasMore: true,
-        errorMessage: null,
+        loadErrorMessage: () => null,
+        actionErrorMessage: () => null,
       ),
     );
     try {
@@ -27,13 +30,21 @@ class FeedCubit extends Cubit<FeedState> {
       emit(
         state.copyWith(
           isLoading: false,
+          hasLoaded: true,
           posts: posts,
           page: 0,
           hasMore: posts.length >= 20,
         ),
       );
     } on AppException catch (error) {
-      emit(state.copyWith(isLoading: false, errorMessage: error.message));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          hasLoaded: true,
+          loadErrorMessage: hadPosts ? null : () => error.message,
+          actionErrorMessage: hadPosts ? () => error.message : null,
+        ),
+      );
     }
   }
 
@@ -43,7 +54,7 @@ class FeedCubit extends Cubit<FeedState> {
     }
 
     final nextPage = state.page + 1;
-    emit(state.copyWith(isLoadingMore: true, errorMessage: null));
+    emit(state.copyWith(isLoadingMore: true, actionErrorMessage: () => null));
     try {
       final posts = await _repository.getTimeline(page: nextPage);
       emit(
@@ -55,7 +66,12 @@ class FeedCubit extends Cubit<FeedState> {
         ),
       );
     } on AppException catch (error) {
-      emit(state.copyWith(isLoadingMore: false, errorMessage: error.message));
+      emit(
+        state.copyWith(
+          isLoadingMore: false,
+          actionErrorMessage: () => error.message,
+        ),
+      );
     }
   }
 
@@ -63,13 +79,18 @@ class FeedCubit extends Cubit<FeedState> {
     required int userId,
     required String content,
   }) async {
-    emit(state.copyWith(isSubmitting: true, errorMessage: null));
+    emit(state.copyWith(isSubmitting: true, actionErrorMessage: () => null));
     try {
       await _repository.createPost(userId: userId, content: content);
       emit(state.copyWith(isSubmitting: false));
       await loadTimeline();
     } on AppException catch (error) {
-      emit(state.copyWith(isSubmitting: false, errorMessage: error.message));
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          actionErrorMessage: () => error.message,
+        ),
+      );
     }
   }
 
@@ -87,16 +108,21 @@ class FeedCubit extends Cubit<FeedState> {
       );
     }).toList();
 
-    emit(state.copyWith(posts: nextPosts, errorMessage: null));
+    emit(state.copyWith(posts: nextPosts, actionErrorMessage: () => null));
     try {
       await _repository.toggleLike(userId: userId, postId: postId);
     } on AppException catch (error) {
-      emit(state.copyWith(posts: previousPosts, errorMessage: error.message));
+      emit(
+        state.copyWith(
+          posts: previousPosts,
+          actionErrorMessage: () => error.message,
+        ),
+      );
     }
   }
 
   Future<void> loadComments({required int postId}) async {
-    emit(state.copyWith(errorMessage: null));
+    emit(state.copyWith(actionErrorMessage: () => null));
     try {
       final comments = await _repository.getComments(postId: postId);
       emit(
@@ -108,7 +134,7 @@ class FeedCubit extends Cubit<FeedState> {
         ),
       );
     } on AppException catch (error) {
-      emit(state.copyWith(errorMessage: error.message));
+      emit(state.copyWith(actionErrorMessage: () => error.message));
     }
   }
 
@@ -117,7 +143,7 @@ class FeedCubit extends Cubit<FeedState> {
     required int postId,
     required String content,
   }) async {
-    emit(state.copyWith(isSubmitting: true, errorMessage: null));
+    emit(state.copyWith(isSubmitting: true, actionErrorMessage: () => null));
     try {
       await _repository.createComment(
         userId: userId,
@@ -143,7 +169,19 @@ class FeedCubit extends Cubit<FeedState> {
         ),
       );
     } on AppException catch (error) {
-      emit(state.copyWith(isSubmitting: false, errorMessage: error.message));
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          actionErrorMessage: () => error.message,
+        ),
+      );
     }
+  }
+
+  void dismissActionError() {
+    if (state.actionErrorMessage == null) {
+      return;
+    }
+    emit(state.copyWith(actionErrorMessage: () => null));
   }
 }
