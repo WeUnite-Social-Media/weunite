@@ -3,13 +3,15 @@ import '../domain/repositories/opportunity_repository.dart';
 import 'opportunity_remote_data_source.dart';
 
 class OpportunityRepositoryImpl implements OpportunityRepository {
-  const OpportunityRepositoryImpl({required OpportunityRemoteDataSource remoteDataSource})
+  const OpportunityRepositoryImpl(
+      {required OpportunityRemoteDataSource remoteDataSource})
       : _remoteDataSource = remoteDataSource;
 
   final OpportunityRemoteDataSource _remoteDataSource;
 
   @override
-  Future<List<Opportunity>> getOpportunities({String? skill, int page = 0}) async {
+  Future<List<Opportunity>> getOpportunities(
+      {String? skill, int page = 0}) async {
     final opportunities = await _remoteDataSource.getOpportunities(
       skill: skill,
       page: page,

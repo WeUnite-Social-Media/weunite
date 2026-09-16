@@ -28,8 +28,10 @@ class ProfileDto {
       bio: data['bio']?.toString(),
       profileImg: data['profileImg']?.toString(),
       bannerImg: data['bannerImg']?.toString(),
-      followersCount: int.tryParse(data['followersCount']?.toString() ?? '') ?? 0,
-      followingCount: int.tryParse(data['followingCount']?.toString() ?? '') ?? 0,
+      followersCount:
+          int.tryParse(data['followersCount']?.toString() ?? '') ?? 0,
+      followingCount:
+          int.tryParse(data['followingCount']?.toString() ?? '') ?? 0,
     );
   }
 

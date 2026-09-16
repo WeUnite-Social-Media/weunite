@@ -47,7 +47,8 @@ class ChatRealtimeClient {
   }) {
     _client?.send(
       destination: '/app/chat.sendMessage',
-      body: '{"conversationId":$conversationId,"senderId":$senderId,"content":"$content"}',
+      body:
+          '{"conversationId":$conversationId,"senderId":$senderId,"content":"$content"}',
     );
   }
 

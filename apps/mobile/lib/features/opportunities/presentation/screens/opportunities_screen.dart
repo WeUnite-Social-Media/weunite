@@ -52,7 +52,8 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
                   );
                 }
 
-                return OpportunityCard(opportunity: state.opportunities[index - 1]);
+                return OpportunityCard(
+                    opportunity: state.opportunities[index - 1]);
               },
             ),
           ),

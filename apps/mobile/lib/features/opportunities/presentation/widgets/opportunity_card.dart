@@ -37,7 +37,8 @@ class OpportunityCard extends StatelessWidget {
               icon: const Icon(Icons.bookmark_border),
             ),
           ),
-          Text(opportunity.description, maxLines: 3, overflow: TextOverflow.ellipsis),
+          Text(opportunity.description,
+              maxLines: 3, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -83,7 +84,8 @@ class _OpportunityDetail extends StatelessWidget {
           controller: controller,
           padding: const EdgeInsets.all(20),
           children: [
-            Text(opportunity.title, style: Theme.of(context).textTheme.headlineSmall),
+            Text(opportunity.title,
+                style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
             Text(opportunity.companyName),
             const SizedBox(height: 16),
@@ -91,7 +93,9 @@ class _OpportunityDetail extends StatelessWidget {
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
-              children: opportunity.skills.map((skill) => Chip(label: Text(skill))).toList(),
+              children: opportunity.skills
+                  .map((skill) => Chip(label: Text(skill)))
+                  .toList(),
             ),
             const SizedBox(height: 24),
             ElevatedButton(

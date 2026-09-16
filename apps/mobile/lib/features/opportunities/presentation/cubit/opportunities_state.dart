@@ -28,5 +28,6 @@ class OpportunitiesState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [opportunities, selectedSkill, isLoading, errorMessage];
+  List<Object?> get props =>
+      [opportunities, selectedSkill, isLoading, errorMessage];
 }

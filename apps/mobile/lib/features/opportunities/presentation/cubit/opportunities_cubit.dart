@@ -13,7 +13,8 @@ class OpportunitiesCubit extends Cubit<OpportunitiesState> {
   final OpportunityRepository _repository;
 
   Future<void> loadOpportunities({String? skill}) async {
-    emit(state.copyWith(isLoading: true, selectedSkill: skill, errorMessage: null));
+    emit(state.copyWith(
+        isLoading: true, selectedSkill: skill, errorMessage: null));
     try {
       final opportunities = await _repository.getOpportunities(skill: skill);
       emit(state.copyWith(isLoading: false, opportunities: opportunities));

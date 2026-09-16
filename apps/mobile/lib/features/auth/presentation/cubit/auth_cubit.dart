@@ -22,7 +22,8 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  Future<void> login({required String username, required String password}) async {
+  Future<void> login(
+      {required String username, required String password}) async {
     emit(state.copyWith(status: AuthStatus.loading, errorMessage: null));
     try {
       final user = await _repository.login(
@@ -68,7 +69,8 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
     } on AppException catch (error) {
-      emit(state.copyWith(status: AuthStatus.unauthenticated, errorMessage: error.message));
+      emit(state.copyWith(
+          status: AuthStatus.unauthenticated, errorMessage: error.message));
     }
   }
 
@@ -93,7 +95,8 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
     } on AppException catch (error) {
-      emit(state.copyWith(status: AuthStatus.unauthenticated, errorMessage: error.message));
+      emit(state.copyWith(
+          status: AuthStatus.unauthenticated, errorMessage: error.message));
     }
   }
 

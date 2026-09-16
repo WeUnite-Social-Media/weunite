@@ -42,7 +42,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: ListView(
               padding: const EdgeInsets.only(bottom: 24),
               children: [
-                if (state.profile != null) ProfileHeader(profile: state.profile!),
+                if (state.profile != null)
+                  ProfileHeader(profile: state.profile!),
                 TabBar(
                   labelColor: AppColors.primary,
                   indicatorColor: AppColors.accentGreen,
@@ -58,7 +59,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: TabBarView(
                     children: [
                       const Center(child: Text('Posts do perfil')),
-                      Center(child: Text(state.profile?.bio ?? 'Sem bio ainda.')),
+                      Center(
+                          child: Text(state.profile?.bio ?? 'Sem bio ainda.')),
                       if (state.profile?.isCompany == true)
                         const Center(child: Text('Oportunidades da empresa')),
                     ],

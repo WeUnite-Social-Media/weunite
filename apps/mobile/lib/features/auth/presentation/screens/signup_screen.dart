@@ -124,13 +124,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       controller: _passwordController,
                       obscureText: true,
                       decoration: const InputDecoration(labelText: 'Senha'),
-                      validator: (value) =>
-                          value == null || value.length < 6 ? 'Minimo de 6 caracteres.' : null,
+                      validator: (value) => value == null || value.length < 6
+                          ? 'Minimo de 6 caracteres.'
+                          : null,
                     ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: state.isLoading ? null : _submit,
-                    child: Text(_isCompany ? 'Cadastrar empresa' : 'Cadastrar atleta'),
+                    child: Text(
+                        _isCompany ? 'Cadastrar empresa' : 'Cadastrar atleta'),
                   ),
                 ],
               ),

@@ -55,8 +55,10 @@ class ProfileHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(profile.name, style: Theme.of(context).textTheme.headlineSmall),
-              Text('@${profile.username}', style: Theme.of(context).textTheme.bodyMedium),
+              Text(profile.name,
+                  style: Theme.of(context).textTheme.headlineSmall),
+              Text('@${profile.username}',
+                  style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 12),
               Row(
                 children: [

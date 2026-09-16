@@ -81,17 +81,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 32),
                     TextFormField(
                       controller: _usernameController,
-                      decoration: const InputDecoration(labelText: 'Usuario ou e-mail'),
+                      decoration:
+                          const InputDecoration(labelText: 'Usuario ou e-mail'),
                       validator: (value) =>
-                          value == null || value.trim().isEmpty ? 'Informe seu usuario.' : null,
+                          value == null || value.trim().isEmpty
+                              ? 'Informe seu usuario.'
+                              : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _passwordController,
                       obscureText: true,
                       decoration: const InputDecoration(labelText: 'Senha'),
-                      validator: (value) =>
-                          value == null || value.length < 6 ? 'Senha obrigatoria.' : null,
+                      validator: (value) => value == null || value.length < 6
+                          ? 'Senha obrigatoria.'
+                          : null,
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
