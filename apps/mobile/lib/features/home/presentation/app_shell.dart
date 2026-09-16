@@ -19,14 +19,12 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   AppTab _currentTab = AppTab.feed;
 
-  Widget get _screen {
-    return switch (_currentTab) {
-      AppTab.feed => const FeedScreen(),
-      AppTab.opportunities => const OpportunitiesScreen(),
-      AppTab.chat => const ConversationsScreen(),
-      AppTab.profile => const ProfileScreen(),
-    };
-  }
+  static const _tabScreens = [
+    FeedScreen(),
+    OpportunitiesScreen(),
+    ConversationsScreen(),
+    ProfileScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +39,10 @@ class _AppShellState extends State<AppShell> {
           ),
         ],
       ),
-      body: _screen,
+      body: IndexedStack(
+        index: _currentTab.index,
+        children: _tabScreens,
+      ),
       bottomNavigationBar: AppBottomNav(
         currentTab: _currentTab,
         onTabSelected: (tab) => setState(() => _currentTab = tab),
