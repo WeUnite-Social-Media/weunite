@@ -15,13 +15,10 @@ class _FakeFeedRepository implements FeedRepository {
   Future<List<Post>> getTimeline({int page = 0}) async => const [];
 
   @override
-  Future<void> createPost({
-    required int userId,
-    required String content,
-  }) async {}
+  Future<void> createPost({required String content}) async {}
 
   @override
-  Future<void> toggleLike({required int userId, required int postId}) async {
+  Future<void> toggleLike({required int postId}) async {
     if (toggleLikeThrows) {
       throw const AppException('Nao foi possivel curtir a publicacao.');
     }
@@ -36,7 +33,6 @@ class _FakeFeedRepository implements FeedRepository {
 
   @override
   Future<void> createComment({
-    required int userId,
     required int postId,
     required String content,
   }) async {}
@@ -57,7 +53,7 @@ void main() {
       'call fails',
       build: () => FeedCubit(_FakeFeedRepository(toggleLikeThrows: true)),
       seed: () => FeedState(posts: [post], hasLoaded: true),
-      act: (cubit) => cubit.toggleLike(userId: 1, postId: post.id),
+      act: (cubit) => cubit.toggleLike(postId: post.id),
       expect: () => [
         FeedState(
           posts: [post.copyWith(likedByViewer: true, likesCount: 1)],
@@ -75,7 +71,7 @@ void main() {
       'keeps the optimistic like when the repository call succeeds',
       build: () => FeedCubit(_FakeFeedRepository()),
       seed: () => FeedState(posts: [post], hasLoaded: true),
-      act: (cubit) => cubit.toggleLike(userId: 1, postId: post.id),
+      act: (cubit) => cubit.toggleLike(postId: post.id),
       expect: () => [
         FeedState(
           posts: [post.copyWith(likedByViewer: true, likesCount: 1)],

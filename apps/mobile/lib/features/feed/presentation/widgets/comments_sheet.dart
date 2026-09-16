@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../domain/entities/comment.dart';
 import '../cubit/feed_cubit.dart';
 
@@ -34,14 +33,12 @@ class _CommentsSheetState extends State<CommentsSheet> {
   }
 
   Future<void> _submit() async {
-    final userId = context.read<AuthCubit>().state.user?.id;
     final content = _controller.text.trim();
-    if (userId == null || content.isEmpty) {
+    if (content.isEmpty) {
       return;
     }
 
     await context.read<FeedCubit>().createComment(
-          userId: userId,
           postId: widget.postId,
           content: content,
         );

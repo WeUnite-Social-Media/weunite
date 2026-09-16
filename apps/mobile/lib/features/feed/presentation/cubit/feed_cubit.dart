@@ -75,13 +75,10 @@ class FeedCubit extends Cubit<FeedState> {
     }
   }
 
-  Future<void> createPost({
-    required int userId,
-    required String content,
-  }) async {
+  Future<void> createPost({required String content}) async {
     emit(state.copyWith(isSubmitting: true, actionErrorMessage: () => null));
     try {
-      await _repository.createPost(userId: userId, content: content);
+      await _repository.createPost(content: content);
       emit(state.copyWith(isSubmitting: false));
       await loadTimeline();
     } on AppException catch (error) {
@@ -94,7 +91,7 @@ class FeedCubit extends Cubit<FeedState> {
     }
   }
 
-  Future<void> toggleLike({required int userId, required int postId}) async {
+  Future<void> toggleLike({required int postId}) async {
     final previousPosts = state.posts;
     final nextPosts = previousPosts.map((post) {
       if (post.id != postId) {
@@ -110,7 +107,7 @@ class FeedCubit extends Cubit<FeedState> {
 
     emit(state.copyWith(posts: nextPosts, actionErrorMessage: () => null));
     try {
-      await _repository.toggleLike(userId: userId, postId: postId);
+      await _repository.toggleLike(postId: postId);
     } on AppException catch (error) {
       emit(
         state.copyWith(
@@ -139,14 +136,12 @@ class FeedCubit extends Cubit<FeedState> {
   }
 
   Future<void> createComment({
-    required int userId,
     required int postId,
     required String content,
   }) async {
     emit(state.copyWith(isSubmitting: true, actionErrorMessage: () => null));
     try {
       await _repository.createComment(
-        userId: userId,
         postId: postId,
         content: content,
       );

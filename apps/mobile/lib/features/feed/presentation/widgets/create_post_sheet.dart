@@ -4,12 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/feed_cubit.dart';
 
 class CreatePostSheet extends StatefulWidget {
-  const CreatePostSheet({
-    required this.userId,
-    super.key,
-  });
-
-  final int userId;
+  const CreatePostSheet({super.key});
 
   @override
   State<CreatePostSheet> createState() => _CreatePostSheetState();
@@ -75,10 +70,7 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
       return;
     }
 
-    await context.read<FeedCubit>().createPost(
-          userId: widget.userId,
-          content: content,
-        );
+    await context.read<FeedCubit>().createPost(content: content);
 
     if (mounted) {
       Navigator.of(context).pop();

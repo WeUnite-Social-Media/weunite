@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/async_state_view.dart';
-import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../cubit/feed_cubit.dart';
 import '../widgets/create_post_sheet.dart';
 import '../widgets/comments_sheet.dart';
@@ -57,7 +56,6 @@ class _FeedScreenState extends State<FeedScreen> {
         }
       },
       builder: (context, state) {
-        final userId = context.read<AuthCubit>().state.user?.id;
         return Scaffold(
           body: AsyncStateView(
             isLoading: state.isLoading,
@@ -80,12 +78,9 @@ class _FeedScreenState extends State<FeedScreen> {
                   final post = state.posts[index];
                   return PostCard(
                     post: post,
-                    onLike: userId == null
-                        ? null
-                        : () => context.read<FeedCubit>().toggleLike(
-                              userId: userId,
-                              postId: post.id,
-                            ),
+                    onLike: () => context.read<FeedCubit>().toggleLike(
+                          postId: post.id,
+                        ),
                     onComments: () => showModalBottomSheet<void>(
                       context: context,
                       isScrollControlled: true,
@@ -100,16 +95,14 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: userId == null
-                ? null
-                : () => showModalBottomSheet<void>(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (_) => BlocProvider.value(
-                        value: context.read<FeedCubit>(),
-                        child: CreatePostSheet(userId: userId),
-                      ),
-                    ),
+            onPressed: () => showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              builder: (_) => BlocProvider.value(
+                value: context.read<FeedCubit>(),
+                child: const CreatePostSheet(),
+              ),
+            ),
             child: const Icon(Icons.add),
           ),
         );

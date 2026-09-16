@@ -1,5 +1,6 @@
 import '../core/config/app_config.dart';
 import '../core/network/api_client.dart';
+import '../core/session/current_user_provider.dart';
 import '../core/session/session_events.dart';
 import '../core/storage/token_storage.dart';
 import '../features/auth/data/auth_remote_data_source.dart';
@@ -46,13 +47,17 @@ AppDependencies bootstrap() {
     sessionEvents: sessionEvents,
   );
 
+  final authRepository = AuthRepositoryImpl(
+    remoteDataSource: AuthRemoteDataSource(apiClient.dio),
+    tokenStorage: tokenStorage,
+  );
+  final currentUserProvider = AuthCurrentUserProvider(authRepository);
+
   return AppDependencies(
-    authRepository: AuthRepositoryImpl(
-      remoteDataSource: AuthRemoteDataSource(apiClient.dio),
-      tokenStorage: tokenStorage,
-    ),
+    authRepository: authRepository,
     feedRepository: FeedRepositoryImpl(
       remoteDataSource: FeedRemoteDataSource(apiClient.dio),
+      currentUserProvider: currentUserProvider,
     ),
     opportunityRepository: OpportunityRepositoryImpl(
       remoteDataSource: OpportunityRemoteDataSource(apiClient.dio),

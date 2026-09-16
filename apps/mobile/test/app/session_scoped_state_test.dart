@@ -106,13 +106,10 @@ class _FakeFeedRepository implements FeedRepository {
   }
 
   @override
-  Future<void> createPost({
-    required int userId,
-    required String content,
-  }) async {}
+  Future<void> createPost({required String content}) async {}
 
   @override
-  Future<void> toggleLike({required int userId, required int postId}) async {}
+  Future<void> toggleLike({required int postId}) async {}
 
   @override
   Future<List<Comment>> getComments({
@@ -123,7 +120,6 @@ class _FakeFeedRepository implements FeedRepository {
 
   @override
   Future<void> createComment({
-    required int userId,
     required int postId,
     required String content,
   }) async {}
