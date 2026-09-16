@@ -96,7 +96,7 @@ class WeUniteMobileApp extends StatelessWidget {
           ),
           BlocProvider(create: (_) => FeedCubit(feedRepository)),
           BlocProvider(
-              create: (_) => OpportunitiesCubit(opportunityRepository)),
+              create: (_) => OpportunitiesCubit(opportunityRepository),),
           BlocProvider(create: (_) => ChatCubit(chatRepository)),
           BlocProvider(create: (_) => ProfileCubit(profileRepository)),
         ],

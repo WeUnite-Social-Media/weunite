@@ -38,7 +38,7 @@ class OpportunityCard extends StatelessWidget {
             ),
           ),
           Text(opportunity.description,
-              maxLines: 3, overflow: TextOverflow.ellipsis),
+              maxLines: 3, overflow: TextOverflow.ellipsis,),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -85,7 +85,7 @@ class _OpportunityDetail extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           children: [
             Text(opportunity.title,
-                style: Theme.of(context).textTheme.headlineSmall),
+                style: Theme.of(context).textTheme.headlineSmall,),
             const SizedBox(height: 8),
             Text(opportunity.companyName),
             const SizedBox(height: 16),

@@ -4,7 +4,7 @@ import 'profile_remote_data_source.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   const ProfileRepositoryImpl(
-      {required ProfileRemoteDataSource remoteDataSource})
+      {required ProfileRemoteDataSource remoteDataSource,})
       : _remoteDataSource = remoteDataSource;
 
   final ProfileRemoteDataSource _remoteDataSource;

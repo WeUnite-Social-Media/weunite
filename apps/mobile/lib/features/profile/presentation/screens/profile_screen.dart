@@ -60,7 +60,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       const Center(child: Text('Posts do perfil')),
                       Center(
-                          child: Text(state.profile?.bio ?? 'Sem bio ainda.')),
+                          child: Text(state.profile?.bio ?? 'Sem bio ainda.'),),
                       if (state.profile?.isCompany == true)
                         const Center(child: Text('Oportunidades da empresa')),
                     ],
