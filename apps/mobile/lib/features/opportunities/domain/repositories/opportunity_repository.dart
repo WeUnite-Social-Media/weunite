@@ -5,6 +5,12 @@ abstract class OpportunityRepository {
   /// them (`isSaved`) or applied to them (`isSubscribed`).
   Future<List<Opportunity>> getOpportunities({int page = 0});
 
+  /// Opportunities published by [companyId].
+  Future<List<Opportunity>> getCompanyOpportunities({
+    required int companyId,
+    int page = 0,
+  });
+
   /// Saves or unsaves the opportunity for the signed-in athlete; returns the
   /// resulting state (`true` = saved), read back from the API.
   Future<bool> toggleSaved({required int opportunityId});

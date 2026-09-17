@@ -21,6 +21,23 @@ class OpportunityRemoteDataSource {
     }
   }
 
+  /// `GET /opportunities/get/company/{companyId}` — what that company has
+  /// published (the API already filters out removed ones).
+  Future<List<OpportunityDto>> getCompanyOpportunities({
+    required int companyId,
+    int page = 0,
+  }) async {
+    try {
+      final response = await _dio.get<Object?>(
+        '/opportunities/get/company/$companyId',
+        queryParameters: {'page': page, 'size': 20},
+      );
+      return decodeJsonList(response.data, OpportunityDto.fromJson);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
   /// Opportunities the athlete bookmarked. The page size is generous on
   /// purpose: the flags are resolved in one request instead of one per card.
   Future<List<SavedOpportunityDto>> getSavedOpportunities({

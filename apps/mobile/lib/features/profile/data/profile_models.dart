@@ -17,6 +17,13 @@ extension UserDtoToProfile on UserDto {
       bannerImg: bannerImg,
       followersCount: followersCount,
       followingCount: followingCount,
+      isPrivate: isPrivate,
+      height: height,
+      weight: weight,
+      footDomain: footDomain,
+      position: position,
+      birthDate: birthDate,
+      skills: skills?.map((skill) => skill.name).toList() ?? const [],
     );
   }
 }

@@ -4,6 +4,7 @@ import '../domain/entities/profile.dart';
 import '../domain/repositories/profile_repository.dart';
 import 'profile_models.dart';
 import 'profile_remote_data_source.dart';
+import 'update_profile_models.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   const ProfileRepositoryImpl({
@@ -61,5 +62,57 @@ class ProfileRepositoryImpl implements ProfileRepository {
       _remoteDataSource.countFollowing(user.id),
     ]);
     return user.toProfile(followersCount: counts[0], followingCount: counts[1]);
+  }
+
+  @override
+  Future<Profile> updateMyProfile({
+    String? name,
+    String? username,
+    String? bio,
+    bool? isPrivate,
+    double? height,
+    double? weight,
+    String? footDomain,
+    String? position,
+    DateTime? birthDate,
+    List<String>? skills,
+    String? profileImagePath,
+    String? bannerImagePath,
+  }) async {
+    final current = await getMyProfile();
+    final updated = await _remoteDataSource.updateUser(
+      username: current.username,
+      request: UpdateUserRequestDto(
+        name: name,
+        username: username,
+        bio: bio,
+        isPrivate: isPrivate,
+        height: height,
+        weight: weight,
+        footDomain: footDomain,
+        position: position,
+        birthDate: birthDate,
+        skills: skills,
+      ),
+      profileImagePath: profileImagePath,
+      bannerImagePath: bannerImagePath,
+    );
+    return updated.toProfile(
+      followersCount: current.followersCount,
+      followingCount: current.followingCount,
+    );
+  }
+
+  @override
+  Future<Profile> deleteMyBanner() async {
+    final current = await getMyProfile();
+    await _remoteDataSource.deleteBanner(current.username);
+    return getMyProfile();
+  }
+
+  @override
+  Future<List<String>> getAvailableSkills() async {
+    final skills = await _remoteDataSource.getSkills();
+    return skills.map((skill) => skill.name).toList();
   }
 }

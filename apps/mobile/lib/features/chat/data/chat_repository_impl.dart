@@ -97,6 +97,18 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
+  Future<Conversation> startConversationWith(int userId) async {
+    final currentUserId = _currentUserProvider.requireUserId();
+    final dto = await _remoteDataSource.createConversation(
+      initiatorUserId: currentUserId,
+      participantId: userId,
+    );
+    final peerId = dto.peerUserIdFor(currentUserId) ?? userId;
+    final peer = (await _loadPeers({peerId}))[peerId];
+    return dto.toEntity(peerUserId: peerId, peer: peer);
+  }
+
+  @override
   Future<void> markConversationAsRead(int conversationId) {
     return _remoteDataSource.markAsRead(
       conversationId: conversationId,

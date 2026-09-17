@@ -9,3 +9,7 @@ part of 'skill_dto.dart';
 SkillDto _$SkillDtoFromJson(Map<String, dynamic> json) => SkillDto(
       name: json['name'] as String,
     );
+
+Map<String, dynamic> _$SkillDtoToJson(SkillDto instance) => <String, dynamic>{
+      'name': instance.name,
+    };

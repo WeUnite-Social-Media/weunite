@@ -17,6 +17,10 @@ abstract class ChatRepository {
     required String imagePath,
   });
 
+  /// Opens (or creates) the 1:1 conversation with [userId]. The API returns
+  /// the existing conversation when there already is one.
+  Future<Conversation> startConversationWith(int userId);
+
   /// Marks the peer's messages in the conversation as read.
   Future<void> markConversationAsRead(int conversationId);
   Future<void> disconnectRealtime();

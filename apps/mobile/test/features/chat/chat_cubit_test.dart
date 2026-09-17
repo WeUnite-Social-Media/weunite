@@ -61,6 +61,14 @@ class _FakeChatRepository implements ChatRepository {
     readCalls.add(conversationId);
   }
 
+  final startedWith = <int>[];
+
+  @override
+  Future<Conversation> startConversationWith(int userId) async {
+    startedWith.add(userId);
+    return _conversation(90 + userId);
+  }
+
   @override
   Future<Conversation> getConversation(int conversationId) async =>
       _conversation(conversationId);

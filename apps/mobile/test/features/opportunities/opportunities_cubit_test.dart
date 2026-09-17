@@ -38,6 +38,13 @@ class _FakeOpportunityRepository implements OpportunityRepository {
       opportunities;
 
   @override
+  Future<List<Opportunity>> getCompanyOpportunities({
+    required int companyId,
+    int page = 0,
+  }) async =>
+      const [];
+
+  @override
   Future<bool> toggleSaved({required int opportunityId}) async {
     toggleSavedCalls++;
     if (throwsOnToggle) {

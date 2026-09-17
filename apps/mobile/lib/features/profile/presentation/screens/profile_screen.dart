@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/async_state_view.dart';
+import '../../domain/entities/profile.dart';
 import '../cubit/profile_cubit.dart';
 import '../cubit/profile_posts_cubit.dart';
+import 'edit_profile_screen.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_posts_list.dart';
 
@@ -96,8 +98,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 24),
                   children: [
-                    if (state.profile != null)
+                    if (state.profile != null) ...[
                       ProfileHeader(profile: state.profile!),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              _editProfile(context, state.profile!),
+                          icon: const Icon(Icons.edit_outlined),
+                          label: const Text('Editar perfil'),
+                        ),
+                      ),
+                    ],
                     TabBar(
                       labelColor: AppColors.primary,
                       indicatorColor: AppColors.accentGreen,
@@ -125,6 +137,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _editProfile(BuildContext context, Profile profile) async {
+    final cubit = context.read<ProfileCubit>();
+    final saved = await Navigator.of(context).push<Profile>(
+      MaterialPageRoute(builder: (_) => EditProfileScreen(profile: profile)),
+    );
+    if (saved != null) {
+      // Reload so follower counts and anything the API normalized are in
+      // sync, not only the fields the form sent.
+      await cubit.loadMyProfile();
+    }
   }
 
   void _showError(BuildContext context, String message) {

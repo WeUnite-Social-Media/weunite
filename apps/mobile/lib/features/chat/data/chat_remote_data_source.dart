@@ -89,6 +89,26 @@ class ChatRemoteDataSource {
     }
   }
 
+  /// `POST /conversations/create` — the API returns the existing 1:1
+  /// conversation when there already is one, so calling it again is safe.
+  Future<ConversationDto> createConversation({
+    required int initiatorUserId,
+    required int participantId,
+  }) async {
+    try {
+      final response = await _dio.post<Object?>(
+        '/conversations/create',
+        data: {
+          'initiatorUserId': initiatorUserId,
+          'participantIds': [participantId],
+        },
+      );
+      return ConversationDto.fromJson(asJsonObject(response.data));
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
   /// `GET /user/id/{id}` (openapi: paths./api/user/id/{id}), used to
   /// resolve a conversation's peer name/avatar. Deliberately not imported
   /// from `features/profile/data`, since a feature never imports another

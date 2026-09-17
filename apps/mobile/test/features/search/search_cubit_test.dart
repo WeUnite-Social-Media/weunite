@@ -62,6 +62,29 @@ class _FakeProfileRepository implements ProfileRepository {
   Future<Profile> getMyProfile() async => throw UnimplementedError();
 
   @override
+  Future<Profile> updateMyProfile({
+    String? name,
+    String? username,
+    String? bio,
+    bool? isPrivate,
+    double? height,
+    double? weight,
+    String? footDomain,
+    String? position,
+    DateTime? birthDate,
+    List<String>? skills,
+    String? profileImagePath,
+    String? bannerImagePath,
+  }) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Profile> deleteMyBanner() async => throw UnimplementedError();
+
+  @override
+  Future<List<String>> getAvailableSkills() async => const [];
+
+  @override
   Future<void> toggleFollow({required int followedId}) async {}
 }
 
@@ -114,6 +137,13 @@ class _FakeOpportunityRepository implements OpportunityRepository {
   @override
   Future<List<Opportunity>> getOpportunities({int page = 0}) async =>
       opportunities;
+
+  @override
+  Future<List<Opportunity>> getCompanyOpportunities({
+    required int companyId,
+    int page = 0,
+  }) async =>
+      const [];
 
   @override
   Future<bool> toggleSaved({required int opportunityId}) async => true;

@@ -107,6 +107,13 @@ class _EmptyOpportunityRepository implements OpportunityRepository {
   Future<List<Opportunity>> getOpportunities({int page = 0}) async => const [];
 
   @override
+  Future<List<Opportunity>> getCompanyOpportunities({
+    required int companyId,
+    int page = 0,
+  }) async =>
+      const [];
+
+  @override
   Future<bool> toggleSaved({required int opportunityId}) async => true;
 
   @override
@@ -150,6 +157,10 @@ class _FakeChatRepository implements ChatRepository {
   }) async {}
 
   @override
+  Future<Conversation> startConversationWith(int userId) async =>
+      throw UnimplementedError();
+
+  @override
   Future<void> markConversationAsRead(int conversationId) async {}
 
   @override
@@ -179,6 +190,29 @@ class _EmptyProfileRepository implements ProfileRepository {
 
   @override
   Future<List<Profile>> searchUsers(String query) async => const [];
+
+  @override
+  Future<Profile> updateMyProfile({
+    String? name,
+    String? username,
+    String? bio,
+    bool? isPrivate,
+    double? height,
+    double? weight,
+    String? footDomain,
+    String? position,
+    DateTime? birthDate,
+    List<String>? skills,
+    String? profileImagePath,
+    String? bannerImagePath,
+  }) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Profile> deleteMyBanner() async => throw UnimplementedError();
+
+  @override
+  Future<List<String>> getAvailableSkills() async => const [];
 
   @override
   Future<void> toggleFollow({required int followedId}) async {}

@@ -51,6 +51,18 @@ class OpportunityRepositoryImpl implements OpportunityRepository {
         .toList();
   }
 
+  @override
+  Future<List<Opportunity>> getCompanyOpportunities({
+    required int companyId,
+    int page = 0,
+  }) async {
+    final opportunities = await _remoteDataSource.getCompanyOpportunities(
+      companyId: companyId,
+      page: page,
+    );
+    return opportunities.map((item) => item.toEntity()).toList();
+  }
+
   Future<Set<int>> _idsOrEmpty(Future<Set<int>> Function() load) async {
     try {
       return await load();

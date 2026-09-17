@@ -65,6 +65,10 @@ class _FakeChatRepository implements ChatRepository {
   }) async {}
 
   @override
+  Future<Conversation> startConversationWith(int userId) async =>
+      throw UnimplementedError();
+
+  @override
   Future<void> markConversationAsRead(int conversationId) async {}
 
   @override
