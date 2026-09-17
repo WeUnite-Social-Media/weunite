@@ -79,6 +79,14 @@ void main() {
       'OpportunityDTO',
       () => expectMatchesSchema(opportunityJson, 'OpportunityDTO'),
     );
+    test(
+      'MessageDTO',
+      () => expectMatchesSchema(messageJson, 'MessageDTO'),
+    );
+    test(
+      'ConversationDTO',
+      () => expectMatchesSchema(conversationJson, 'ConversationDTO'),
+    );
 
     group('paths used by the mobile app exist in the spec', () {
       const usedPaths = <String, String>{

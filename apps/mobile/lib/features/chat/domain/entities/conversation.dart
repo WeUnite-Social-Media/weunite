@@ -3,16 +3,18 @@ import 'package:equatable/equatable.dart';
 class Conversation extends Equatable {
   const Conversation({
     required this.id,
-    required this.peerName,
-    required this.peerUsername,
+    this.peerUserId,
+    this.peerName,
+    this.peerUsername,
     this.peerAvatar,
     this.lastMessage,
     this.unreadCount = 0,
   });
 
   final int id;
-  final String peerName;
-  final String peerUsername;
+  final int? peerUserId;
+  final String? peerName;
+  final String? peerUsername;
   final String? peerAvatar;
   final String? lastMessage;
   final int unreadCount;
@@ -20,6 +22,7 @@ class Conversation extends Equatable {
   @override
   List<Object?> get props => [
         id,
+        peerUserId,
         peerName,
         peerUsername,
         peerAvatar,

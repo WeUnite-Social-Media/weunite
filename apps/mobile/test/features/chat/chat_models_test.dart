@@ -3,12 +3,11 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:weunite_mobile/features/chat/data/chat_models.dart';
 import 'package:weunite_mobile/features/chat/domain/entities/chat_realtime_event.dart';
-import 'package:weunite_mobile/features/chat/domain/entities/conversation.dart';
 
 void main() {
-  group('ChatMessageDto.fromJson', () {
+  group('MessageDto.fromJson', () {
     test('parses a real MessageDTO payload without readAt/editedAt', () {
-      final dto = ChatMessageDto.fromJson({
+      final dto = MessageDto.fromJson({
         'id': 55,
         'conversationId': 30,
         'senderId': 9,
@@ -20,25 +19,29 @@ void main() {
         'edited': false,
       });
 
-      expect(dto.read, isTrue);
+      expect(dto.isRead, isTrue);
       expect(
         dto.createdAt,
         DateTime.utc(2026, 9, 15, 12, 10, 0, 123, 456),
       );
       expect(dto.readAt, isNull);
       expect(dto.editedAt, isNull);
-      expect(dto.type, ChatMessageType.text);
+      expect(dto.type, MessageTypeDto.text);
     });
 
     test(
         'createdAt with 9 fractional digits does not fall back to '
         'DateTime.now()', () {
-      final dto = ChatMessageDto.fromJson({
+      final dto = MessageDto.fromJson({
         'id': 55,
         'conversationId': 30,
         'senderId': 9,
         'content': 'Oi!',
+        'isRead': false,
         'createdAt': '2026-09-15T12:10:00.123456789Z',
+        'type': 'TEXT',
+        'deleted': false,
+        'edited': false,
       });
 
       expect(dto.createdAt, DateTime.utc(2026, 9, 15, 12, 10, 0, 123, 456));
@@ -107,6 +110,36 @@ void main() {
       expect(parseChatRealtimeEvent('not json'), isNull);
       expect(parseChatRealtimeEvent('42'), isNull);
       expect(parseChatRealtimeEvent(jsonEncode({'foo': 1})), isNull);
+    });
+
+    test('a message with a string id returns null', () {
+      final event = parseChatRealtimeEvent(
+        jsonEncode({...baseMessage(), 'id': '55'}),
+      );
+
+      expect(event, isNull);
+    });
+
+    test('a message without createdAt returns null', () {
+      final payload = baseMessage()..remove('createdAt');
+
+      expect(parseChatRealtimeEvent(jsonEncode(payload)), isNull);
+    });
+
+    test('a message with an unknown type returns null', () {
+      final event = parseChatRealtimeEvent(
+        jsonEncode({...baseMessage(), 'type': 'VIDEO'}),
+      );
+
+      expect(event, isNull);
+    });
+
+    test('a DELETE payload with a string messageId returns null', () {
+      final event = parseChatRealtimeEvent(
+        jsonEncode({'type': 'DELETE', 'messageId': '55'}),
+      );
+
+      expect(event, isNull);
     });
   });
 }

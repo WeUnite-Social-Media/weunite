@@ -1,3 +1,5 @@
+import '../../../core/contracts/user_dto.dart';
+import '../../../core/error/app_exception.dart';
 import '../../../core/session/current_user_provider.dart';
 import '../domain/entities/chat_realtime_event.dart';
 import '../domain/entities/conversation.dart';
@@ -20,19 +22,30 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<List<Conversation>> getConversations() async {
-    final conversations = await _remoteDataSource.getConversations(
-      _currentUserProvider.requireUserId(),
-    );
-    return conversations.map((item) => item.toEntity()).toList();
+    final userId = _currentUserProvider.requireUserId();
+    final dtos = await _remoteDataSource.getConversations(userId);
+    final peerIds =
+        dtos.map((dto) => dto.peerUserIdFor(userId)).whereType<int>().toSet();
+    final peers = await _loadPeers(peerIds);
+    return dtos.map((dto) {
+      final peerId = dto.peerUserIdFor(userId);
+      return dto.toEntity(
+        peerUserId: peerId,
+        peer: peerId == null ? null : peers[peerId],
+      );
+    }).toList();
   }
 
   @override
   Future<Conversation> getConversation(int conversationId) async {
-    final conversation = await _remoteDataSource.getConversation(
+    final userId = _currentUserProvider.requireUserId();
+    final dto = await _remoteDataSource.getConversation(
       conversationId: conversationId,
-      userId: _currentUserProvider.requireUserId(),
+      userId: userId,
     );
-    return conversation.toEntity();
+    final peerId = dto.peerUserIdFor(userId);
+    final peer = peerId == null ? null : (await _loadPeers({peerId}))[peerId];
+    return dto.toEntity(peerUserId: peerId, peer: peer);
   }
 
   @override
@@ -64,5 +77,24 @@ class ChatRepositoryImpl implements ChatRepository {
   @override
   Future<void> disconnectRealtime() {
     return _realtimeClient.disconnect();
+  }
+
+  /// Fetches [ids] concurrently. A 404 (peer no longer accessible) resolves
+  /// to `null` for that id instead of failing the whole lookup; any other
+  /// error is rethrown.
+  Future<Map<int, UserDto?>> _loadPeers(Set<int> ids) async {
+    final entries = await Future.wait(
+      ids.map((id) async {
+        try {
+          return MapEntry(id, await _remoteDataSource.getUser(id));
+        } on AppException catch (error) {
+          if (error.statusCode == 404) {
+            return MapEntry<int, UserDto?>(id, null);
+          }
+          rethrow;
+        }
+      }),
+    );
+    return Map.fromEntries(entries);
   }
 }

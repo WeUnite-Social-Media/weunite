@@ -58,6 +58,27 @@ const Map<String, Object?> commentJson = {
   'createdAt': '2026-09-15T12:20:00Z',
 };
 
+/// `MessageDTO` (openapi: components.schemas.MessageDTO).
+const Map<String, Object?> messageJson = {
+  'id': 55,
+  'conversationId': 30,
+  'senderId': 9,
+  'content': 'Oi!',
+  'isRead': true,
+  'createdAt': '2026-09-15T12:10:00Z',
+  'type': 'TEXT',
+  'deleted': false,
+  'edited': false,
+};
+
+/// `ConversationDTO` (openapi: components.schemas.ConversationDTO).
+const Map<String, Object?> conversationJson = {
+  'id': 30,
+  'participantIds': [7, 9],
+  'lastMessage': messageJson,
+  'unreadCount': 2,
+};
+
 /// `OpportunityDTO` (openapi: components.schemas.OpportunityDTO).
 Map<String, Object?> get opportunityJson => {
       'id': 4,

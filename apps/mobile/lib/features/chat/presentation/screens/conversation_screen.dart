@@ -46,7 +46,9 @@ class _ConversationViewState extends State<_ConversationView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.conversation.peerName)),
+      appBar: AppBar(
+        title: Text(widget.conversation.peerName ?? 'Conversa'),
+      ),
       body: MultiBlocListener(
         listeners: [
           BlocListener<ConversationCubit, ConversationState>(

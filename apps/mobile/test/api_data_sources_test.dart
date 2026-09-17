@@ -6,8 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:weunite_mobile/core/error/app_exception.dart';
 import 'package:weunite_mobile/core/network/api_diagnostics.dart';
 import 'package:weunite_mobile/features/auth/data/auth_remote_data_source.dart';
+import 'package:weunite_mobile/features/chat/data/chat_models.dart';
 import 'package:weunite_mobile/features/chat/data/chat_remote_data_source.dart';
-import 'package:weunite_mobile/features/chat/domain/entities/conversation.dart';
 import 'package:weunite_mobile/features/feed/data/feed_remote_data_source.dart';
 import 'package:weunite_mobile/features/opportunities/data/opportunity_remote_data_source.dart';
 import 'package:weunite_mobile/features/profile/data/profile_remote_data_source.dart';
@@ -67,37 +67,8 @@ void main() {
     test('parses raw conversation and message lists returned by the API',
         () async {
       final dio = _dio({
-        '/api/conversations/user/7': [
-          {
-            'id': 30,
-            'participantIds': [7, 9],
-            'unreadCount': 2,
-            'lastMessage': {
-              'id': 55,
-              'conversationId': 30,
-              'senderId': 9,
-              'content': 'Oi!',
-              'isRead': false,
-              'createdAt': '2026-09-15T12:10:00Z',
-              'type': 'TEXT',
-              'deleted': false,
-              'edited': false,
-            },
-          },
-        ],
-        '/api/conversations/30/messages/7': [
-          {
-            'id': 55,
-            'conversationId': 30,
-            'senderId': 9,
-            'content': 'Oi!',
-            'isRead': true,
-            'createdAt': '2026-09-15T12:10:00Z',
-            'type': 'TEXT',
-            'deleted': false,
-            'edited': false,
-          },
-        ],
+        '/api/conversations/user/7': [conversationJson],
+        '/api/conversations/30/messages/7': [messageJson],
       });
       final dataSource = ChatRemoteDataSource(dio);
 
@@ -107,12 +78,12 @@ void main() {
         userId: 7,
       );
 
-      expect(conversations.single.lastMessage, 'Oi!');
+      expect(conversations.single.lastMessage?.content, 'Oi!');
       expect(conversations.single.unreadCount, 2);
       expect(messages.single.content, 'Oi!');
-      expect(messages.single.read, isTrue);
+      expect(messages.single.isRead, isTrue);
       expect(messages.single.conversationId, 30);
-      expect(messages.single.type, ChatMessageType.text);
+      expect(messages.single.type, MessageTypeDto.text);
     });
 
     test('parses ResponseDTO<UserDTO> profile', () async {
@@ -244,6 +215,21 @@ void main() {
         );
 
         expect(dataSource.getOpportunities, isServerFormatError());
+      });
+
+      test('message with an unknown type', () async {
+        final dataSource = ChatRemoteDataSource(
+          _dio({
+            '/api/conversations/30/messages/7': [
+              {...messageJson, 'type': 'VIDEO'},
+            ],
+          }),
+        );
+
+        expect(
+          () => dataSource.getMessages(conversationId: 30, userId: 7),
+          isServerFormatError(),
+        );
       });
     });
   });

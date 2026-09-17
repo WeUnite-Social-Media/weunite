@@ -49,12 +49,15 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                       ? null
                       : NetworkImage(conversation.peerAvatar!),
                   child: conversation.peerAvatar == null
-                      ? Text(_initial(conversation.peerName))
+                      ? Text(_initial(conversation.peerName ?? ''))
                       : null,
                 ),
-                title: Text(conversation.peerName),
+                title: Text(conversation.peerName ?? 'Conversa'),
                 subtitle: Text(
-                  conversation.lastMessage ?? '@${conversation.peerUsername}',
+                  conversation.lastMessage ??
+                      (conversation.peerUsername == null
+                          ? ''
+                          : '@${conversation.peerUsername}'),
                 ),
                 trailing: conversation.unreadCount == 0
                     ? null
