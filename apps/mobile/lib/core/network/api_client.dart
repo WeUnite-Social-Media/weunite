@@ -71,7 +71,9 @@ AppException mapDioError(Object error, [StackTrace? stackTrace]) {
       debugPrintStack(stackTrace: stackTrace, maxFrames: 8);
     }
   }
-  if (cause is TypeError || cause is FormatException) {
+  if (cause is TypeError ||
+      cause is FormatException ||
+      cause is ArgumentError) {
     return const AppException('Resposta do servidor em formato inesperado.');
   }
   if (error is DioException) {
