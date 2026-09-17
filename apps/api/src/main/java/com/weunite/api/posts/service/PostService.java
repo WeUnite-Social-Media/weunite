@@ -143,7 +143,7 @@ public class PostService {
         projection.getUpdatedAt(),
         new UserSummaryDTO(
             String.valueOf(projection.getUserId()),
-            projection.getUserName(),
+            projection.getAuthorName(),
             projection.getUsername(),
             projection.getUserProfileImg()),
         toRepostedBySummary(projection),
