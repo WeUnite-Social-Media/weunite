@@ -116,16 +116,10 @@ class _FakeOpportunityRepository implements OpportunityRepository {
       opportunities;
 
   @override
-  Future<void> toggleSaved({
-    required int athleteId,
-    required int opportunityId,
-  }) async {}
+  Future<bool> toggleSaved({required int opportunityId}) async => true;
 
   @override
-  Future<void> toggleSubscription({
-    required int athleteId,
-    required int opportunityId,
-  }) async {}
+  Future<bool> toggleSubscription({required int opportunityId}) async => true;
 }
 
 SearchCubit _cubit({

@@ -145,16 +145,10 @@ class _FakeOpportunityRepository implements OpportunityRepository {
   Future<List<Opportunity>> getOpportunities({int page = 0}) async => const [];
 
   @override
-  Future<void> toggleSaved({
-    required int athleteId,
-    required int opportunityId,
-  }) async {}
+  Future<bool> toggleSaved({required int opportunityId}) async => true;
 
   @override
-  Future<void> toggleSubscription({
-    required int athleteId,
-    required int opportunityId,
-  }) async {}
+  Future<bool> toggleSubscription({required int opportunityId}) async => true;
 }
 
 class _FakeChatRepository implements ChatRepository {

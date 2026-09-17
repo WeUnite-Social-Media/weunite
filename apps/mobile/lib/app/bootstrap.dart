@@ -62,6 +62,7 @@ AppDependencies bootstrap() {
     ),
     opportunityRepository: OpportunityRepositoryImpl(
       remoteDataSource: OpportunityRemoteDataSource(apiClient.dio),
+      currentUserProvider: currentUserProvider,
     ),
     chatRepository: ChatRepositoryImpl(
       remoteDataSource: ChatRemoteDataSource(apiClient.dio),

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/async_state_view.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../cubit/opportunities_cubit.dart';
 import '../widgets/opportunity_card.dart';
+import '../widgets/opportunity_detail_route.dart';
 
 class OpportunitiesScreen extends StatefulWidget {
   const OpportunitiesScreen({super.key});
@@ -44,8 +46,29 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
               itemCount: state.opportunities.length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
+                final opportunity = state.opportunities[index];
+                // Saving and applying are athlete-only on the API, so a
+                // company account sees the listing without those actions.
+                final isAthlete =
+                    context.read<AuthCubit>().state.user?.isCompany == false;
                 return OpportunityCard(
-                  opportunity: state.opportunities[index],
+                  opportunity: opportunity,
+                  isPending: state.pendingIds.contains(opportunity.id),
+                  onOpenDetail: () => showOpportunityDetailBound(
+                    context,
+                    opportunityId: opportunity.id,
+                    canAct: isAthlete,
+                  ),
+                  onToggleSaved: isAthlete
+                      ? () => context
+                          .read<OpportunitiesCubit>()
+                          .toggleSaved(opportunityId: opportunity.id)
+                      : null,
+                  onToggleSubscription: isAthlete
+                      ? () => context
+                          .read<OpportunitiesCubit>()
+                          .toggleSubscription(opportunityId: opportunity.id)
+                      : null,
                 );
               },
             ),
