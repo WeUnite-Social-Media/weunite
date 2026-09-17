@@ -65,6 +65,18 @@ Known gaps: there is no realtime read-receipt (the API only broadcasts `/topic/c
 | `/feed`, `/opportunities`, `/chat`, `/profile` | The four bottom-nav tabs, as branches of a `StatefulShellRoute.indexedStack`. Each branch keeps its own `Navigator` and screen state when switching tabs, same as the previous manual `IndexedStack`. |
 | `/chat/:conversationId` | Pushed full-screen. Resolves the id to a `Conversation` (`ChatRepository.getConversation`) before rendering `ConversationScreen`, so it also works as a cold-start deep link. |
 | `/profile/:userId` | Pushed full-screen. A read-only view of a third party's profile (`UserProfileCubit` + `UserProfileScreen`), separate from the session-scoped `ProfileCubit` used by the `/profile` tab, which only ever holds the signed-in user's own profile. |
-| `/posts/:postId` | Placeholder (`PostDetailScreen`). `GET /posts/get/{postId}` exists on the API but returns a different DTO shape (`ResponseDTO<PostDTO>`) than the feed list; a real detail view is deferred to the typed-contracts phase. |
+| `/posts/:postId` | Placeholder (`PostDetailScreen`). `GET /posts/get/{postId}` exists on the API but returns a different DTO shape (`ResponseDTO<PostDTO>`, with `likes`/`comments` lists) than the feed list; a real detail view is still pending. |
 
 A top-level `redirect` reads `AuthCubit.state.status` and re-runs on every auth change via a `GoRouterRefreshStream` (adapts `AuthCubit.stream` into a `Listenable`): unauthenticated goes to `/login`, authenticated while on `/login`/`/signup`/`/splash` goes to `/feed`, and `checking` goes to `/splash`. The session-scoped `MultiBlocProvider` (`FeedCubit`, `OpportunitiesCubit`, `ChatCubit`, `ProfileCubit`, keyed by `ValueKey(user.id)`) is built inside the shell route's `builder`, so it exists only while authenticated, matching the scoping described above.
+
+## API contracts
+
+DTOs are generated with `json_serializable` from the real API shapes (field names match the Java DTOs exactly, no name fallbacks), and any payload that doesn't match — a missing field, the wrong JSON type, an unknown enum value — throws instead of silently producing a default value like `''`, `0`, or `DateTime.now()`; `mapDioError` turns that into `AppException('Resposta do servidor em formato inesperado.')`.
+
+```sh
+pnpm --filter @weunite/mobile codegen          # regenerate *.g.dart after editing a DTO
+pnpm --filter @weunite/mobile contracts:update # refresh openapi/weunite-api.json (needs the API running)
+pnpm --filter @weunite/mobile test             # includes test/contracts/openapi_contract_test.dart
+```
+
+`*.g.dart` files are committed, since `flutter test` runs without codegen in CI. Two effects of the real API shapes worth knowing: a profile's `followersCount`/`followingCount` are fetched from `GET /follow/{followers,following}/{userId}/count` (there's no such field on `UserDTO`), and a chat conversation's peer name/avatar are fetched from `GET /user/id/{id}` after resolving the peer id client-side, since `ConversationDTO` only has `participantIds`.
