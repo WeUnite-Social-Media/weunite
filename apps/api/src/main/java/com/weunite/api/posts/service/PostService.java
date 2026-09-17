@@ -99,6 +99,23 @@ public class PostService {
         .toList();
   }
 
+  /** Posts whose text matches {@code query}; a blank query matches nothing. */
+  @Transactional(readOnly = true)
+  public List<FeedPostSummaryDTO> searchPosts(Long viewerId, String query, int page, int size) {
+    String term = query == null ? "" : query.trim();
+    if (term.isEmpty()) {
+      return List.of();
+    }
+
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 100);
+    PageRequest pageable = PageRequest.of(safePage, safeSize);
+
+    return postRepository.searchFeedSummaries(viewerId, term, pageable).getContent().stream()
+        .map(this::toFeedPostSummaryDTO)
+        .toList();
+  }
+
   @Transactional(readOnly = true)
   public List<FeedPostSummaryDTO> getPostsByUser(Long viewerId, Long userId, int page, int size) {
     if (!userRepository.existsById(userId)) {

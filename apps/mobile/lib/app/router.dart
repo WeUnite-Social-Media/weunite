@@ -25,6 +25,7 @@ import '../features/profile/presentation/cubit/profile_cubit.dart';
 import '../features/profile/presentation/cubit/profile_posts_cubit.dart';
 import '../features/profile/presentation/screens/profile_screen.dart';
 import '../features/profile/presentation/screens/user_profile_screen.dart';
+import '../features/search/presentation/screens/search_screen.dart';
 
 /// Route map (kept in sync with `apps/mobile/AGENTS.md` / `README.md`):
 /// - `/splash`: shown while `AuthCubit` is restoring the session.
@@ -61,6 +62,10 @@ GoRouter buildRouter({
         builder: (context, state) => ConversationRouteScreen(
           conversationId: int.parse(state.pathParameters['conversationId']!),
         ),
+      ),
+      GoRoute(
+        path: '/search',
+        builder: (context, state) => const SearchScreen(),
       ),
       GoRoute(
         path: '/profile/:userId',

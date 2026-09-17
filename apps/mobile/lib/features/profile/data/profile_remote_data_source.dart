@@ -33,6 +33,25 @@ class ProfileRemoteDataSource {
     }
   }
 
+  /// `GET /user/search?query=` — matches name, username and e-mail, and only
+  /// returns users with a verified e-mail.
+  Future<List<UserDto>> searchUsers(String query) async {
+    try {
+      final response = await _dio.get<Object?>(
+        '/user/search',
+        queryParameters: {'query': query},
+      );
+      return decodeResponseData<List<UserDto>>(
+        response.data,
+        (data) => (data! as List<Object?>)
+            .map((item) => UserDto.fromJson(asJsonObject(item)))
+            .toList(),
+      );
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
   Future<int> countFollowers(int userId) async {
     try {
       final response =

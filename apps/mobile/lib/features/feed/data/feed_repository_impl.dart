@@ -39,6 +39,12 @@ class FeedRepositoryImpl implements FeedRepository {
   }
 
   @override
+  Future<List<Post>> searchPosts({required String query, int page = 0}) async {
+    final posts = await _remoteDataSource.searchPosts(query: query, page: page);
+    return posts.map((post) => post.toEntity()).toList();
+  }
+
+  @override
   Future<void> createPost({required String content, String? imagePath}) {
     return _remoteDataSource.createPost(
       userId: _currentUserProvider.requireUserId(),

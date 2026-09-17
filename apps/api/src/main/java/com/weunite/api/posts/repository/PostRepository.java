@@ -210,6 +210,53 @@ public interface PostRepository extends JpaRepository<Post, Long> {
       value =
           """
           SELECT
+            p.id AS postId,
+            p.text AS text,
+            p.image_url AS imageUrl,
+            p.created_at AS createdAt,
+            p.updated_at AS updatedAt,
+            u.id AS userId,
+            u.name AS authorName,
+            u.username AS username,
+            u.profile_img AS userProfileImg,
+            (SELECT COUNT(*) FROM tb_post_like l WHERE l.post_id = p.id) AS likesCount,
+            (SELECT COUNT(*) FROM comment c WHERE c.post_id = p.id AND c.deleted = false) AS commentsCount,
+            CASE
+              WHEN :viewerId IS NOT NULL AND EXISTS (
+                SELECT 1
+                FROM tb_post_like viewer_like
+                WHERE viewer_like.post_id = p.id
+                  AND viewer_like.user_id = :viewerId
+              )
+              THEN TRUE
+              ELSE FALSE
+            END AS likedByViewer,
+            CAST(NULL AS BIGINT) AS repostedByUserId,
+            CAST(NULL AS VARCHAR) AS repostedByName,
+            CAST(NULL AS VARCHAR) AS repostedByUsername,
+            CAST(NULL AS VARCHAR) AS repostedByProfileImg,
+            CAST(NULL AS TIMESTAMP) AS repostedAt
+          FROM post p
+          JOIN tb_user u ON u.id = p.user_id
+          WHERE p.deleted = false
+            AND LOWER(p.text) LIKE LOWER(CONCAT('%', :query, '%'))
+          ORDER BY p.created_at DESC, p.id DESC
+          """,
+      countQuery =
+          """
+          SELECT COUNT(*)
+          FROM post p
+          WHERE p.deleted = false
+            AND LOWER(p.text) LIKE LOWER(CONCAT('%', :query, '%'))
+          """,
+      nativeQuery = true)
+  Page<FeedPostSummaryProjection> searchFeedSummaries(
+      @Param("viewerId") Long viewerId, @Param("query") String query, Pageable pageable);
+
+  @Query(
+      value =
+          """
+          SELECT
             feed.post_id AS postId,
             p.text AS text,
             p.image_url AS imageUrl,

@@ -39,6 +39,22 @@ class FeedRemoteDataSource {
     }
   }
 
+  /// `GET /posts/search?query=` — posts whose text matches the query.
+  Future<List<FeedPostSummaryDto>> searchPosts({
+    required String query,
+    int page = 0,
+  }) async {
+    try {
+      final response = await _dio.get<Object?>(
+        '/posts/search',
+        queryParameters: {'query': query, 'page': page, 'size': kFeedPageSize},
+      );
+      return decodeJsonList(response.data, FeedPostSummaryDto.fromJson);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
   Future<List<FeedPostSummaryDto>> getUserPosts({
     required int userId,
     int page = 0,

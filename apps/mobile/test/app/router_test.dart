@@ -76,6 +76,10 @@ class _EmptyFeedRepository implements FeedRepository {
       const [];
 
   @override
+  Future<List<Post>> searchPosts({required String query, int page = 0}) async =>
+      const [];
+
+  @override
   Future<void> createPost({
     required String content,
     String? imagePath,
@@ -169,6 +173,9 @@ class _EmptyProfileRepository implements ProfileRepository {
       role: 'ATHLETE',
     );
   }
+
+  @override
+  Future<List<Profile>> searchUsers(String query) async => const [];
 
   @override
   Future<void> toggleFollow({required int followedId}) async {}

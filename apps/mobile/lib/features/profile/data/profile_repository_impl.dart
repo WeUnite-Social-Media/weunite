@@ -40,6 +40,14 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
+  Future<List<Profile>> searchUsers(String query) async {
+    final users = await _remoteDataSource.searchUsers(query);
+    return users
+        .map((user) => user.toProfile(followersCount: 0, followingCount: 0))
+        .toList();
+  }
+
+  @override
   Future<void> toggleFollow({required int followedId}) {
     return _remoteDataSource.toggleFollow(
       followerId: _currentUserProvider.requireUserId(),

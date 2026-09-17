@@ -206,4 +206,27 @@ class PostInteractionPersistenceTest {
       assertEquals("authorhandle", summary.getUsername());
     }
   }
+
+  @Test
+  @DisplayName("Should search posts by text, ignoring case and deleted posts")
+  void searchPostsByText() {
+    User author =
+        userRepository.save(new User("Searcher", "searcher", "searcher@example.com", "p"));
+    postRepository.save(new Post(author, "Peneira de futebol amanha"));
+    postRepository.save(new Post(author, "Nada a ver"));
+    Post deleted = postRepository.save(new Post(author, "Peneira cancelada"));
+    deleted.setDeleted(true);
+    postRepository.saveAndFlush(deleted);
+    entityManager.clear();
+
+    List<String> found =
+        postRepository
+            .searchFeedSummaries(null, "PENEIRA", PageRequest.of(0, 10))
+            .getContent()
+            .stream()
+            .map(FeedPostSummaryProjection::getText)
+            .toList();
+
+    assertEquals(List.of("Peneira de futebol amanha"), found);
+  }
 }
