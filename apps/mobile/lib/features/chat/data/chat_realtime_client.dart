@@ -205,6 +205,7 @@ class ChatRealtimeClient {
     required int conversationId,
     required int senderId,
     required String content,
+    MessageTypeDto type = MessageTypeDto.text,
   }) {
     final client = _client;
     if (client == null || !client.connected) {
@@ -221,6 +222,7 @@ class ChatRealtimeClient {
             conversationId: conversationId,
             senderId: senderId,
             content: content,
+            type: type,
           ).toJson(),
         ),
       );

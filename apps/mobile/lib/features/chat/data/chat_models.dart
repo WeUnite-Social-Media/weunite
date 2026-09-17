@@ -113,6 +113,12 @@ class ConversationDto {
       peerUsername: peer?.username,
       peerAvatar: peer?.profileImg,
       lastMessage: lastMessage?.content,
+      lastMessageAt: lastMessage?.createdAt,
+      lastMessageType: switch (lastMessage?.type) {
+        MessageTypeDto.image => ChatMessageType.image,
+        MessageTypeDto.file => ChatMessageType.file,
+        _ => ChatMessageType.text,
+      },
       unreadCount: unreadCount,
     );
   }
@@ -138,17 +144,23 @@ class SendMessageRequestDto {
     required this.conversationId,
     required this.senderId,
     required this.content,
+    this.type = MessageTypeDto.text,
   });
 
   final int conversationId;
   final int senderId;
   final String content;
+  final MessageTypeDto type;
 
   Map<String, Object> toJson() => {
         'conversationId': conversationId,
         'senderId': senderId,
         'content': content,
-        'type': 'TEXT',
+        'type': switch (type) {
+          MessageTypeDto.text => 'TEXT',
+          MessageTypeDto.image => 'IMAGE',
+          MessageTypeDto.file => 'FILE',
+        },
       };
 }
 

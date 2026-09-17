@@ -7,6 +7,7 @@ class ConversationState extends Equatable {
     this.hasLoaded = false,
     this.isSending = false,
     this.messageSentTick = 0,
+    this.readTick = 0,
     this.loadErrorMessage,
     this.actionErrorMessage,
   });
@@ -16,6 +17,10 @@ class ConversationState extends Equatable {
   final bool hasLoaded;
   final bool isSending;
   final int messageSentTick;
+
+  /// Bumped every time the conversation is marked as read on the API, so the
+  /// screen can tell the conversation list to clear the badge.
+  final int readTick;
   final String? loadErrorMessage;
   final String? actionErrorMessage;
 
@@ -25,6 +30,7 @@ class ConversationState extends Equatable {
     bool? hasLoaded,
     bool? isSending,
     int? messageSentTick,
+    int? readTick,
     ValueGetter<String?>? loadErrorMessage,
     ValueGetter<String?>? actionErrorMessage,
   }) {
@@ -34,6 +40,7 @@ class ConversationState extends Equatable {
       hasLoaded: hasLoaded ?? this.hasLoaded,
       isSending: isSending ?? this.isSending,
       messageSentTick: messageSentTick ?? this.messageSentTick,
+      readTick: readTick ?? this.readTick,
       loadErrorMessage:
           loadErrorMessage != null ? loadErrorMessage() : this.loadErrorMessage,
       actionErrorMessage: actionErrorMessage != null
@@ -49,6 +56,7 @@ class ConversationState extends Equatable {
         hasLoaded,
         isSending,
         messageSentTick,
+        readTick,
         loadErrorMessage,
         actionErrorMessage,
       ];

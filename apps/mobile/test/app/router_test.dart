@@ -144,6 +144,15 @@ class _FakeChatRepository implements ChatRepository {
   }) async {}
 
   @override
+  Future<void> sendImage({
+    required int conversationId,
+    required String imagePath,
+  }) async {}
+
+  @override
+  Future<void> markConversationAsRead(int conversationId) async {}
+
+  @override
   Future<void> disconnectRealtime() async {}
 }
 

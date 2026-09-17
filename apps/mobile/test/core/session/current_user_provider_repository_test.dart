@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:weunite_mobile/core/session/current_user_provider.dart';
+import 'package:weunite_mobile/features/chat/data/chat_models.dart';
 import 'package:weunite_mobile/features/chat/data/chat_realtime_client.dart';
 import 'package:weunite_mobile/features/chat/domain/entities/chat_realtime_event.dart';
 import 'package:weunite_mobile/features/chat/data/chat_remote_data_source.dart';
@@ -172,6 +173,7 @@ class _FakeChatRealtimeClient implements ChatRealtimeClient {
     required int conversationId,
     required int senderId,
     required String content,
+    MessageTypeDto type = MessageTypeDto.text,
   }) {
     lastConversationId = conversationId;
     lastSenderId = senderId;

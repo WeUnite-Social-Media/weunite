@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:weunite_mobile/core/error/app_exception.dart';
 import 'package:weunite_mobile/core/session/current_user_provider.dart';
+import 'package:weunite_mobile/features/chat/data/chat_models.dart';
 import 'package:weunite_mobile/features/chat/data/chat_realtime_client.dart';
 import 'package:weunite_mobile/features/chat/data/chat_remote_data_source.dart';
 import 'package:weunite_mobile/features/chat/data/chat_repository_impl.dart';
@@ -167,6 +168,7 @@ class _NoopChatRealtimeClient implements ChatRealtimeClient {
     required int conversationId,
     required int senderId,
     required String content,
+    MessageTypeDto type = MessageTypeDto.text,
   }) {}
 
   @override

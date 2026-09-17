@@ -10,5 +10,14 @@ abstract class ChatRepository {
     required int conversationId,
     required String content,
   });
+
+  /// Uploads [imagePath] and sends it as an image message.
+  Future<void> sendImage({
+    required int conversationId,
+    required String imagePath,
+  });
+
+  /// Marks the peer's messages in the conversation as read.
+  Future<void> markConversationAsRead(int conversationId);
   Future<void> disconnectRealtime();
 }

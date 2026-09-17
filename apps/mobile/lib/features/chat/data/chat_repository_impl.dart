@@ -4,6 +4,7 @@ import '../../../core/session/current_user_provider.dart';
 import '../domain/entities/chat_realtime_event.dart';
 import '../domain/entities/conversation.dart';
 import '../domain/repositories/chat_repository.dart';
+import 'chat_models.dart';
 import 'chat_realtime_client.dart';
 import 'chat_remote_data_source.dart';
 
@@ -71,6 +72,35 @@ class ChatRepositoryImpl implements ChatRepository {
       conversationId: conversationId,
       senderId: _currentUserProvider.requireUserId(),
       content: content,
+    );
+  }
+
+  @override
+  Future<void> sendImage({
+    required int conversationId,
+    required String imagePath,
+  }) async {
+    final senderId = _currentUserProvider.requireUserId();
+    // The upload endpoint only stores the file and returns its URL; the
+    // message itself still goes through STOMP, typed as an image.
+    final url = await _remoteDataSource.uploadAttachment(
+      conversationId: conversationId,
+      senderId: senderId,
+      filePath: imagePath,
+    );
+    _realtimeClient.sendMessage(
+      conversationId: conversationId,
+      senderId: senderId,
+      content: url,
+      type: MessageTypeDto.image,
+    );
+  }
+
+  @override
+  Future<void> markConversationAsRead(int conversationId) {
+    return _remoteDataSource.markAsRead(
+      conversationId: conversationId,
+      userId: _currentUserProvider.requireUserId(),
     );
   }
 

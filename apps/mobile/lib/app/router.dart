@@ -100,7 +100,10 @@ GoRouter buildRouter({
                 ),
               ),
               BlocProvider(
-                create: (context) => ChatCubit(context.read<ChatRepository>()),
+                create: (context) => ChatCubit(
+                  context.read<ChatRepository>(),
+                  currentUserId: user.id,
+                ),
               ),
               BlocProvider(
                 create: (context) =>

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/contracts/user_dto.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/network/image_media_type.dart';
 import '../../../core/network/json_body.dart';
 import 'chat_models.dart';
 
@@ -42,6 +43,47 @@ class ChatRemoteDataSource {
         '/conversations/$conversationId/messages/$userId',
       );
       return decodeJsonList(response.data, MessageDto.fromJson);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
+  /// `PUT /conversations/{id}/read/{userId}` — marks the messages the peer
+  /// sent in that conversation as read.
+  Future<void> markAsRead({
+    required int conversationId,
+    required int userId,
+  }) async {
+    try {
+      await _dio.put<void>('/conversations/$conversationId/read/$userId');
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
+  /// `POST /messages/upload` — uploads the attachment to Cloudinary and
+  /// returns its URL. It does not create the message: the caller still sends
+  /// it over STOMP, with that URL as the content.
+  Future<String> uploadAttachment({
+    required int conversationId,
+    required int senderId,
+    required String filePath,
+  }) async {
+    try {
+      final filename = filePath.split(RegExp(r'[\\/]')).last;
+      final response = await _dio.post<Object?>(
+        '/messages/upload',
+        data: FormData.fromMap({
+          'file': await MultipartFile.fromFile(
+            filePath,
+            filename: filename,
+            contentType: imageMediaTypeFor(filename),
+          ),
+          'conversationId': conversationId,
+          'senderId': senderId,
+        }),
+      );
+      return asJsonObject(response.data)['fileUrl']! as String;
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
     }
