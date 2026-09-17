@@ -8,6 +8,8 @@
     "typecheck": "flutter analyze",
     "test": "flutter test",
     "build": "flutter build apk --dart-define-from-file=config/dev.json",
-    "format": "dart format --set-exit-if-changed lib test"
+    "format": "dart format --set-exit-if-changed lib test",
+    "contracts:update": "dart run tool/update_openapi.dart",
+    "codegen": "dart run build_runner build --delete-conflicting-outputs"
   }
 }
