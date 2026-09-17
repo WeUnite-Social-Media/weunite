@@ -13,8 +13,6 @@ class OpportunitiesScreen extends StatefulWidget {
 }
 
 class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
-  static const _filters = ['Todas', 'Futebol', 'Marketing', 'Patrocinio'];
-
   @override
   void initState() {
     super.initState();
@@ -43,27 +41,11 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
             onRefresh: context.read<OpportunitiesCubit>().loadOpportunities,
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: state.opportunities.length + 1,
+              itemCount: state.opportunities.length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
-                if (index == 0) {
-                  return Wrap(
-                    spacing: 8,
-                    children: _filters.map((filter) {
-                      final skill = filter == 'Todas' ? null : filter;
-                      return ChoiceChip(
-                        label: Text(filter),
-                        selected: state.selectedSkill == skill,
-                        onSelected: (_) => context
-                            .read<OpportunitiesCubit>()
-                            .loadOpportunities(skill: skill),
-                      );
-                    }).toList(),
-                  );
-                }
-
                 return OpportunityCard(
-                  opportunity: state.opportunities[index - 1],
+                  opportunity: state.opportunities[index],
                 );
               },
             ),

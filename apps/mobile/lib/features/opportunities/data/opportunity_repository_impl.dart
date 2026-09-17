@@ -10,12 +10,8 @@ class OpportunityRepositoryImpl implements OpportunityRepository {
   final OpportunityRemoteDataSource _remoteDataSource;
 
   @override
-  Future<List<Opportunity>> getOpportunities({
-    String? skill,
-    int page = 0,
-  }) async {
+  Future<List<Opportunity>> getOpportunities({int page = 0}) async {
     final opportunities = await _remoteDataSource.getOpportunities(
-      skill: skill,
       page: page,
     );
     return opportunities.map((item) => item.toEntity()).toList();

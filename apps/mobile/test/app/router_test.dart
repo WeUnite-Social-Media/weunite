@@ -90,11 +90,7 @@ class _EmptyFeedRepository implements FeedRepository {
 
 class _EmptyOpportunityRepository implements OpportunityRepository {
   @override
-  Future<List<Opportunity>> getOpportunities({
-    String? skill,
-    int page = 0,
-  }) async =>
-      const [];
+  Future<List<Opportunity>> getOpportunities({int page = 0}) async => const [];
 
   @override
   Future<void> toggleSaved({

@@ -128,11 +128,7 @@ class _FakeFeedRepository implements FeedRepository {
 
 class _FakeOpportunityRepository implements OpportunityRepository {
   @override
-  Future<List<Opportunity>> getOpportunities({
-    String? skill,
-    int page = 0,
-  }) async =>
-      const [];
+  Future<List<Opportunity>> getOpportunities({int page = 0}) async => const [];
 
   @override
   Future<void> toggleSaved({

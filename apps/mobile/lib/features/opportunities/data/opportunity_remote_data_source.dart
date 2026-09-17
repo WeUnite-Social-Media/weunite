@@ -9,18 +9,11 @@ class OpportunityRemoteDataSource {
 
   final Dio _dio;
 
-  Future<List<OpportunityDto>> getOpportunities({
-    String? skill,
-    int page = 0,
-  }) async {
+  Future<List<OpportunityDto>> getOpportunities({int page = 0}) async {
     try {
       final response = await _dio.get<Object?>(
         '/opportunities/get',
-        queryParameters: {
-          'page': page,
-          'size': 20,
-          if (skill != null && skill.isNotEmpty) 'skill': skill,
-        },
+        queryParameters: {'page': page, 'size': 20},
       );
       return decodeJsonList(response.data, OpportunityDto.fromJson);
     } catch (error, stackTrace) {
