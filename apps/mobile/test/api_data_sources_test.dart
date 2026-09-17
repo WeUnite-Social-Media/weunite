@@ -5,69 +5,47 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:weunite_mobile/core/error/app_exception.dart';
 import 'package:weunite_mobile/core/network/api_diagnostics.dart';
+import 'package:weunite_mobile/features/auth/data/auth_remote_data_source.dart';
 import 'package:weunite_mobile/features/chat/data/chat_remote_data_source.dart';
 import 'package:weunite_mobile/features/chat/domain/entities/conversation.dart';
 import 'package:weunite_mobile/features/feed/data/feed_remote_data_source.dart';
 import 'package:weunite_mobile/features/opportunities/data/opportunity_remote_data_source.dart';
 import 'package:weunite_mobile/features/profile/data/profile_remote_data_source.dart';
 
+import 'fixtures/api_payloads.dart';
+
 void main() {
   group('API data sources', () {
     test('parses raw post list returned by the API', () async {
       final dataSource = FeedRemoteDataSource(
         _dio({
-          '/api/posts/get': [
-            {
-              'id': '10',
-              'text': 'Treino aberto hoje',
-              'imageUrl': 'https://example.com/post.png',
-              'likesCount': 3,
-              'commentsCount': 1,
-              'likedByViewer': true,
-              'createdAt': '2026-09-15T12:00:00Z',
-              'user': {
-                'id': '7',
-                'name': 'Matheus',
-                'username': 'matheus',
-                'profileImg': 'https://example.com/avatar.png',
-              },
-            },
-          ],
+          '/api/posts/get': [feedPostSummaryJson],
         }),
       );
 
       final posts = await dataSource.getTimeline();
 
       expect(posts, hasLength(1));
-      expect(posts.single.content, 'Treino aberto hoje');
-      expect(posts.single.authorName, 'Matheus');
-      expect(posts.single.likesCount, 3);
-      expect(posts.single.likedByViewer, isTrue);
+      final post = posts.single.toEntity();
+      expect(post.content, 'Treino aberto hoje');
+      expect(post.authorName, 'Matheus Silva');
+      expect(post.likesCount, 3);
+      expect(post.likedByViewer, isTrue);
     });
 
     test('parses raw comments list returned by the API', () async {
       final dataSource = FeedRemoteDataSource(
         _dio({
-          '/api/comment/get/10': [
-            {
-              'id': '4',
-              'text': 'Boa!',
-              'createdAt': '2026-09-15T12:20:00Z',
-              'user': {
-                'name': 'Ana',
-                'username': 'ana',
-                'profileImg': 'https://example.com/ana.png',
-              },
-            },
-          ],
+          '/api/comment/get/10': [commentJson],
         }),
       );
 
       final comments = await dataSource.getComments(postId: 10);
 
       expect(comments, hasLength(1));
-      expect(comments.single.content, 'Boa!');
-      expect(comments.single.authorUsername, 'ana');
+      final comment = comments.single.toEntity();
+      expect(comment.content, 'Boa!');
+      expect(comment.authorUsername, 'matheus');
     });
 
     test('parses raw opportunities list returned by the API', () async {
@@ -190,6 +168,73 @@ void main() {
           ),
         ),
       );
+    });
+
+    group('malformed payloads become server-format AppExceptions', () {
+      Matcher isServerFormatError() => throwsA(
+            isA<AppException>().having(
+              (error) => error.message,
+              'message',
+              contains('formato inesperado'),
+            ),
+          );
+
+      test('post with a numeric id', () async {
+        final dataSource = FeedRemoteDataSource(
+          _dio({
+            '/api/posts/get': [
+              {...feedPostSummaryJson, 'id': 10},
+            ],
+          }),
+        );
+
+        expect(dataSource.getTimeline, isServerFormatError());
+      });
+
+      test('post with an invalid createdAt', () async {
+        final dataSource = FeedRemoteDataSource(
+          _dio({
+            '/api/posts/get': [
+              {...feedPostSummaryJson, 'createdAt': 'ontem'},
+            ],
+          }),
+        );
+
+        expect(dataSource.getTimeline, isServerFormatError());
+      });
+
+      test('post without a user', () async {
+        final dataSource = FeedRemoteDataSource(
+          _dio({
+            '/api/posts/get': [
+              {...feedPostSummaryJson}..remove('user'),
+            ],
+          }),
+        );
+
+        expect(dataSource.getTimeline, isServerFormatError());
+      });
+
+      test('timeline with a null body', () async {
+        final dataSource = FeedRemoteDataSource(
+          _dio({'/api/posts/get': null}),
+        );
+
+        expect(dataSource.getTimeline, isServerFormatError());
+      });
+
+      test('login response without a data key', () async {
+        final dataSource = AuthRemoteDataSource(
+          _dio({
+            '/api/auth/login': {'message': 'ok'},
+          }),
+        );
+
+        expect(
+          () => dataSource.login(username: 'matheus', password: 'secret'),
+          isServerFormatError(),
+        );
+      });
     });
   });
 

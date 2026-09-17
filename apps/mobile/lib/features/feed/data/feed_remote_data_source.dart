@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/network/json_body.dart';
 import '../feed_constants.dart';
 import 'comment_models.dart';
 import 'feed_models.dart';
@@ -12,17 +13,13 @@ class FeedRemoteDataSource {
 
   final Dio _dio;
 
-  Future<List<PostDto>> getTimeline({int page = 0}) async {
+  Future<List<FeedPostSummaryDto>> getTimeline({int page = 0}) async {
     try {
-      final response = await _dio.get<List<dynamic>>(
+      final response = await _dio.get<Object?>(
         '/posts/get',
         queryParameters: {'page': page, 'size': kFeedPageSize},
       );
-      final items = response.data ?? [];
-
-      return items
-          .map((item) => PostDto.fromJson(item as Map<String, dynamic>))
-          .toList();
+      return decodeJsonList(response.data, FeedPostSummaryDto.fromJson);
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
     }
@@ -37,7 +34,7 @@ class FeedRemoteDataSource {
         '/posts/create/$userId',
         data: FormData.fromMap({
           'post': MultipartFile.fromString(
-            jsonEncode({'text': content}),
+            jsonEncode(PostRequestDto(text: content).toJson()),
             contentType: DioMediaType('application', 'json'),
           ),
         }),
@@ -60,15 +57,11 @@ class FeedRemoteDataSource {
     int page = 0,
   }) async {
     try {
-      final response = await _dio.get<List<dynamic>>(
+      final response = await _dio.get<Object?>(
         '/comment/get/$postId',
         queryParameters: {'page': page, 'size': kFeedPageSize},
       );
-      final items = response.data ?? [];
-
-      return items
-          .map((item) => CommentDto.fromJson(item as Map<String, dynamic>))
-          .toList();
+      return decodeJsonList(response.data, CommentDto.fromJson);
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
     }
@@ -83,7 +76,7 @@ class FeedRemoteDataSource {
       await _dio.post<void>(
         '/comment/create',
         queryParameters: {'userId': userId, 'postId': postId},
-        data: {'text': content},
+        data: CommentRequestDto(text: content).toJson(),
       );
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);

@@ -1,74 +1,62 @@
+import 'package:json_annotation/json_annotation.dart';
+
+import '../../../core/contracts/json_converters.dart';
+import '../../../core/contracts/user_summary_dto.dart';
 import '../domain/entities/post.dart';
 
-class PostDto {
-  const PostDto({
+part 'feed_models.g.dart';
+
+/// Subset of `FeedPostSummaryDTO` (openapi:
+/// components.schemas.FeedPostSummaryDTO), returned by `GET /posts/get`.
+@JsonSerializable()
+class FeedPostSummaryDto {
+  const FeedPostSummaryDto({
     required this.id,
-    required this.content,
-    required this.authorName,
-    required this.authorUsername,
+    this.text,
+    this.imageUrl,
+    required this.likesCount,
+    required this.commentsCount,
+    required this.likedByViewer,
     required this.createdAt,
-    this.authorAvatar,
-    this.mediaUrl,
-    this.likesCount = 0,
-    this.commentsCount = 0,
-    this.likedByViewer = false,
+    required this.user,
   });
 
-  factory PostDto.fromJson(Map<String, dynamic> json) {
-    final user = (json['user'] as Map?)?.cast<String, dynamic>() ??
-        (json['author'] as Map?)?.cast<String, dynamic>() ??
-        {};
+  factory FeedPostSummaryDto.fromJson(Map<String, dynamic> json) =>
+      _$FeedPostSummaryDtoFromJson(json);
 
-    return PostDto(
-      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
-      content: json['content']?.toString() ??
-          json['description']?.toString() ??
-          json['text']?.toString() ??
-          '',
-      authorName:
-          user['name']?.toString() ?? user['username']?.toString() ?? 'Usuario',
-      authorUsername: user['username']?.toString() ?? '',
-      authorAvatar: user['profileImg']?.toString(),
-      mediaUrl: json['imageUrl']?.toString() ??
-          json['mediaUrl']?.toString() ??
-          json['fileUrl']?.toString(),
-      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
-          DateTime.now(),
-      likesCount: int.tryParse(
-            (json['likesCount'] ?? json['likes']?.length ?? 0).toString(),
-          ) ??
-          0,
-      commentsCount: int.tryParse(
-            (json['commentsCount'] ?? json['comments']?.length ?? 0).toString(),
-          ) ??
-          0,
-      likedByViewer: json['likedByViewer'] == true,
-    );
-  }
-
+  @StringIdConverter()
   final int id;
-  final String content;
-  final String authorName;
-  final String authorUsername;
-  final String? authorAvatar;
-  final String? mediaUrl;
-  final DateTime createdAt;
+  final String? text;
+  final String? imageUrl;
   final int likesCount;
   final int commentsCount;
   final bool likedByViewer;
+  final DateTime createdAt;
+  final UserSummaryDto user;
 
   Post toEntity() {
     return Post(
       id: id,
-      content: content,
-      authorName: authorName,
-      authorUsername: authorUsername,
-      authorAvatar: authorAvatar,
-      mediaUrl: mediaUrl,
+      content: text,
+      authorName: user.name,
+      authorUsername: user.username,
+      authorAvatar: user.profileImg,
+      mediaUrl: imageUrl,
       createdAt: createdAt,
       likesCount: likesCount,
       commentsCount: commentsCount,
       likedByViewer: likedByViewer,
     );
   }
+}
+
+/// Request body for `POST /posts/create/{userId}` (openapi:
+/// components.schemas.PostRequestDTO).
+@JsonSerializable(createFactory: false, createToJson: true)
+class PostRequestDto {
+  const PostRequestDto({required this.text});
+
+  final String text;
+
+  Map<String, dynamic> toJson() => _$PostRequestDtoToJson(this);
 }

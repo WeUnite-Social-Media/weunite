@@ -35,3 +35,25 @@ const Map<String, Object?> authJson = {
   'jwt': 'token',
   'expiresIn': 3600000,
 };
+
+/// `FeedPostSummaryDTO` (openapi: components.schemas.FeedPostSummaryDTO).
+/// No `repostedBy`/`repostedAt`, mirroring `non_null` omission.
+const Map<String, Object?> feedPostSummaryJson = {
+  'id': '10',
+  'text': 'Treino aberto hoje',
+  'imageUrl': 'https://example.com/post.png',
+  'likesCount': 3,
+  'commentsCount': 1,
+  'likedByViewer': true,
+  'createdAt': '2026-09-15T12:00:00Z',
+  'user': userSummaryJson,
+};
+
+/// `CommentDTO` (openapi: components.schemas.CommentDTO). No `comments`,
+/// which is absent from the spec (see plan D2) but not consumed anyway.
+const Map<String, Object?> commentJson = {
+  'id': '4',
+  'user': userJson,
+  'text': 'Boa!',
+  'createdAt': '2026-09-15T12:20:00Z',
+};

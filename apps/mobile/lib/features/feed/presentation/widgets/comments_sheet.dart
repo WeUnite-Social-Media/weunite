@@ -198,7 +198,7 @@ class _CommentTile extends StatelessWidget {
                   style: Theme.of(context).textTheme.labelMedium,
                 ),
               const SizedBox(height: 4),
-              Text(comment.content),
+              if (comment.content != null) Text(comment.content!),
             ],
           ),
         ),

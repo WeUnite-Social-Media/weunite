@@ -15,7 +15,7 @@ class Post extends Equatable {
   });
 
   final int id;
-  final String content;
+  final String? content;
   final String authorName;
   final String authorUsername;
   final String? authorAvatar;

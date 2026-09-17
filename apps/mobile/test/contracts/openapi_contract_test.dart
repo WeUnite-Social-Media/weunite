@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:weunite_mobile/features/auth/data/auth_models.dart';
+import 'package:weunite_mobile/features/feed/data/comment_models.dart';
+import 'package:weunite_mobile/features/feed/data/feed_models.dart';
 
 import '../fixtures/api_payloads.dart';
 
@@ -45,6 +47,28 @@ void main() {
           role: 'athlete',
         ).toJson(),
         'CreateUserRequestDTO',
+      ),
+    );
+    test(
+      'FeedPostSummaryDTO',
+      () => expectMatchesSchema(feedPostSummaryJson, 'FeedPostSummaryDTO'),
+    );
+    test(
+      'CommentDTO',
+      () => expectMatchesSchema(commentJson, 'CommentDTO'),
+    );
+    test(
+      'PostRequestDTO',
+      () => expectMatchesSchema(
+        const PostRequestDto(text: 'Treino aberto hoje').toJson(),
+        'PostRequestDTO',
+      ),
+    );
+    test(
+      'CommentRequestDTO',
+      () => expectMatchesSchema(
+        const CommentRequestDto(text: 'Boa!').toJson(),
+        'CommentRequestDTO',
       ),
     );
 

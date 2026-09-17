@@ -36,7 +36,7 @@ class PostCard extends StatelessWidget {
             subtitle: Text('@${post.authorUsername}'),
             trailing: Text(DateFormat('dd/MM').format(post.createdAt)),
           ),
-          if (post.content.isNotEmpty) Text(post.content),
+          if (post.content?.isNotEmpty ?? false) Text(post.content!),
           if (post.mediaUrl != null) ...[
             const SizedBox(height: 12),
             ClipRRect(
