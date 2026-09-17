@@ -16,13 +16,21 @@ import '../features/profile/domain/repositories/profile_repository.dart';
 import '../features/profile/presentation/cubit/profile_cubit.dart';
 import 'bootstrap.dart';
 
-class WeUniteMobileApp extends StatelessWidget {
+class WeUniteMobileApp extends StatefulWidget {
   const WeUniteMobileApp({required this.dependencies, super.key});
 
   final AppDependencies dependencies;
 
   @override
+  State<WeUniteMobileApp> createState() => _WeUniteMobileAppState();
+}
+
+class _WeUniteMobileAppState extends State<WeUniteMobileApp> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+
+  @override
   Widget build(BuildContext context) {
+    final dependencies = widget.dependencies;
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AuthRepository>.value(
@@ -46,45 +54,55 @@ class WeUniteMobileApp extends StatelessWidget {
           context.read<AuthRepository>(),
           dependencies.sessionEvents,
         )..restoreSession(),
-        child: MaterialApp(
-          title: 'WeUnite',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light(),
-          home: BlocBuilder<AuthCubit, AuthState>(
-            builder: (context, state) {
-              if (state.status == AuthStatus.checking) {
-                return const _BootSplash();
-              }
+        child: BlocListener<AuthCubit, AuthState>(
+          listenWhen: (previous, current) =>
+              previous.status == AuthStatus.authenticated &&
+              current.status != AuthStatus.authenticated,
+          listener: (context, state) {
+            context.read<ChatRepository>().disconnectRealtime();
+            _navigatorKey.currentState?.popUntil((route) => route.isFirst);
+          },
+          child: MaterialApp(
+            navigatorKey: _navigatorKey,
+            title: 'WeUnite',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light(),
+            home: BlocBuilder<AuthCubit, AuthState>(
+              builder: (context, state) {
+                if (state.status == AuthStatus.checking) {
+                  return const _BootSplash();
+                }
 
-              final user = state.user;
-              if (state.status == AuthStatus.authenticated && user != null) {
-                return MultiBlocProvider(
-                  key: ValueKey(user.id),
-                  providers: [
-                    BlocProvider(
-                      create: (context) =>
-                          FeedCubit(context.read<FeedRepository>()),
-                    ),
-                    BlocProvider(
-                      create: (context) => OpportunitiesCubit(
-                        context.read<OpportunityRepository>(),
+                final user = state.user;
+                if (state.status == AuthStatus.authenticated && user != null) {
+                  return MultiBlocProvider(
+                    key: ValueKey(user.id),
+                    providers: [
+                      BlocProvider(
+                        create: (context) =>
+                            FeedCubit(context.read<FeedRepository>()),
                       ),
-                    ),
-                    BlocProvider(
-                      create: (context) =>
-                          ChatCubit(context.read<ChatRepository>()),
-                    ),
-                    BlocProvider(
-                      create: (context) =>
-                          ProfileCubit(context.read<ProfileRepository>()),
-                    ),
-                  ],
-                  child: const AppShell(),
-                );
-              }
+                      BlocProvider(
+                        create: (context) => OpportunitiesCubit(
+                          context.read<OpportunityRepository>(),
+                        ),
+                      ),
+                      BlocProvider(
+                        create: (context) =>
+                            ChatCubit(context.read<ChatRepository>()),
+                      ),
+                      BlocProvider(
+                        create: (context) =>
+                            ProfileCubit(context.read<ProfileRepository>()),
+                      ),
+                    ],
+                    child: const AppShell(),
+                  );
+                }
 
-              return const LoginScreen();
-            },
+                return const LoginScreen();
+              },
+            ),
           ),
         ),
       ),
