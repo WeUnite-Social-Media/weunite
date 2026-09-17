@@ -8,6 +8,20 @@ import '../feed_constants.dart';
 import 'comment_models.dart';
 import 'feed_models.dart';
 
+/// Media type for an image part, from the file extension. Cloudinary rejects
+/// uploads sent as `application/octet-stream`, so the part must be typed.
+DioMediaType imageMediaTypeFor(String filename) {
+  final extension =
+      filename.contains('.') ? filename.split('.').last.toLowerCase() : '';
+  return switch (extension) {
+    'png' => DioMediaType('image', 'png'),
+    'gif' => DioMediaType('image', 'gif'),
+    'webp' => DioMediaType('image', 'webp'),
+    'heic' || 'heif' => DioMediaType('image', 'heic'),
+    _ => DioMediaType('image', 'jpeg'),
+  };
+}
+
 class FeedRemoteDataSource {
   const FeedRemoteDataSource(this._dio);
 
@@ -25,19 +39,46 @@ class FeedRemoteDataSource {
     }
   }
 
+  Future<List<FeedPostSummaryDto>> getUserPosts({
+    required int userId,
+    int page = 0,
+  }) async {
+    try {
+      final response = await _dio.get<Object?>(
+        '/posts/get/user/$userId',
+        queryParameters: {'page': page, 'size': kFeedPageSize},
+      );
+      return decodeJsonList(response.data, FeedPostSummaryDto.fromJson);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
+  /// `POST /posts/create/{userId}` is multipart: a JSON `post` part and an
+  /// optional `image` file part, which the API uploads to Cloudinary.
   Future<void> createPost({
     required int userId,
     required String content,
+    String? imagePath,
   }) async {
     try {
+      final parts = <String, Object>{
+        'post': MultipartFile.fromString(
+          jsonEncode(PostRequestDto(text: content).toJson()),
+          contentType: DioMediaType('application', 'json'),
+        ),
+      };
+      if (imagePath != null) {
+        final filename = imagePath.split(RegExp(r'[\\/]')).last;
+        parts['image'] = await MultipartFile.fromFile(
+          imagePath,
+          filename: filename,
+          contentType: imageMediaTypeFor(filename),
+        );
+      }
       await _dio.post<void>(
         '/posts/create/$userId',
-        data: FormData.fromMap({
-          'post': MultipartFile.fromString(
-            jsonEncode(PostRequestDto(text: content).toJson()),
-            contentType: DioMediaType('application', 'json'),
-          ),
-        }),
+        data: FormData.fromMap(parts),
       );
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);

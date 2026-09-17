@@ -41,7 +41,32 @@ class PostCard extends StatelessWidget {
             const SizedBox(height: 12),
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.network(post.mediaUrl!, fit: BoxFit.cover),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 420),
+                child: Image.network(
+                  post.mediaUrl!,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) {
+                      return child;
+                    }
+                    return const SizedBox(
+                      height: 220,
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) => SizedBox(
+                    height: 120,
+                    child: Center(
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        color: Theme.of(context).disabledColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
           const SizedBox(height: 12),

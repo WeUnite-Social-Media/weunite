@@ -10,12 +10,17 @@ class _FakeFeedRepository implements FeedRepository {
   _FakeFeedRepository({this.createPostThrows = false});
 
   final bool createPostThrows;
+  final createPostCalls = <({String content, String? imagePath})>[];
 
   @override
   Future<List<Post>> getTimeline({int page = 0}) async => const [];
 
   @override
-  Future<void> createPost({required String content}) async {
+  Future<List<Post>> getMyPosts({int page = 0}) async => const [];
+
+  @override
+  Future<void> createPost({required String content, String? imagePath}) async {
+    createPostCalls.add((content: content, imagePath: imagePath));
     if (createPostThrows) {
       throw const AppException('Nao foi possivel publicar.');
     }
@@ -58,6 +63,68 @@ void main() {
         CreatePostState(isSubmitting: true),
         CreatePostState(errorMessage: 'Nao foi possivel publicar.'),
       ],
+    );
+
+    final withImage = _FakeFeedRepository();
+    blocTest<CreatePostCubit, CreatePostState>(
+      'sends the selected image path with the post',
+      build: () => CreatePostCubit(withImage),
+      act: (cubit) async {
+        cubit.selectImage('/tmp/foto.jpg');
+        await cubit.submit(content: 'Com foto');
+      },
+      expect: () => const [
+        CreatePostState(imagePath: '/tmp/foto.jpg'),
+        CreatePostState(isSubmitting: true, imagePath: '/tmp/foto.jpg'),
+        CreatePostState(isSuccess: true, imagePath: '/tmp/foto.jpg'),
+      ],
+      verify: (_) {
+        expect(withImage.createPostCalls, [
+          (content: 'Com foto', imagePath: '/tmp/foto.jpg'),
+        ]);
+      },
+    );
+
+    final imageOnly = _FakeFeedRepository();
+    blocTest<CreatePostCubit, CreatePostState>(
+      'allows publishing an image without text',
+      build: () => CreatePostCubit(imageOnly),
+      act: (cubit) async {
+        cubit.selectImage('/tmp/foto.png');
+        await cubit.submit(content: '');
+      },
+      skip: 1,
+      expect: () => const [
+        CreatePostState(isSubmitting: true, imagePath: '/tmp/foto.png'),
+        CreatePostState(isSuccess: true, imagePath: '/tmp/foto.png'),
+      ],
+      verify: (_) {
+        expect(imageOnly.createPostCalls.single.imagePath, '/tmp/foto.png');
+      },
+    );
+
+    final empty = _FakeFeedRepository();
+    blocTest<CreatePostCubit, CreatePostState>(
+      'ignores a submit with neither text nor image',
+      build: () => CreatePostCubit(empty),
+      act: (cubit) => cubit.submit(content: ''),
+      expect: () => const <CreatePostState>[],
+      verify: (_) => expect(empty.createPostCalls, isEmpty),
+    );
+
+    final removed = _FakeFeedRepository();
+    blocTest<CreatePostCubit, CreatePostState>(
+      'does not send an image that was removed before publishing',
+      build: () => CreatePostCubit(removed),
+      act: (cubit) async {
+        cubit
+          ..selectImage('/tmp/foto.jpg')
+          ..removeImage();
+        await cubit.submit(content: 'Sem foto');
+      },
+      verify: (_) {
+        expect(removed.createPostCalls.single.imagePath, isNull);
+      },
     );
   });
 }
