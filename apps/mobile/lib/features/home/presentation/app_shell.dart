@@ -1,30 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_bottom_nav.dart';
 import '../../auth/presentation/cubit/auth_cubit.dart';
-import '../../chat/presentation/screens/conversations_screen.dart';
-import '../../feed/presentation/screens/feed_screen.dart';
-import '../../opportunities/presentation/screens/opportunities_screen.dart';
-import '../../profile/presentation/screens/profile_screen.dart';
 
-class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+/// Hosts the four bottom-nav tabs as branches of a
+/// `StatefulShellRoute.indexedStack` (see `lib/app/router.dart`): each
+/// branch keeps its own `Navigator` and screen state alive when switching
+/// tabs, the same way the previous manual `IndexedStack` did.
+class AppShell extends StatelessWidget {
+  const AppShell({required this.navigationShell, super.key});
 
-  @override
-  State<AppShell> createState() => _AppShellState();
-}
-
-class _AppShellState extends State<AppShell> {
-  AppTab _currentTab = AppTab.feed;
-
-  static const _tabScreens = [
-    FeedScreen(),
-    OpportunitiesScreen(),
-    ConversationsScreen(),
-    ProfileScreen(),
-  ];
+  final StatefulNavigationShell navigationShell;
 
   @override
   Widget build(BuildContext context) {
@@ -39,13 +28,16 @@ class _AppShellState extends State<AppShell> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _currentTab.index,
-        children: _tabScreens,
-      ),
+      body: navigationShell,
       bottomNavigationBar: AppBottomNav(
-        currentTab: _currentTab,
-        onTabSelected: (tab) => setState(() => _currentTab = tab),
+        currentTab: AppTab.values[navigationShell.currentIndex],
+        onTabSelected: (tab) {
+          final index = AppTab.values.indexOf(tab);
+          navigationShell.goBranch(
+            index,
+            initialLocation: index == navigationShell.currentIndex,
+          );
+        },
       ),
     );
   }

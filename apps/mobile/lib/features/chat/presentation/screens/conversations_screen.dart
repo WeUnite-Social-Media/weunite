@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/widgets/async_state_view.dart';
 import '../cubit/chat_cubit.dart';
-import 'conversation_screen.dart';
 
 class ConversationsScreen extends StatefulWidget {
   const ConversationsScreen({super.key});
@@ -60,12 +60,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                     ? null
                     : Badge(label: Text('${conversation.unreadCount}')),
                 onTap: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          ConversationScreen(conversation: conversation),
-                    ),
-                  );
+                  await context.push<void>('/chat/${conversation.id}');
                   if (context.mounted) {
                     context.read<ChatCubit>().loadConversations();
                   }

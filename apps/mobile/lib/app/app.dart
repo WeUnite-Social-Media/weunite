@@ -1,20 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/auth/domain/repositories/auth_repository.dart';
 import '../features/auth/presentation/cubit/auth_cubit.dart';
-import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/chat/domain/repositories/chat_repository.dart';
-import '../features/chat/presentation/cubit/chat_cubit.dart';
 import '../features/feed/domain/repositories/feed_repository.dart';
-import '../features/feed/presentation/cubit/feed_cubit.dart';
-import '../features/home/presentation/app_shell.dart';
 import '../features/opportunities/domain/repositories/opportunity_repository.dart';
-import '../features/opportunities/presentation/cubit/opportunities_cubit.dart';
 import '../features/profile/domain/repositories/profile_repository.dart';
-import '../features/profile/presentation/cubit/profile_cubit.dart';
 import 'bootstrap.dart';
+import 'router.dart';
 
 class WeUniteMobileApp extends StatefulWidget {
   const WeUniteMobileApp({required this.dependencies, super.key});
@@ -26,7 +22,31 @@ class WeUniteMobileApp extends StatefulWidget {
 }
 
 class _WeUniteMobileAppState extends State<WeUniteMobileApp> {
-  final _navigatorKey = GlobalKey<NavigatorState>();
+  late final AuthCubit _authCubit;
+  late final GoRouterRefreshStream _routerRefresh;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _authCubit = AuthCubit(
+      widget.dependencies.authRepository,
+      widget.dependencies.sessionEvents,
+    )..restoreSession();
+    _routerRefresh = GoRouterRefreshStream(_authCubit.stream);
+    _router = buildRouter(
+      authCubit: _authCubit,
+      refreshListenable: _routerRefresh,
+    );
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    _routerRefresh.dispose();
+    _authCubit.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,74 +69,23 @@ class _WeUniteMobileAppState extends State<WeUniteMobileApp> {
           value: dependencies.profileRepository,
         ),
       ],
-      child: BlocProvider(
-        create: (context) => AuthCubit(
-          context.read<AuthRepository>(),
-          dependencies.sessionEvents,
-        )..restoreSession(),
+      child: BlocProvider.value(
+        value: _authCubit,
         child: BlocListener<AuthCubit, AuthState>(
           listenWhen: (previous, current) =>
               previous.status == AuthStatus.authenticated &&
               current.status != AuthStatus.authenticated,
           listener: (context, state) {
             context.read<ChatRepository>().disconnectRealtime();
-            _navigatorKey.currentState?.popUntil((route) => route.isFirst);
           },
-          child: MaterialApp(
-            navigatorKey: _navigatorKey,
+          child: MaterialApp.router(
             title: 'WeUnite',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light(),
-            home: BlocBuilder<AuthCubit, AuthState>(
-              builder: (context, state) {
-                if (state.status == AuthStatus.checking) {
-                  return const _BootSplash();
-                }
-
-                final user = state.user;
-                if (state.status == AuthStatus.authenticated && user != null) {
-                  return MultiBlocProvider(
-                    key: ValueKey(user.id),
-                    providers: [
-                      BlocProvider(
-                        create: (context) =>
-                            FeedCubit(context.read<FeedRepository>()),
-                      ),
-                      BlocProvider(
-                        create: (context) => OpportunitiesCubit(
-                          context.read<OpportunityRepository>(),
-                        ),
-                      ),
-                      BlocProvider(
-                        create: (context) =>
-                            ChatCubit(context.read<ChatRepository>()),
-                      ),
-                      BlocProvider(
-                        create: (context) =>
-                            ProfileCubit(context.read<ProfileRepository>()),
-                      ),
-                    ],
-                    child: const AppShell(),
-                  );
-                }
-
-                return const LoginScreen();
-              },
-            ),
+            routerConfig: _router,
           ),
         ),
       ),
-    );
-  }
-}
-
-class _BootSplash extends StatelessWidget {
-  const _BootSplash();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
     );
   }
 }
