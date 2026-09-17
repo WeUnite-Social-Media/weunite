@@ -1,18 +1,71 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/app_exception.dart';
 import '../../domain/entities/post.dart';
+import '../../domain/post_events.dart';
 import '../../domain/repositories/feed_repository.dart';
 import '../../feed_constants.dart';
 
 part 'feed_state.dart';
 
 class FeedCubit extends Cubit<FeedState> {
-  FeedCubit(this._repository) : super(const FeedState());
+  FeedCubit(this._repository, {PostEvents? events})
+      : _events = events,
+        super(const FeedState()) {
+    _eventsSubscription = events?.stream.listen(_onPostEvent);
+  }
 
   final FeedRepository _repository;
+  final PostEvents? _events;
+  StreamSubscription<PostEvent>? _eventsSubscription;
+
+  void _onPostEvent(PostEvent event) {
+    switch (event) {
+      case PostCreated():
+        loadTimeline();
+      case PostUpdated(:final post):
+        _replacePost(post);
+      case PostCommentAdded(:final postId):
+        onCommentAdded(postId);
+    }
+  }
+
+  void _replacePost(Post updated) {
+    if (!state.posts.any((post) => post.id == updated.id)) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        posts: [
+          for (final post in state.posts)
+            if (post.id == updated.id) updated else post,
+        ],
+      ),
+    );
+  }
+
+  void _publishPost(int postId) {
+    final events = _events;
+    if (events == null) {
+      return;
+    }
+    for (final post in state.posts) {
+      if (post.id == postId) {
+        events.postUpdated(post);
+        return;
+      }
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    await _eventsSubscription?.cancel();
+    return super.close();
+  }
 
   Future<void> loadTimeline() async {
     final hadPosts = state.posts.isNotEmpty;
@@ -100,6 +153,7 @@ class FeedCubit extends Cubit<FeedState> {
         actionErrorMessage: () => null,
       ),
     );
+    _publishPost(postId);
     try {
       await _repository.toggleLike(postId: postId);
       emit(
@@ -115,6 +169,7 @@ class FeedCubit extends Cubit<FeedState> {
           actionErrorMessage: () => error.message,
         ),
       );
+      _publishPost(postId);
     }
   }
 

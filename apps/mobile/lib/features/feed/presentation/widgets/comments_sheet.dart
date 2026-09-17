@@ -3,8 +3,29 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../domain/entities/comment.dart';
+import '../../domain/post_events.dart';
+import '../../domain/repositories/feed_repository.dart';
 import '../cubit/comments_cubit.dart';
-import '../cubit/feed_cubit.dart';
+
+/// Opens [CommentsSheet] for [postId] from any screen inside the session
+/// (feed, profile). New comments are announced through [PostEvents], so every
+/// list holding the post updates its counter.
+Future<void> showCommentsSheet(BuildContext context, {required int postId}) {
+  final repository = context.read<FeedRepository>();
+  final events = context.read<PostEvents>();
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => RepositoryProvider.value(
+      value: events,
+      child: BlocProvider(
+        create: (_) => CommentsCubit(postId: postId, repository: repository)
+          ..loadComments(),
+        child: CommentsSheet(postId: postId),
+      ),
+    ),
+  );
+}
 
 class CommentsSheet extends StatefulWidget {
   const CommentsSheet({
@@ -57,7 +78,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
           listener: (context, state) {
             if (state.commentCreatedTick != _lastHandledCommentCreatedTick) {
               _lastHandledCommentCreatedTick = state.commentCreatedTick;
-              context.read<FeedCubit>().onCommentAdded(widget.postId);
+              context.read<PostEvents>().commentAdded(widget.postId);
             }
             if (state.actionErrorMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(

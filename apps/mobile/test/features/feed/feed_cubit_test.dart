@@ -25,7 +25,13 @@ class _FakeFeedRepository implements FeedRepository {
   }
 
   @override
-  Future<void> createPost({required String content}) async {}
+  Future<List<Post>> getMyPosts({int page = 0}) async => const [];
+
+  @override
+  Future<void> createPost({
+    required String content,
+    String? imagePath,
+  }) async {}
 
   @override
   Future<void> toggleLike({required int postId}) async {

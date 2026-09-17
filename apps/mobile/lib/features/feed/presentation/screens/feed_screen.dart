@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/async_state_view.dart';
-import '../../domain/repositories/feed_repository.dart';
-import '../cubit/comments_cubit.dart';
-import '../cubit/create_post_cubit.dart';
 import '../cubit/feed_cubit.dart';
 import '../widgets/create_post_sheet.dart';
 import '../widgets/comments_sheet.dart';
@@ -68,6 +65,10 @@ class _FeedScreenState extends State<FeedScreen> {
               onRefresh: context.read<FeedCubit>().loadTimeline,
               child: ListView.separated(
                 controller: _scrollController,
+                // Needed for pull-to-refresh when the posts don't fill the
+                // screen: with an explicit controller the list isn't primary
+                // and would not scroll (so never overscroll) otherwise.
+                physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 itemCount: state.posts.length + (state.isLoadingMore ? 1 : 0),
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -84,42 +85,15 @@ class _FeedScreenState extends State<FeedScreen> {
                     onLike: () => context.read<FeedCubit>().toggleLike(
                           postId: post.id,
                         ),
-                    onComments: () => showModalBottomSheet<void>(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (_) => MultiBlocProvider(
-                        providers: [
-                          BlocProvider.value(value: context.read<FeedCubit>()),
-                          BlocProvider(
-                            create: (context) => CommentsCubit(
-                              postId: post.id,
-                              repository: context.read<FeedRepository>(),
-                            )..loadComments(),
-                          ),
-                        ],
-                        child: CommentsSheet(postId: post.id),
-                      ),
-                    ),
+                    onComments: () =>
+                        showCommentsSheet(context, postId: post.id),
                   );
                 },
               ),
             ),
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: () => showModalBottomSheet<void>(
-              context: context,
-              isScrollControlled: true,
-              builder: (_) => MultiBlocProvider(
-                providers: [
-                  BlocProvider.value(value: context.read<FeedCubit>()),
-                  BlocProvider(
-                    create: (context) =>
-                        CreatePostCubit(context.read<FeedRepository>()),
-                  ),
-                ],
-                child: const CreatePostSheet(),
-              ),
-            ),
+            onPressed: () => showCreatePostSheet(context),
             child: const Icon(Icons.add),
           ),
         );
