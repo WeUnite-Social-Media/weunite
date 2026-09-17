@@ -1,40 +1,63 @@
+import 'package:json_annotation/json_annotation.dart';
+
+import '../../../core/contracts/user_dto.dart';
 import '../domain/entities/app_user.dart';
 
-class AppUserDto {
-  const AppUserDto({
-    required this.id,
+part 'auth_models.g.dart';
+
+/// Request body for `POST /auth/login` (openapi: paths./auth/login).
+@JsonSerializable(createFactory: false, createToJson: true)
+class LoginRequestDto {
+  const LoginRequestDto({required this.username, required this.password});
+
+  final String username;
+  final String password;
+
+  Map<String, dynamic> toJson() => _$LoginRequestDtoToJson(this);
+}
+
+/// Request body for `POST /auth/signup` and `POST /auth/signup/company`
+/// (openapi: components.schemas.CreateUserRequestDTO).
+@JsonSerializable(createFactory: false, createToJson: true)
+class CreateUserRequestDto {
+  const CreateUserRequestDto({
     required this.name,
     required this.username,
     required this.email,
+    this.password,
     required this.role,
-    this.profileImg,
-    this.bannerImg,
-    this.bio,
+    this.cnpj,
   });
 
-  factory AppUserDto.fromJson(Map<String, dynamic> json) {
-    return AppUserDto(
-      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
-      name: json['name']?.toString() ?? json['username']?.toString() ?? '',
-      username: json['username']?.toString() ?? '',
-      email: json['email']?.toString() ?? '',
-      role: json['role']?.toString() ?? '',
-      profileImg: json['profileImg']?.toString(),
-      bannerImg: json['bannerImg']?.toString(),
-      bio: json['bio']?.toString(),
-    );
-  }
-
-  final int id;
   final String name;
   final String username;
   final String email;
   final String role;
-  final String? profileImg;
-  final String? bannerImg;
-  final String? bio;
+  final String? password;
+  final String? cnpj;
 
-  AppUser toEntity() {
+  Map<String, dynamic> toJson() => _$CreateUserRequestDtoToJson(this);
+}
+
+/// Subset of `AuthDTO` (openapi: components.schemas.AuthDTO), returned by
+/// login (with `jwt`/`expiresIn`) and by signup (both omitted, since
+/// `non_null` inclusion drops them).
+@JsonSerializable()
+class AuthDto {
+  const AuthDto({required this.user, this.jwt, this.expiresIn});
+
+  factory AuthDto.fromJson(Map<String, dynamic> json) =>
+      _$AuthDtoFromJson(json);
+
+  final UserDto user;
+  final String? jwt;
+
+  /// Milliseconds until the token expires (`JwtService.plusMillis`).
+  final int? expiresIn;
+}
+
+extension UserDtoToAppUser on UserDto {
+  AppUser toAppUser() {
     return AppUser(
       id: id,
       name: name,
@@ -46,43 +69,4 @@ class AppUserDto {
       bio: bio,
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'username': username,
-      'email': email,
-      'role': role,
-      'profileImg': profileImg,
-      'bannerImg': bannerImg,
-      'bio': bio,
-    };
-  }
-}
-
-class AuthSessionDto {
-  const AuthSessionDto({
-    required this.jwt,
-    required this.user,
-    this.expiresInMillis,
-  });
-
-  factory AuthSessionDto.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] is Map<String, dynamic>
-        ? json['data'] as Map<String, dynamic>
-        : json;
-
-    return AuthSessionDto(
-      jwt: data['jwt']?.toString() ?? data['token']?.toString() ?? '',
-      user: AppUserDto.fromJson(
-        (data['user'] as Map?)?.cast<String, dynamic>() ?? {},
-      ),
-      expiresInMillis: int.tryParse(data['expiresIn']?.toString() ?? ''),
-    );
-  }
-
-  final String jwt;
-  final AppUserDto user;
-  final int? expiresInMillis;
 }

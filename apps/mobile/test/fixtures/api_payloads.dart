@@ -28,3 +28,10 @@ Map<String, Object?> responseDto(Object? data) => {
       'message': 'ok',
       'data': data,
     };
+
+/// `AuthDTO` (openapi: components.schemas.AuthDTO) as returned by login.
+const Map<String, Object?> authJson = {
+  'user': userJson,
+  'jwt': 'token',
+  'expiresIn': 3600000,
+};

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../../core/contracts/user_dto.dart';
 import '../../../core/error/app_exception.dart';
 import '../../../core/storage/token_storage.dart';
 import '../domain/entities/app_user.dart';
@@ -38,9 +39,9 @@ class AuthRepositoryImpl implements AuthRepository {
       return null;
     }
     try {
-      final user = AppUserDto.fromJson(
+      final user = UserDto.fromJson(
         jsonDecode(userJson) as Map<String, dynamic>,
-      ).toEntity();
+      ).toAppUser();
       _currentUser = user;
       return user;
     } catch (_) {
@@ -59,20 +60,18 @@ class AuthRepositoryImpl implements AuthRepository {
       password: password,
     );
 
-    if (session.jwt.isEmpty || session.user.id == 0) {
+    final jwt = session.jwt;
+    if (jwt == null || jwt.isEmpty) {
       throw const AppException('Resposta de login invalida.');
     }
 
-    final expiresInMillis = session.expiresInMillis;
+    final expiresInMillis = session.expiresIn;
     final expiresAt = expiresInMillis != null
         ? DateTime.now().add(Duration(milliseconds: expiresInMillis))
         : null;
-    await _tokenStorage.saveTokens(
-      accessToken: session.jwt,
-      expiresAt: expiresAt,
-    );
+    await _tokenStorage.saveTokens(accessToken: jwt, expiresAt: expiresAt);
     await _tokenStorage.saveUserJson(jsonEncode(session.user.toJson()));
-    _currentUser = session.user.toEntity();
+    _currentUser = session.user.toAppUser();
     return _currentUser!;
   }
 

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/network/json_body.dart';
 import 'auth_models.dart';
 
 class AuthRemoteDataSource {
@@ -8,16 +9,19 @@ class AuthRemoteDataSource {
 
   final Dio _dio;
 
-  Future<AuthSessionDto> login({
+  Future<AuthDto> login({
     required String username,
     required String password,
   }) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _dio.post<Object?>(
         '/auth/login',
-        data: {'username': username, 'password': password},
+        data: LoginRequestDto(username: username, password: password).toJson(),
       );
-      return AuthSessionDto.fromJson(response.data ?? {});
+      return decodeResponseData<AuthDto>(
+        response.data,
+        (data) => AuthDto.fromJson(asJsonObject(data)),
+      );
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
     }
@@ -32,13 +36,13 @@ class AuthRemoteDataSource {
     try {
       await _dio.post<void>(
         '/auth/signup',
-        data: {
-          'name': name,
-          'username': username,
-          'email': email,
-          'password': password,
-          'role': 'athlete',
-        },
+        data: CreateUserRequestDto(
+          name: name,
+          username: username,
+          email: email,
+          password: password,
+          role: 'athlete',
+        ).toJson(),
       );
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
@@ -54,13 +58,13 @@ class AuthRemoteDataSource {
     try {
       await _dio.post<void>(
         '/auth/signup/company',
-        data: {
-          'name': name,
-          'username': username,
-          'email': email,
-          'cnpj': cnpj,
-          'role': 'company',
-        },
+        data: CreateUserRequestDto(
+          name: name,
+          username: username,
+          email: email,
+          role: 'company',
+          cnpj: cnpj,
+        ).toJson(),
       );
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);

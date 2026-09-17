@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:weunite_mobile/features/auth/data/auth_models.dart';
 
 import '../fixtures/api_payloads.dart';
 
@@ -18,6 +19,33 @@ void main() {
     test(
       'ResponseDTOLong',
       () => expectMatchesSchema(responseDto(3), 'ResponseDTOLong'),
+    );
+    test(
+      'ResponseDTOAuthDTO',
+      () => expectMatchesSchema(responseDto(authJson), 'ResponseDTOAuthDTO'),
+    );
+    test(
+      'LoginRequestDTO',
+      () => expectMatchesSchema(
+        const LoginRequestDto(
+          username: 'matheus',
+          password: 'secret',
+        ).toJson(),
+        'LoginRequestDTO',
+      ),
+    );
+    test(
+      'CreateUserRequestDTO',
+      () => expectMatchesSchema(
+        const CreateUserRequestDto(
+          name: 'Matheus Silva',
+          username: 'matheus',
+          email: 'matheus@example.com',
+          password: 'secret',
+          role: 'athlete',
+        ).toJson(),
+        'CreateUserRequestDTO',
+      ),
     );
 
     group('paths used by the mobile app exist in the spec', () {
@@ -37,8 +65,7 @@ void main() {
         '/api/follow/followAndUnfollow/{followerId}/{followedId}': 'post',
         '/api/opportunities/get': 'get',
         '/api/saved-opportunities/toggle/{athleteId}/{opportunityId}': 'post',
-        '/api/subscriber/toggleSubscriber/{athleteId}/{opportunityId}':
-            'post',
+        '/api/subscriber/toggleSubscriber/{athleteId}/{opportunityId}': 'post',
         '/api/conversations/user/{userId}': 'get',
         '/api/conversations/{conversationId}/user/{userId}': 'get',
         '/api/conversations/{conversationId}/messages/{userId}': 'get',
