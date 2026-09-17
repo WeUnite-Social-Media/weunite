@@ -27,6 +27,15 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
+  Future<Conversation> getConversation(int conversationId) async {
+    final conversation = await _remoteDataSource.getConversation(
+      conversationId: conversationId,
+      userId: _currentUserProvider.requireUserId(),
+    );
+    return conversation.toEntity();
+  }
+
+  @override
   Future<List<ChatMessage>> getMessages({required int conversationId}) async {
     final messages = await _remoteDataSource.getMessages(
       conversationId: conversationId,

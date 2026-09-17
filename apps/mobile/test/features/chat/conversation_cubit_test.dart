@@ -30,6 +30,11 @@ class _FakeChatRepository implements ChatRepository {
   Future<List<Conversation>> getConversations() async => const [];
 
   @override
+  Future<Conversation> getConversation(int conversationId) async {
+    throw const AppException('Nao implementado.');
+  }
+
+  @override
   Future<List<ChatMessage>> getMessages({required int conversationId}) async {
     getMessagesCalls++;
     if (getMessagesDelay > Duration.zero) {

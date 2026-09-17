@@ -21,6 +21,20 @@ class ChatRemoteDataSource {
     }
   }
 
+  Future<ConversationDto> getConversation({
+    required int conversationId,
+    required int userId,
+  }) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/conversations/$conversationId/user/$userId',
+      );
+      return ConversationDto.fromJson(response.data ?? {});
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
   Future<List<ChatMessageDto>> getMessages({
     required int conversationId,
     required int userId,
