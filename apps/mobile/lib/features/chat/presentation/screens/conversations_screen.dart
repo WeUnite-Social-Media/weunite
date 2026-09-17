@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/async_state_view.dart';
 import '../cubit/chat_cubit.dart';
+import 'conversation_screen.dart';
 
 class ConversationsScreen extends StatefulWidget {
   const ConversationsScreen({super.key});
@@ -58,6 +59,17 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                 trailing: conversation.unreadCount == 0
                     ? null
                     : Badge(label: Text('${conversation.unreadCount}')),
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          ConversationScreen(conversation: conversation),
+                    ),
+                  );
+                  if (context.mounted) {
+                    context.read<ChatCubit>().loadConversations();
+                  }
+                },
               );
             },
           ),
