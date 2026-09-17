@@ -40,6 +40,12 @@ Only `AuthCubit` lives above `MaterialApp`. The feature cubits (`FeedCubit`, `Op
 
 `AppShell` renders its four tabs with an `IndexedStack`, so switching tabs does not rebuild the screens: scroll position and already-loaded data are preserved. Each screen only triggers its initial load when its cubit state has not been loaded yet (`hasLoaded == false`); pull-to-refresh always forces a new request. Feature states separate `loadErrorMessage` (blocks the whole screen only when there is no data yet) from `actionErrorMessage` (shown as a transient `SnackBar`, e.g. a failed like, comment, post, or a refresh that failed while data was already on screen).
 
+## Posts: images and profile sync
+
+Creating a post can attach one image picked from the device gallery (`image_picker`). It is sent as the optional multipart `image` part of `POST /posts/create/{userId}`, and the API uploads it to Cloudinary, so the API's `CLOUDINARY_URL` needs real credentials for local uploads. Images are downscaled before upload and rejected above 10 MB (the API's multipart limit). A post can be text-only, image-only, or both.
+
+The "Posts" tab of your own profile lists your posts (`ProfilePostsCubit`, `GET /posts/get/user/{userId}`). Feed and profile stay in sync through the session-scoped `PostEvents` bus: publishing a post reloads both lists immediately, and a like or comment made in one list updates the same post in the other, with no manual refresh.
+
 ## Current user id
 
 Screens and cubits never read `AuthCubit.state.user?.id` to act on behalf of the signed-in user. `lib/core/session/current_user_provider.dart` defines `CurrentUserProvider` (`currentUserId`, `requireUserId()`), implemented by `AuthCurrentUserProvider` on top of `AuthRepository.currentUser`. `FeedRepositoryImpl`, `ChatRepositoryImpl`, and `ProfileRepositoryImpl` receive it and resolve the logged-in user's id internally, so their domain contracts (`FeedRepository.toggleLike`, `createPost`, `createComment`; `ChatRepository.getConversations`, `getMessages`, `sendMessage`; `ProfileRepository.getMyProfile`, `toggleFollow`) no longer take a `userId` parameter. `ProfileRepository.getProfile(int userId)` still takes an explicit id because it is used to look up a third party's profile. The one exception is display-only: the message bubble in `ConversationScreen` reads `state.user?.id` purely to align its own messages to the right.
