@@ -51,30 +51,17 @@ void main() {
     test('parses raw opportunities list returned by the API', () async {
       final dataSource = OpportunityRemoteDataSource(
         _dio({
-          '/api/opportunities/get': [
-            {
-              'id': 4,
-              'title': 'Peneira sub-20',
-              'description': 'Selecao para atletas',
-              'location': 'Sao Paulo',
-              'dateEnd': '2026-10-01',
-              'subscribersCount': 12,
-              'company': {'name': 'WeUnite FC', 'username': 'weunite'},
-              'skills': [
-                {'name': 'Velocidade'},
-                {'name': 'Passe'},
-              ],
-            },
-          ],
+          '/api/opportunities/get': [opportunityJson],
         }),
       );
 
       final opportunities = await dataSource.getOpportunities();
 
       expect(opportunities, hasLength(1));
-      expect(opportunities.single.title, 'Peneira sub-20');
-      expect(opportunities.single.companyName, 'WeUnite FC');
-      expect(opportunities.single.skills, ['Velocidade', 'Passe']);
+      final opportunity = opportunities.single.toEntity();
+      expect(opportunity.title, 'Peneira sub-20');
+      expect(opportunity.companyName, 'Matheus Silva');
+      expect(opportunity.skills, ['Velocidade', 'Passe']);
     });
 
     test('parses raw conversation and message lists returned by the API',
@@ -245,6 +232,18 @@ void main() {
         );
 
         expect(() => dataSource.getProfileById(7), isServerFormatError());
+      });
+
+      test('opportunity without a company', () async {
+        final dataSource = OpportunityRemoteDataSource(
+          _dio({
+            '/api/opportunities/get': [
+              {...opportunityJson}..remove('company'),
+            ],
+          }),
+        );
+
+        expect(dataSource.getOpportunities, isServerFormatError());
       });
     });
   });

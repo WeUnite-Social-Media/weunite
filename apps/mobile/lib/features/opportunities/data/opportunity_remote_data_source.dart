@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/network/json_body.dart';
 import 'opportunity_models.dart';
 
 class OpportunityRemoteDataSource {
@@ -13,7 +14,7 @@ class OpportunityRemoteDataSource {
     int page = 0,
   }) async {
     try {
-      final response = await _dio.get<List<dynamic>>(
+      final response = await _dio.get<Object?>(
         '/opportunities/get',
         queryParameters: {
           'page': page,
@@ -21,11 +22,7 @@ class OpportunityRemoteDataSource {
           if (skill != null && skill.isNotEmpty) 'skill': skill,
         },
       );
-      final items = response.data ?? [];
-
-      return items
-          .map((item) => OpportunityDto.fromJson(item as Map<String, dynamic>))
-          .toList();
+      return decodeJsonList(response.data, OpportunityDto.fromJson);
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
     }

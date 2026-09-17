@@ -15,7 +15,7 @@ class Opportunity extends Equatable {
 
   final int id;
   final String title;
-  final String description;
+  final String? description;
   final String companyName;
   final String? companyAvatar;
   final String? location;

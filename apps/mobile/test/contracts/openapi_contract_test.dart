@@ -75,6 +75,10 @@ void main() {
       'ResponseDTOUserDTO',
       () => expectMatchesSchema(responseDto(userJson), 'ResponseDTOUserDTO'),
     );
+    test(
+      'OpportunityDTO',
+      () => expectMatchesSchema(opportunityJson, 'OpportunityDTO'),
+    );
 
     group('paths used by the mobile app exist in the spec', () {
       const usedPaths = <String, String>{

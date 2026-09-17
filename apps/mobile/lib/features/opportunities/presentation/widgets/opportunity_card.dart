@@ -37,11 +37,12 @@ class OpportunityCard extends StatelessWidget {
               icon: const Icon(Icons.bookmark_border),
             ),
           ),
-          Text(
-            opportunity.description,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
+          if (opportunity.description != null)
+            Text(
+              opportunity.description!,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -94,7 +95,7 @@ class _OpportunityDetail extends StatelessWidget {
             const SizedBox(height: 8),
             Text(opportunity.companyName),
             const SizedBox(height: 16),
-            Text(opportunity.description),
+            if (opportunity.description != null) Text(opportunity.description!),
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,

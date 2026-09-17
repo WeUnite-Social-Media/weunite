@@ -57,3 +57,18 @@ const Map<String, Object?> commentJson = {
   'text': 'Boa!',
   'createdAt': '2026-09-15T12:20:00Z',
 };
+
+/// `OpportunityDTO` (openapi: components.schemas.OpportunityDTO).
+Map<String, Object?> get opportunityJson => {
+      'id': 4,
+      'title': 'Peneira sub-20',
+      'description': 'Selecao para atletas',
+      'location': 'Sao Paulo',
+      'dateEnd': '2026-10-01',
+      'skills': [
+        {'id': 1, 'name': 'Velocidade'},
+        {'id': 2, 'name': 'Passe'},
+      ],
+      'company': {...userJson, 'role': 'COMPANY'},
+      'subscribersCount': 12,
+    };
