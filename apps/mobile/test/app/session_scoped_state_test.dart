@@ -6,6 +6,7 @@ import 'package:weunite_mobile/core/error/app_exception.dart';
 import 'package:weunite_mobile/core/session/session_events.dart';
 import 'package:weunite_mobile/features/auth/domain/entities/app_user.dart';
 import 'package:weunite_mobile/features/auth/domain/repositories/auth_repository.dart';
+import 'package:weunite_mobile/features/chat/domain/entities/chat_realtime_event.dart';
 import 'package:weunite_mobile/features/chat/domain/entities/conversation.dart';
 import 'package:weunite_mobile/features/chat/domain/repositories/chat_repository.dart';
 import 'package:weunite_mobile/features/feed/domain/entities/comment.dart';
@@ -147,22 +148,29 @@ class _FakeOpportunityRepository implements OpportunityRepository {
 }
 
 class _FakeChatRepository implements ChatRepository {
+  int disconnectCalls = 0;
+
   @override
   Future<List<Conversation>> getConversations() async => const [];
 
   @override
-  Future<List<ChatMessage>> getMessages({
-    required int conversationId,
-    required int userId,
-  }) async =>
+  Future<List<ChatMessage>> getMessages({required int conversationId}) async =>
       const [];
+
+  @override
+  Stream<ChatRealtimeEvent> watchConversation(int conversationId) =>
+      const Stream.empty();
 
   @override
   Future<void> sendMessage({
     required int conversationId,
-    required int senderId,
     required String content,
   }) async {}
+
+  @override
+  Future<void> disconnectRealtime() async {
+    disconnectCalls++;
+  }
 }
 
 class _FakeProfileRepository implements ProfileRepository {
@@ -190,14 +198,20 @@ class _FakeProfileRepository implements ProfileRepository {
   Future<void> toggleFollow({required int followedId}) async {}
 }
 
-Future<_FakeFeedRepository> _pumpAuthenticatedApp(WidgetTester tester) async {
+typedef _Repositories = ({
+  _FakeFeedRepository feed,
+  _FakeChatRepository chat,
+});
+
+Future<_Repositories> _pumpAuthenticatedApp(WidgetTester tester) async {
   final authRepository = _FakeAuthRepository();
   final feedRepository = _FakeFeedRepository(authRepository);
+  final chatRepository = _FakeChatRepository();
   final dependencies = AppDependencies(
     authRepository: authRepository,
     feedRepository: feedRepository,
     opportunityRepository: _FakeOpportunityRepository(),
-    chatRepository: _FakeChatRepository(),
+    chatRepository: chatRepository,
     profileRepository: _FakeProfileRepository(),
     sessionEvents: SessionEvents(),
   );
@@ -205,7 +219,7 @@ Future<_FakeFeedRepository> _pumpAuthenticatedApp(WidgetTester tester) async {
   await tester.pumpWidget(WeUniteMobileApp(dependencies: dependencies));
   await tester.pumpAndSettle();
 
-  return feedRepository;
+  return (feed: feedRepository, chat: chatRepository);
 }
 
 Future<void> _login(WidgetTester tester, String username) async {
@@ -237,17 +251,32 @@ void main() {
   testWidgets(
     'switching tabs and returning to feed does not reload the timeline',
     (tester) async {
-      final feedRepository = await _pumpAuthenticatedApp(tester);
+      final repositories = await _pumpAuthenticatedApp(tester);
 
       await _login(tester, 'alice');
-      expect(feedRepository.timelineCalls, 1);
+      expect(repositories.feed.timelineCalls, 1);
 
       await tester.tap(find.byType(NavigationDestination).at(1));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(NavigationDestination).at(0));
       await tester.pumpAndSettle();
 
-      expect(feedRepository.timelineCalls, 1);
+      expect(repositories.feed.timelineCalls, 1);
+    },
+  );
+
+  testWidgets(
+    'logging out disconnects the chat realtime client',
+    (tester) async {
+      final repositories = await _pumpAuthenticatedApp(tester);
+
+      await _login(tester, 'alice');
+      expect(repositories.chat.disconnectCalls, 0);
+
+      await tester.tap(find.byIcon(Icons.logout));
+      await tester.pumpAndSettle();
+
+      expect(repositories.chat.disconnectCalls, 1);
     },
   );
 }

@@ -3,9 +3,9 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:weunite_mobile/core/config/app_config.dart';
 import 'package:weunite_mobile/core/session/current_user_provider.dart';
-import 'package:weunite_mobile/core/storage/token_storage.dart';
+import 'package:weunite_mobile/features/chat/data/chat_realtime_client.dart';
+import 'package:weunite_mobile/features/chat/domain/entities/chat_realtime_event.dart';
 import 'package:weunite_mobile/features/chat/data/chat_remote_data_source.dart';
 import 'package:weunite_mobile/features/chat/data/chat_repository_impl.dart';
 import 'package:weunite_mobile/features/feed/data/feed_remote_data_source.dart';
@@ -79,17 +79,47 @@ void main() {
         remoteDataSource: ChatRemoteDataSource(
           _dio(recorder, response: const <Object?>[]),
         ),
-        config: const AppConfig(
-          apiBaseUrl: 'http://localhost/api',
-          websocketBaseUrl: 'http://localhost/ws',
-        ),
-        tokenStorage: _FakeTokenStorage(),
+        realtimeClient: _FakeChatRealtimeClient(),
         currentUserProvider: _FakeCurrentUserProvider(23),
       );
 
       await repository.getConversations();
 
       expect(recorder.lastPath, '/api/conversations/user/23');
+    });
+
+    test(
+        'ChatRepositoryImpl.getMessages fetches messages for the id from '
+        'CurrentUserProvider', () async {
+      final recorder = _RequestRecorder();
+      final repository = ChatRepositoryImpl(
+        remoteDataSource: ChatRemoteDataSource(
+          _dio(recorder, response: const <Object?>[]),
+        ),
+        realtimeClient: _FakeChatRealtimeClient(),
+        currentUserProvider: _FakeCurrentUserProvider(23),
+      );
+
+      await repository.getMessages(conversationId: 30);
+
+      expect(recorder.lastPath, '/api/conversations/30/messages/23');
+    });
+
+    test(
+        'ChatRepositoryImpl.sendMessage passes senderId from '
+        'CurrentUserProvider to the realtime client', () async {
+      final fakeRealtimeClient = _FakeChatRealtimeClient();
+      final repository = ChatRepositoryImpl(
+        remoteDataSource: ChatRemoteDataSource(_dio(_RequestRecorder())),
+        realtimeClient: fakeRealtimeClient,
+        currentUserProvider: _FakeCurrentUserProvider(23),
+      );
+
+      await repository.sendMessage(conversationId: 30, content: 'Oi!');
+
+      expect(fakeRealtimeClient.lastSenderId, 23);
+      expect(fakeRealtimeClient.lastConversationId, 30);
+      expect(fakeRealtimeClient.lastContent, 'Oi!');
     });
   });
 }
@@ -104,31 +134,34 @@ class _FakeCurrentUserProvider implements CurrentUserProvider {
   int requireUserId() => currentUserId!;
 }
 
-class _FakeTokenStorage implements TokenStorage {
-  @override
-  Future<String?> readAccessToken() async => null;
+class _FakeChatRealtimeClient implements ChatRealtimeClient {
+  int? lastSenderId;
+  int? lastConversationId;
+  String? lastContent;
 
   @override
-  Future<String?> readRefreshToken() async => null;
+  bool get isConnected => false;
 
   @override
-  Future<String?> readUserJson() async => null;
+  Future<void> connect() async {}
 
   @override
-  Future<DateTime?> readAccessTokenExpiresAt() async => null;
+  Stream<ChatRealtimeEvent> subscribeConversation(int conversationId) =>
+      const Stream.empty();
 
   @override
-  Future<void> saveTokens({
-    required String accessToken,
-    String? refreshToken,
-    DateTime? expiresAt,
-  }) async {}
+  void sendMessage({
+    required int conversationId,
+    required int senderId,
+    required String content,
+  }) {
+    lastConversationId = conversationId;
+    lastSenderId = senderId;
+    lastContent = content;
+  }
 
   @override
-  Future<void> saveUserJson(String userJson) async {}
-
-  @override
-  Future<void> clear() async {}
+  Future<void> disconnect() async {}
 }
 
 class _RequestRecorder {

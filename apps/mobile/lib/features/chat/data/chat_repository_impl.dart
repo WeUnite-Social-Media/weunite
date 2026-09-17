@@ -1,6 +1,5 @@
-import '../../../core/config/app_config.dart';
 import '../../../core/session/current_user_provider.dart';
-import '../../../core/storage/token_storage.dart';
+import '../domain/entities/chat_realtime_event.dart';
 import '../domain/entities/conversation.dart';
 import '../domain/repositories/chat_repository.dart';
 import 'chat_realtime_client.dart';
@@ -9,15 +8,11 @@ import 'chat_remote_data_source.dart';
 class ChatRepositoryImpl implements ChatRepository {
   ChatRepositoryImpl({
     required ChatRemoteDataSource remoteDataSource,
-    required AppConfig config,
-    required TokenStorage tokenStorage,
+    required ChatRealtimeClient realtimeClient,
     required CurrentUserProvider currentUserProvider,
   })  : _remoteDataSource = remoteDataSource,
         _currentUserProvider = currentUserProvider,
-        _realtimeClient = ChatRealtimeClient(
-          config: config,
-          tokenStorage: tokenStorage,
-        );
+        _realtimeClient = realtimeClient;
 
   final ChatRemoteDataSource _remoteDataSource;
   final CurrentUserProvider _currentUserProvider;
@@ -32,27 +27,33 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<List<ChatMessage>> getMessages({
-    required int conversationId,
-    required int userId,
-  }) async {
+  Future<List<ChatMessage>> getMessages({required int conversationId}) async {
     final messages = await _remoteDataSource.getMessages(
       conversationId: conversationId,
-      userId: userId,
+      userId: _currentUserProvider.requireUserId(),
     );
     return messages.map((item) => item.toEntity()).toList();
   }
 
   @override
+  Stream<ChatRealtimeEvent> watchConversation(int conversationId) {
+    return _realtimeClient.subscribeConversation(conversationId);
+  }
+
+  @override
   Future<void> sendMessage({
     required int conversationId,
-    required int senderId,
     required String content,
   }) async {
     _realtimeClient.sendMessage(
       conversationId: conversationId,
-      senderId: senderId,
+      senderId: _currentUserProvider.requireUserId(),
       content: content,
     );
+  }
+
+  @override
+  Future<void> disconnectRealtime() {
+    return _realtimeClient.disconnect();
   }
 }

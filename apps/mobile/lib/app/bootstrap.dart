@@ -6,6 +6,7 @@ import '../core/storage/token_storage.dart';
 import '../features/auth/data/auth_remote_data_source.dart';
 import '../features/auth/data/auth_repository_impl.dart';
 import '../features/auth/domain/repositories/auth_repository.dart';
+import '../features/chat/data/chat_realtime_client.dart';
 import '../features/chat/data/chat_remote_data_source.dart';
 import '../features/chat/data/chat_repository_impl.dart';
 import '../features/chat/domain/repositories/chat_repository.dart';
@@ -64,8 +65,10 @@ AppDependencies bootstrap() {
     ),
     chatRepository: ChatRepositoryImpl(
       remoteDataSource: ChatRemoteDataSource(apiClient.dio),
-      config: config,
-      tokenStorage: tokenStorage,
+      realtimeClient: ChatRealtimeClient(
+        config: config,
+        tokenStorage: tokenStorage,
+      ),
       currentUserProvider: currentUserProvider,
     ),
     profileRepository: ProfileRepositoryImpl(

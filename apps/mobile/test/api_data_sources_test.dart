@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:weunite_mobile/core/error/app_exception.dart';
 import 'package:weunite_mobile/core/network/api_diagnostics.dart';
 import 'package:weunite_mobile/features/chat/data/chat_remote_data_source.dart';
+import 'package:weunite_mobile/features/chat/domain/entities/conversation.dart';
 import 'package:weunite_mobile/features/feed/data/feed_remote_data_source.dart';
 import 'package:weunite_mobile/features/opportunities/data/opportunity_remote_data_source.dart';
 import 'package:weunite_mobile/features/profile/data/profile_remote_data_source.dart';
@@ -113,6 +114,9 @@ void main() {
               'content': 'Oi!',
               'isRead': false,
               'createdAt': '2026-09-15T12:10:00Z',
+              'type': 'TEXT',
+              'deleted': false,
+              'edited': false,
             },
           },
         ],
@@ -124,6 +128,9 @@ void main() {
             'content': 'Oi!',
             'isRead': true,
             'createdAt': '2026-09-15T12:10:00Z',
+            'type': 'TEXT',
+            'deleted': false,
+            'edited': false,
           },
         ],
       });
@@ -139,6 +146,8 @@ void main() {
       expect(conversations.single.unreadCount, 2);
       expect(messages.single.content, 'Oi!');
       expect(messages.single.read, isTrue);
+      expect(messages.single.conversationId, 30);
+      expect(messages.single.type, ChatMessageType.text);
     });
 
     test('keeps profile parsing compatible with ResponseDTO.data', () async {
