@@ -1,43 +1,204 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 import 'package:stomp_dart_client/stomp_dart_client.dart';
 
 import '../../../core/config/app_config.dart';
+import '../../../core/error/app_exception.dart';
 import '../../../core/storage/token_storage.dart';
+import '../domain/entities/chat_realtime_event.dart';
+import 'chat_models.dart';
+
+typedef StompClientFactory = StompClient Function(StompConfig config);
+
+class _TopicSubscription {
+  _TopicSubscription(this.destination);
+
+  final String destination;
+  final StreamController<ChatRealtimeEvent> controller =
+      StreamController<ChatRealtimeEvent>();
+  StompUnsubscribe? unsubscribe;
+}
 
 class ChatRealtimeClient {
   ChatRealtimeClient({
     required AppConfig config,
     required TokenStorage tokenStorage,
+    StompClientFactory? clientFactory,
+    Duration initialReconnectDelay = const Duration(seconds: 1),
+    Duration maxReconnectDelay = const Duration(seconds: 30),
+    void Function(String message)? log,
   })  : _config = config,
-        _tokenStorage = tokenStorage;
+        _tokenStorage = tokenStorage,
+        _clientFactory = clientFactory ?? ((c) => StompClient(config: c)),
+        _initialReconnectDelay = initialReconnectDelay,
+        _maxReconnectDelay = maxReconnectDelay,
+        _log = log ?? _defaultLog;
 
   final AppConfig _config;
   final TokenStorage _tokenStorage;
-  StompClient? _client;
+  final StompClientFactory _clientFactory;
+  final Duration _initialReconnectDelay;
+  final Duration _maxReconnectDelay;
+  final void Function(String message) _log;
 
-  Future<void> connect({
-    required int userId,
-    required void Function(String body) onMessage,
-  }) async {
+  StompClient? _client;
+  bool _shouldConnect = false;
+  int _generation = 0;
+  Future<void>? _connecting;
+  Timer? _reconnectTimer;
+  int _reconnectAttempt = 0;
+  bool _hasConnectedBefore = false;
+  final Set<_TopicSubscription> _subscriptions = {};
+
+  static void _defaultLog(String message) {
+    if (kDebugMode) {
+      debugPrint(message);
+    }
+  }
+
+  bool get isConnected => _client?.connected ?? false;
+
+  Future<void> connect() {
+    _shouldConnect = true;
+    return _connecting ??= _open().whenComplete(() => _connecting = null);
+  }
+
+  Future<void> _open() async {
+    if (_client != null) {
+      return;
+    }
+    final generation = _generation;
+
     final token = await _tokenStorage.readAccessToken();
-    _client = StompClient(
-      config: StompConfig.sockJS(
+    final expiresAt = await _tokenStorage.readAccessTokenExpiresAt();
+
+    if (generation != _generation || !_shouldConnect) {
+      return;
+    }
+
+    if (token == null ||
+        token.isEmpty ||
+        (expiresAt != null && expiresAt.isBefore(DateTime.now()))) {
+      _log('[WS] no valid token, skipping connection');
+      _shouldConnect = false;
+      return;
+    }
+
+    late final StompClient client;
+    client = _clientFactory(
+      StompConfig.sockJS(
         url: _config.websocketBaseUrl,
-        stompConnectHeaders: {
-          if (token != null) 'Authorization': 'Bearer $token',
+        reconnectDelay: Duration.zero,
+        stompConnectHeaders: {'Authorization': 'Bearer $token'},
+        onConnect: (_) => _handleConnected(client),
+        onStompError: (_) => _log('[WS] STOMP error frame received'),
+        onWebSocketError: (error) {
+          _log('[WS] socket error type=${error.runtimeType}');
+          _handleConnectionLost(client);
         },
-        onConnect: (frame) {
-          _client?.subscribe(
-            destination: '/topic/user/$userId/messages',
-            callback: (frame) {
-              final body = frame.body;
-              if (body != null) {
-                onMessage(body);
-              }
-            },
-          );
-        },
+        onWebSocketDone: () => _handleConnectionLost(client),
       ),
-    )..activate();
+    );
+
+    _client = client;
+    client.activate();
+  }
+
+  void _handleConnected(StompClient client) {
+    if (!identical(client, _client)) {
+      return;
+    }
+    _log('[WS] connected');
+    final isReconnect = _hasConnectedBefore;
+    _hasConnectedBefore = true;
+    _reconnectAttempt = 0;
+
+    for (final sub in _subscriptions) {
+      _attach(sub);
+      if (isReconnect) {
+        sub.controller.add(const ChatRealtimeReconnected());
+      }
+    }
+  }
+
+  void _attach(_TopicSubscription sub) {
+    if (_client?.connected != true) {
+      return;
+    }
+    try {
+      sub.unsubscribe?.call();
+      sub.unsubscribe = _client!.subscribe(
+        destination: sub.destination,
+        callback: (frame) {
+          final body = frame.body;
+          if (body == null) {
+            return;
+          }
+          final event = parseChatRealtimeEvent(body);
+          if (event == null) {
+            _log('[WS] ignored malformed event');
+            return;
+          }
+          sub.controller.add(event);
+        },
+      );
+    } on StompBadStateException {
+      // Connection dropped between the connected callback and the
+      // subscribe call; the next reconnect will retry.
+    }
+  }
+
+  void _handleConnectionLost(StompClient client) {
+    if (!identical(client, _client)) {
+      return;
+    }
+    _client = null;
+    client.deactivate();
+
+    for (final sub in _subscriptions) {
+      sub.unsubscribe = null;
+    }
+
+    if (_shouldConnect) {
+      _scheduleReconnect();
+    }
+  }
+
+  void _scheduleReconnect() {
+    if (_reconnectTimer != null) {
+      return;
+    }
+    final delayMs = min(
+      _initialReconnectDelay.inMilliseconds * pow(2, _reconnectAttempt).toInt(),
+      _maxReconnectDelay.inMilliseconds,
+    );
+    final delay = Duration(milliseconds: delayMs);
+    _reconnectAttempt++;
+    _log('[WS] reconnecting in ${delay.inSeconds}s');
+    _reconnectTimer = Timer(delay, () {
+      _reconnectTimer = null;
+      if (_shouldConnect) {
+        unawaited(connect());
+      }
+    });
+  }
+
+  Stream<ChatRealtimeEvent> subscribeConversation(int conversationId) {
+    final sub = _TopicSubscription('/topic/conversation/$conversationId');
+    sub.controller.onListen = () {
+      _subscriptions.add(sub);
+      _attach(sub);
+      unawaited(connect());
+    };
+    sub.controller.onCancel = () {
+      _subscriptions.remove(sub);
+      sub.unsubscribe?.call();
+      sub.unsubscribe = null;
+    };
+    return sub.controller.stream;
   }
 
   void sendMessage({
@@ -45,15 +206,49 @@ class ChatRealtimeClient {
     required int senderId,
     required String content,
   }) {
-    _client?.send(
-      destination: '/app/chat.sendMessage',
-      body:
-          '{"conversationId":$conversationId,"senderId":$senderId,"content":"$content"}',
-    );
+    final client = _client;
+    if (client == null || !client.connected) {
+      unawaited(connect());
+      throw const AppException(
+        'Chat desconectado. Tente novamente em instantes.',
+      );
+    }
+    try {
+      client.send(
+        destination: '/app/chat.sendMessage',
+        body: jsonEncode(
+          SendMessageRequestDto(
+            conversationId: conversationId,
+            senderId: senderId,
+            content: content,
+          ).toJson(),
+        ),
+      );
+    } on StompBadStateException {
+      throw const AppException(
+        'Chat desconectado. Tente novamente em instantes.',
+      );
+    }
   }
 
-  void disconnect() {
-    _client?.deactivate();
+  Future<void> disconnect() async {
+    _shouldConnect = false;
+    _generation++;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _reconnectAttempt = 0;
+    _hasConnectedBefore = false;
+
+    final client = _client;
     _client = null;
+    client?.deactivate();
+
+    final subs = _subscriptions.toList();
+    _subscriptions.clear();
+    for (final sub in subs) {
+      sub.unsubscribe = null;
+      await sub.controller.close();
+    }
+    _log('[WS] disconnected');
   }
 }
