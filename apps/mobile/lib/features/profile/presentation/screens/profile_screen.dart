@@ -3,11 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/async_state_view.dart';
-import '../../../feed/presentation/widgets/comments_sheet.dart';
-import '../../../feed/presentation/widgets/post_card.dart';
 import '../cubit/profile_cubit.dart';
 import '../cubit/profile_posts_cubit.dart';
 import '../widgets/profile_header.dart';
+import '../widgets/profile_posts_list.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -110,7 +109,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                     switch (tabIndex) {
-                      _postsTab => const _ProfilePostsSection(),
+                      _postsTab => const ProfilePostsList(
+                          emptyMessage: 'Voce ainda nao publicou nada.',
+                        ),
                       1 => _CenteredMessage(
                           state.profile?.bio ?? 'Sem bio ainda.',
                         ),
@@ -129,65 +130,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
-    );
-  }
-}
-
-class _ProfilePostsSection extends StatelessWidget {
-  const _ProfilePostsSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<ProfilePostsCubit, ProfilePostsState>(
-      builder: (context, state) {
-        if (state.isLoading || (!state.hasLoaded && state.posts.isEmpty)) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 48),
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (state.loadErrorMessage != null) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 16),
-            child: Column(
-              children: [
-                Text(state.loadErrorMessage!, textAlign: TextAlign.center),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: context.read<ProfilePostsCubit>().loadPosts,
-                  child: const Text('Tentar novamente'),
-                ),
-              ],
-            ),
-          );
-        }
-        if (state.posts.isEmpty) {
-          return const _CenteredMessage('Voce ainda nao publicou nada.');
-        }
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final post in state.posts) ...[
-                PostCard(
-                  post: post,
-                  onLike: () => context
-                      .read<ProfilePostsCubit>()
-                      .toggleLike(postId: post.id),
-                  onComments: () => showCommentsSheet(context, postId: post.id),
-                ),
-                const SizedBox(height: 12),
-              ],
-              if (state.isLoadingMore)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

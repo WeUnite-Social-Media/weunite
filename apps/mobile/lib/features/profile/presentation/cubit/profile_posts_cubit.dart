@@ -12,12 +12,15 @@ import '../../../feed/feed_constants.dart';
 
 part 'profile_posts_state.dart';
 
-/// Posts authored by the signed-in user, shown on the "Posts" tab of their
-/// profile. Session-scoped like `ProfileCubit`, and kept in sync with the
-/// feed through [PostEvents]: a new post reloads the list, likes and
-/// comments made elsewhere update the matching post in place.
+/// Posts authored by one user, shown on the "Posts" tab of a profile.
+///
+/// Without [userId] it lists the signed-in user's own posts (session-scoped,
+/// like `ProfileCubit`); with it, another user's posts (route-scoped, on
+/// `/profile/:userId`). Kept in sync with the feed through [PostEvents]:
+/// likes and comments made elsewhere update the matching post in place, and
+/// a new post reloads the signed-in user's own list.
 class ProfilePostsCubit extends Cubit<ProfilePostsState> {
-  ProfilePostsCubit(this._repository, {PostEvents? events})
+  ProfilePostsCubit(this._repository, {PostEvents? events, this.userId})
       : _events = events,
         super(const ProfilePostsState()) {
     _eventsSubscription = events?.stream.listen(_onPostEvent);
@@ -25,7 +28,17 @@ class ProfilePostsCubit extends Cubit<ProfilePostsState> {
 
   final FeedRepository _repository;
   final PostEvents? _events;
+
+  /// Author whose posts are listed; `null` means the signed-in user.
+  final int? userId;
   StreamSubscription<PostEvent>? _eventsSubscription;
+
+  Future<List<Post>> _fetch(int page) {
+    final id = userId;
+    return id == null
+        ? _repository.getMyPosts(page: page)
+        : _repository.getUserPosts(userId: id, page: page);
+  }
 
   Future<void> loadPosts() async {
     final hadPosts = state.posts.isNotEmpty;
@@ -39,7 +52,7 @@ class ProfilePostsCubit extends Cubit<ProfilePostsState> {
       ),
     );
     try {
-      final posts = await _repository.getMyPosts(page: 0);
+      final posts = await _fetch(0);
       emit(
         state.copyWith(
           isLoading: false,
@@ -69,7 +82,7 @@ class ProfilePostsCubit extends Cubit<ProfilePostsState> {
     final nextPage = state.page + 1;
     emit(state.copyWith(isLoadingMore: true, actionErrorMessage: () => null));
     try {
-      final posts = await _repository.getMyPosts(page: nextPage);
+      final posts = await _fetch(nextPage);
       emit(
         state.copyWith(
           isLoadingMore: false,
@@ -141,9 +154,9 @@ class ProfilePostsCubit extends Cubit<ProfilePostsState> {
   void _onPostEvent(PostEvent event) {
     switch (event) {
       case PostCreated():
-        // Only reload once the tab has been opened; before that the first
-        // visit loads the fresh list anyway.
-        if (state.hasLoaded) {
+        // Only the signed-in user publishes, so only their own list changes.
+        // Before the tab has loaded, its first visit fetches fresh data.
+        if (userId == null && state.hasLoaded) {
           loadPosts();
         }
       case PostUpdated(:final post):

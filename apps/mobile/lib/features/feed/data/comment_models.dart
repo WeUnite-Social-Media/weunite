@@ -30,6 +30,7 @@ class CommentDto {
     return Comment(
       id: id,
       content: text,
+      authorId: user.id,
       authorName: user.name,
       authorUsername: user.username,
       authorAvatar: user.profileImg,

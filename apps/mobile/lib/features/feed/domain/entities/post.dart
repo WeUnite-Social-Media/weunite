@@ -7,6 +7,7 @@ class Post extends Equatable {
     required this.authorName,
     required this.authorUsername,
     required this.createdAt,
+    this.authorId,
     this.authorAvatar,
     this.mediaUrl,
     this.likesCount = 0,
@@ -18,6 +19,9 @@ class Post extends Equatable {
   final String? content;
   final String authorName;
   final String authorUsername;
+
+  /// Author's user id, used to open their profile. Null when unknown.
+  final int? authorId;
   final String? authorAvatar;
   final String? mediaUrl;
   final DateTime createdAt;
@@ -36,6 +40,7 @@ class Post extends Equatable {
       authorName: authorName,
       authorUsername: authorUsername,
       createdAt: createdAt,
+      authorId: authorId,
       authorAvatar: authorAvatar,
       mediaUrl: mediaUrl,
       likesCount: likesCount ?? this.likesCount,
@@ -50,6 +55,7 @@ class Post extends Equatable {
         content,
         authorName,
         authorUsername,
+        authorId,
         authorAvatar,
         mediaUrl,
         createdAt,

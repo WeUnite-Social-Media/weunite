@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/widgets/weunite_card.dart';
+import '../../../profile/presentation/navigation/open_user_profile.dart';
 import '../../domain/entities/opportunity.dart';
 
 class OpportunityCard extends StatelessWidget {
@@ -22,16 +23,22 @@ class OpportunityCard extends StatelessWidget {
         children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: CircleAvatar(
-              backgroundImage: opportunity.companyAvatar == null
-                  ? null
-                  : NetworkImage(opportunity.companyAvatar!),
-              child: opportunity.companyAvatar == null
-                  ? Text(_initial(opportunity.companyName))
-                  : null,
+            leading: GestureDetector(
+              onTap: () => openUserProfile(context, opportunity.companyId),
+              child: CircleAvatar(
+                backgroundImage: opportunity.companyAvatar == null
+                    ? null
+                    : NetworkImage(opportunity.companyAvatar!),
+                child: opportunity.companyAvatar == null
+                    ? Text(_initial(opportunity.companyName))
+                    : null,
+              ),
             ),
             title: Text(opportunity.title),
-            subtitle: Text(opportunity.companyName),
+            subtitle: GestureDetector(
+              onTap: () => openUserProfile(context, opportunity.companyId),
+              child: Text(opportunity.companyName),
+            ),
             trailing: IconButton(
               onPressed: () {},
               icon: const Icon(Icons.bookmark_border),
@@ -93,7 +100,14 @@ class _OpportunityDetail extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
-            Text(opportunity.companyName),
+            GestureDetector(
+              onTap: () => openUserProfile(
+                context,
+                opportunity.companyId,
+                closeCurrentRoute: true,
+              ),
+              child: Text(opportunity.companyName),
+            ),
             const SizedBox(height: 16),
             if (opportunity.description != null) Text(opportunity.description!),
             const SizedBox(height: 16),

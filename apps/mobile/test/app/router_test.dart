@@ -72,6 +72,10 @@ class _EmptyFeedRepository implements FeedRepository {
   Future<List<Post>> getMyPosts({int page = 0}) async => const [];
 
   @override
+  Future<List<Post>> getUserPosts({required int userId, int page = 0}) async =>
+      const [];
+
+  @override
   Future<void> createPost({
     required String content,
     String? imagePath,

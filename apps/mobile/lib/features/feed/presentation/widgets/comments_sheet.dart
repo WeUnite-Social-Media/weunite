@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../../profile/presentation/navigation/open_user_profile.dart';
 import '../../domain/entities/comment.dart';
 import '../../domain/post_events.dart';
 import '../../domain/repositories/feed_repository.dart';
@@ -180,19 +181,27 @@ class _CommentTile extends StatelessWidget {
 
   final Comment comment;
 
+  void _openAuthor(BuildContext context) {
+    openUserProfile(context, comment.authorId, closeCurrentRoute: true);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final canOpenAuthor = comment.authorId != null;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CircleAvatar(
-          radius: 18,
-          backgroundImage: comment.authorAvatar == null
-              ? null
-              : NetworkImage(comment.authorAvatar!),
-          child: comment.authorAvatar == null
-              ? Text(_initials(comment.authorName))
-              : null,
+        GestureDetector(
+          onTap: canOpenAuthor ? () => _openAuthor(context) : null,
+          child: CircleAvatar(
+            radius: 18,
+            backgroundImage: comment.authorAvatar == null
+                ? null
+                : NetworkImage(comment.authorAvatar!),
+            child: comment.authorAvatar == null
+                ? Text(_initials(comment.authorName))
+                : null,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -202,9 +211,12 @@ class _CommentTile extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      comment.authorName,
-                      style: Theme.of(context).textTheme.titleSmall,
+                    child: GestureDetector(
+                      onTap: canOpenAuthor ? () => _openAuthor(context) : null,
+                      child: Text(
+                        comment.authorName,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
                     ),
                   ),
                   Text(

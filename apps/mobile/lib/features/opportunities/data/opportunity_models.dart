@@ -42,6 +42,7 @@ class OpportunityDto {
       id: id,
       title: title,
       description: description,
+      companyId: company.id,
       companyName: company.name,
       companyAvatar: company.profileImg,
       location: location,

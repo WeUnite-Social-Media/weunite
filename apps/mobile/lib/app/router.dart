@@ -80,42 +80,35 @@ GoRouter buildRouter({
           if (user == null) {
             return const _SplashScreen();
           }
-          // Keyed by user so the event bus and every cubit are rebuilt when
-          // the signed-in user changes.
-          return RepositoryProvider<PostEvents>(
+          return MultiBlocProvider(
             key: ValueKey(user.id),
-            create: (_) => PostEvents(),
-            dispose: (events) => events.dispose(),
-            child: MultiBlocProvider(
-              providers: [
-                BlocProvider(
-                  create: (context) => FeedCubit(
-                    context.read<FeedRepository>(),
-                    events: context.read<PostEvents>(),
-                  ),
+            providers: [
+              BlocProvider(
+                create: (context) => FeedCubit(
+                  context.read<FeedRepository>(),
+                  events: context.read<PostEvents>(),
                 ),
-                BlocProvider(
-                  create: (context) => OpportunitiesCubit(
-                    context.read<OpportunityRepository>(),
-                  ),
+              ),
+              BlocProvider(
+                create: (context) => OpportunitiesCubit(
+                  context.read<OpportunityRepository>(),
                 ),
-                BlocProvider(
-                  create: (context) =>
-                      ChatCubit(context.read<ChatRepository>()),
+              ),
+              BlocProvider(
+                create: (context) => ChatCubit(context.read<ChatRepository>()),
+              ),
+              BlocProvider(
+                create: (context) =>
+                    ProfileCubit(context.read<ProfileRepository>()),
+              ),
+              BlocProvider(
+                create: (context) => ProfilePostsCubit(
+                  context.read<FeedRepository>(),
+                  events: context.read<PostEvents>(),
                 ),
-                BlocProvider(
-                  create: (context) =>
-                      ProfileCubit(context.read<ProfileRepository>()),
-                ),
-                BlocProvider(
-                  create: (context) => ProfilePostsCubit(
-                    context.read<FeedRepository>(),
-                    events: context.read<PostEvents>(),
-                  ),
-                ),
-              ],
-              child: AppShell(navigationShell: navigationShell),
-            ),
+              ),
+            ],
+            child: AppShell(navigationShell: navigationShell),
           );
         },
         branches: [

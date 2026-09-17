@@ -7,6 +7,7 @@ class Opportunity extends Equatable {
     required this.description,
     required this.companyName,
     required this.dateEnd,
+    this.companyId,
     this.companyAvatar,
     this.location,
     this.skills = const [],
@@ -17,6 +18,9 @@ class Opportunity extends Equatable {
   final String title;
   final String? description;
   final String companyName;
+
+  /// User id of the company that published it, used to open its profile.
+  final int? companyId;
   final String? companyAvatar;
   final String? location;
   final DateTime dateEnd;
@@ -29,6 +33,7 @@ class Opportunity extends Equatable {
         title,
         description,
         companyName,
+        companyId,
         companyAvatar,
         location,
         dateEnd,
