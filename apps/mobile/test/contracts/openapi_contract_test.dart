@@ -71,6 +71,10 @@ void main() {
         'CommentRequestDTO',
       ),
     );
+    test(
+      'ResponseDTOUserDTO',
+      () => expectMatchesSchema(responseDto(userJson), 'ResponseDTOUserDTO'),
+    );
 
     group('paths used by the mobile app exist in the spec', () {
       const usedPaths = <String, String>{

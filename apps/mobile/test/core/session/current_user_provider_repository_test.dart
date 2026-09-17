@@ -13,6 +13,8 @@ import 'package:weunite_mobile/features/feed/data/feed_repository_impl.dart';
 import 'package:weunite_mobile/features/profile/data/profile_remote_data_source.dart';
 import 'package:weunite_mobile/features/profile/data/profile_repository_impl.dart';
 
+import '../../fixtures/api_payloads.dart';
+
 void main() {
   group('repository id resolution', () {
     test(
@@ -48,13 +50,29 @@ void main() {
         'from CurrentUserProvider', () async {
       final recorder = _RequestRecorder();
       final repository = ProfileRepositoryImpl(
-        remoteDataSource: ProfileRemoteDataSource(_dio(recorder)),
+        remoteDataSource: ProfileRemoteDataSource(
+          _dio(
+            recorder,
+            responsesByPath: {
+              '/api/user/id/15': responseDto({...userJson, 'id': '15'}),
+              '/api/follow/followers/15/count': responseDto(0),
+              '/api/follow/following/15/count': responseDto(0),
+            },
+          ),
+        ),
         currentUserProvider: _FakeCurrentUserProvider(15),
       );
 
       await repository.getMyProfile();
 
-      expect(recorder.lastPath, '/api/user/id/15');
+      expect(
+        recorder.paths,
+        containsAll(<String>[
+          '/api/user/id/15',
+          '/api/follow/followers/15/count',
+          '/api/follow/following/15/count',
+        ]),
+      );
     });
 
     test(
@@ -166,6 +184,7 @@ class _FakeChatRealtimeClient implements ChatRealtimeClient {
 
 class _RequestRecorder {
   RequestOptions? lastOptions;
+  final paths = <String>[];
 
   String? get lastPath => lastOptions?.uri.path;
 }
@@ -173,16 +192,23 @@ class _RequestRecorder {
 Dio _dio(
   _RequestRecorder recorder, {
   Object? response = const <String, Object?>{},
+  Map<String, Object?> responsesByPath = const {},
 }) {
   return Dio(BaseOptions(baseUrl: 'http://localhost/api'))
-    ..httpClientAdapter = _RecordingAdapter(recorder, response);
+    ..httpClientAdapter =
+        _RecordingAdapter(recorder, response, responsesByPath);
 }
 
 class _RecordingAdapter implements HttpClientAdapter {
-  _RecordingAdapter(this._recorder, this._response);
+  _RecordingAdapter(
+    this._recorder,
+    this._defaultResponse,
+    this._responsesByPath,
+  );
 
   final _RequestRecorder _recorder;
-  final Object? _response;
+  final Object? _defaultResponse;
+  final Map<String, Object?> _responsesByPath;
 
   @override
   Future<ResponseBody> fetch(
@@ -191,8 +217,12 @@ class _RecordingAdapter implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     _recorder.lastOptions = options;
+    _recorder.paths.add(options.uri.path);
+    final body = _responsesByPath.containsKey(options.uri.path)
+        ? _responsesByPath[options.uri.path]
+        : _defaultResponse;
     return ResponseBody.fromString(
-      jsonEncode(_response),
+      jsonEncode(body),
       200,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],

@@ -128,27 +128,30 @@ void main() {
       expect(messages.single.type, ChatMessageType.text);
     });
 
-    test('keeps profile parsing compatible with ResponseDTO.data', () async {
+    test('parses ResponseDTO<UserDTO> profile', () async {
       final dataSource = ProfileRemoteDataSource(
         _dio({
-          '/api/user/id/7': {
-            'message': 'ok',
-            'data': {
-              'id': '7',
-              'name': 'Matheus',
-              'username': 'matheus',
-              'role': 'athlete',
-              'bio': 'Atleta',
-            },
-          },
+          '/api/user/id/7': responseDto(userJson),
         }),
       );
 
-      final profile = await dataSource.getProfileById(7);
+      final user = await dataSource.getProfileById(7);
 
-      expect(profile.id, 7);
-      expect(profile.name, 'Matheus');
-      expect(profile.role, 'athlete');
+      expect(user.id, 7);
+      expect(user.name, 'Matheus Silva');
+      expect(user.role, 'ATHLETE');
+    });
+
+    test('parses ResponseDTO<Long> follow counts', () async {
+      final dataSource = ProfileRemoteDataSource(
+        _dio({
+          '/api/follow/followers/7/count': responseDto(3),
+        }),
+      );
+
+      final followers = await dataSource.countFollowers(7);
+
+      expect(followers, 3);
     });
 
     test('maps unexpected response shapes as server format errors', () async {
@@ -234,6 +237,14 @@ void main() {
           () => dataSource.login(username: 'matheus', password: 'secret'),
           isServerFormatError(),
         );
+      });
+
+      test('profile response body is a list instead of an object', () async {
+        final dataSource = ProfileRemoteDataSource(
+          _dio({'/api/user/id/7': []}),
+        );
+
+        expect(() => dataSource.getProfileById(7), isServerFormatError());
       });
     });
   });

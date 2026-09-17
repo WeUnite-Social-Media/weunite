@@ -1,6 +1,8 @@
+import '../../../core/contracts/user_dto.dart';
 import '../../../core/session/current_user_provider.dart';
 import '../domain/entities/profile.dart';
 import '../domain/repositories/profile_repository.dart';
+import 'profile_models.dart';
 import 'profile_remote_data_source.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
@@ -15,12 +17,21 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
   @override
   Future<Profile> getProfileByUsername(String username) async {
-    return (await _remoteDataSource.getProfileByUsername(username)).toEntity();
+    final user = await _remoteDataSource.getProfileByUsername(username);
+    return _withFollowCounts(user);
   }
 
   @override
   Future<Profile> getProfile(int userId) async {
-    return (await _remoteDataSource.getProfileById(userId)).toEntity();
+    final results = await Future.wait<Object>([
+      _remoteDataSource.getProfileById(userId),
+      _remoteDataSource.countFollowers(userId),
+      _remoteDataSource.countFollowing(userId),
+    ]);
+    return (results[0] as UserDto).toProfile(
+      followersCount: results[1] as int,
+      followingCount: results[2] as int,
+    );
   }
 
   @override
@@ -34,5 +45,13 @@ class ProfileRepositoryImpl implements ProfileRepository {
       followerId: _currentUserProvider.requireUserId(),
       followedId: followedId,
     );
+  }
+
+  Future<Profile> _withFollowCounts(UserDto user) async {
+    final counts = await Future.wait<int>([
+      _remoteDataSource.countFollowers(user.id),
+      _remoteDataSource.countFollowing(user.id),
+    ]);
+    return user.toProfile(followersCount: counts[0], followingCount: counts[1]);
   }
 }

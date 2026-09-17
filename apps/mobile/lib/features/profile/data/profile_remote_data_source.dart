@@ -1,27 +1,53 @@
 import 'package:dio/dio.dart';
 
+import '../../../core/contracts/user_dto.dart';
 import '../../../core/network/api_client.dart';
-import 'profile_models.dart';
+import '../../../core/network/json_body.dart';
 
 class ProfileRemoteDataSource {
   const ProfileRemoteDataSource(this._dio);
 
   final Dio _dio;
 
-  Future<ProfileDto> getProfileByUsername(String username) async {
+  Future<UserDto> getProfileByUsername(String username) async {
     try {
-      final response =
-          await _dio.get<Map<String, dynamic>>('/user/username/$username');
-      return ProfileDto.fromJson(response.data ?? {});
+      final response = await _dio.get<Object?>('/user/username/$username');
+      return decodeResponseData<UserDto>(
+        response.data,
+        (data) => UserDto.fromJson(asJsonObject(data)),
+      );
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
     }
   }
 
-  Future<ProfileDto> getProfileById(int userId) async {
+  Future<UserDto> getProfileById(int userId) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>('/user/id/$userId');
-      return ProfileDto.fromJson(response.data ?? {});
+      final response = await _dio.get<Object?>('/user/id/$userId');
+      return decodeResponseData<UserDto>(
+        response.data,
+        (data) => UserDto.fromJson(asJsonObject(data)),
+      );
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
+  Future<int> countFollowers(int userId) async {
+    try {
+      final response =
+          await _dio.get<Object?>('/follow/followers/$userId/count');
+      return decodeResponseData<int>(response.data, (data) => data! as int);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
+  Future<int> countFollowing(int userId) async {
+    try {
+      final response =
+          await _dio.get<Object?>('/follow/following/$userId/count');
+      return decodeResponseData<int>(response.data, (data) => data! as int);
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
     }
