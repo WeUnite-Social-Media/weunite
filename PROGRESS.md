@@ -38,23 +38,31 @@ Legenda: ✅ concluído e validado no emulador · 🟡 parcial · ⏳ pendente �
 | 8 | Candidatura | ✅ | Toggle + `isSubscribed`, contador ajusta, duplo toque bloqueado (`pendingIds`), persiste. |
 | 9 | Detalhes da oportunidade | ✅ | Sheet com status, empresa clicável, descrição, skills, local, prazo, publicação, candidatos e ações. Campos inexistentes no banco (requisitos/modalidade/vagas) **não foram inventados**. |
 | 10 | Etiquetas de habilidade ilegíveis | ✅ | `chipTheme` com cores explícitas + teste de contraste WCAG (`bc5ec0f`). |
-| 11 | Edição do perfil | 🟡 | **Implementado e com testes verdes; NÃO validado no emulador.** Tela "Editar perfil" (nome, username, bio, privado, altura, peso, posição, perna, nascimento, skills, foto, capa, remover capa) → `PUT /user/update/{username}` + `DELETE /user/banner/delete/{username}`. Commit `19b6435`. |
+| 11 | Edição do perfil | ✅ | Validado no emulador (gravou altura/peso/posição/pé em `athlete_profile`). Tela "Editar perfil" (nome, username, bio, privado, altura, peso, posição, perna, nascimento, skills, foto, capa, remover capa) → `PUT /user/update/{username}` + `DELETE /user/banner/delete/{username}`. Commit `19b6435`. |
 | 12 | Chat atualiza automaticamente | ✅ | `ChatCubit` assina o tópico STOMP de todas as conversas; prévia, horário, badge e reordenação. |
-| 13 | Estado vazio no chat | ✅ | Ícone + texto + CTA "Procurar pessoas" + pull-to-refresh. **O CTA ainda aponta para `/search`; o item 19 pede a busca do chat.** |
+| 13 | Estado vazio no chat | ✅ | Ícone + texto + CTA "Nova conversa" (busca do chat, item 19) + pull-to-refresh. |
 | 14 | Marcar mensagens como lidas | ✅ | `PUT /conversations/{id}/read/{userId}` ao abrir e ao receber com a tela aberta; badge zera; conferido no banco. |
 | 15 | Destaque dos itens da lista de chat | ✅ | Card branco com borda (verde quando não lida), avatar, nome, prévia, horário relativo e badge vermelho. |
 | 16 | Fotos no chat | ✅ | `POST /messages/upload` → URL → mensagem STOMP `type: IMAGE`; bolha renderiza a imagem. |
 | 17 | Emojis no chat | ✅ | UTF-8 preservado (`jsonEncode`) + seletor rápido de 20 emojis no compositor. |
 | 18 | PROGRESS.md / continuidade | ✅ | Este arquivo + `HANDOFF.md`. |
-| 19 | Nova conversa a partir do chat | 🟡 | **Só camada de dados.** `ChatRepository.startConversationWith(userId)` → `POST /conversations/create` (idempotente para 1:1). **Falta UI**: busca só de usuários dentro do Chat, toque abre a conversa (nunca o perfil), CTA "Nova conversa", repontar o botão do estado vazio. |
-| 20 | Oportunidades da empresa no perfil | 🟡 | **Só camada de dados.** `OpportunityRepository.getCompanyOpportunities(companyId)` → `GET /opportunities/get/company/{companyId}`. **Falta cubit + UI** na aba "Oportunidades" do perfil próprio (empresa) e no `UserProfileScreen` de empresa, abrindo o detalhe. |
+| 19 | Nova conversa a partir do chat | ✅ | Tela `/chat/new`: só usuários, sem posts/oportunidades, eu mesmo fora da lista; toque abre/cria a conversa e **não** o perfil. Entradas: barra no topo da aba Chat, FAB e CTA do estado vazio. Validado — criou a conversa 2, a lista atualizou, e buscar de novo abriu a **mesma** conversa. |
+| 20 | Oportunidades da empresa no perfil | ✅ | `CompanyOpportunitiesCubit` + `CompanyOpportunitiesList` na aba "Oportunidades" do perfil da empresa e em `/profile/:userId` de empresa; abre o detalhe. Recarrega no pull-to-refresh (`refreshTick`). Validado com 3 oportunidades, incluindo uma criada pela API durante o teste. |
+| 21 | Enviar mensagem pelo perfil | ✅ | Botão **"Conversar"** no perfil de terceiros (mesmo par do `HeaderProfile` da web); abre a conversa existente ou cria. Validado: abriu a conversa 1 com a Ana, com histórico, sem duplicar. |
+| 22 | Seguir usuários | ✅ | `Seguir`/`Deixar de seguir` no perfil; `POST /follow/followAndUnfollow/{a}/{b}`, estado lido de `GET /follow/get/{a}/{b}` (`ACCEPTED`) e relido após o toggle; contador acompanha. Validado seguir → persistir ao reabrir → deixar de seguir (tabela `follow`). |
+| 23 | Seguir clubes/empresas | ✅ | Mesmo componente e mesma regra do item 22 — a web e a API não distinguem papel aqui. Validado no perfil da empresa. |
+| 25 | Características do atleta | ✅ | Aba "Sobre" replica o `AboutProfile` da web (Idade, Posição, Pé dominante, Altura, Peso com `N/A`, + habilidades). Editar perfil passou a gravar **altura em metros** (gravava cm, virava "182m") e o pé dominante virou seleção com as 3 opções da web, preservando valor legado. Validado: 1.82m / Destro. |
+| 26 | Peneiras — inscrição do atleta | ✅ | A ação existia só no detalhe, abaixo da dobra. Agora o **card** tem "Candidatar-se" (como o card da web) e no detalhe o botão é fixo no rodapé; rótulos iguais aos da web. Validado: candidatura gravada em `subscriber` a partir do perfil da empresa. |
+| 27 | Peneiras — salvar | ✅ | O bookmark já existia na aba Oportunidades; passou a existir também nas oportunidades listadas no perfil da empresa (para quem vê como atleta), com as flags resolvidas igual à listagem principal. |
 
 ## Próximo item
 
-1. **Validar o item 11** no emulador (checklist na seção 26 do `HANDOFF.md`) e corrigir o que aparecer.
-2. **Item 19 (UI)**: `chat/presentation/cubit/user_search_cubit.dart` + `chat/presentation/screens/new_conversation_screen.dart`, rota `/chat/new`, busca/FAB na aba Chat, CTA do estado vazio apontando para lá. Toque = `startConversationWith` → `pushReplacement('/chat/{id}')`; **não** abrir perfil.
-3. **Item 20 (UI)**: `company_opportunities_cubit.dart` + seção nas telas de perfil, abrindo o detalhe.
-4. Testes + `dart format`/`analyze`/`test`, validação no emulador, commit e push por item.
+Itens 1–27 concluídos e validados no emulador. Sugestão de continuidade (paridade com a web):
+
+1. Telas que a web tem e o mobile não: **"Oportunidades salvas"** e **"Minhas candidaturas"** (`/opportunity/saved`, `/opportunity/my-opportunities`) e **"Ver inscritos"** para a empresa dona (`/opportunity/:id/subscribers`).
+2. `/posts/:postId` (detalhe do post) ainda é placeholder.
+3. Criação/edição de oportunidade pelo mobile (hoje só pela API/web).
+4. Listas de seguidores/seguindo (na web os contadores abrem modais).
 
 ## Bugs conhecidos (fora da lista, encontrados em QA)
 
@@ -77,6 +85,14 @@ Legenda: ✅ concluído e validado no emulador · 🟡 parcial · ⏳ pendente �
 - (2026-09-17) `markAsRead` via REST (não pelo STOMP): já existia, é idempotente e não depende da conexão.
 - (2026-09-17) Imagem no chat em duas etapas (upload REST → mensagem STOMP): o endpoint de upload não cria a mensagem.
 - (2026-09-17) Ações de oportunidade escondidas para conta empresa (endpoints são athlete-only).
+- (2026-09-18) A busca do Chat é um cubit próprio (`UserSearchCubit`), não o `SearchCubit` da Home: a Home busca 3 fontes e abre perfil; o chat busca só usuários e abre conversa.
+- (2026-09-18) `/chat/new` **devolve** o id da conversa com `context.pop(id)` em vez de `pushReplacement`: com replace o `await` da aba Chat terminava cedo e a lista não recarregava.
+- (2026-09-18) `/chat/new` é declarada **antes** de `/chat/:conversationId` no router, senão "new" seria lido como id.
+- (2026-09-18) O FAB da aba Chat tem `heroTag` próprio (o FAB do feed continua vivo no `IndexedStack`).
+- (2026-09-18) `CurrentUserProvider` passou a ser exposto no `MultiRepositoryProvider` (a busca do chat exclui o próprio usuário).
+- (2026-09-18) Follow: estado vem de `GET /follow/get/{a}/{b}` e é **relido** após o toggle; a web deduz pela string da mensagem ("Seguiu"), o que é frágil.
+- (2026-09-18) Altura é gravada em **metros** (a web usa metros e renderiza "1.82m"); o mobile gravava centímetros.
+- (2026-09-18) O pé dominante virou seleção com as 3 opções da web, mantendo como opção o valor já salvo para não apagar dado legado.
 
 ## Registro de trabalho
 
@@ -94,10 +110,14 @@ Legenda: ✅ concluído e validado no emulador · 🟡 parcial · ⏳ pendente �
 - `5d29a2e` — itens 7, 8 e 9: flags na listagem (`CurrentUserProvider` no repositório), toggles com reconciliação, `pendingIds`, detalhe rico e ligado ao cubit (`opportunity_detail_route.dart`).
 - `d187729` — itens 12–17: realtime na lista de conversas, `markConversationAsRead`, estado vazio + refresh, redesign dos cards, `sendImage` (upload + STOMP `IMAGE`), seletor de emoji.
 - `19b6435` — item 11 (edição de perfil: `UpdateUserRequestDto`, `EditProfileCubit`, `EditProfileScreen`, novos campos em `UserDto`/`Profile`, `SkillDto.toJson`) + **base dos itens 19 e 20** (`startConversationWith`, `createConversation`, `getCompanyOpportunities`).
+- `270c0da` — cria o `HANDOFF.md` e atualiza este arquivo.
+- `e64e59f` — itens 19 e 20 (UI): `UserSearchCubit`, `NewConversationScreen`, rota `/chat/new`, barra/FAB na aba Chat, `CompanyOpportunitiesCubit` + `CompanyOpportunitiesList` nas telas de perfil, `CurrentUserProvider` no provider tree.
+- `2c8f203` — correções achadas no emulador: a lista de conversas não recarregava depois de criar, e as oportunidades da empresa não recarregavam no pull-to-refresh.
+- `c9282c2` — itens 21, 22, 23, 25, 26 e 27: `UserProfileActions` (Seguir/Conversar), leitura e toggle de follow, `AboutProfile`, editar perfil em metros + seleção de pé dominante, `SubscribeButton` no card e fixo no detalhe, ações nas oportunidades do perfil da empresa.
 
 ## Testes
 
-- Mobile: `dart format` limpo; `flutter analyze` **0 issues**; `flutter test` **177 verdes**.
+- Mobile: `dart format` limpo; `flutter analyze` **0 issues**; `flutter test` **197 verdes**.
 - API: `PostInteractionPersistenceTest` (10) + `PostServiceTest` (10) verdes no container.
-- Emulador: itens 1–10 e 12–17 validados (detalhe do que foi exercitado na seção 25 do `HANDOFF.md`).
-- Pendentes de validação: item 11 no emulador, "Trocar imagem" no emulador, itens 19 e 20 (sem UI).
+- Emulador: itens **1–27 validados** (detalhe na seção 25 do `HANDOFF.md`).
+- Pendente de validação: apenas o botão "Trocar imagem" do compositor de post.

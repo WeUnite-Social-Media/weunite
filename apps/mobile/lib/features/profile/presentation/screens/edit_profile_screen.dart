@@ -19,6 +19,16 @@ const kMaxProfileImageBytes = 10 * 1024 * 1024;
 /// Dominant foot options, matching the web select in `EditProfile.tsx`.
 const kFootDomainOptions = ['Direito', 'Esquerdo', 'Ambos'];
 
+/// The three web options, plus [current] when it is something else (data saved
+/// before this form existed), so editing never drops a value.
+List<String> footDomainOptionsFor(String current) {
+  final value = current.trim();
+  if (value.isEmpty || kFootDomainOptions.contains(value)) {
+    return kFootDomainOptions;
+  }
+  return [value, ...kFootDomainOptions];
+}
+
 class EditProfileScreen extends StatelessWidget {
   const EditProfileScreen({required this.profile, super.key});
 
@@ -277,14 +287,14 @@ class _EditProfileViewState extends State<_EditProfileView> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    // The web offers exactly these three options.
-                    initialValue: kFootDomainOptions.contains(_footDomain)
-                        ? _footDomain
-                        : null,
+                    // The web offers exactly these three options; a value
+                    // saved before (or by another client) is kept as an extra
+                    // option so opening this form never silently clears it.
+                    initialValue: _footDomain.isEmpty ? null : _footDomain,
                     decoration:
                         const InputDecoration(labelText: 'Pe dominante'),
                     items: [
-                      for (final option in kFootDomainOptions)
+                      for (final option in footDomainOptionsFor(_footDomain))
                         DropdownMenuItem(value: option, child: Text(option)),
                     ],
                     onChanged: (value) =>

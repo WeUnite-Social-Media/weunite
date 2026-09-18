@@ -1,4 +1,4 @@
-# HANDOFF — WeUnite mobile (sessão 2026-09-16/17)
+# HANDOFF — WeUnite mobile (sessão 2026-09-16/18)
 
 > Documento de transferência de contexto. Foi escrito para que **outro agente/desenvolvedor continue sem ter acesso ao histórico da conversa**. Leia inteiro antes de mudar código. Complemento: `PROGRESS.md` (status resumido por item).
 
@@ -76,9 +76,9 @@ Mostrar tudo que existir no banco; organizar visualmente; não inventar dados.
 Contraste/cores/bordas, claro e escuro.
 **Feito:** `chipTheme` com verde-800 sobre verde-100 + borda (~7:1). Só existe tema claro no app. Teste de widget garante a cor e o contraste.
 
-### 11. Edição do perfil — [PRECISA TESTAR]
+### 11. Edição do perfil — [CONCLUÍDO]
 Bio, características, habilidades, foto, banner; persistir, refletir na hora e após reabrir; trocar/remover imagem.
-**Feito (código + testes):** tela "Editar perfil" (nome, username, bio, privado, altura, peso, posição, perna dominante, data de nascimento, habilidades via catálogo, foto e capa, remover capa) → `PUT /user/update/{username}` multipart e `DELETE /user/banner/delete/{username}`; ao salvar, o perfil recarrega. **Ainda não exercitado no emulador.**
+**Feito:** tela "Editar perfil" (nome, username, bio, privado, altura, peso, posição, pé dominante, data de nascimento, habilidades via catálogo, foto e capa, remover capa) → `PUT /user/update/{username}` multipart e `DELETE /user/banner/delete/{username}`; ao salvar, o perfil recarrega. Validado no emulador: alterações gravadas em `athlete_profile` e refletidas na aba "Sobre".
 
 ### 12. Chat não atualiza automaticamente — [CONCLUÍDO]
 Novas mensagens aparecem sozinhas; conversa e lista atualizam; última mensagem, horário e contador.
@@ -107,13 +107,44 @@ Digitados normalmente, armazenados/exibidos corretamente, sem quebrar envio/hist
 ### 18. PROGRESS.md / continuidade — [CONCLUÍDO]
 `PROGRESS.md` criado e atualizado; este `HANDOFF.md` completa o protocolo.
 
-### 19. Iniciar nova conversa pelo chat — [PARCIAL]
+### 19. Iniciar nova conversa pelo chat — [CONCLUÍDO]
 A busca **dentro do Chat** deve: pesquisar **apenas usuários**; não exibir posts nem oportunidades; mostrar foto, nome e username; ao clicar, **abrir a conversa** (existente ou nova) e **não** o perfil; botão claro "Nova conversa". Manter a busca geral abrindo perfil nas outras áreas.
-**Feito:** camada de dados — `ChatRepository.startConversationWith(userId)` → `POST /conversations/create` (a API devolve a conversa existente quando já há uma 1:1). **Falta:** tela/CTA (ver §33 e §34).
+**Feito:** `/chat/new` (`NewConversationScreen` + `UserSearchCubit`) busca **apenas usuários** (debounce 300 ms), deixa o próprio usuário de fora e, ao tocar, chama `ChatRepository.startConversationWith(userId)` → `POST /conversations/create` (a API devolve a existente quando já há uma 1:1) e abre `/chat/:id`. Entradas: barra "Buscar pessoas para conversar" no topo da aba Chat, FAB "Nova conversa" e o botão do estado vazio. Validado: criou a conversa 2 (empresa↔atleta), a lista passou a mostrá-la, e repetir a busca abriu a **mesma** conversa.
 
-### 20. Exibir oportunidades criadas pela empresa — [PARCIAL]
+### 20. Exibir oportunidades criadas pela empresa — [CONCLUÍDO]
 Seção "Oportunidades da empresa" deve listar as oportunidades daquela empresa (título, status, modalidade, localização, data, vagas quando existir), abrir detalhes ao clicar, refletir criação/edição/remoção e persistir.
-**Feito:** camada de dados — `OpportunityRepository.getCompanyOpportunities(companyId)` → `GET /opportunities/get/company/{companyId}`. **Falta:** cubit + UI nas abas de perfil (hoje a aba mostra o texto fixo "Oportunidades da empresa"). Campos inexistentes (modalidade/vagas) não devem ser inventados.
+**Feito:** `CompanyOpportunitiesCubit` + `CompanyOpportunitiesList` (`GET /opportunities/get/company/{companyId}`) na aba "Oportunidades" do perfil da empresa e numa seção do `/profile/:userId` quando o perfil é de empresa; toque abre o detalhe. O pull-to-refresh do perfil recarrega a lista (`refreshTick`). Campos inexistentes (modalidade/vagas) continuam não sendo inventados. Validado com 3 oportunidades, incluindo uma criada pela API durante o teste.
+
+### 21. Enviar mensagem pelo perfil de outro usuário — [CONCLUÍDO]
+Reutilizar a ação que a web já tem no perfil; abrir a conversa existente ou criar, indo direto para a tela de mensagens.
+**Referência na web:** `apps/web/src/features/profile/components/HeaderProfile.tsx` — botão "Conversar" (ícone `Send`, "Abrindo..." enquanto cria), só quando `!isOwnProfile`.
+**Feito:** `UserProfileActions` no cabeçalho de `/profile/:userId` com o mesmo par de botões. Usa `startConversationWith` (o mesmo método do item 19) e navega para `/chat/:id`. Validado: abriu a conversa existente com a Ana, com histórico, sem criar duplicata.
+
+### 22. Seguir usuários — [CONCLUÍDO]
+Seguir, deixar de seguir, refletir no visual, persistir e manter após recarregar.
+**Referência na web:** `HeaderProfile.tsx` / `CardFollowing.tsx` + `useFollowAction` → `POST /follow/followAndUnfollow/{a}/{b}`, status por `GET /follow/get/{a}/{b}` (`status === 'ACCEPTED'`).
+**Feito:** mesmo par de rótulos ("Seguir" / "Deixar de seguir") em `UserProfileActions`; `Profile.isFollowing` vem de `GET /follow/get/...` no carregamento e o toggle **relê** o estado (a web deduz pela string da mensagem, o que é frágil); contador de seguidores acompanha, com reversão em caso de erro. Validado: seguir → reabrir o perfil → deixar de seguir, conferindo a tabela `follow`.
+
+### 23. Seguir clubes — [CONCLUÍDO]
+**Feito:** é o **mesmo** componente e o mesmo endpoint — a web não diferencia papel no botão de seguir e a API também não (`FollowService` só valida `follower != followed`). Nenhuma solução paralela foi criada. Validado no perfil da empresa.
+
+### 25. Características do atleta no Editar perfil — [CONCLUÍDO]
+**Referência na web:** `EditProfile.tsx` (bloco "Informações do atleta", só para `role === 'athlete'`): `height` (m, step 0.01), `weight` (kg), `footDomain` (select Direito/Esquerdo/Ambos), `position` (texto), `birthDate` (`YYYY-MM-DD`), `skills`; e `AboutProfile.tsx`, que mostra Idade, Posição, Pé dominante, Altura (`${height}m`), Peso (`${weight}kg`) com fallback "N/A".
+**Feito:** os campos já existiam no mobile, mas com duas divergências reais, agora corrigidas:
+- a altura era pedida em **centímetros** e gravada como `182`, que a web renderiza como "182m" — agora é em **metros** (`1.82`);
+- o pé dominante era texto livre — virou a mesma seleção de três opções da web, mantendo como opção o valor já salvo para não apagar dado legado ao salvar.
+Além disso, a aba **"Sobre"** (que mostrava só a bio) passou a replicar o `AboutProfile`: características do atleta, CNPJ/`N/A` quando for empresa e as habilidades. Validado: 1.82m / 78kg / Destro / Meio-campo aparecendo em "Sobre" e no banco.
+
+### 26. Peneiras — inscrição do atleta — [CONCLUÍDO]
+**Referência na web:** o botão de candidatura fica no **rodapé do card** (`OpportunityCard.tsx`) e também no detalhe; visível só quando `isAthlete && !isOwner`; rótulos "Candidatar-se" / "Cancelar candidatura" / "Prazo encerrado" (desabilitado) / "Processando...".
+**Causa do problema relatado:** no mobile a ação existia **apenas dentro do detalhe e abaixo da dobra** — era preciso rolar o bottom sheet para vê-la; numa conta empresa ela é escondida de propósito.
+**Feito:** `SubscribeButton` (rótulos iguais aos da web) no rodapé do card e, no detalhe, fixado no rodapé do sheet. Validado: candidatura gravada em `subscriber` a partir do perfil da empresa e refletida na aba Oportunidades.
+
+### 27. Peneiras — salvar — [CONCLUÍDO]
+**Referência na web:** ícone `Bookmark` no card, só para atleta (`OpportunityCard.tsx`); o detalhe da web **não** tem o botão.
+**Feito:** o bookmark já existia na aba Oportunidades (item 7); o que faltava era nas oportunidades listadas **no perfil da empresa** — agora aparecem lá para quem vê como atleta, com `isSaved`/`isSubscribed` resolvidos pela mesma rotina da listagem principal (`_withViewerFlags`). Validado no emulador.
+
+> Observação: não houve item 24 na lista enviada pelo usuário.
 
 ### Requisitos/descobertas adicionais (não pedidos, encontrados em QA)
 - Feed não fazia pull-to-refresh com poucos posts — **corrigido**.
@@ -482,7 +513,7 @@ Itens 1–12 da lista acima (com testes automatizados cobrindo 1, 2, 4, 5, 6, 7,
 
 ## 25. TESTES REALIZADOS
 
-**Automatizados (mobile): `flutter test` → 177 testes, todos passando.** `flutter analyze` → 0 issues. Arquivos de teste tocados/criados: `core/theme/app_theme_test.dart` (novo), `features/profile/profile_posts_cubit_test.dart` (novo), `features/profile/open_user_profile_test.dart` (novo), `features/search/search_cubit_test.dart` (novo), `features/opportunities/opportunities_cubit_test.dart` (novo), `features/chat/chat_cubit_test.dart` (novo), `features/feed/feed_remote_data_source_test.dart` (novo), `features/feed/create_post_cubit_test.dart` (ampliado), fakes atualizados em `app/router_test.dart`, `app/session_scoped_state_test.dart`, `features/feed/*`, `features/chat/*`, `fixtures/api_payloads.dart`.
+**Automatizados (mobile): `flutter test` → 197 testes, todos passando.** `flutter analyze` → 0 issues. Arquivos de teste tocados/criados: `core/theme/app_theme_test.dart` (novo), `features/profile/profile_posts_cubit_test.dart` (novo), `features/profile/open_user_profile_test.dart` (novo), `features/search/search_cubit_test.dart` (novo), `features/opportunities/opportunities_cubit_test.dart` (novo), `features/chat/chat_cubit_test.dart` (novo), `features/feed/feed_remote_data_source_test.dart` (novo), `features/feed/create_post_cubit_test.dart` (ampliado), fakes atualizados em `app/router_test.dart`, `app/session_scoped_state_test.dart`, `features/feed/*`, `features/chat/*`, `fixtures/api_payloads.dart`.
 
 **Automatizados (API):** `PostInteractionPersistenceTest` (10) + `PostServiceTest` (10) — **passando** (rodados no container).
 
@@ -495,7 +526,14 @@ Itens 1–12 da lista acima (com testes automatizados cobrindo 1, 2, 4, 5, 6, 7,
 - Busca: usuários, posts, oportunidades, vazio — PASSOU.
 - Salvar oportunidade + persistência — PASSOU. Candidatar/cancelar/recandidatar — PASSOU. Detalhe — PASSOU.
 - Chat: atualização automática da lista, marcar como lida (banco), estado vazio, destaque visual, envio de imagem, emoji — PASSOU.
-- **NÃO TESTADO:** edição de perfil (item 11), botão "Trocar imagem" no post, itens 19 e 20 (sem UI), qualquer coisa em tablet/tela grande, web.
+- Edição de perfil (item 11): alterar características, salvar, conferir no banco e na aba "Sobre" — PASSOU.
+- Nova conversa pelo chat (item 19): busca só mostra pessoas, abre a conversa, cria quando não existe, não duplica ao repetir, lista atualiza — PASSOU.
+- Oportunidades da empresa (item 20): lista no perfil próprio e no perfil de terceiros, detalhe, refresh após criar pela API — PASSOU.
+- Conversar pelo perfil (item 21): abriu a conversa existente — PASSOU.
+- Seguir/deixar de seguir usuário e empresa (itens 22 e 23), com persistência ao reabrir — PASSOU.
+- "Sobre" com características e altura em metros (item 25) — PASSOU.
+- Candidatar-se pelo card, inclusive no perfil da empresa (itens 26 e 27) — PASSOU.
+- **NÃO TESTADO:** botão "Trocar imagem" no post, qualquer coisa em tablet/tela grande, web.
 
 ---
 
@@ -610,7 +648,14 @@ Mobile: `WEUNITE_API_URL`, `WEUNITE_WS_URL` (via `--dart-define-from-file=config
 
 ## 33. ESTADO EXATO NO MOMENTO DA PARADA
 
-- Trabalhando em: **itens 19 e 20** (após concluir o 11).
+- **Todos os itens 1–27 estão implementados e validados no emulador** (o único ponto não exercitado é o botão "Trocar imagem" do compositor de post).
+- Working tree limpa em `feat/mobile-backlog`; último commit de código: `c9282c2`. `flutter analyze` 0 issues, `flutter test` **197 verdes**.
+- App rodando no emulador com o build atual; API e Postgres no Docker.
+- Dados de teste no banco após a sessão: conversas 1 (Caio↔Ana) e 2 (Caio↔Marca); oportunidades 1, 2 e 3 da empresa 3; candidaturas do atleta 1 nas oportunidades 1 e 3; nenhuma linha de follow ativa (o teste terminou com "deixar de seguir").
+
+### Histórico da parada anterior (mantido por contexto)
+
+- Trabalhava em: **itens 19 e 20** (após concluir o 11).
 - Últimos arquivos alterados: `chat_remote_data_source.dart`, `chat_repository_impl.dart`, `chat_repository.dart`, `opportunity_remote_data_source.dart`, `opportunity_repository_impl.dart`, `opportunity_repository.dart` (+ fakes de teste).
 - Última alteração concluída: `startConversationWith` e `getCompanyOpportunities` na camada de dados, com fakes atualizados; `flutter analyze` 0 issues; `flutter test` 177 verdes; **commit `19b6435` feito e enviado**.
 - **Não há código incompleto no working tree** (árvore limpa antes deste documento).
@@ -621,13 +666,13 @@ Mobile: `WEUNITE_API_URL`, `WEUNITE_WS_URL` (via `--dart-define-from-file=config
 
 ## 34. PRÓXIMOS PASSOS (ordem)
 
-1. **Validar item 11** no emulador (checklist §26) e corrigir o que aparecer.
-2. **Item 19 — busca do chat**: criar `chat/presentation/cubit/user_search_cubit.dart` (só `ProfileRepository.searchUsers`, debounce 300 ms) e `chat/presentation/screens/new_conversation_screen.dart` (lista com foto/nome/@username; ao tocar: `startConversationWith` → `context.pushReplacement('/chat/{id}')`). Adicionar rota `/chat/new`, barra de busca no topo da aba Chat e FAB/CTA "Nova conversa"; apontar o botão do estado vazio para essa tela (hoje vai para `/search`).
-3. **Item 20 — oportunidades da empresa**: criar `opportunities/presentation/cubit/company_opportunities_cubit.dart` (usa `getCompanyOpportunities`), renderizar na aba "Oportunidades" do `ProfileScreen` (empresa) e numa seção do `UserProfileScreen` quando `profile.isCompany`; abrir o detalhe ao tocar (read-only ou ligado ao cubit, se quiser permitir salvar/candidatar).
-4. Testes automatizados para os dois itens + `dart format`/`analyze`/`test`.
-5. Validar no emulador (checklist §26), commitar e **dar push** a cada item.
-6. Atualizar `PROGRESS.md` e este `HANDOFF.md`.
-7. Só então considerar os pendentes menores (§24).
+O backlog 1–27 está fechado. Continuidade sugerida, sempre olhando primeiro como a web faz:
+
+1. **Telas de oportunidades que só existem na web**: "Oportunidades salvas" (`/opportunity/saved`), "Minhas candidaturas" / "Minhas oportunidades" (`/opportunity/my-opportunities`) e "Ver inscritos" para a empresa dona (`/opportunity/:id/subscribers`, `GET /subscriber/subscribers/{id}`). Os dados já existem no repositório mobile (`getSavedOpportunities`, `getSubscriptions`).
+2. **Detalhe do post** (`/posts/:postId`) — ainda é placeholder.
+3. **Criar/editar oportunidade pelo mobile** (hoje só pela web/API).
+4. **Listas de seguidores/seguindo** (na web os contadores do perfil abrem modais; endpoints `GET /follow/followers|following/{id}`).
+5. Pendências menores da §24.
 
 ---
 
@@ -669,8 +714,10 @@ Mobile: `WEUNITE_API_URL`, `WEUNITE_WS_URL` (via `--dart-define-from-file=config
 
 ## 38. PROBLEMAS NÃO ESCONDIDOS (resumo honesto)
 
-- Item 11 **não validado** no app; pode ter erro de multipart/validação que só aparece em runtime.
-- Itens 19 e 20 **sem UI**.
+- O botão "Trocar imagem" do compositor de post continua sem teste no emulador.
+- Perfis que já tinham altura em centímetros (gravada pelo mobile antes desta sessão) continuam com o valor antigo no banco: é preciso reeditar o perfil para corrigir. Só o perfil de teste foi corrigido.
+- O pé dominante aceita valores fora das três opções da web quando vieram de outro cliente; o formulário preserva o valor, mas não o normaliza.
+- A web tem telas que o mobile ainda não tem (oportunidades salvas, candidaturas, inscritos, seguidores/seguindo).
 - Resultados de busca não permitem curtir.
 - Sem paginação no histórico do chat; sem editar/apagar mensagem.
 - Criação/edição de oportunidade não existe no mobile.
@@ -706,12 +753,19 @@ Regras do usuário: lista de requisitos é acumulativa; não quebrar o que funci
 ajuste apenas visual (validar backend, persistência e atualização da interface); testar o
 fluxo completo antes de dar um item como concluído.
 
-PRÓXIMO ITEM A EXECUTAR: validar no emulador o item 11 (edição de perfil) e, em seguida,
-implementar a UI do item 19 (busca exclusiva de usuários dentro do Chat que abre/cria a
-conversa, sem abrir o perfil) e do item 20 (listar as oportunidades da empresa na aba
-"Oportunidades" do perfil). A camada de dados dos itens 19 e 20 já está pronta:
-ChatRepository.startConversationWith(userId) e
-OpportunityRepository.getCompanyOpportunities(companyId).
+ESTADO: o backlog 1-27 esta concluido e validado no emulador (analyze 0 issues, 197 testes
+verdes, ultimo commit c9282c2 em feat/mobile-backlog).
+
+REGRA IMPORTANTE DO USUARIO: a interface desktop (apps/web) e a referencia. Antes de criar
+qualquer componente novo no mobile, procure a implementacao equivalente na web, identifique
+componente, logica, endpoint e estado, e reutilize ao maximo. Nao crie solucoes paralelas
+para o que ja existe.
+
+PROXIMO ITEM A EXECUTAR: as telas de oportunidades que so existem na web -- "Oportunidades
+salvas" (/opportunity/saved), "Minhas candidaturas"/"Minhas oportunidades"
+(/opportunity/my-opportunities) e "Ver inscritos" da empresa dona
+(/opportunity/:id/subscribers). Os metodos de dados ja existem no mobile
+(getSavedOpportunities, getSubscriptions).
 
 Todo o contexto anterior necessário está documentado nesses arquivos.
 Não comece o projeto novamente. Não substitua implementações existentes por preferência.
