@@ -22,6 +22,15 @@ final class ChatMessageDeleted extends ChatRealtimeEvent {
   final int messageId;
 }
 
+/// The other participant read the conversation. The API broadcasts the
+/// reader's id on `/topic/conversation/{id}/read` when someone marks it as
+/// read over STOMP.
+final class ChatConversationRead extends ChatRealtimeEvent {
+  const ChatConversationRead({required this.readerUserId});
+
+  final int readerUserId;
+}
+
 /// Emitted after a reconnection, so the consumer resyncs via REST.
 final class ChatRealtimeReconnected extends ChatRealtimeEvent {
   const ChatRealtimeReconnected();

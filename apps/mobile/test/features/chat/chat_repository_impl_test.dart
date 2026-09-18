@@ -160,6 +160,17 @@ class _NoopChatRealtimeClient implements ChatRealtimeClient {
   Future<void> connect() async {}
 
   @override
+  Stream<ChatRealtimeEvent> subscribeConversationRead(int conversationId) =>
+      const Stream.empty();
+
+  final readReceipts = <int>[];
+
+  @override
+  void sendReadReceipt({required int conversationId, required int userId}) {
+    readReceipts.add(conversationId);
+  }
+
+  @override
   Stream<ChatRealtimeEvent> subscribeConversation(int conversationId) =>
       const Stream.empty();
 

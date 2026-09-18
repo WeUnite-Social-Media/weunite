@@ -21,6 +21,10 @@ abstract class ChatRepository {
   /// the existing conversation when there already is one.
   Future<Conversation> startConversationWith(int userId);
 
+  /// Read receipts for the conversation: emits when the other participant
+  /// reads it, so my own messages can show as seen without a refetch.
+  Stream<ChatRealtimeEvent> watchConversationRead(int conversationId);
+
   /// Marks the peer's messages in the conversation as read.
   Future<void> markConversationAsRead(int conversationId);
   Future<void> disconnectRealtime();

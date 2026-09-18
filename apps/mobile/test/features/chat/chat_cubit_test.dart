@@ -53,6 +53,10 @@ class _FakeChatRepository implements ChatRepository {
   Future<List<Conversation>> getConversations() async => conversations;
 
   @override
+  Stream<ChatRealtimeEvent> watchConversationRead(int conversationId) =>
+      const Stream.empty();
+
+  @override
   Stream<ChatRealtimeEvent> watchConversation(int conversationId) =>
       topic(conversationId).stream;
 

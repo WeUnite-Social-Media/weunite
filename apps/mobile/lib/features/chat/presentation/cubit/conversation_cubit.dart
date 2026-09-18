@@ -21,6 +21,7 @@ class ConversationCubit extends Cubit<ConversationState> {
   final int conversationId;
   final ChatRepository _repository;
   StreamSubscription<ChatRealtimeEvent>? _subscription;
+  StreamSubscription<ChatRealtimeEvent>? _readSubscription;
 
   Future<void> start() async {
     if (_subscription != null) {
@@ -30,6 +31,12 @@ class ConversationCubit extends Cubit<ConversationState> {
           _onEvent,
           onError: (Object _) {},
         );
+    // Read receipts from the other side, so my ticks turn green live.
+    _readSubscription =
+        _repository.watchConversationRead(conversationId).listen(
+              _onEvent,
+              onError: (Object _) {},
+            );
     await loadMessages();
     await markAsRead();
   }
@@ -184,6 +191,19 @@ class ConversationCubit extends Cubit<ConversationState> {
             ],
           ),
         );
+      case ChatConversationRead(:final readerUserId):
+        // The reader read everyone else's messages in this conversation —
+        // the same rule the API applies (sender != reader, isRead = false).
+        emit(
+          state.copyWith(
+            messages: [
+              for (final message in state.messages)
+                message.senderId == readerUserId || message.read
+                    ? message
+                    : message.copyWith(read: true),
+            ],
+          ),
+        );
       case ChatRealtimeReconnected():
         unawaited(loadMessages());
     }
@@ -210,6 +230,7 @@ class ConversationCubit extends Cubit<ConversationState> {
 
   @override
   Future<void> close() async {
+    await _readSubscription?.cancel();
     await _subscription?.cancel();
     return super.close();
   }

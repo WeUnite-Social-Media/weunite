@@ -44,6 +44,10 @@ class _FakeChatRepository implements ChatRepository {
   }
 
   @override
+  Stream<ChatRealtimeEvent> watchConversationRead(int conversationId) =>
+      const Stream.empty();
+
+  @override
   Stream<ChatRealtimeEvent> watchConversation(int conversationId) =>
       _controller.stream;
 

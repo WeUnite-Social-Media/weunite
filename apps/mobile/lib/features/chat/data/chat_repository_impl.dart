@@ -109,10 +109,22 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<void> markConversationAsRead(int conversationId) {
-    return _remoteDataSource.markAsRead(
+  Stream<ChatRealtimeEvent> watchConversationRead(int conversationId) {
+    return _realtimeClient.subscribeConversationRead(conversationId);
+  }
+
+  @override
+  Future<void> markConversationAsRead(int conversationId) async {
+    final userId = _currentUserProvider.requireUserId();
+    await _remoteDataSource.markAsRead(
       conversationId: conversationId,
-      userId: _currentUserProvider.requireUserId(),
+      userId: userId,
+    );
+    // The REST call persists it but broadcasts nothing; this is what lets the
+    // sender see the ticks turn green without refetching.
+    _realtimeClient.sendReadReceipt(
+      conversationId: conversationId,
+      userId: userId,
     );
   }
 

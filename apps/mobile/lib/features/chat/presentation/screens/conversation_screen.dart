@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/async_state_view.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../domain/entities/conversation.dart';
@@ -170,7 +171,49 @@ class _MessageBubble extends StatelessWidget {
                     : null,
               ),
             const SizedBox(height: 4),
-            Text(time, style: Theme.of(context).textTheme.labelSmall),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(time, style: Theme.of(context).textTheme.labelSmall),
+                // Same read indicator as the web `Message.tsx`: two ticks on my
+                // own messages, green once the other side has read them.
+                if (isMine) ...[
+                  const SizedBox(width: 4),
+                  ReadReceipt(isRead: message.read),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Double tick shown on my own messages: grey when the peer has not read it
+/// yet, green once they have — the same two states the web shows (it has no
+/// separate "sent" and "delivered" states, and neither do we).
+class ReadReceipt extends StatelessWidget {
+  const ReadReceipt({required this.isRead, super.key});
+
+  final bool isRead;
+
+  @override
+  Widget build(BuildContext context) {
+    final color =
+        isRead ? AppColors.accentGreenStrong : AppColors.mutedForeground;
+    return Semantics(
+      label: isRead ? 'Mensagem visualizada' : 'Mensagem enviada',
+      child: SizedBox(
+        width: 18,
+        height: 12,
+        child: Stack(
+          children: [
+            Icon(Icons.check, size: 12, color: color),
+            Positioned(
+              left: 5,
+              child: Icon(Icons.check, size: 12, color: color),
+            ),
           ],
         ),
       ),
