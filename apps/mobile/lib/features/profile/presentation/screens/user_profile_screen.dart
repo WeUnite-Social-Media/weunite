@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/widgets/async_state_view.dart';
 import '../../../feed/domain/post_events.dart';
 import '../../../feed/domain/repositories/feed_repository.dart';
+import '../../../opportunities/presentation/widgets/company_opportunities_list.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../cubit/profile_posts_cubit.dart';
 import '../cubit/user_profile_cubit.dart';
@@ -80,6 +81,20 @@ class _UserProfileView extends StatelessWidget {
                           padding: const EdgeInsets.only(bottom: 24),
                           children: [
                             ProfileHeader(profile: state.profile!),
+                            if (state.profile!.isCompany) ...[
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                                child: Text(
+                                  'Oportunidades da empresa',
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
+                                ),
+                              ),
+                              CompanyOpportunitiesList(
+                                companyId: state.profile!.id,
+                              ),
+                            ],
                             Padding(
                               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                               child: Text(

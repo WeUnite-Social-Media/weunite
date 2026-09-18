@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:weunite_mobile/core/session/current_user_provider.dart';
 import 'package:weunite_mobile/app/app.dart';
 import 'package:weunite_mobile/app/bootstrap.dart';
 import 'package:weunite_mobile/core/error/app_exception.dart';
@@ -219,12 +220,14 @@ class _EmptyProfileRepository implements ProfileRepository {
 }
 
 AppDependencies _dependencies() {
+  final authRepository = _FakeAuthRepository();
   return AppDependencies(
-    authRepository: _FakeAuthRepository(),
+    authRepository: authRepository,
     feedRepository: _EmptyFeedRepository(),
     opportunityRepository: _EmptyOpportunityRepository(),
     chatRepository: _FakeChatRepository(),
     profileRepository: _EmptyProfileRepository(),
+    currentUserProvider: AuthCurrentUserProvider(authRepository),
     sessionEvents: SessionEvents(),
   );
 }

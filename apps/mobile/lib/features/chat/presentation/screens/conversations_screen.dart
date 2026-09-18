@@ -36,38 +36,112 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
         }
       },
       builder: (context, state) {
-        return AsyncStateView(
-          isLoading: state.isLoading,
-          errorMessage: state.loadErrorMessage,
-          onRetry: context.read<ChatCubit>().loadConversations,
-          child: RefreshIndicator(
-            onRefresh: context.read<ChatCubit>().loadConversations,
-            child: state.conversations.isEmpty
-                ? const _EmptyConversations()
-                : ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    itemCount: state.conversations.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final conversation = state.conversations[index];
-                      return _ConversationTile(
-                        conversation: conversation,
-                        onTap: () async {
-                          // Opening it marks it as read on the API; clear the
-                          // badge here too and refresh on the way back.
-                          context.read<ChatCubit>().markAsRead(conversation.id);
-                          await context.push<void>('/chat/${conversation.id}');
-                          if (context.mounted) {
-                            await context.read<ChatCubit>().loadConversations();
-                          }
-                        },
-                      );
-                    },
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          floatingActionButton: state.conversations.isEmpty
+              ? null
+              : FloatingActionButton(
+                  // The feed tab keeps its own FAB alive in the IndexedStack,
+                  // so this one needs a distinct hero tag.
+                  heroTag: 'new-conversation-fab',
+                  tooltip: 'Nova conversa',
+                  onPressed: () => _openNewConversation(context),
+                  child: const Icon(Icons.edit_square),
+                ),
+          body: Column(
+            children: [
+              const _NewConversationBar(),
+              Expanded(
+                child: AsyncStateView(
+                  isLoading: state.isLoading,
+                  errorMessage: state.loadErrorMessage,
+                  onRetry: context.read<ChatCubit>().loadConversations,
+                  child: RefreshIndicator(
+                    onRefresh: context.read<ChatCubit>().loadConversations,
+                    child: state.conversations.isEmpty
+                        ? const _EmptyConversations()
+                        : ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
+                            itemCount: state.conversations.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final conversation = state.conversations[index];
+                              return _ConversationTile(
+                                conversation: conversation,
+                                onTap: () async {
+                                  // Opening it marks it as read on the API;
+                                  // clear the badge here too and refresh on the
+                                  // way back.
+                                  context
+                                      .read<ChatCubit>()
+                                      .markAsRead(conversation.id);
+                                  await context
+                                      .push<void>('/chat/${conversation.id}');
+                                  if (context.mounted) {
+                                    await context
+                                        .read<ChatCubit>()
+                                        .loadConversations();
+                                  }
+                                },
+                              );
+                            },
+                          ),
                   ),
+                ),
+              ),
+            ],
           ),
         );
       },
+    );
+  }
+}
+
+/// Entry point for item 19: a people search that belongs to the Chat tab.
+Future<void> _openNewConversation(BuildContext context) async {
+  await context.push<void>('/chat/new');
+  if (context.mounted) {
+    // A conversation may have been created while we were away.
+    await context.read<ChatCubit>().loadConversations();
+  }
+}
+
+/// Looks like the Home search bar, but it opens the chat-only people search.
+class _NewConversationBar extends StatelessWidget {
+  const _NewConversationBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: () => _openNewConversation(context),
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.search, color: AppColors.mutedForeground),
+              const SizedBox(width: 8),
+              Text(
+                'Buscar pessoas para conversar',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: AppColors.mutedForeground),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -250,10 +324,10 @@ class _EmptyConversations extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Center(
-          child: OutlinedButton.icon(
-            onPressed: () => context.push('/search'),
-            icon: const Icon(Icons.search),
-            label: const Text('Procurar pessoas'),
+          child: FilledButton.icon(
+            onPressed: () => _openNewConversation(context),
+            icon: const Icon(Icons.edit_square),
+            label: const Text('Nova conversa'),
           ),
         ),
       ],

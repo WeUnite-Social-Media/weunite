@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:weunite_mobile/core/session/current_user_provider.dart';
 import 'package:weunite_mobile/app/app.dart';
 import 'package:weunite_mobile/app/bootstrap.dart';
 import 'package:weunite_mobile/core/error/app_exception.dart';
@@ -268,6 +269,7 @@ Future<_Repositories> _pumpAuthenticatedApp(WidgetTester tester) async {
     opportunityRepository: _FakeOpportunityRepository(),
     chatRepository: chatRepository,
     profileRepository: _FakeProfileRepository(),
+    currentUserProvider: AuthCurrentUserProvider(authRepository),
     sessionEvents: SessionEvents(),
   );
 

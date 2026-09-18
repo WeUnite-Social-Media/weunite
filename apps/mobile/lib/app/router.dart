@@ -11,6 +11,7 @@ import '../features/chat/domain/repositories/chat_repository.dart';
 import '../features/chat/presentation/cubit/chat_cubit.dart';
 import '../features/chat/presentation/screens/conversation_route_screen.dart';
 import '../features/chat/presentation/screens/conversations_screen.dart';
+import '../features/chat/presentation/screens/new_conversation_screen.dart';
 import '../features/feed/domain/post_events.dart';
 import '../features/feed/domain/repositories/feed_repository.dart';
 import '../features/feed/presentation/cubit/feed_cubit.dart';
@@ -56,6 +57,11 @@ GoRouter buildRouter({
       GoRoute(
         path: '/signup',
         builder: (context, state) => const SignUpScreen(),
+      ),
+      // Declared before `/chat/:conversationId` so "new" is not parsed as an id.
+      GoRoute(
+        path: '/chat/new',
+        builder: (context, state) => const NewConversationScreen(),
       ),
       GoRoute(
         path: '/chat/:conversationId',

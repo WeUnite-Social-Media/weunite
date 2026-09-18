@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/async_state_view.dart';
+import '../../../opportunities/presentation/widgets/company_opportunities_list.dart';
 import '../../domain/entities/profile.dart';
 import '../cubit/profile_cubit.dart';
 import '../cubit/profile_posts_cubit.dart';
@@ -127,7 +128,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       1 => _CenteredMessage(
                           state.profile?.bio ?? 'Sem bio ainda.',
                         ),
-                      _ => const _CenteredMessage('Oportunidades da empresa'),
+                      _ => CompanyOpportunitiesList(
+                          companyId: state.profile!.id,
+                        ),
                     },
                   ],
                 ),

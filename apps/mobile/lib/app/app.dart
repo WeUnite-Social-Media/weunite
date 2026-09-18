@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/session/current_user_provider.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/domain/repositories/auth_repository.dart';
 import '../features/auth/presentation/cubit/auth_cubit.dart';
@@ -74,6 +75,9 @@ class _WeUniteMobileAppState extends State<WeUniteMobileApp> {
         ),
         RepositoryProvider<ProfileRepository>.value(
           value: dependencies.profileRepository,
+        ),
+        RepositoryProvider<CurrentUserProvider>.value(
+          value: dependencies.currentUserProvider,
         ),
         RepositoryProvider<PostEvents>.value(value: _postEvents),
       ],
