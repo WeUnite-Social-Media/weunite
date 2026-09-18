@@ -31,6 +31,9 @@ class _FakeOpportunityRepository implements OpportunityRepository {
   }
 
   @override
+  Future<List<Opportunity>> getSavedOpportunities() async => const [];
+
+  @override
   Future<List<Opportunity>> getOpportunities({int page = 0}) async => const [];
 
   @override

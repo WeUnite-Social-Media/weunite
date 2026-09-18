@@ -11,6 +11,10 @@ abstract class OpportunityRepository {
     int page = 0,
   });
 
+  /// Opportunities the signed-in athlete saved, newest first — the same list
+  /// the web "Oportunidades salvas" page shows.
+  Future<List<Opportunity>> getSavedOpportunities();
+
   /// Saves or unsaves the opportunity for the signed-in athlete; returns the
   /// resulting state (`true` = saved), read back from the API.
   Future<bool> toggleSaved({required int opportunityId});

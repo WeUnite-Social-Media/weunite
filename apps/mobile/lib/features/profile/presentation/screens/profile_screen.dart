@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/async_state_view.dart';
 import '../../../opportunities/presentation/widgets/company_opportunities_list.dart';
+import '../../../opportunities/presentation/widgets/saved_opportunities_list.dart';
 import '../../domain/entities/profile.dart';
 import '../cubit/profile_cubit.dart';
 import '../cubit/profile_posts_cubit.dart';
 import '../widgets/about_profile.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_posts_list.dart';
+import '../widgets/profile_tabs.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -87,59 +88,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
           final isCompany = state.profile?.isCompany == true;
-          final tabCount = isCompany ? 3 : 2;
-          final tabIndex = _tabIndex < tabCount ? _tabIndex : _postsTab;
+          // A company publishes opportunities; an athlete saves them. Same
+          // split the web makes between CompanyOpportunities and the saved
+          // opportunities page.
+          final labels = [
+            'Posts',
+            'Sobre',
+            if (isCompany) 'Oportunidades' else 'Salvos',
+          ];
+          final tabIndex = _tabIndex < labels.length ? _tabIndex : _postsTab;
 
           return AsyncStateView(
             isLoading: state.isLoading,
             errorMessage: state.loadErrorMessage,
             onRetry: () => context.read<ProfileCubit>().loadMyProfile(),
-            child: DefaultTabController(
-              length: tabCount,
-              initialIndex: tabIndex,
-              child: RefreshIndicator(
-                onRefresh: _refresh,
-                child: ListView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 24),
-                  children: [
-                    if (state.profile != null) ...[
-                      ProfileHeader(profile: state.profile!),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        child: OutlinedButton.icon(
-                          onPressed: () =>
-                              _editProfile(context, state.profile!),
-                          icon: const Icon(Icons.edit_outlined),
-                          label: const Text('Editar perfil'),
-                        ),
+            child: RefreshIndicator(
+              onRefresh: _refresh,
+              child: ListView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 24),
+                children: [
+                  if (state.profile != null) ...[
+                    ProfileHeader(profile: state.profile!),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      child: OutlinedButton.icon(
+                        onPressed: () => _editProfile(context, state.profile!),
+                        icon: const Icon(Icons.edit_outlined),
+                        label: const Text('Editar perfil'),
                       ),
-                    ],
-                    TabBar(
-                      labelColor: AppColors.primary,
-                      indicatorColor: AppColors.accentGreen,
-                      onTap: (index) => setState(() => _tabIndex = index),
-                      tabs: [
-                        const Tab(text: 'Posts'),
-                        const Tab(text: 'Sobre'),
-                        if (isCompany) const Tab(text: 'Oportunidades'),
-                      ],
                     ),
-                    switch (tabIndex) {
-                      _postsTab => const ProfilePostsList(
-                          emptyMessage: 'Voce ainda nao publicou nada.',
-                        ),
-                      1 => state.profile == null
-                          ? const SizedBox.shrink()
-                          : AboutProfile(profile: state.profile!),
-                      _ => CompanyOpportunitiesList(
-                          companyId: state.profile!.id,
-                          refreshTick: _refreshTick,
-                        ),
-                    },
                   ],
-                ),
+                  ProfileTabs(
+                    labels: labels,
+                    currentIndex: tabIndex,
+                    onChanged: (index) => setState(() => _tabIndex = index),
+                  ),
+                  switch (tabIndex) {
+                    _postsTab => const ProfilePostsList(
+                        emptyMessage: 'Voce ainda nao publicou nada.',
+                      ),
+                    1 => state.profile == null
+                        ? const SizedBox.shrink()
+                        : AboutProfile(profile: state.profile!),
+                    _ => isCompany
+                        ? CompanyOpportunitiesList(
+                            companyId: state.profile!.id,
+                            refreshTick: _refreshTick,
+                          )
+                        : SavedOpportunitiesList(refreshTick: _refreshTick),
+                  },
+                ],
               ),
             ),
           );

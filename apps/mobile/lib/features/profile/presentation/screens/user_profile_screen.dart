@@ -12,6 +12,7 @@ import '../cubit/user_profile_cubit.dart';
 import '../widgets/about_profile.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_posts_list.dart';
+import '../widgets/profile_tabs.dart';
 import '../widgets/user_profile_actions.dart';
 
 /// Another user's profile, reached from `/profile/:userId`: header plus the
@@ -53,8 +54,11 @@ class _UserProfileView extends StatefulWidget {
 }
 
 class _UserProfileViewState extends State<_UserProfileView> {
+  static const _postsTab = 0;
+
   /// Bumped on pull-to-refresh so the company opportunities list reloads too.
   int _refreshTick = 0;
+  int _tabIndex = _postsTab;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +87,15 @@ class _UserProfileViewState extends State<_UserProfileView> {
         ],
         child: BlocBuilder<UserProfileCubit, UserProfileState>(
           builder: (context, state) {
+            // An athlete profile has no opportunities of its own: what they
+            // saved is private, exactly like the web, which only shows saved
+            // opportunities to their owner.
+            final labels = [
+              'Posts',
+              'Sobre',
+              if (state.profile?.isCompany == true) 'Oportunidades',
+            ];
+            final tabIndex = _tabIndex < labels.length ? _tabIndex : _postsTab;
             return AsyncStateView(
               isLoading: state.isLoading,
               errorMessage: state.errorMessage,
@@ -112,32 +125,24 @@ class _UserProfileViewState extends State<_UserProfileView> {
                               profile: state.profile!,
                               actions: const UserProfileActions(),
                             ),
-                            AboutProfile(profile: state.profile!),
-                            if (state.profile!.isCompany) ...[
-                              Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                                child: Text(
-                                  'Oportunidades da empresa',
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
+                            // Same tab structure as my own profile: one
+                            // section at a time, not everything stacked.
+                            ProfileTabs(
+                              labels: labels,
+                              currentIndex: tabIndex,
+                              onChanged: (index) =>
+                                  setState(() => _tabIndex = index),
+                            ),
+                            switch (tabIndex) {
+                              _postsTab => const ProfilePostsList(
+                                  emptyMessage: 'Nenhuma publicacao ainda.',
                                 ),
-                              ),
-                              CompanyOpportunitiesList(
-                                companyId: state.profile!.id,
-                                refreshTick: _refreshTick,
-                              ),
-                            ],
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                              child: Text(
-                                'Posts',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                            ),
-                            const ProfilePostsList(
-                              emptyMessage: 'Nenhuma publicacao ainda.',
-                            ),
+                              1 => AboutProfile(profile: state.profile!),
+                              _ => CompanyOpportunitiesList(
+                                  companyId: state.profile!.id,
+                                  refreshTick: _refreshTick,
+                                ),
+                            },
                           ],
                         ),
                       ),

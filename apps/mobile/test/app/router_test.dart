@@ -105,6 +105,9 @@ class _EmptyFeedRepository implements FeedRepository {
 
 class _EmptyOpportunityRepository implements OpportunityRepository {
   @override
+  Future<List<Opportunity>> getSavedOpportunities() async => const [];
+
+  @override
   Future<List<Opportunity>> getOpportunities({int page = 0}) async => const [];
 
   @override
@@ -140,6 +143,10 @@ class _FakeChatRepository implements ChatRepository {
   @override
   Future<List<ChatMessage>> getMessages({required int conversationId}) async =>
       const [];
+
+  @override
+  Stream<ChatRealtimeEvent> watchConversationRead(int conversationId) =>
+      const Stream.empty();
 
   @override
   Stream<ChatRealtimeEvent> watchConversation(int conversationId) =>
