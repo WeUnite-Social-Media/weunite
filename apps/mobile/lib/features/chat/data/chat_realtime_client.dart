@@ -14,9 +14,13 @@ import 'chat_models.dart';
 typedef StompClientFactory = StompClient Function(StompConfig config);
 
 class _TopicSubscription {
-  _TopicSubscription(this.destination);
+  _TopicSubscription(this.destination, {this.parse});
 
   final String destination;
+
+  /// Parser for topics that do not carry a message payload; defaults to
+  /// [parseChatRealtimeEvent].
+  final ChatRealtimeEvent? Function(String body)? parse;
   final StreamController<ChatRealtimeEvent> controller =
       StreamController<ChatRealtimeEvent>();
   StompUnsubscribe? unsubscribe;
@@ -137,7 +141,7 @@ class ChatRealtimeClient {
           if (body == null) {
             return;
           }
-          final event = parseChatRealtimeEvent(body);
+          final event = (sub.parse ?? parseChatRealtimeEvent)(body);
           if (event == null) {
             _log('[WS] ignored malformed event');
             return;
@@ -201,10 +205,55 @@ class ChatRealtimeClient {
     return sub.controller.stream;
   }
 
+  /// `/topic/conversation/{id}/read` carries only the reader's id, so it gets
+  /// its own parser instead of [parseChatRealtimeEvent].
+  Stream<ChatRealtimeEvent> subscribeConversationRead(int conversationId) {
+    final sub = _TopicSubscription(
+      '/topic/conversation/$conversationId/read',
+      parse: (body) {
+        final readerUserId = int.tryParse(body.trim());
+        return readerUserId == null
+            ? null
+            : ChatConversationRead(readerUserId: readerUserId);
+      },
+    );
+    sub.controller.onListen = () {
+      _subscriptions.add(sub);
+      _attach(sub);
+      unawaited(connect());
+    };
+    sub.controller.onCancel = () {
+      _subscriptions.remove(sub);
+      sub.unsubscribe?.call();
+      sub.unsubscribe = null;
+    };
+    return sub.controller.stream;
+  }
+
+  /// Tells the API over STOMP that [userId] read the conversation. The REST
+  /// call already persists it; this is what makes the API broadcast the
+  /// receipt to the other participant, so their ticks turn green live.
+  /// Best-effort: a disconnected socket is not an error here.
+  void sendReadReceipt({required int conversationId, required int userId}) {
+    final client = _client;
+    if (client == null || !client.connected) {
+      return;
+    }
+    try {
+      client.send(
+        destination: '/app/chat.markAsRead',
+        body: jsonEncode({'conversationId': conversationId, 'userId': userId}),
+      );
+    } on StompBadStateException {
+      // Dropped in between; the REST call already persisted the read.
+    }
+  }
+
   void sendMessage({
     required int conversationId,
     required int senderId,
     required String content,
+    MessageTypeDto type = MessageTypeDto.text,
   }) {
     final client = _client;
     if (client == null || !client.connected) {
@@ -221,6 +270,7 @@ class ChatRealtimeClient {
             conversationId: conversationId,
             senderId: senderId,
             content: content,
+            type: type,
           ).toJson(),
         ),
       );

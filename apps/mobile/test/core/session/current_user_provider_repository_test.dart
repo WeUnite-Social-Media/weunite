@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:weunite_mobile/core/session/current_user_provider.dart';
+import 'package:weunite_mobile/features/chat/data/chat_models.dart';
 import 'package:weunite_mobile/features/chat/data/chat_realtime_client.dart';
 import 'package:weunite_mobile/features/chat/domain/entities/chat_realtime_event.dart';
 import 'package:weunite_mobile/features/chat/data/chat_remote_data_source.dart';
@@ -86,7 +87,14 @@ void main() {
 
       await repository.toggleFollow(followedId: 99);
 
-      expect(recorder.lastPath, '/api/follow/followAndUnfollow/11/99');
+      // Toggles, then reads the resulting state back from the API.
+      expect(
+        recorder.paths,
+        containsAllInOrder(<String>[
+          '/api/follow/followAndUnfollow/11/99',
+          '/api/follow/get/11/99',
+        ]),
+      );
     });
 
     test(
@@ -164,6 +172,17 @@ class _FakeChatRealtimeClient implements ChatRealtimeClient {
   Future<void> connect() async {}
 
   @override
+  Stream<ChatRealtimeEvent> subscribeConversationRead(int conversationId) =>
+      const Stream.empty();
+
+  final readReceipts = <int>[];
+
+  @override
+  void sendReadReceipt({required int conversationId, required int userId}) {
+    readReceipts.add(conversationId);
+  }
+
+  @override
   Stream<ChatRealtimeEvent> subscribeConversation(int conversationId) =>
       const Stream.empty();
 
@@ -172,6 +191,7 @@ class _FakeChatRealtimeClient implements ChatRealtimeClient {
     required int conversationId,
     required int senderId,
     required String content,
+    MessageTypeDto type = MessageTypeDto.text,
   }) {
     lastConversationId = conversationId;
     lastSenderId = senderId;

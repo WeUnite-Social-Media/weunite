@@ -27,6 +27,7 @@ class AppDependencies {
     required this.opportunityRepository,
     required this.chatRepository,
     required this.profileRepository,
+    required this.currentUserProvider,
     required this.sessionEvents,
   });
 
@@ -35,6 +36,7 @@ class AppDependencies {
   final OpportunityRepository opportunityRepository;
   final ChatRepository chatRepository;
   final ProfileRepository profileRepository;
+  final CurrentUserProvider currentUserProvider;
   final SessionEvents sessionEvents;
 }
 
@@ -62,6 +64,7 @@ AppDependencies bootstrap() {
     ),
     opportunityRepository: OpportunityRepositoryImpl(
       remoteDataSource: OpportunityRemoteDataSource(apiClient.dio),
+      currentUserProvider: currentUserProvider,
     ),
     chatRepository: ChatRepositoryImpl(
       remoteDataSource: ChatRemoteDataSource(apiClient.dio),
@@ -75,6 +78,7 @@ AppDependencies bootstrap() {
       remoteDataSource: ProfileRemoteDataSource(apiClient.dio),
       currentUserProvider: currentUserProvider,
     ),
+    currentUserProvider: currentUserProvider,
     sessionEvents: sessionEvents,
   );
 }

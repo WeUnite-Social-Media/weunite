@@ -8,6 +8,8 @@ class Conversation extends Equatable {
     this.peerUsername,
     this.peerAvatar,
     this.lastMessage,
+    this.lastMessageAt,
+    this.lastMessageType = ChatMessageType.text,
     this.unreadCount = 0,
   });
 
@@ -17,7 +19,30 @@ class Conversation extends Equatable {
   final String? peerUsername;
   final String? peerAvatar;
   final String? lastMessage;
+
+  /// When the last message arrived (used for the list preview and sorting).
+  final DateTime? lastMessageAt;
+  final ChatMessageType lastMessageType;
   final int unreadCount;
+
+  Conversation copyWith({
+    String? lastMessage,
+    DateTime? lastMessageAt,
+    ChatMessageType? lastMessageType,
+    int? unreadCount,
+  }) {
+    return Conversation(
+      id: id,
+      peerUserId: peerUserId,
+      peerName: peerName,
+      peerUsername: peerUsername,
+      peerAvatar: peerAvatar,
+      lastMessage: lastMessage ?? this.lastMessage,
+      lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+      lastMessageType: lastMessageType ?? this.lastMessageType,
+      unreadCount: unreadCount ?? this.unreadCount,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -27,6 +52,8 @@ class Conversation extends Equatable {
         peerUsername,
         peerAvatar,
         lastMessage,
+        lastMessageAt,
+        lastMessageType,
         unreadCount,
       ];
 }

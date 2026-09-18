@@ -1,13 +1,25 @@
 import '../entities/opportunity.dart';
 
 abstract class OpportunityRepository {
+  /// Opportunities already flagged with whether the signed-in athlete saved
+  /// them (`isSaved`) or applied to them (`isSubscribed`).
   Future<List<Opportunity>> getOpportunities({int page = 0});
-  Future<void> toggleSaved({
-    required int athleteId,
-    required int opportunityId,
+
+  /// Opportunities published by [companyId].
+  Future<List<Opportunity>> getCompanyOpportunities({
+    required int companyId,
+    int page = 0,
   });
-  Future<void> toggleSubscription({
-    required int athleteId,
-    required int opportunityId,
-  });
+
+  /// Opportunities the signed-in athlete saved, newest first — the same list
+  /// the web "Oportunidades salvas" page shows.
+  Future<List<Opportunity>> getSavedOpportunities();
+
+  /// Saves or unsaves the opportunity for the signed-in athlete; returns the
+  /// resulting state (`true` = saved), read back from the API.
+  Future<bool> toggleSaved({required int opportunityId});
+
+  /// Applies to or withdraws from the opportunity for the signed-in athlete;
+  /// returns the resulting state (`true` = applied), read back from the API.
+  Future<bool> toggleSubscription({required int opportunityId});
 }

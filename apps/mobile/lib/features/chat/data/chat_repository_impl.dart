@@ -4,6 +4,7 @@ import '../../../core/session/current_user_provider.dart';
 import '../domain/entities/chat_realtime_event.dart';
 import '../domain/entities/conversation.dart';
 import '../domain/repositories/chat_repository.dart';
+import 'chat_models.dart';
 import 'chat_realtime_client.dart';
 import 'chat_remote_data_source.dart';
 
@@ -71,6 +72,59 @@ class ChatRepositoryImpl implements ChatRepository {
       conversationId: conversationId,
       senderId: _currentUserProvider.requireUserId(),
       content: content,
+    );
+  }
+
+  @override
+  Future<void> sendImage({
+    required int conversationId,
+    required String imagePath,
+  }) async {
+    final senderId = _currentUserProvider.requireUserId();
+    // The upload endpoint only stores the file and returns its URL; the
+    // message itself still goes through STOMP, typed as an image.
+    final url = await _remoteDataSource.uploadAttachment(
+      conversationId: conversationId,
+      senderId: senderId,
+      filePath: imagePath,
+    );
+    _realtimeClient.sendMessage(
+      conversationId: conversationId,
+      senderId: senderId,
+      content: url,
+      type: MessageTypeDto.image,
+    );
+  }
+
+  @override
+  Future<Conversation> startConversationWith(int userId) async {
+    final currentUserId = _currentUserProvider.requireUserId();
+    final dto = await _remoteDataSource.createConversation(
+      initiatorUserId: currentUserId,
+      participantId: userId,
+    );
+    final peerId = dto.peerUserIdFor(currentUserId) ?? userId;
+    final peer = (await _loadPeers({peerId}))[peerId];
+    return dto.toEntity(peerUserId: peerId, peer: peer);
+  }
+
+  @override
+  Stream<ChatRealtimeEvent> watchConversationRead(int conversationId) {
+    return _realtimeClient.subscribeConversationRead(conversationId);
+  }
+
+  @override
+  Future<void> markConversationAsRead(int conversationId) async {
+    final userId = _currentUserProvider.requireUserId();
+    await _remoteDataSource.markAsRead(
+      conversationId: conversationId,
+      userId: userId,
+    );
+    // The REST call persists it but broadcasts nothing; this is what lets the
+    // sender see the ticks turn green without refetching.
+    _realtimeClient.sendReadReceipt(
+      conversationId: conversationId,
+      userId: userId,
     );
   }
 

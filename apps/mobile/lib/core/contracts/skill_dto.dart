@@ -3,7 +3,7 @@ import 'package:json_annotation/json_annotation.dart';
 part 'skill_dto.g.dart';
 
 /// Subset of `SkillDTO` (openapi: components.schemas.SkillDTO).
-@JsonSerializable()
+@JsonSerializable(createToJson: true)
 class SkillDto {
   const SkillDto({required this.name});
 
@@ -11,4 +11,6 @@ class SkillDto {
       _$SkillDtoFromJson(json);
 
   final String name;
+
+  Map<String, dynamic> toJson() => _$SkillDtoToJson(this);
 }

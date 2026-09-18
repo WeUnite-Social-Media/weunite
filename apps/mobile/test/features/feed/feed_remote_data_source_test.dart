@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:weunite_mobile/core/network/image_media_type.dart';
 import 'package:weunite_mobile/features/feed/data/feed_remote_data_source.dart';
 
 import '../../fixtures/api_payloads.dart';

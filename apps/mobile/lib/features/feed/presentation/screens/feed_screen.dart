@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/async_state_view.dart';
+import '../../../search/presentation/widgets/home_search_bar.dart';
 import '../cubit/feed_cubit.dart';
 import '../widgets/create_post_sheet.dart';
 import '../widgets/comments_sheet.dart';
@@ -57,40 +58,48 @@ class _FeedScreenState extends State<FeedScreen> {
       },
       builder: (context, state) {
         return Scaffold(
-          body: AsyncStateView(
-            isLoading: state.isLoading,
-            errorMessage: state.loadErrorMessage,
-            onRetry: context.read<FeedCubit>().loadTimeline,
-            child: RefreshIndicator(
-              onRefresh: context.read<FeedCubit>().loadTimeline,
-              child: ListView.separated(
-                controller: _scrollController,
-                // Needed for pull-to-refresh when the posts don't fill the
-                // screen: with an explicit controller the list isn't primary
-                // and would not scroll (so never overscroll) otherwise.
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                itemCount: state.posts.length + (state.isLoadingMore ? 1 : 0),
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  if (index >= state.posts.length) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-                  final post = state.posts[index];
-                  return PostCard(
-                    post: post,
-                    onLike: () => context.read<FeedCubit>().toggleLike(
-                          postId: post.id,
-                        ),
-                    onComments: () =>
-                        showCommentsSheet(context, postId: post.id),
-                  );
-                },
+          body: Column(
+            children: [
+              const HomeSearchBar(),
+              Expanded(
+                child: AsyncStateView(
+                  isLoading: state.isLoading,
+                  errorMessage: state.loadErrorMessage,
+                  onRetry: context.read<FeedCubit>().loadTimeline,
+                  child: RefreshIndicator(
+                    onRefresh: context.read<FeedCubit>().loadTimeline,
+                    child: ListView.separated(
+                      controller: _scrollController,
+                      // Needed for pull-to-refresh when the posts don't fill the
+                      // screen: with an explicit controller the list isn't primary
+                      // and would not scroll (so never overscroll) otherwise.
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      itemCount:
+                          state.posts.length + (state.isLoadingMore ? 1 : 0),
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        if (index >= state.posts.length) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        final post = state.posts[index];
+                        return PostCard(
+                          post: post,
+                          onLike: () => context.read<FeedCubit>().toggleLike(
+                                postId: post.id,
+                              ),
+                          onComments: () =>
+                              showCommentsSheet(context, postId: post.id),
+                        );
+                      },
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () => showCreatePostSheet(context),

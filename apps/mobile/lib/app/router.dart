@@ -11,6 +11,7 @@ import '../features/chat/domain/repositories/chat_repository.dart';
 import '../features/chat/presentation/cubit/chat_cubit.dart';
 import '../features/chat/presentation/screens/conversation_route_screen.dart';
 import '../features/chat/presentation/screens/conversations_screen.dart';
+import '../features/chat/presentation/screens/new_conversation_screen.dart';
 import '../features/feed/domain/post_events.dart';
 import '../features/feed/domain/repositories/feed_repository.dart';
 import '../features/feed/presentation/cubit/feed_cubit.dart';
@@ -25,6 +26,7 @@ import '../features/profile/presentation/cubit/profile_cubit.dart';
 import '../features/profile/presentation/cubit/profile_posts_cubit.dart';
 import '../features/profile/presentation/screens/profile_screen.dart';
 import '../features/profile/presentation/screens/user_profile_screen.dart';
+import '../features/search/presentation/screens/search_screen.dart';
 
 /// Route map (kept in sync with `apps/mobile/AGENTS.md` / `README.md`):
 /// - `/splash`: shown while `AuthCubit` is restoring the session.
@@ -56,11 +58,20 @@ GoRouter buildRouter({
         path: '/signup',
         builder: (context, state) => const SignUpScreen(),
       ),
+      // Declared before `/chat/:conversationId` so "new" is not parsed as an id.
+      GoRoute(
+        path: '/chat/new',
+        builder: (context, state) => const NewConversationScreen(),
+      ),
       GoRoute(
         path: '/chat/:conversationId',
         builder: (context, state) => ConversationRouteScreen(
           conversationId: int.parse(state.pathParameters['conversationId']!),
         ),
+      ),
+      GoRoute(
+        path: '/search',
+        builder: (context, state) => const SearchScreen(),
       ),
       GoRoute(
         path: '/profile/:userId',
@@ -80,42 +91,38 @@ GoRouter buildRouter({
           if (user == null) {
             return const _SplashScreen();
           }
-          // Keyed by user so the event bus and every cubit are rebuilt when
-          // the signed-in user changes.
-          return RepositoryProvider<PostEvents>(
+          return MultiBlocProvider(
             key: ValueKey(user.id),
-            create: (_) => PostEvents(),
-            dispose: (events) => events.dispose(),
-            child: MultiBlocProvider(
-              providers: [
-                BlocProvider(
-                  create: (context) => FeedCubit(
-                    context.read<FeedRepository>(),
-                    events: context.read<PostEvents>(),
-                  ),
+            providers: [
+              BlocProvider(
+                create: (context) => FeedCubit(
+                  context.read<FeedRepository>(),
+                  events: context.read<PostEvents>(),
                 ),
-                BlocProvider(
-                  create: (context) => OpportunitiesCubit(
-                    context.read<OpportunityRepository>(),
-                  ),
+              ),
+              BlocProvider(
+                create: (context) => OpportunitiesCubit(
+                  context.read<OpportunityRepository>(),
                 ),
-                BlocProvider(
-                  create: (context) =>
-                      ChatCubit(context.read<ChatRepository>()),
+              ),
+              BlocProvider(
+                create: (context) => ChatCubit(
+                  context.read<ChatRepository>(),
+                  currentUserId: user.id,
                 ),
-                BlocProvider(
-                  create: (context) =>
-                      ProfileCubit(context.read<ProfileRepository>()),
+              ),
+              BlocProvider(
+                create: (context) =>
+                    ProfileCubit(context.read<ProfileRepository>()),
+              ),
+              BlocProvider(
+                create: (context) => ProfilePostsCubit(
+                  context.read<FeedRepository>(),
+                  events: context.read<PostEvents>(),
                 ),
-                BlocProvider(
-                  create: (context) => ProfilePostsCubit(
-                    context.read<FeedRepository>(),
-                    events: context.read<PostEvents>(),
-                  ),
-                ),
-              ],
-              child: AppShell(navigationShell: navigationShell),
-            ),
+              ),
+            ],
+            child: AppShell(navigationShell: navigationShell),
           );
         },
         branches: [

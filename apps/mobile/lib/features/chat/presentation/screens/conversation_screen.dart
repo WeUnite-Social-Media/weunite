@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/async_state_view.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../domain/entities/conversation.dart';
@@ -99,6 +102,9 @@ class _ConversationViewState extends State<_ConversationView> {
   }
 }
 
+/// Same limit the API enforces for chat uploads (10 MB).
+const kMaxChatImageBytes = 10 * 1024 * 1024;
+
 class _MessageBubble extends StatelessWidget {
   const _MessageBubble({required this.message});
 
@@ -125,18 +131,58 @@ class _MessageBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              message.deleted
-                  ? 'Mensagem apagada'
-                  : message.edited
-                      ? '${message.content} (editada)'
-                      : message.content,
-              style: message.deleted
-                  ? const TextStyle(fontStyle: FontStyle.italic)
-                  : null,
-            ),
+            if (!message.deleted && message.type == ChatMessageType.image)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxHeight: 260,
+                    maxWidth: 240,
+                  ),
+                  child: Image.network(
+                    message.content,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, progress) => progress ==
+                            null
+                        ? child
+                        : const SizedBox(
+                            height: 160,
+                            width: 160,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                    errorBuilder: (context, error, stackTrace) =>
+                        const SizedBox(
+                      height: 80,
+                      width: 160,
+                      child: Center(child: Icon(Icons.broken_image_outlined)),
+                    ),
+                  ),
+                ),
+              )
+            else
+              Text(
+                message.deleted
+                    ? 'Mensagem apagada'
+                    : message.edited
+                        ? '${message.content} (editada)'
+                        : message.content,
+                style: message.deleted
+                    ? const TextStyle(fontStyle: FontStyle.italic)
+                    : null,
+              ),
             const SizedBox(height: 4),
-            Text(time, style: Theme.of(context).textTheme.labelSmall),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(time, style: Theme.of(context).textTheme.labelSmall),
+                // Same read indicator as the web `Message.tsx`: two ticks on my
+                // own messages, green once the other side has read them.
+                if (isMine) ...[
+                  const SizedBox(width: 4),
+                  ReadReceipt(isRead: message.read),
+                ],
+              ],
+            ),
           ],
         ),
       ),
@@ -144,11 +190,114 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
+/// Double tick shown on my own messages: grey when the peer has not read it
+/// yet, blue once they have — the same two states the web shows (it has no
+/// separate "sent" and "delivered" states, and neither do we). The web tints
+/// it with the brand green, which is unreadable here because my own bubble is
+/// already light green.
+class ReadReceipt extends StatelessWidget {
+  const ReadReceipt({required this.isRead, super.key});
+
+  final bool isRead;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isRead ? AppColors.readReceipt : AppColors.mutedForeground;
+    return Semantics(
+      label: isRead ? 'Mensagem visualizada' : 'Mensagem enviada',
+      child: SizedBox(
+        width: 18,
+        height: 12,
+        child: Stack(
+          children: [
+            Icon(Icons.check, size: 12, color: color),
+            Positioned(
+              left: 5,
+              child: Icon(Icons.check, size: 12, color: color),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A few common emoji, so sending one doesn't depend on the system keyboard
+/// (emoji typed on the keyboard keep working as before).
+const _quickEmojis = [
+  '😀', '😂', '😍', '👍', '🙏', '🎉', '🔥', '⚽', '🏆', '💪', //
+  '😅', '😉', '😎', '🤝', '👏', '❤️', '✅', '⏰', '📍', '🚀', //
+];
+
 class _Composer extends StatelessWidget {
   const _Composer({required this.controller, required this.isSending});
 
   final TextEditingController controller;
   final bool isSending;
+
+  Future<void> _pickImage(BuildContext context) async {
+    final cubit = context.read<ConversationCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final XFile? file;
+    try {
+      file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 85,
+      );
+    } on PlatformException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Nao foi possivel abrir a galeria.')),
+      );
+      return;
+    }
+    if (file == null) {
+      return;
+    }
+    if (await file.length() > kMaxChatImageBytes) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('A imagem deve ter no maximo 10 MB.')),
+      );
+      return;
+    }
+    await cubit.sendImage(file.path);
+  }
+
+  Future<void> _pickEmoji(BuildContext context) async {
+    final emoji = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final emoji in _quickEmojis)
+                InkWell(
+                  onTap: () => Navigator.of(context).pop(emoji),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(emoji, style: const TextStyle(fontSize: 28)),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (emoji == null) {
+      return;
+    }
+    final selection = controller.selection;
+    final text = controller.text;
+    final start = selection.start < 0 ? text.length : selection.start;
+    final end = selection.end < 0 ? text.length : selection.end;
+    controller
+      ..text = text.replaceRange(start, end, emoji)
+      ..selection = TextSelection.collapsed(offset: start + emoji.length);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +306,16 @@ class _Composer extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         child: Row(
           children: [
+            IconButton(
+              tooltip: 'Enviar imagem',
+              onPressed: isSending ? null : () => _pickImage(context),
+              icon: const Icon(Icons.image_outlined),
+            ),
+            IconButton(
+              tooltip: 'Emojis',
+              onPressed: isSending ? null : () => _pickEmoji(context),
+              icon: const Icon(Icons.emoji_emotions_outlined),
+            ),
             Expanded(
               child: TextField(
                 controller: controller,

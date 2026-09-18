@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/widgets/weunite_card.dart';
+import '../../../profile/presentation/navigation/open_user_profile.dart';
 import '../../domain/entities/post.dart';
 
 class PostCard extends StatelessWidget {
@@ -9,6 +10,7 @@ class PostCard extends StatelessWidget {
     required this.post,
     this.onLike,
     this.onComments,
+    this.enableAuthorNavigation = true,
     super.key,
   });
 
@@ -16,14 +18,22 @@ class PostCard extends StatelessWidget {
   final VoidCallback? onLike;
   final VoidCallback? onComments;
 
+  /// Tapping the author's avatar or name opens their profile. Disable it
+  /// where the list already belongs to that author's profile.
+  final bool enableAuthorNavigation;
+
   @override
   Widget build(BuildContext context) {
+    final canOpenAuthor = enableAuthorNavigation && post.authorId != null;
     return WeUniteCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
+            onTap: canOpenAuthor
+                ? () => openUserProfile(context, post.authorId)
+                : null,
             leading: CircleAvatar(
               backgroundImage: post.authorAvatar == null
                   ? null

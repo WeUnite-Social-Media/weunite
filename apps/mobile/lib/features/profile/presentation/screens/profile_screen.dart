@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/async_state_view.dart';
-import '../../../feed/presentation/widgets/comments_sheet.dart';
-import '../../../feed/presentation/widgets/post_card.dart';
+import '../../../opportunities/presentation/widgets/company_opportunities_list.dart';
+import '../../../opportunities/presentation/widgets/saved_opportunities_list.dart';
+import '../../domain/entities/profile.dart';
 import '../cubit/profile_cubit.dart';
 import '../cubit/profile_posts_cubit.dart';
+import '../widgets/about_profile.dart';
 import '../widgets/profile_header.dart';
+import '../widgets/profile_posts_list.dart';
+import '../widgets/profile_tabs.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,6 +25,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   final _scrollController = ScrollController();
   int _tabIndex = _postsTab;
+
+  /// Bumped on pull-to-refresh so the company opportunities list reloads too.
+  int _refreshTick = 0;
 
   @override
   void initState() {
@@ -52,6 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _refresh() {
+    setState(() => _refreshTick++);
     return Future.wait([
       context.read<ProfileCubit>().loadMyProfile(),
       context.read<ProfilePostsCubit>().loadPosts(),
@@ -80,44 +88,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
           final isCompany = state.profile?.isCompany == true;
-          final tabCount = isCompany ? 3 : 2;
-          final tabIndex = _tabIndex < tabCount ? _tabIndex : _postsTab;
+          // A company publishes opportunities; an athlete saves them. Same
+          // split the web makes between CompanyOpportunities and the saved
+          // opportunities page.
+          final labels = [
+            'Posts',
+            'Sobre',
+            if (isCompany) 'Oportunidades' else 'Salvos',
+          ];
+          final tabIndex = _tabIndex < labels.length ? _tabIndex : _postsTab;
 
           return AsyncStateView(
             isLoading: state.isLoading,
             errorMessage: state.loadErrorMessage,
             onRetry: () => context.read<ProfileCubit>().loadMyProfile(),
-            child: DefaultTabController(
-              length: tabCount,
-              initialIndex: tabIndex,
-              child: RefreshIndicator(
-                onRefresh: _refresh,
-                child: ListView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 24),
-                  children: [
-                    if (state.profile != null)
-                      ProfileHeader(profile: state.profile!),
-                    TabBar(
-                      labelColor: AppColors.primary,
-                      indicatorColor: AppColors.accentGreen,
-                      onTap: (index) => setState(() => _tabIndex = index),
-                      tabs: [
-                        const Tab(text: 'Posts'),
-                        const Tab(text: 'Sobre'),
-                        if (isCompany) const Tab(text: 'Oportunidades'),
-                      ],
+            child: RefreshIndicator(
+              onRefresh: _refresh,
+              child: ListView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 24),
+                children: [
+                  if (state.profile != null) ...[
+                    ProfileHeader(profile: state.profile!),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      child: OutlinedButton.icon(
+                        onPressed: () => _editProfile(context, state.profile!),
+                        icon: const Icon(Icons.edit_outlined),
+                        label: const Text('Editar perfil'),
+                      ),
                     ),
-                    switch (tabIndex) {
-                      _postsTab => const _ProfilePostsSection(),
-                      1 => _CenteredMessage(
-                          state.profile?.bio ?? 'Sem bio ainda.',
-                        ),
-                      _ => const _CenteredMessage('Oportunidades da empresa'),
-                    },
                   ],
-                ),
+                  ProfileTabs(
+                    labels: labels,
+                    currentIndex: tabIndex,
+                    onChanged: (index) => setState(() {
+                      // Selecting the opportunities/saved tab refetches, so a
+                      // save made elsewhere (web, another screen) shows up
+                      // without a pull-to-refresh.
+                      if (index != _tabIndex && index >= 2) {
+                        _refreshTick++;
+                      }
+                      _tabIndex = index;
+                    }),
+                  ),
+                  switch (tabIndex) {
+                    _postsTab => const ProfilePostsList(
+                        emptyMessage: 'Voce ainda nao publicou nada.',
+                      ),
+                    1 => state.profile == null
+                        ? const SizedBox.shrink()
+                        : AboutProfile(profile: state.profile!),
+                    _ => isCompany
+                        ? CompanyOpportunitiesList(
+                            companyId: state.profile!.id,
+                            refreshTick: _refreshTick,
+                          )
+                        : SavedOpportunitiesList(refreshTick: _refreshTick),
+                  },
+                ],
               ),
             ),
           );
@@ -126,82 +156,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _editProfile(BuildContext context, Profile profile) async {
+    final cubit = context.read<ProfileCubit>();
+    final saved = await Navigator.of(context).push<Profile>(
+      MaterialPageRoute(builder: (_) => EditProfileScreen(profile: profile)),
+    );
+    if (saved != null) {
+      // Reload so follower counts and anything the API normalized are in
+      // sync, not only the fields the form sent.
+      await cubit.loadMyProfile();
+    }
+  }
+
   void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
-    );
-  }
-}
-
-class _ProfilePostsSection extends StatelessWidget {
-  const _ProfilePostsSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<ProfilePostsCubit, ProfilePostsState>(
-      builder: (context, state) {
-        if (state.isLoading || (!state.hasLoaded && state.posts.isEmpty)) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 48),
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (state.loadErrorMessage != null) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 16),
-            child: Column(
-              children: [
-                Text(state.loadErrorMessage!, textAlign: TextAlign.center),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: context.read<ProfilePostsCubit>().loadPosts,
-                  child: const Text('Tentar novamente'),
-                ),
-              ],
-            ),
-          );
-        }
-        if (state.posts.isEmpty) {
-          return const _CenteredMessage('Voce ainda nao publicou nada.');
-        }
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final post in state.posts) ...[
-                PostCard(
-                  post: post,
-                  onLike: () => context
-                      .read<ProfilePostsCubit>()
-                      .toggleLike(postId: post.id),
-                  onComments: () => showCommentsSheet(context, postId: post.id),
-                ),
-                const SizedBox(height: 12),
-              ],
-              if (state.isLoadingMore)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _CenteredMessage extends StatelessWidget {
-  const _CenteredMessage(this.message);
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 16),
-      child: Center(child: Text(message, textAlign: TextAlign.center)),
     );
   }
 }

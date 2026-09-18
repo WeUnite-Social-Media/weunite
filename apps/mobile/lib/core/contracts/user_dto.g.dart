@@ -15,6 +15,17 @@ UserDto _$UserDtoFromJson(Map<String, dynamic> json) => UserDto(
       bio: json['bio'] as String?,
       profileImg: json['profileImg'] as String?,
       bannerImg: json['bannerImg'] as String?,
+      isPrivate: json['isPrivate'] as bool? ?? false,
+      height: (json['height'] as num?)?.toDouble(),
+      weight: (json['weight'] as num?)?.toDouble(),
+      footDomain: json['footDomain'] as String?,
+      position: json['position'] as String?,
+      birthDate: json['birthDate'] == null
+          ? null
+          : DateTime.parse(json['birthDate'] as String),
+      skills: (json['skills'] as List<dynamic>?)
+          ?.map((e) => SkillDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$UserDtoToJson(UserDto instance) => <String, dynamic>{
@@ -26,4 +37,11 @@ Map<String, dynamic> _$UserDtoToJson(UserDto instance) => <String, dynamic>{
       'bio': instance.bio,
       'profileImg': instance.profileImg,
       'bannerImg': instance.bannerImg,
+      'isPrivate': instance.isPrivate,
+      'height': instance.height,
+      'weight': instance.weight,
+      'footDomain': instance.footDomain,
+      'position': instance.position,
+      'birthDate': instance.birthDate?.toIso8601String(),
+      'skills': instance.skills?.map((e) => e.toJson()).toList(),
     };

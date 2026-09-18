@@ -7,6 +7,7 @@ class Comment extends Equatable {
     required this.authorName,
     required this.authorUsername,
     required this.createdAt,
+    this.authorId,
     this.authorAvatar,
   });
 
@@ -14,6 +15,9 @@ class Comment extends Equatable {
   final String? content;
   final String authorName;
   final String authorUsername;
+
+  /// Author's user id, used to open their profile. Null when unknown.
+  final int? authorId;
   final String? authorAvatar;
   final DateTime createdAt;
 
@@ -23,6 +27,7 @@ class Comment extends Equatable {
         content,
         authorName,
         authorUsername,
+        authorId,
         authorAvatar,
         createdAt,
       ];

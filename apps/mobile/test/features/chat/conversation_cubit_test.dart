@@ -44,6 +44,10 @@ class _FakeChatRepository implements ChatRepository {
   }
 
   @override
+  Stream<ChatRealtimeEvent> watchConversationRead(int conversationId) =>
+      const Stream.empty();
+
+  @override
   Stream<ChatRealtimeEvent> watchConversation(int conversationId) =>
       _controller.stream;
 
@@ -57,6 +61,19 @@ class _FakeChatRepository implements ChatRepository {
     }
     sentContents.add(content);
   }
+
+  @override
+  Future<void> sendImage({
+    required int conversationId,
+    required String imagePath,
+  }) async {}
+
+  @override
+  Future<Conversation> startConversationWith(int userId) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> markConversationAsRead(int conversationId) async {}
 
   @override
   Future<void> disconnectRealtime() async {}

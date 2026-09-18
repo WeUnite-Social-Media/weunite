@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_bottom_nav.dart';
 import '../../auth/presentation/cubit/auth_cubit.dart';
+import '../../chat/presentation/cubit/chat_cubit.dart';
 
 /// Hosts the four bottom-nav tabs as branches of a
 /// `StatefulShellRoute.indexedStack` (see `lib/app/router.dart`): each
@@ -30,6 +31,11 @@ class AppShell extends StatelessWidget {
       ),
       body: navigationShell,
       bottomNavigationBar: AppBottomNav(
+        // Single source of truth: the same ChatCubit state that draws the
+        // per-conversation badges, kept live by its STOMP subscriptions.
+        chatUnreadCount: context.select(
+          (ChatCubit cubit) => cubit.state.totalUnreadCount,
+        ),
         currentTab: AppTab.values[navigationShell.currentIndex],
         onTabSelected: (tab) {
           final index = AppTab.values.indexOf(tab);

@@ -3,6 +3,7 @@ part of 'opportunities_cubit.dart';
 class OpportunitiesState extends Equatable {
   const OpportunitiesState({
     this.opportunities = const [],
+    this.pendingIds = const {},
     this.isLoading = false,
     this.hasLoaded = false,
     this.loadErrorMessage,
@@ -10,6 +11,9 @@ class OpportunitiesState extends Equatable {
   });
 
   final List<Opportunity> opportunities;
+
+  /// Opportunities with a save/apply request in flight (blocks double taps).
+  final Set<int> pendingIds;
   final bool isLoading;
   final bool hasLoaded;
   final String? loadErrorMessage;
@@ -17,6 +21,7 @@ class OpportunitiesState extends Equatable {
 
   OpportunitiesState copyWith({
     List<Opportunity>? opportunities,
+    Set<int>? pendingIds,
     bool? isLoading,
     bool? hasLoaded,
     ValueGetter<String?>? loadErrorMessage,
@@ -24,6 +29,7 @@ class OpportunitiesState extends Equatable {
   }) {
     return OpportunitiesState(
       opportunities: opportunities ?? this.opportunities,
+      pendingIds: pendingIds ?? this.pendingIds,
       isLoading: isLoading ?? this.isLoading,
       hasLoaded: hasLoaded ?? this.hasLoaded,
       loadErrorMessage:
@@ -37,6 +43,7 @@ class OpportunitiesState extends Equatable {
   @override
   List<Object?> get props => [
         opportunities,
+        pendingIds,
         isLoading,
         hasLoaded,
         loadErrorMessage,

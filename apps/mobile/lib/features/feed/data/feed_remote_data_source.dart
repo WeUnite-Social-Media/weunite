@@ -3,24 +3,11 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/network/image_media_type.dart';
 import '../../../core/network/json_body.dart';
 import '../feed_constants.dart';
 import 'comment_models.dart';
 import 'feed_models.dart';
-
-/// Media type for an image part, from the file extension. Cloudinary rejects
-/// uploads sent as `application/octet-stream`, so the part must be typed.
-DioMediaType imageMediaTypeFor(String filename) {
-  final extension =
-      filename.contains('.') ? filename.split('.').last.toLowerCase() : '';
-  return switch (extension) {
-    'png' => DioMediaType('image', 'png'),
-    'gif' => DioMediaType('image', 'gif'),
-    'webp' => DioMediaType('image', 'webp'),
-    'heic' || 'heif' => DioMediaType('image', 'heic'),
-    _ => DioMediaType('image', 'jpeg'),
-  };
-}
 
 class FeedRemoteDataSource {
   const FeedRemoteDataSource(this._dio);
@@ -32,6 +19,22 @@ class FeedRemoteDataSource {
       final response = await _dio.get<Object?>(
         '/posts/get',
         queryParameters: {'page': page, 'size': kFeedPageSize},
+      );
+      return decodeJsonList(response.data, FeedPostSummaryDto.fromJson);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
+  /// `GET /posts/search?query=` — posts whose text matches the query.
+  Future<List<FeedPostSummaryDto>> searchPosts({
+    required String query,
+    int page = 0,
+  }) async {
+    try {
+      final response = await _dio.get<Object?>(
+        '/posts/search',
+        queryParameters: {'query': query, 'page': page, 'size': kFeedPageSize},
       );
       return decodeJsonList(response.data, FeedPostSummaryDto.fromJson);
     } catch (error, stackTrace) {

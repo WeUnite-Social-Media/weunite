@@ -7,6 +7,12 @@ abstract class FeedRepository {
   /// Posts authored by the signed-in user, newest first.
   Future<List<Post>> getMyPosts({int page = 0});
 
+  /// Posts authored by another user ([userId]), newest first.
+  Future<List<Post>> getUserPosts({required int userId, int page = 0});
+
+  /// Posts whose text matches [query].
+  Future<List<Post>> searchPosts({required String query, int page = 0});
+
   /// [imagePath] is a local file path (e.g. from the gallery picker); when
   /// present the image is uploaded together with the post.
   Future<void> createPost({required String content, String? imagePath});

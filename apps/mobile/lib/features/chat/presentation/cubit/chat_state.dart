@@ -15,6 +15,14 @@ class ChatState extends Equatable {
   final String? loadErrorMessage;
   final String? actionErrorMessage;
 
+  /// Unread messages across every conversation — what the bottom-nav badge
+  /// shows. Derived from the same list the Chat tab renders, so there is no
+  /// second counter to keep in sync.
+  int get totalUnreadCount => conversations.fold(
+        0,
+        (total, conversation) => total + conversation.unreadCount,
+      );
+
   ChatState copyWith({
     List<Conversation>? conversations,
     bool? isLoading,

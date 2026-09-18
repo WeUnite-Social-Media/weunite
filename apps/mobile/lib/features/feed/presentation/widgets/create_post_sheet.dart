@@ -89,14 +89,24 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  if (state.imagePath != null)
+                  if (state.imagePath != null) ...[
                     _ImagePreview(
                       path: state.imagePath!,
                       onRemove: state.isSubmitting
                           ? null
                           : context.read<CreatePostCubit>().removeImage,
-                    )
-                  else
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: state.isSubmitting
+                            ? null
+                            : () => _pickImage(context),
+                        icon: const Icon(Icons.swap_horiz),
+                        label: const Text('Trocar imagem'),
+                      ),
+                    ),
+                  ] else
                     OutlinedButton.icon(
                       onPressed:
                           state.isSubmitting ? null : () => _pickImage(context),

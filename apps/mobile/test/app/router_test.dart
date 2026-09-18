@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:weunite_mobile/core/session/current_user_provider.dart';
 import 'package:weunite_mobile/app/app.dart';
 import 'package:weunite_mobile/app/bootstrap.dart';
 import 'package:weunite_mobile/core/error/app_exception.dart';
@@ -72,6 +73,14 @@ class _EmptyFeedRepository implements FeedRepository {
   Future<List<Post>> getMyPosts({int page = 0}) async => const [];
 
   @override
+  Future<List<Post>> getUserPosts({required int userId, int page = 0}) async =>
+      const [];
+
+  @override
+  Future<List<Post>> searchPosts({required String query, int page = 0}) async =>
+      const [];
+
+  @override
   Future<void> createPost({
     required String content,
     String? imagePath,
@@ -96,19 +105,23 @@ class _EmptyFeedRepository implements FeedRepository {
 
 class _EmptyOpportunityRepository implements OpportunityRepository {
   @override
+  Future<List<Opportunity>> getSavedOpportunities() async => const [];
+
+  @override
   Future<List<Opportunity>> getOpportunities({int page = 0}) async => const [];
 
   @override
-  Future<void> toggleSaved({
-    required int athleteId,
-    required int opportunityId,
-  }) async {}
+  Future<List<Opportunity>> getCompanyOpportunities({
+    required int companyId,
+    int page = 0,
+  }) async =>
+      const [];
 
   @override
-  Future<void> toggleSubscription({
-    required int athleteId,
-    required int opportunityId,
-  }) async {}
+  Future<bool> toggleSaved({required int opportunityId}) async => true;
+
+  @override
+  Future<bool> toggleSubscription({required int opportunityId}) async => true;
 }
 
 class _FakeChatRepository implements ChatRepository {
@@ -132,6 +145,10 @@ class _FakeChatRepository implements ChatRepository {
       const [];
 
   @override
+  Stream<ChatRealtimeEvent> watchConversationRead(int conversationId) =>
+      const Stream.empty();
+
+  @override
   Stream<ChatRealtimeEvent> watchConversation(int conversationId) =>
       const Stream.empty();
 
@@ -140,6 +157,19 @@ class _FakeChatRepository implements ChatRepository {
     required int conversationId,
     required String content,
   }) async {}
+
+  @override
+  Future<void> sendImage({
+    required int conversationId,
+    required String imagePath,
+  }) async {}
+
+  @override
+  Future<Conversation> startConversationWith(int userId) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> markConversationAsRead(int conversationId) async {}
 
   @override
   Future<void> disconnectRealtime() async {}
@@ -167,16 +197,44 @@ class _EmptyProfileRepository implements ProfileRepository {
   }
 
   @override
-  Future<void> toggleFollow({required int followedId}) async {}
+  Future<List<Profile>> searchUsers(String query) async => const [];
+
+  @override
+  Future<Profile> updateMyProfile({
+    String? name,
+    String? username,
+    String? bio,
+    bool? isPrivate,
+    double? height,
+    double? weight,
+    String? footDomain,
+    String? position,
+    DateTime? birthDate,
+    List<String>? skills,
+    String? profileImagePath,
+    String? bannerImagePath,
+  }) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Profile> deleteMyBanner() async => throw UnimplementedError();
+
+  @override
+  Future<List<String>> getAvailableSkills() async => const [];
+
+  @override
+  Future<bool> toggleFollow({required int followedId}) async => false;
 }
 
 AppDependencies _dependencies() {
+  final authRepository = _FakeAuthRepository();
   return AppDependencies(
-    authRepository: _FakeAuthRepository(),
+    authRepository: authRepository,
     feedRepository: _EmptyFeedRepository(),
     opportunityRepository: _EmptyOpportunityRepository(),
     chatRepository: _FakeChatRepository(),
     profileRepository: _EmptyProfileRepository(),
+    currentUserProvider: AuthCurrentUserProvider(authRepository),
     sessionEvents: SessionEvents(),
   );
 }

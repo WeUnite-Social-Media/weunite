@@ -38,6 +38,19 @@ class _FakeFeedRepository implements FeedRepository {
     return page == 0 ? myPosts : const [];
   }
 
+  List<Post> otherUserPosts = [_post(9)];
+  final getUserPostsCalls = <int>[];
+
+  @override
+  Future<List<Post>> getUserPosts({required int userId, int page = 0}) async {
+    getUserPostsCalls.add(userId);
+    return page == 0 ? otherUserPosts : const [];
+  }
+
+  @override
+  Future<List<Post>> searchPosts({required String query, int page = 0}) async =>
+      const [];
+
   @override
   Future<void> createPost({required String content, String? imagePath}) async {}
 
@@ -140,6 +153,54 @@ void main() {
         ),
       ],
     );
+  });
+
+  group('ProfilePostsCubit for another user', () {
+    test('loads that user posts instead of the signed-in user posts', () async {
+      final repository = _FakeFeedRepository();
+      final cubit = ProfilePostsCubit(repository, userId: 42);
+
+      await cubit.loadPosts();
+
+      expect(repository.getUserPostsCalls, [42]);
+      expect(repository.getMyPostsCalls, 0);
+      expect(cubit.state.posts.single.id, 9);
+
+      await cubit.close();
+    });
+
+    test('does not reload when the signed-in user publishes a post', () async {
+      final repository = _FakeFeedRepository();
+      final events = PostEvents();
+      final cubit = ProfilePostsCubit(repository, events: events, userId: 42);
+      await cubit.loadPosts();
+
+      events.postCreated();
+      await pumpEventQueue();
+
+      expect(repository.getUserPostsCalls, [42]);
+
+      await cubit.close();
+      await events.dispose();
+    });
+
+    test('a like on their profile shows up in the feed', () async {
+      final repository = _FakeFeedRepository()..timeline = [_post(9)];
+      final events = PostEvents();
+      final feed = FeedCubit(repository, events: events);
+      final profile = ProfilePostsCubit(repository, events: events, userId: 42);
+      await feed.loadTimeline();
+      await profile.loadPosts();
+
+      await profile.toggleLike(postId: 9);
+      await pumpEventQueue();
+
+      expect(feed.state.posts.single.likedByViewer, isTrue);
+
+      await feed.close();
+      await profile.close();
+      await events.dispose();
+    });
   });
 
   group('feed and profile stay in sync through PostEvents', () {

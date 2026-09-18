@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import 'json_converters.dart';
+import 'skill_dto.dart';
 
 part 'user_dto.g.dart';
 
@@ -18,6 +19,13 @@ class UserDto {
     this.bio,
     this.profileImg,
     this.bannerImg,
+    this.isPrivate = false,
+    this.height,
+    this.weight,
+    this.footDomain,
+    this.position,
+    this.birthDate,
+    this.skills,
   });
 
   factory UserDto.fromJson(Map<String, dynamic> json) =>
@@ -32,6 +40,15 @@ class UserDto {
   final String? bio;
   final String? profileImg;
   final String? bannerImg;
+  final bool isPrivate;
+
+  /// Athlete attributes; absent for companies.
+  final double? height;
+  final double? weight;
+  final String? footDomain;
+  final String? position;
+  final DateTime? birthDate;
+  final List<SkillDto>? skills;
 
   Map<String, dynamic> toJson() => _$UserDtoToJson(this);
 }

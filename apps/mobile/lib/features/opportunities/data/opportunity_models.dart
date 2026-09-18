@@ -16,6 +16,7 @@ class OpportunityDto {
     this.description,
     this.location,
     required this.dateEnd,
+    required this.createdAt,
     this.skills,
     required this.company,
     required this.subscribersCount,
@@ -29,6 +30,7 @@ class OpportunityDto {
   final String? description;
   final String? location;
   final DateTime dateEnd;
+  final DateTime createdAt;
 
   /// `non_null` omits the (server-initialized, never empty) `skills`
   /// collection when it would be empty; treated as `const []` in
@@ -42,12 +44,38 @@ class OpportunityDto {
       id: id,
       title: title,
       description: description,
+      companyId: company.id,
       companyName: company.name,
       companyAvatar: company.profileImg,
       location: location,
       dateEnd: dateEnd,
       skills: skills?.map((skill) => skill.name).toList() ?? const [],
       subscribersCount: subscribersCount,
+      createdAt: createdAt,
     );
   }
+}
+
+/// Subset of `SavedOpportunityDTO`, returned by
+/// `GET /saved-opportunities/athlete/{athleteId}`.
+@JsonSerializable()
+class SavedOpportunityDto {
+  const SavedOpportunityDto({required this.opportunity});
+
+  factory SavedOpportunityDto.fromJson(Map<String, dynamic> json) =>
+      _$SavedOpportunityDtoFromJson(json);
+
+  final OpportunityDto opportunity;
+}
+
+/// Subset of `SubscriberDTO` (an application to an opportunity), returned by
+/// `GET /subscriber/athlete/{athleteId}`.
+@JsonSerializable()
+class SubscriberDto {
+  const SubscriberDto({required this.opportunity});
+
+  factory SubscriberDto.fromJson(Map<String, dynamic> json) =>
+      _$SubscriberDtoFromJson(json);
+
+  final OpportunityDto opportunity;
 }

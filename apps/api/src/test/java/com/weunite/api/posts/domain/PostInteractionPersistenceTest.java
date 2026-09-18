@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.weunite.api.posts.repository.CommentRepository;
+import com.weunite.api.posts.repository.FeedPostSummaryProjection;
 import com.weunite.api.posts.repository.LikeRepository;
 import com.weunite.api.posts.repository.PostRepository;
 import com.weunite.api.posts.repository.RepostRepository;
@@ -179,5 +180,53 @@ class PostInteractionPersistenceTest {
         commentRepository.findByPostIdAndDeletedFalse(post.getId(), PageRequest.of(0, 10)).stream()
             .map(Comment::getId)
             .toList());
+  }
+
+  @Test
+  @DisplayName("Should keep the author name and username apart in feed summaries")
+  void keepAuthorNameAndUsernameApartInFeedSummaries() {
+    // Unquoted native aliases are case-folded by the database, so an alias like
+    // "userName" collides with "username" and the display name is lost.
+    User author =
+        userRepository.save(
+            new User("Author Display Name", "authorhandle", "authorhandle@example.com", "p"));
+    postRepository.saveAndFlush(new Post(author, "Hello"));
+    entityManager.clear();
+
+    FeedPostSummaryProjection fromFeed =
+        postRepository.findFeedSummaries(null, PageRequest.of(0, 10)).getContent().get(0);
+    FeedPostSummaryProjection fromProfile =
+        postRepository
+            .findFeedSummariesByUserId(null, author.getId(), PageRequest.of(0, 10))
+            .getContent()
+            .get(0);
+
+    for (FeedPostSummaryProjection summary : List.of(fromFeed, fromProfile)) {
+      assertEquals("Author Display Name", summary.getAuthorName());
+      assertEquals("authorhandle", summary.getUsername());
+    }
+  }
+
+  @Test
+  @DisplayName("Should search posts by text, ignoring case and deleted posts")
+  void searchPostsByText() {
+    User author =
+        userRepository.save(new User("Searcher", "searcher", "searcher@example.com", "p"));
+    postRepository.save(new Post(author, "Peneira de futebol amanha"));
+    postRepository.save(new Post(author, "Nada a ver"));
+    Post deleted = postRepository.save(new Post(author, "Peneira cancelada"));
+    deleted.setDeleted(true);
+    postRepository.saveAndFlush(deleted);
+    entityManager.clear();
+
+    List<String> found =
+        postRepository
+            .searchFeedSummaries(null, "PENEIRA", PageRequest.of(0, 10))
+            .getContent()
+            .stream()
+            .map(FeedPostSummaryProjection::getText)
+            .toList();
+
+    assertEquals(List.of("Peneira de futebol amanha"), found);
   }
 }
