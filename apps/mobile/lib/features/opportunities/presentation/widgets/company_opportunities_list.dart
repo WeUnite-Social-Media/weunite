@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../domain/repositories/opportunity_repository.dart';
 import '../cubit/company_opportunities_cubit.dart';
 import 'opportunity_card.dart';
@@ -13,8 +14,8 @@ import 'opportunity_card.dart';
 /// bumps the counter and this list fetches again, so an opportunity created
 /// elsewhere shows up without leaving the profile.
 ///
-/// The cards are read-only here: tapping one opens the detail sheet. Saving and
-/// applying stay in the Opportunities tab, which owns that state.
+/// An athlete viewer gets the same save and apply actions as the Opportunities
+/// tab; a company viewer only sees the cards (those endpoints are athlete-only).
 class CompanyOpportunitiesList extends StatefulWidget {
   const CompanyOpportunitiesList({
     required this.companyId,
@@ -60,7 +61,16 @@ class _CompanyOpportunitiesListState extends State<CompanyOpportunitiesList> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _cubit,
-      child: const _CompanyOpportunitiesView(),
+      child: BlocListener<CompanyOpportunitiesCubit, CompanyOpportunitiesState>(
+        listenWhen: (_, current) => current.actionErrorMessage != null,
+        listener: (context, state) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.actionErrorMessage!)),
+          );
+          context.read<CompanyOpportunitiesCubit>().dismissActionError();
+        },
+        child: const _CompanyOpportunitiesView(),
+      ),
     );
   }
 }
@@ -72,6 +82,8 @@ class _CompanyOpportunitiesView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<CompanyOpportunitiesCubit, CompanyOpportunitiesState>(
       builder: (context, state) {
+        final isAthlete =
+            context.read<AuthCubit>().state.user?.isCompany == false;
         if (state.isLoading && !state.hasLoaded) {
           return const Padding(
             padding: EdgeInsets.all(32),
@@ -105,12 +117,37 @@ class _CompanyOpportunitiesView extends StatelessWidget {
           );
         }
 
+        final cubit = context.read<CompanyOpportunitiesCubit>();
         return Column(
           children: [
             for (final opportunity in state.opportunities)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: OpportunityCard(opportunity: opportunity),
+                child: OpportunityCard(
+                  opportunity: opportunity,
+                  isPending: state.pendingIds.contains(opportunity.id),
+                  onToggleSaved: isAthlete
+                      ? () => cubit.toggleSaved(opportunityId: opportunity.id)
+                      : null,
+                  onToggleSubscription: isAthlete
+                      ? () => cubit.toggleSubscription(
+                            opportunityId: opportunity.id,
+                          )
+                      : null,
+                  onOpenDetail: () => showOpportunityDetail(
+                    context,
+                    opportunity: opportunity,
+                    onToggleSaved: isAthlete
+                        ? () => cubit.toggleSaved(opportunityId: opportunity.id)
+                        : null,
+                    onToggleSubscription: isAthlete
+                        ? () => cubit.toggleSubscription(
+                              opportunityId: opportunity.id,
+                            )
+                        : null,
+                    isPending: state.pendingIds.contains(opportunity.id),
+                  ),
+                ),
               ),
           ],
         );

@@ -15,9 +15,32 @@ class OpportunityRepositoryImpl implements OpportunityRepository {
 
   @override
   Future<List<Opportunity>> getOpportunities({int page = 0}) async {
-    final athleteId = _currentUserProvider.currentUserId;
     final opportunities = await _remoteDataSource.getOpportunities(page: page);
-    final entities = opportunities.map((item) => item.toEntity()).toList();
+    return _withViewerFlags(
+      opportunities.map((item) => item.toEntity()).toList(),
+    );
+  }
+
+  @override
+  Future<List<Opportunity>> getCompanyOpportunities({
+    required int companyId,
+    int page = 0,
+  }) async {
+    final opportunities = await _remoteDataSource.getCompanyOpportunities(
+      companyId: companyId,
+      page: page,
+    );
+    // Same flags as the main listing, so saving and applying work from a
+    // company profile exactly like they do on the Opportunities tab.
+    return _withViewerFlags(
+      opportunities.map((item) => item.toEntity()).toList(),
+    );
+  }
+
+  Future<List<Opportunity>> _withViewerFlags(
+    List<Opportunity> entities,
+  ) async {
+    final athleteId = _currentUserProvider.currentUserId;
     if (athleteId == null) {
       return entities;
     }
@@ -49,18 +72,6 @@ class OpportunityRepositoryImpl implements OpportunityRepository {
           ),
         )
         .toList();
-  }
-
-  @override
-  Future<List<Opportunity>> getCompanyOpportunities({
-    required int companyId,
-    int page = 0,
-  }) async {
-    final opportunities = await _remoteDataSource.getCompanyOpportunities(
-      companyId: companyId,
-      page: page,
-    );
-    return opportunities.map((item) => item.toEntity()).toList();
   }
 
   Future<Set<int>> _idsOrEmpty(Future<Set<int>> Function() load) async {

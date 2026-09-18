@@ -19,6 +19,7 @@ class Profile extends Equatable {
     this.position,
     this.birthDate,
     this.skills = const [],
+    this.isFollowing = false,
   });
 
   final int id;
@@ -41,6 +42,53 @@ class Profile extends Equatable {
   final DateTime? birthDate;
   final List<String> skills;
 
+  /// Whether the signed-in user follows this profile (always false on my own).
+  final bool isFollowing;
+
+  /// Age in whole years, the way the web "Sobre" section shows it.
+  int? get age {
+    final birth = birthDate;
+    if (birth == null) {
+      return null;
+    }
+    final now = DateTime.now();
+    var years = now.year - birth.year;
+    final hadBirthday = now.month > birth.month ||
+        (now.month == birth.month && now.day >= birth.day);
+    if (!hadBirthday) {
+      years--;
+    }
+    return years < 0 ? null : years;
+  }
+
+  bool get isAthlete => !isCompany;
+
+  Profile copyWith({
+    int? followersCount,
+    bool? isFollowing,
+  }) {
+    return Profile(
+      id: id,
+      name: name,
+      username: username,
+      role: role,
+      email: email,
+      bio: bio,
+      profileImg: profileImg,
+      bannerImg: bannerImg,
+      followersCount: followersCount ?? this.followersCount,
+      followingCount: followingCount,
+      isPrivate: isPrivate,
+      height: height,
+      weight: weight,
+      footDomain: footDomain,
+      position: position,
+      birthDate: birthDate,
+      skills: skills,
+      isFollowing: isFollowing ?? this.isFollowing,
+    );
+  }
+
   bool get isCompany => role.toUpperCase().contains('COMPANY');
 
   @override
@@ -62,5 +110,6 @@ class Profile extends Equatable {
         position,
         birthDate,
         skills,
+        isFollowing,
       ];
 }

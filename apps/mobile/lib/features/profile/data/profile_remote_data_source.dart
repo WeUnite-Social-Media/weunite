@@ -77,6 +77,29 @@ class ProfileRemoteDataSource {
     }
   }
 
+  /// `GET /follow/get/{followerId}/{followedId}`. The API answers with the
+  /// raw FollowDTO (not the `{message, data}` envelope) and 200 + null body
+  /// when there is no follow, the same shape the web client reads.
+  Future<bool> isFollowing({
+    required int followerId,
+    required int followedId,
+  }) async {
+    try {
+      final response =
+          await _dio.get<Object?>('/follow/get/$followerId/$followedId');
+      final body = response.data;
+      if (body is! Map<String, Object?>) {
+        return false;
+      }
+      final follow = body['data'] is Map<String, Object?>
+          ? body['data']! as Map<String, Object?>
+          : body;
+      return follow['status'] == 'ACCEPTED';
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
   Future<void> toggleFollow({
     required int followerId,
     required int followedId,

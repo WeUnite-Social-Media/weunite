@@ -32,7 +32,25 @@ class ProfileRepositoryImpl implements ProfileRepository {
     return (results[0] as UserDto).toProfile(
       followersCount: results[1] as int,
       followingCount: results[2] as int,
+      isFollowing: await _isFollowing(userId),
     );
+  }
+
+  /// Whether the signed-in user follows [userId]. Never throws: on my own
+  /// profile, or when the call fails, the button simply shows "Seguir".
+  Future<bool> _isFollowing(int userId) async {
+    final myId = _currentUserProvider.currentUserId;
+    if (myId == null || myId == userId) {
+      return false;
+    }
+    try {
+      return await _remoteDataSource.isFollowing(
+        followerId: myId,
+        followedId: userId,
+      );
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
@@ -49,9 +67,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<void> toggleFollow({required int followedId}) {
-    return _remoteDataSource.toggleFollow(
-      followerId: _currentUserProvider.requireUserId(),
+  Future<bool> toggleFollow({required int followedId}) async {
+    final followerId = _currentUserProvider.requireUserId();
+    await _remoteDataSource.toggleFollow(
+      followerId: followerId,
+      followedId: followedId,
+    );
+    // Read the truth back instead of assuming the opposite: the web client
+    // infers it from the response message, which is brittle.
+    return _remoteDataSource.isFollowing(
+      followerId: followerId,
       followedId: followedId,
     );
   }

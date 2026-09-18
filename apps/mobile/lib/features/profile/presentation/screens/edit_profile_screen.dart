@@ -16,6 +16,9 @@ const kMaxProfileImageBytes = 10 * 1024 * 1024;
 
 /// Form for the signed-in user's profile: name, username, bio, privacy,
 /// athlete attributes, skills, avatar and banner.
+/// Dominant foot options, matching the web select in `EditProfile.tsx`.
+const kFootDomainOptions = ['Direito', 'Esquerdo', 'Ambos'];
+
 class EditProfileScreen extends StatelessWidget {
   const EditProfileScreen({required this.profile, super.key});
 
@@ -50,7 +53,7 @@ class _EditProfileViewState extends State<_EditProfileView> {
   late final TextEditingController _height;
   late final TextEditingController _weight;
   late final TextEditingController _position;
-  late final TextEditingController _footDomain;
+  String _footDomain = '';
   late bool _isPrivate;
   DateTime? _birthDate;
 
@@ -66,7 +69,7 @@ class _EditProfileViewState extends State<_EditProfileView> {
     _height = TextEditingController(text: _number(profile.height));
     _weight = TextEditingController(text: _number(profile.weight));
     _position = TextEditingController(text: profile.position ?? '');
-    _footDomain = TextEditingController(text: profile.footDomain ?? '');
+    _footDomain = profile.footDomain ?? '';
     _isPrivate = profile.isPrivate;
     _birthDate = profile.birthDate;
   }
@@ -88,7 +91,6 @@ class _EditProfileViewState extends State<_EditProfileView> {
     _height.dispose();
     _weight.dispose();
     _position.dispose();
-    _footDomain.dispose();
     super.dispose();
   }
 
@@ -145,7 +147,7 @@ class _EditProfileViewState extends State<_EditProfileView> {
           height: double.tryParse(_height.text.trim().replaceAll(',', '.')),
           weight: double.tryParse(_weight.text.trim().replaceAll(',', '.')),
           position: _position.text.trim(),
-          footDomain: _footDomain.text.trim(),
+          footDomain: _footDomain.trim(),
           birthDate: _birthDate,
           isAthlete: _isAthlete,
         );
@@ -239,18 +241,28 @@ class _EditProfileViewState extends State<_EditProfileView> {
                       Expanded(
                         child: TextFormField(
                           controller: _height,
-                          keyboardType: TextInputType.number,
-                          decoration:
-                              const InputDecoration(labelText: 'Altura (cm)'),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          // Metres, like the web form — "Sobre" renders the
+                          // value as "1.82m" on both clients.
+                          decoration: const InputDecoration(
+                            labelText: 'Altura (m)',
+                            hintText: 'Ex: 1.82',
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextFormField(
                           controller: _weight,
-                          keyboardType: TextInputType.number,
-                          decoration:
-                              const InputDecoration(labelText: 'Peso (kg)'),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Peso (kg)',
+                            hintText: 'Ex: 78',
+                          ),
                         ),
                       ),
                     ],
@@ -258,13 +270,25 @@ class _EditProfileViewState extends State<_EditProfileView> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _position,
-                    decoration: const InputDecoration(labelText: 'Posicao'),
+                    decoration: const InputDecoration(
+                      labelText: 'Posicao',
+                      hintText: 'Ex: Atacante',
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _footDomain,
+                  DropdownButtonFormField<String>(
+                    // The web offers exactly these three options.
+                    initialValue: kFootDomainOptions.contains(_footDomain)
+                        ? _footDomain
+                        : null,
                     decoration:
-                        const InputDecoration(labelText: 'Perna dominante'),
+                        const InputDecoration(labelText: 'Pe dominante'),
+                    items: [
+                      for (final option in kFootDomainOptions)
+                        DropdownMenuItem(value: option, child: Text(option)),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _footDomain = value ?? ''),
                   ),
                   const SizedBox(height: 12),
                   ListTile(

@@ -5,6 +5,7 @@ extension UserDtoToProfile on UserDto {
   Profile toProfile({
     required int followersCount,
     required int followingCount,
+    bool isFollowing = false,
   }) {
     return Profile(
       id: id,
@@ -24,6 +25,7 @@ extension UserDtoToProfile on UserDto {
       position: position,
       birthDate: birthDate,
       skills: skills?.map((skill) => skill.name).toList() ?? const [],
+      isFollowing: isFollowing,
     );
   }
 }

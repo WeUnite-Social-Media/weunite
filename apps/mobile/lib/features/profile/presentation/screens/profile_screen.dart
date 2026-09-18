@@ -7,9 +7,10 @@ import '../../../opportunities/presentation/widgets/company_opportunities_list.d
 import '../../domain/entities/profile.dart';
 import '../cubit/profile_cubit.dart';
 import '../cubit/profile_posts_cubit.dart';
-import 'edit_profile_screen.dart';
+import '../widgets/about_profile.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_posts_list.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -129,9 +130,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _postsTab => const ProfilePostsList(
                           emptyMessage: 'Voce ainda nao publicou nada.',
                         ),
-                      1 => _CenteredMessage(
-                          state.profile?.bio ?? 'Sem bio ainda.',
-                        ),
+                      1 => state.profile == null
+                          ? const SizedBox.shrink()
+                          : AboutProfile(profile: state.profile!),
                       _ => CompanyOpportunitiesList(
                           companyId: state.profile!.id,
                           refreshTick: _refreshTick,
@@ -162,20 +163,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
-    );
-  }
-}
-
-class _CenteredMessage extends StatelessWidget {
-  const _CenteredMessage(this.message);
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 16),
-      child: Center(child: Text(message, textAlign: TextAlign.center)),
     );
   }
 }

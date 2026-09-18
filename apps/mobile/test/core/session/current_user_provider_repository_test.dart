@@ -87,7 +87,14 @@ void main() {
 
       await repository.toggleFollow(followedId: 99);
 
-      expect(recorder.lastPath, '/api/follow/followAndUnfollow/11/99');
+      // Toggles, then reads the resulting state back from the API.
+      expect(
+        recorder.paths,
+        containsAllInOrder(<String>[
+          '/api/follow/followAndUnfollow/11/99',
+          '/api/follow/get/11/99',
+        ]),
+      );
     });
 
     test(

@@ -216,7 +216,7 @@ class _EmptyProfileRepository implements ProfileRepository {
   Future<List<String>> getAvailableSkills() async => const [];
 
   @override
-  Future<void> toggleFollow({required int followedId}) async {}
+  Future<bool> toggleFollow({required int followedId}) async => false;
 }
 
 AppDependencies _dependencies() {
