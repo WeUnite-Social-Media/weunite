@@ -123,7 +123,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ProfileTabs(
                     labels: labels,
                     currentIndex: tabIndex,
-                    onChanged: (index) => setState(() => _tabIndex = index),
+                    onChanged: (index) => setState(() {
+                      // Selecting the opportunities/saved tab refetches, so a
+                      // save made elsewhere (web, another screen) shows up
+                      // without a pull-to-refresh.
+                      if (index != _tabIndex && index >= 2) {
+                        _refreshTick++;
+                      }
+                      _tabIndex = index;
+                    }),
                   ),
                   switch (tabIndex) {
                     _postsTab => const ProfilePostsList(

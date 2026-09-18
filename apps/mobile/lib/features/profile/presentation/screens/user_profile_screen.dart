@@ -130,8 +130,12 @@ class _UserProfileViewState extends State<_UserProfileView> {
                             ProfileTabs(
                               labels: labels,
                               currentIndex: tabIndex,
-                              onChanged: (index) =>
-                                  setState(() => _tabIndex = index),
+                              onChanged: (index) => setState(() {
+                                if (index != _tabIndex && index >= 2) {
+                                  _refreshTick++;
+                                }
+                                _tabIndex = index;
+                              }),
                             ),
                             switch (tabIndex) {
                               _postsTab => const ProfilePostsList(
