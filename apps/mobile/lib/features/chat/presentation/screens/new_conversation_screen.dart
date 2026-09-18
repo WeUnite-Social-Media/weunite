@@ -51,9 +51,10 @@ class _NewConversationViewState extends State<_NewConversationView> {
     if (conversationId == null || !context.mounted) {
       return;
     }
-    // Replace: coming back from the conversation should land on the list, not
-    // on the search again.
-    context.pushReplacement('/chat/$conversationId');
+    // Hand the id back to the Chat tab and close: it owns ChatCubit, so it can
+    // open the conversation and refresh the list afterwards. Coming back from
+    // the conversation then lands on the list, not on this search again.
+    context.pop(conversationId);
   }
 
   @override

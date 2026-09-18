@@ -41,8 +41,16 @@ class UserProfileScreen extends StatelessWidget {
   }
 }
 
-class _UserProfileView extends StatelessWidget {
+class _UserProfileView extends StatefulWidget {
   const _UserProfileView();
+
+  @override
+  State<_UserProfileView> createState() => _UserProfileViewState();
+}
+
+class _UserProfileViewState extends State<_UserProfileView> {
+  /// Bumped on pull-to-refresh so the company opportunities list reloads too.
+  int _refreshTick = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -72,10 +80,13 @@ class _UserProfileView extends StatelessWidget {
                         return false;
                       },
                       child: RefreshIndicator(
-                        onRefresh: () => Future.wait([
-                          context.read<UserProfileCubit>().load(),
-                          context.read<ProfilePostsCubit>().loadPosts(),
-                        ]),
+                        onRefresh: () {
+                          setState(() => _refreshTick++);
+                          return Future.wait([
+                            context.read<UserProfileCubit>().load(),
+                            context.read<ProfilePostsCubit>().loadPosts(),
+                          ]);
+                        },
                         child: ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.only(bottom: 24),
@@ -93,6 +104,7 @@ class _UserProfileView extends StatelessWidget {
                               ),
                               CompanyOpportunitiesList(
                                 companyId: state.profile!.id,
+                                refreshTick: _refreshTick,
                               ),
                             ],
                             Padding(

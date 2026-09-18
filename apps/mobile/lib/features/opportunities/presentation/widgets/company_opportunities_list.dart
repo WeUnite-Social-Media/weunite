@@ -9,20 +9,57 @@ import 'opportunity_card.dart';
 /// (own profile tab or `/profile/:userId`). It owns its cubit so both screens
 /// just drop it in with a [companyId].
 ///
+/// [refreshTick] is how the host screen asks for a reload: its pull-to-refresh
+/// bumps the counter and this list fetches again, so an opportunity created
+/// elsewhere shows up without leaving the profile.
+///
 /// The cards are read-only here: tapping one opens the detail sheet. Saving and
 /// applying stay in the Opportunities tab, which owns that state.
-class CompanyOpportunitiesList extends StatelessWidget {
-  const CompanyOpportunitiesList({required this.companyId, super.key});
+class CompanyOpportunitiesList extends StatefulWidget {
+  const CompanyOpportunitiesList({
+    required this.companyId,
+    this.refreshTick = 0,
+    super.key,
+  });
 
   final int companyId;
+  final int refreshTick;
+
+  @override
+  State<CompanyOpportunitiesList> createState() =>
+      _CompanyOpportunitiesListState();
+}
+
+class _CompanyOpportunitiesListState extends State<CompanyOpportunitiesList> {
+  late final CompanyOpportunitiesCubit _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = CompanyOpportunitiesCubit(
+      context.read<OpportunityRepository>(),
+      companyId: widget.companyId,
+    )..load();
+  }
+
+  @override
+  void didUpdateWidget(covariant CompanyOpportunitiesList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshTick != widget.refreshTick) {
+      _cubit.load();
+    }
+  }
+
+  @override
+  void dispose() {
+    _cubit.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => CompanyOpportunitiesCubit(
-        context.read<OpportunityRepository>(),
-        companyId: companyId,
-      )..load(),
+    return BlocProvider.value(
+      value: _cubit,
       child: const _CompanyOpportunitiesView(),
     );
   }

@@ -101,9 +101,13 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
 
 /// Entry point for item 19: a people search that belongs to the Chat tab.
 Future<void> _openNewConversation(BuildContext context) async {
-  await context.push<void>('/chat/new');
+  // The search pops with the conversation it opened (or created), so the list
+  // — which owns ChatCubit — pushes the conversation and reloads afterwards.
+  final conversationId = await context.push<int>('/chat/new');
+  if (conversationId != null && context.mounted) {
+    await context.push<void>('/chat/$conversationId');
+  }
   if (context.mounted) {
-    // A conversation may have been created while we were away.
     await context.read<ChatCubit>().loadConversations();
   }
 }

@@ -24,6 +24,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _scrollController = ScrollController();
   int _tabIndex = _postsTab;
 
+  /// Bumped on pull-to-refresh so the company opportunities list reloads too.
+  int _refreshTick = 0;
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _refresh() {
+    setState(() => _refreshTick++);
     return Future.wait([
       context.read<ProfileCubit>().loadMyProfile(),
       context.read<ProfilePostsCubit>().loadPosts(),
@@ -130,6 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       _ => CompanyOpportunitiesList(
                           companyId: state.profile!.id,
+                          refreshTick: _refreshTick,
                         ),
                     },
                   ],
