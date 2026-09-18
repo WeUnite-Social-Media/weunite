@@ -2,7 +2,7 @@
 
 > **Leia `HANDOFF.md` primeiro** (contexto completo). Este arquivo é o status resumido por item. Depois confira `git log` e `git status` na branch indicada e continue do **Próximo item**.
 
-_Atualizado em 2026-09-17, após o commit `19b6435`._
+_Atualizado em 2026-09-18, após o commit `3aa1c37` — **PR [#38](https://github.com/WeUnite-Social-Media/weunite/pull/38)** aberto._
 
 ## Contexto para retomar
 
@@ -55,6 +55,13 @@ Legenda: ✅ concluído e validado no emulador · 🟡 parcial · ⏳ pendente �
 | 26 | Peneiras — inscrição do atleta | ✅ | A ação existia só no detalhe, abaixo da dobra. Agora o **card** tem "Candidatar-se" (como o card da web) e no detalhe o botão é fixo no rodapé; rótulos iguais aos da web. Validado: candidatura gravada em `subscriber` a partir do perfil da empresa. |
 | 27 | Peneiras — salvar | ✅ | O bookmark já existia na aba Oportunidades; passou a existir também nas oportunidades listadas no perfil da empresa (para quem vê como atleta), com as flags resolvidas igual à listagem principal. |
 
+| 29 | Abas no perfil de outro usuário | ✅ | `ProfileTabs` extraído do meu perfil e usado nos dois: Posts / Sobre / Oportunidades (empresa). Só o conteúdo da aba selecionada aparece. Mesma divisão do `FeedProfile.tsx` da web (que também só mostra a aba de oportunidades em perfil de empresa). |
+| 30 | Aba "Salvos" no meu perfil | ✅ | `SavedOpportunitiesCubit` + `SavedOpportunitiesList` sobre `GET /saved-opportunities/athlete/{id}` — o mesmo endpoint da página "Oportunidades salvas" da web, através do método de data source que já alimentava as flags. Abre o detalhe, remove dos salvos (a web não permite), estado vazio com o texto da web, e recarrega ao selecionar a aba. |
+| 31 | Status de visualização no chat | ✅ | Duplo check nas minhas mensagens (cinza → verde), campo `isRead` do `MessageDTO`, igual ao `Message.tsx` da web. Além disso o app assina `/topic/conversation/{id}/read` — tópico que a API **já publicava** e a web não escuta — e publica em `/app/chat.markAsRead` junto do PUT REST, então o check fica verde em tempo real. |
+| 32 | Badge de não lidas na navegação | ✅ | Badge vermelho (com corte "9+", como a web faz no badge de notificações) no ícone de Chat, derivado de `ChatState.totalUnreadCount` — a soma do `unreadCount` das conversas já mantidas pelo `ChatCubit`. Sem contador paralelo e sem requisição extra. A web não tem esse badge. |
+
+> Não houve item 24 nem 28 na lista enviada pelo usuário.
+
 ## Próximo item
 
 Itens 1–27 concluídos e validados no emulador. Sugestão de continuidade (paridade com a web):
@@ -93,6 +100,10 @@ Itens 1–27 concluídos e validados no emulador. Sugestão de continuidade (par
 - (2026-09-18) Follow: estado vem de `GET /follow/get/{a}/{b}` e é **relido** após o toggle; a web deduz pela string da mensagem ("Seguiu"), o que é frágil.
 - (2026-09-18) Altura é gravada em **metros** (a web usa metros e renderiza "1.82m"); o mobile gravava centímetros.
 - (2026-09-18) O pé dominante virou seleção com as 3 opções da web, mantendo como opção o valor já salvo para não apagar dado legado.
+- (2026-09-18) `ProfileTabs` é um só componente para os dois perfis; a web faz igual (`FeedProfile` serve o meu perfil e o de terceiros, mudando só pela role do dono).
+- (2026-09-18) A aba de oportunidades/salvos recarrega ao ser **selecionada** (bump do `refreshTick`): sem isso, algo salvo no desktop não aparecia até dar pull-to-refresh.
+- (2026-09-18) O recibo de leitura usa o tópico `/topic/conversation/{id}/read` que o backend já publicava; o mobile passou a publicar em `/app/chat.markAsRead` **além** do PUT REST, porque o REST não faz broadcast. Nada novo foi criado na API.
+- (2026-09-18) O badge da navegação lê `ChatState.totalUnreadCount` (soma do `unreadCount` das conversas). Não criar contador próprio para a barra.
 
 ## Registro de trabalho
 
@@ -114,6 +125,18 @@ Itens 1–27 concluídos e validados no emulador. Sugestão de continuidade (par
 - `e64e59f` — itens 19 e 20 (UI): `UserSearchCubit`, `NewConversationScreen`, rota `/chat/new`, barra/FAB na aba Chat, `CompanyOpportunitiesCubit` + `CompanyOpportunitiesList` nas telas de perfil, `CurrentUserProvider` no provider tree.
 - `2c8f203` — correções achadas no emulador: a lista de conversas não recarregava depois de criar, e as oportunidades da empresa não recarregavam no pull-to-refresh.
 - `c9282c2` — itens 21, 22, 23, 25, 26 e 27: `UserProfileActions` (Seguir/Conversar), leitura e toggle de follow, `AboutProfile`, editar perfil em metros + seleção de pé dominante, `SubscribeButton` no card e fixo no detalhe, ações nas oportunidades do perfil da empresa.
+
+## Git, PR e configuração de agentes
+
+- Branch: `feat/mobile-backlog`, empilhada em `feat/mobile-post-image-and-profile-posts` (base do PR).
+- **PR [#38](https://github.com/WeUnite-Social-Media/weunite/pull/38)** — "feat(mobile): fecha o backlog de 27 itens usando o desktop como referencia": 18 commits, 109 arquivos, nenhum arquivo de `apps/web`.
+- Não havia PR anterior para esta branch (os PRs #33, #35 e #37 são das branches anteriores da pilha e não foram tocados).
+- Commits desta última etapa: `3bd096f` (abas + aba Salvos), `4187800` (duplo check + badge), `3aa1c37` (recarregar a aba ao selecionar).
+- **Agentes:** nenhuma configuração de agente/modelo foi alterada em disco nesta sessão — não existe `.claude/agents` no repositório nem no perfil do usuário, e `~/.claude/settings.json` só tem `autoUpdatesChannel` e `theme` (inalterados). O uso de agentes mais fortes foi apenas a execução de subagentes de leitura dentro da sessão, que não persiste configuração. Portanto **não há o que restaurar**; nada foi adivinhado.
+
+## CI conhecida (falha pré-existente)
+
+O check `validate` do GitHub Actions falha em `@weunite/mobile#lint` com `sh: 1: flutter: not found`: o `ci.yml` instala pnpm/Node/Java mas não o Flutter, e os scripts do pacote mobile chamam `flutter`. **Não é causado por este trabalho** — o mesmo check falha no PR #37, de uma branch anterior. Correção sugerida: passo `subosito/flutter-action@v2` no workflow. Detalhes na seção 39 do `HANDOFF.md`.
 
 ## Testes
 

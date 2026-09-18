@@ -1,5 +1,7 @@
 # HANDOFF — WeUnite mobile (sessão 2026-09-16/18)
 
+> Estado final: backlog 1–32 concluído e validado (mobile e desktop). **PR [#38](https://github.com/WeUnite-Social-Media/weunite/pull/38)**.
+
 > Documento de transferência de contexto. Foi escrito para que **outro agente/desenvolvedor continue sem ter acesso ao histórico da conversa**. Leia inteiro antes de mudar código. Complemento: `PROGRESS.md` (status resumido por item).
 
 ---
@@ -144,7 +146,27 @@ Além disso, a aba **"Sobre"** (que mostrava só a bio) passou a replicar o `Abo
 **Referência na web:** ícone `Bookmark` no card, só para atleta (`OpportunityCard.tsx`); o detalhe da web **não** tem o botão.
 **Feito:** o bookmark já existia na aba Oportunidades (item 7); o que faltava era nas oportunidades listadas **no perfil da empresa** — agora aparecem lá para quem vê como atleta, com `isSaved`/`isSubscribed` resolvidos pela mesma rotina da listagem principal (`_withViewerFlags`). Validado no emulador.
 
-> Observação: não houve item 24 na lista enviada pelo usuário.
+### 29. Abas no perfil de outro usuário — [CONCLUÍDO]
+Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
+**Referência na web:** `apps/web/src/features/profile/components/FeedProfile.tsx` — um único conjunto de abas para qualquer perfil (Publicações / Comentários / Sobre, + Oportunidades quando o dono é empresa); a aba inicial é sempre a primeira, e o que muda entre meu perfil e o de outro fica só no cabeçalho.
+**Feito:** o `TabBar` do meu perfil virou o componente `ProfileTabs`, usado nas duas telas. `/profile/:userId` passou a ter Posts / Sobre / Oportunidades (empresa), mostrando só a aba selecionada. Validado no emulador.
+**Diferença que permanece:** o mobile não tem a aba "Comentários" que a web tem (não foi pedida; `GET /comment/get/user/{id}` existe caso queiram).
+
+### 30. Aba de oportunidades salvas no meu perfil — [CONCLUÍDO]
+**Referência na web:** não existe aba de salvos no perfil; a funcionalidade vive em `/opportunity/saved` (`SavedOpportunitiesPage.tsx`, `useGetSavedOpportunities` → `GET /saved-opportunities/athlete/{id}`, guard de atleta, vazio "Nenhuma oportunidade salva ainda").
+**Feito:** aba "Salvos" no meu perfil com `SavedOpportunitiesCubit` + `SavedOpportunitiesList` sobre **o mesmo endpoint**, reaproveitando o método de data source que já alimentava as flags `isSaved`. Abre o detalhe, mostra o vazio com o texto da web e recarrega ao selecionar a aba.
+**Diferença consciente:** aqui dá para **remover dos salvos** (a web não deixa — o bookmark da página dela é decorativo), porque o item pedia que a aba se atualizasse ao remover.
+
+### 31. Status de visualização das mensagens — [CONCLUÍDO]
+**Referência na web:** `apps/web/src/features/chat/components/Message.tsx` — dois ícones `Check` nas mensagens que eu enviei, cinza quando `message.read` é falso e verde quando é verdadeiro. Não existe "enviada/entregue" separado, nem na web nem na API.
+**Campos da API:** `MessageDTO.isRead` e `readAt` (`Message.java`), atualizados por `MessageService.markMessagesAsRead` (mensagens da conversa cujo remetente != leitor).
+**Feito:** mesmo duplo check no mobile. Como a web marca como lida só por REST (`PUT /conversations/{id}/read/{userId}`), o remetente dela nunca vê o check virar verde sem refetch; o mobile passou a publicar também em `/app/chat.markAsRead` e a assinar `/topic/conversation/{id}/read` — **ambos já existiam no backend** (`ChatController`), nada foi criado. Validado: a "Ana" leu por STOMP e os checks ficaram verdes na hora.
+
+### 32. Badge de não lidas na navegação — [CONCLUÍDO]
+**Referência na web:** a web **não** tem badge de chat no menu (o badge verde da sidebar é de notificações, `GET /notifications/user/{id}/unread-count`, cortado em "9+"). O `unreadCount` de chat só existe por conversa, em `GET /conversations/user/{userId}`.
+**Feito:** badge vermelho no ícone de Chat da barra inferior, com corte "9+", lendo `ChatState.totalUnreadCount` — a soma do `unreadCount` das conversas que o `ChatCubit` já mantém e atualiza por STOMP. Sem contador paralelo, sem requisição nova. Validado: mensagem recebida com o app na Home fez o badge aparecer sozinho; abrir a conversa zerou.
+
+> Observação: não houve item 24 nem 28 na lista enviada pelo usuário.
 
 ### Requisitos/descobertas adicionais (não pedidos, encontrados em QA)
 - Feed não fazia pull-to-refresh com poucos posts — **corrigido**.
@@ -513,7 +535,9 @@ Itens 1–12 da lista acima (com testes automatizados cobrindo 1, 2, 4, 5, 6, 7,
 
 ## 25. TESTES REALIZADOS
 
-**Automatizados (mobile): `flutter test` → 197 testes, todos passando.** `flutter analyze` → 0 issues. Arquivos de teste tocados/criados: `core/theme/app_theme_test.dart` (novo), `features/profile/profile_posts_cubit_test.dart` (novo), `features/profile/open_user_profile_test.dart` (novo), `features/search/search_cubit_test.dart` (novo), `features/opportunities/opportunities_cubit_test.dart` (novo), `features/chat/chat_cubit_test.dart` (novo), `features/feed/feed_remote_data_source_test.dart` (novo), `features/feed/create_post_cubit_test.dart` (ampliado), fakes atualizados em `app/router_test.dart`, `app/session_scoped_state_test.dart`, `features/feed/*`, `features/chat/*`, `fixtures/api_payloads.dart`.
+**Automatizados (mobile): `flutter test` → 200 testes, todos passando.** `flutter analyze` → 0 issues.
+**API:** `mvn test -Dtest=PostInteractionPersistenceTest,PostServiceTest` → 20 testes, BUILD SUCCESS.
+**Web:** typecheck limpo, lint 0 erros, build OK (§32-A). `flutter analyze` → 0 issues. Arquivos de teste tocados/criados: `core/theme/app_theme_test.dart` (novo), `features/profile/profile_posts_cubit_test.dart` (novo), `features/profile/open_user_profile_test.dart` (novo), `features/search/search_cubit_test.dart` (novo), `features/opportunities/opportunities_cubit_test.dart` (novo), `features/chat/chat_cubit_test.dart` (novo), `features/feed/feed_remote_data_source_test.dart` (novo), `features/feed/create_post_cubit_test.dart` (ampliado), fakes atualizados em `app/router_test.dart`, `app/session_scoped_state_test.dart`, `features/feed/*`, `features/chat/*`, `fixtures/api_payloads.dart`.
 
 **Automatizados (API):** `PostInteractionPersistenceTest` (10) + `PostServiceTest` (10) — **passando** (rodados no container).
 
@@ -646,9 +670,27 @@ Mobile: `WEUNITE_API_URL`, `WEUNITE_WS_URL` (via `--dart-define-from-file=config
 
 ---
 
+## 32-A. VALIDAÇÃO DO DESKTOP (obrigatória)
+
+A web foi subida com `docker compose --env-file .env -f infra/docker/compose.dev.yml --profile web up -d web` (Vite em http://localhost:3000) e percorrida no navegador com a conta de atleta:
+
+| Fluxo | Resultado |
+|---|---|
+| `pnpm --filter @weunite/web typecheck` | limpo |
+| `pnpm --filter @weunite/web lint` | 0 erros, 6 warnings **pré-existentes** de `react-refresh` (`ui/form.tsx`, `ui/sidebar.tsx`, `ThemeProvider.tsx` — não tocados) |
+| `pnpm --filter @weunite/web build` | sucesso |
+| Home / feed | posts, curtidas e comentários corretos; as iniciais do avatar passaram a usar o nome real (efeito da correção de alias na API) |
+| Perfil / abas / Sobre | normais; "Sobre" mostra 1.82m / 78kg / Destro / Meio-campo — exatamente o que foi salvo pelo mobile |
+| Chat | as duas conversas (inclusive a criada pelo mobile), histórico com emoji e imagem, envio pelo desktop persistido |
+| Peneiras | listagem, "Cancelar candidatura" refletindo a candidatura feita no mobile, salvar pelo desktop com toast de sucesso |
+| Oportunidades salvas | reflete o que foi salvo/removido pelo mobile (mesma fonte de dados) |
+
+**Nenhuma regressão encontrada.** Nenhum arquivo de `apps/web` foi alterado nesta branch; o único ponto de contato com a web é a API, e o campo corrigido (`user.name` no feed) é usado por ela apenas nas iniciais do avatar.
+
 ## 33. ESTADO EXATO NO MOMENTO DA PARADA
 
-- **Todos os itens 1–27 estão implementados e validados no emulador** (o único ponto não exercitado é o botão "Trocar imagem" do compositor de post).
+- **Todos os itens 1–32 estão implementados e validados no emulador**, e o desktop foi revalidado (§32-A).
+- Marcador antigo: itens 1–27 (o único ponto não exercitado é o botão "Trocar imagem" do compositor de post).
 - Working tree limpa em `feat/mobile-backlog`; último commit de código: `c9282c2`. `flutter analyze` 0 issues, `flutter test` **197 verdes**.
 - App rodando no emulador com o build atual; API e Postgres no Docker.
 - Dados de teste no banco após a sessão: conversas 1 (Caio↔Ana) e 2 (Caio↔Marca); oportunidades 1, 2 e 3 da empresa 3; candidaturas do atleta 1 nas oportunidades 1 e 3; nenhuma linha de follow ativa (o teste terminou com "deixar de seguir").
@@ -666,7 +708,7 @@ Mobile: `WEUNITE_API_URL`, `WEUNITE_WS_URL` (via `--dart-define-from-file=config
 
 ## 34. PRÓXIMOS PASSOS (ordem)
 
-O backlog 1–27 está fechado. Continuidade sugerida, sempre olhando primeiro como a web faz:
+O backlog 1–32 está fechado. Continuidade sugerida, sempre olhando primeiro como a web faz:
 
 1. **Telas de oportunidades que só existem na web**: "Oportunidades salvas" (`/opportunity/saved`), "Minhas candidaturas" / "Minhas oportunidades" (`/opportunity/my-opportunities`) e "Ver inscritos" para a empresa dona (`/opportunity/:id/subscribers`, `GET /subscriber/subscribers/{id}`). Os dados já existem no repositório mobile (`getSavedOpportunities`, `getSubscriptions`).
 2. **Detalhe do post** (`/posts/:postId`) — ainda é placeholder.
@@ -688,6 +730,12 @@ O backlog 1–27 está fechado. Continuidade sugerida, sempre olhando primeiro c
 8. `apps/mobile/lib/features/search/presentation/cubit/search_cubit.dart` (modelo de busca com debounce — **não reutilizar direto no chat**)
 
 ---
+
+## 35-A. PR E CONFIGURAÇÃO DE AGENTES
+
+- **PR [#38](https://github.com/WeUnite-Social-Media/weunite/pull/38)** — `feat/mobile-backlog` → `feat/mobile-post-image-and-profile-posts` (a branch pai, para o diff conter só esta rodada): 18 commits, 109 arquivos, nenhum arquivo de `apps/web`. Descrição com contexto, implementação, referências do desktop reaproveitadas, passos de validação, testes e a seção "Validação Desktop".
+- Não existia PR para esta branch; os PRs #33, #35 e #37 pertencem a branches anteriores da pilha e **não foram tocados**.
+- **Agentes:** nenhuma configuração de agente/modelo foi alterada em disco nesta sessão. Não há `.claude/agents` no repositório nem no perfil, e `~/.claude/settings.json` contém apenas `autoUpdatesChannel` e `theme`, inalterados. O uso de agentes mais fortes se deu apenas por subagentes de leitura dentro da sessão, o que não persiste configuração — **não há o que restaurar**, e nada foi adivinhado.
 
 ## 36. GIT / ESTADO DO REPOSITÓRIO
 
@@ -726,6 +774,20 @@ O backlog 1–27 está fechado. Continuidade sugerida, sempre olhando primeiro c
 - Testes de widget cobrem pouco: a maior parte da cobertura é de cubits/data sources.
 
 ---
+
+## 39. CI: POR QUE O CHECK `validate` FALHA (PROBLEMA PRÉ-EXISTENTE)
+
+O workflow `.github/workflows/ci.yml` instala **pnpm, Node e Java — mas não o Flutter** — e roda `pnpm lint` / `typecheck` / `test` / `build` em todo o monorepo. Como `apps/mobile/package.json` mapeia esses scripts para `flutter analyze` / `flutter test` / `flutter build apk`, o job quebra em `@weunite/mobile#lint` com:
+
+```
+sh: 1: flutter: not found
+[ERROR] @weunite/mobile#lint: command (.../apps/mobile) pnpm run lint exited (1)
+```
+
+- **Não é causado por este trabalho.** O mesmo check falha no PR #37 (branch anterior da pilha, que não toquei) — ou seja, falha desde que o app Flutter entrou no monorepo.
+- **Como reproduzir:** abrir qualquer PR que inclua `apps/mobile` e ver o job `validate` → passo "Lint".
+- **Como corrigir (sugestão, fora do escopo deste PR porque altera CI compartilhada):** adicionar um passo `subosito/flutter-action@v2` (com a versão usada pelo time) antes do "Lint" em `ci.yml`, ou excluir `@weunite/mobile` dos alvos do turbo na CI enquanto o Flutter não for instalado no runner.
+- Enquanto isso, a validação do mobile é feita localmente: `flutter analyze` (0 issues) e `flutter test` (200 verdes).
 
 # PROMPT PARA CONTINUAR EM OUTRO CONTEXTO
 
