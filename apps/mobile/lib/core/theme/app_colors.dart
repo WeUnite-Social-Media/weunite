@@ -16,6 +16,11 @@ class AppColors {
   /// light to read there. green-800 on [accentGreenSurface] is ~7:1.
   static const accentGreenStrong = Color(0xFF166534);
   static const accentGreenSurface = Color(0xFFDCFCE7);
+
+  /// Read receipt tick. Blue instead of the brand green: on the light green
+  /// bubble of my own messages a green tick is nearly invisible at 12px.
+  static const readReceipt = Color(0xFF1D7BF5);
+
   static const border = Color(0xFFE5E5E5);
   static const destructive = Color(0xFFE7000B);
   static const sidebar = Color(0xFFFFFFFF);

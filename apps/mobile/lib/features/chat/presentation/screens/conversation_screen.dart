@@ -191,8 +191,10 @@ class _MessageBubble extends StatelessWidget {
 }
 
 /// Double tick shown on my own messages: grey when the peer has not read it
-/// yet, green once they have — the same two states the web shows (it has no
-/// separate "sent" and "delivered" states, and neither do we).
+/// yet, blue once they have — the same two states the web shows (it has no
+/// separate "sent" and "delivered" states, and neither do we). The web tints
+/// it with the brand green, which is unreadable here because my own bubble is
+/// already light green.
 class ReadReceipt extends StatelessWidget {
   const ReadReceipt({required this.isRead, super.key});
 
@@ -200,8 +202,7 @@ class ReadReceipt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isRead ? AppColors.accentGreenStrong : AppColors.mutedForeground;
+    final color = isRead ? AppColors.readReceipt : AppColors.mutedForeground;
     return Semantics(
       label: isRead ? 'Mensagem visualizada' : 'Mensagem enviada',
       child: SizedBox(
