@@ -563,7 +563,7 @@ Itens 1–12 da lista acima (com testes automatizados cobrindo 1, 2, 4, 5, 6, 7,
 
 ## 26. CHECKLIST PARA O PRÓXIMO AGENTE (testes a fazer)
 
-Pré-requisitos: API no ar (§28), emulador `Pixel_8_API_35`, app rodando, login `caiogodas` / `WeUnite@2026`.
+Pré-requisitos: API no ar (§28), emulador `Pixel_8_API_35`, app rodando, login `caiogodas` (senha de teste local, ver com o time).
 
 **Item 11 (perfil):**
 - [ ] Perfil → "Editar perfil" → alterar bio, altura, peso, posição, perna, data de nascimento, marcar habilidades → Salvar.

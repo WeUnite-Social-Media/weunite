@@ -17,7 +17,7 @@ _Atualizado em 2026-09-18, após o commit `3aa1c37` — **PR [#38](https://githu
   - As chaves JWT do `.env` foram **regeneradas** durante o QA — tokens antigos (scripts de teste) precisam ser refeitos.
 - **Rodar app:** emulador `Pixel_8_API_35`; `cd apps/mobile; flutter run -d emulator-5554 --dart-define-from-file=config/dev.json`.
 - **QA no emulador:** helpers PowerShell (adb + `uiautomator dump`) para ler elementos e tocar por label. Screenshots em `/data/local/tmp` (não `/sdcard`, para não poluir a galeria). Não usar `keyevent 111` (fecha bottom sheets).
-- **Contas de teste** (senha `WeUnite@2026`): `caiogodas` (atleta, id 1), `anateste` (atleta, id 2), `marcateste` (empresa, id 3).
+- **Contas de teste** (mesma senha de teste local para as tres; ver com o time): `caiogodas` (atleta, id 1), `anateste` (atleta, id 2), `marcateste` (empresa, id 3).
   Dados: posts 1–4; comentário da Ana no post 3; conversa id 1 (Caio↔Ana) com mensagens de texto e imagem; oportunidade id 1 (empresa 3, skill Futebol).
 - **Validação obrigatória por item:** `dart format lib test`, `flutter analyze` (0 issues), `flutter test` (tudo verde), teste manual no emulador, persistência conferida (banco/após reiniciar app), commit, atualizar este arquivo, **push**.
 - **Push:** autorizado e funcionando (GitHub CLI autenticado). Commitar e dar push a cada item.
