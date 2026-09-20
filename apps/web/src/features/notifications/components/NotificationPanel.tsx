@@ -8,9 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
 import { NotificationList } from "@/features/notifications/components/NotificationList";
-import {
-  getNotificationFilterLabel,
-} from "@/features/notifications/lib/notificationHelpers";
+import { getNotificationFilterLabel } from "@/features/notifications/lib/notificationHelpers";
 import type { NotificationFilter } from "@/features/notifications/types/notification.types";
 
 export function NotificationPanel({
@@ -40,7 +38,7 @@ export function NotificationPanel({
 
     const timeoutId = window.setTimeout(() => {
       setShouldRender(false);
-    }, 300);
+    }, 500);
 
     return () => {
       window.clearTimeout(timeoutId);
