@@ -9,13 +9,6 @@ jobs:
   validate:
     runs-on: ubuntu-latest
 
-    # `flutter build apk` needs the Android SDK. The runner ships one, but
-    # nothing points Flutter at it, and the setup-android action fails on its
-    # own sdkmanager call here.
-    env:
-      ANDROID_HOME: /usr/local/lib/android/sdk
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-
     steps:
       - uses: actions/checkout@v5
 
@@ -60,5 +53,11 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # The mobile package is covered above by lint, typecheck and its test
+      # suite. Its `build` script produces an Android APK, which needs a full
+      # Android SDK/NDK that this runner image does not provide (Flutter reports
+      # "No Android SDK found" even with ANDROID_HOME exported, and
+      # setup-android@v3 fails on its own sdkmanager call). Build the APK
+      # locally or from a dedicated release workflow - see MOBILE_TESTING.md.
       - name: Build
-        run: pnpm build
+        run: pnpm exec turbo run build --filter=!@weunite/mobile
