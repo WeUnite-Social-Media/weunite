@@ -1,16 +1,30 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/app_exception.dart';
+import '../../../../core/session/session_events.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
-  AuthCubit(this._repository) : super(const AuthState());
+  AuthCubit(this._repository, this._sessionEvents) : super(const AuthState()) {
+    _sessionExpiredSubscription = _sessionEvents.onExpired.listen((_) {
+      emit(
+        const AuthState(
+          status: AuthStatus.unauthenticated,
+          errorMessage: 'Sua sessão expirou. Entre novamente.',
+        ),
+      );
+    });
+  }
 
   final AuthRepository _repository;
+  final SessionEvents _sessionEvents;
+  late final StreamSubscription<void> _sessionExpiredSubscription;
 
   Future<void> restoreSession() async {
     emit(state.copyWith(status: AuthStatus.checking));
@@ -169,5 +183,11 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> logout() async {
     await _repository.logout();
     emit(const AuthState(status: AuthStatus.unauthenticated));
+  }
+
+  @override
+  Future<void> close() {
+    _sessionExpiredSubscription.cancel();
+    return super.close();
   }
 }

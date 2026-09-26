@@ -7,21 +7,47 @@ class Post extends Equatable {
     required this.authorName,
     required this.authorUsername,
     required this.createdAt,
+    this.authorId,
     this.authorAvatar,
     this.mediaUrl,
     this.likesCount = 0,
     this.commentsCount = 0,
+    this.likedByViewer = false,
   });
 
   final int id;
-  final String content;
+  final String? content;
   final String authorName;
   final String authorUsername;
+
+  /// Author's user id, used to open their profile. Null when unknown.
+  final int? authorId;
   final String? authorAvatar;
   final String? mediaUrl;
   final DateTime createdAt;
   final int likesCount;
   final int commentsCount;
+  final bool likedByViewer;
+
+  Post copyWith({
+    int? likesCount,
+    int? commentsCount,
+    bool? likedByViewer,
+  }) {
+    return Post(
+      id: id,
+      content: content,
+      authorName: authorName,
+      authorUsername: authorUsername,
+      createdAt: createdAt,
+      authorId: authorId,
+      authorAvatar: authorAvatar,
+      mediaUrl: mediaUrl,
+      likesCount: likesCount ?? this.likesCount,
+      commentsCount: commentsCount ?? this.commentsCount,
+      likedByViewer: likedByViewer ?? this.likedByViewer,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -29,10 +55,12 @@ class Post extends Equatable {
         content,
         authorName,
         authorUsername,
+        authorId,
         authorAvatar,
         mediaUrl,
         createdAt,
         likesCount,
         commentsCount,
+        likedByViewer,
       ];
 }

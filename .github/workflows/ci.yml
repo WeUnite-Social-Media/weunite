@@ -28,8 +28,21 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # The mobile package's lint/typecheck/test/build scripts all shell out to
+      # `flutter`, so without this the whole job fails at @weunite/mobile#lint
+      # with "flutter: not found".
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
+
+      - name: Fetch Flutter packages
+        run: flutter pub get
+        working-directory: apps/mobile
 
       - name: Lint
         run: pnpm lint
@@ -40,5 +53,11 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # The mobile package is covered above by lint, typecheck and its test
+      # suite. Its `build` script produces an Android APK, which needs a full
+      # Android SDK/NDK that this runner image does not provide (Flutter reports
+      # "No Android SDK found" even with ANDROID_HOME exported, and
+      # setup-android@v3 fails on its own sdkmanager call). Build the APK
+      # locally or from a dedicated release workflow - see MOBILE_TESTING.md.
       - name: Build
-        run: pnpm build
+        run: pnpm exec turbo run build --filter=!@weunite/mobile

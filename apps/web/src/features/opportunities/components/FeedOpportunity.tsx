@@ -10,6 +10,7 @@ import { CreateOpportunity } from "./CreateOpportunity";
 import { HorizontalMenuOpportunity } from "./HorizontalMenuOpportunity";
 import OpportunityCard from "./OpportunityCard";
 import OpportunitySearch from "./OpportunitySearch";
+import { filterOpportunities } from "../utils/opportunityFilter";
 import { OpportunitySidebar } from "./OpportunitySidebar";
 import OpportunitySuggestionCarousel from "./OpportunitySuggestionCarousel";
 
@@ -58,6 +59,10 @@ export default function FeedOpportunity() {
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const opportunities = data?.pages.flatMap((page) => page.data ?? []) ?? [];
   const [searchTerm, setSearchTerm] = useState("");
+  // The search box was rendered but never filtered anything; it now narrows the
+  // loaded opportunities with the same rule the mobile app applies.
+  const visibleOpportunities = filterOpportunities(opportunities, searchTerm);
+  const isSearching = searchTerm.trim().length > 0;
   const [isCreateOpportunityOpen, setIsCreateOpportunityOpen] = useState(false);
   const { isDesktop, isMobile, isTablet } = useBreakpoints();
   const { user } = useAuthStore();
@@ -157,11 +162,17 @@ export default function FeedOpportunity() {
             {isDesktop ? <OpportunitySidebar /> : <HorizontalMenuOpportunity />}
           </div>
 
-          {opportunities.length > 0 ? (
+          {!isSearching && opportunities.length > 0 ? (
             <OpportunitySuggestionCarousel opportunities={opportunities} />
           ) : null}
 
-          {opportunities.map((opportunity: Opportunity) => (
+          {isSearching && visibleOpportunities.length === 0 ? (
+            <div className="py-10 text-center text-sm text-muted-foreground">
+              Nenhuma oportunidade encontrada para "{searchTerm}".
+            </div>
+          ) : null}
+
+          {visibleOpportunities.map((opportunity: Opportunity) => (
             <OpportunityCard key={opportunity.id} opportunity={opportunity} />
           ))}
 

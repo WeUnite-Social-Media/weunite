@@ -3,30 +3,50 @@ part of 'opportunities_cubit.dart';
 class OpportunitiesState extends Equatable {
   const OpportunitiesState({
     this.opportunities = const [],
-    this.selectedSkill,
+    this.pendingIds = const {},
     this.isLoading = false,
-    this.errorMessage,
+    this.hasLoaded = false,
+    this.loadErrorMessage,
+    this.actionErrorMessage,
   });
 
   final List<Opportunity> opportunities;
-  final String? selectedSkill;
+
+  /// Opportunities with a save/apply request in flight (blocks double taps).
+  final Set<int> pendingIds;
   final bool isLoading;
-  final String? errorMessage;
+  final bool hasLoaded;
+  final String? loadErrorMessage;
+  final String? actionErrorMessage;
 
   OpportunitiesState copyWith({
     List<Opportunity>? opportunities,
-    String? selectedSkill,
+    Set<int>? pendingIds,
     bool? isLoading,
-    String? errorMessage,
+    bool? hasLoaded,
+    ValueGetter<String?>? loadErrorMessage,
+    ValueGetter<String?>? actionErrorMessage,
   }) {
     return OpportunitiesState(
       opportunities: opportunities ?? this.opportunities,
-      selectedSkill: selectedSkill ?? this.selectedSkill,
+      pendingIds: pendingIds ?? this.pendingIds,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
+      hasLoaded: hasLoaded ?? this.hasLoaded,
+      loadErrorMessage:
+          loadErrorMessage != null ? loadErrorMessage() : this.loadErrorMessage,
+      actionErrorMessage: actionErrorMessage != null
+          ? actionErrorMessage()
+          : this.actionErrorMessage,
     );
   }
 
   @override
-  List<Object?> get props => [opportunities, selectedSkill, isLoading, errorMessage];
+  List<Object?> get props => [
+        opportunities,
+        pendingIds,
+        isLoading,
+        hasLoaded,
+        loadErrorMessage,
+        actionErrorMessage,
+      ];
 }

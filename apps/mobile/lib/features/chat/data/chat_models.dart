@@ -1,88 +1,191 @@
+import 'dart:convert';
+
+import 'package:json_annotation/json_annotation.dart';
+
+import '../../../core/contracts/user_dto.dart';
+import '../domain/entities/chat_realtime_event.dart';
 import '../domain/entities/conversation.dart';
 
+part 'chat_models.g.dart';
+
+/// `MessageDTO.type` (openapi: components.schemas.MessageDTO).
+enum MessageTypeDto {
+  @JsonValue('TEXT')
+  text,
+  @JsonValue('IMAGE')
+  image,
+  @JsonValue('FILE')
+  file,
+}
+
+/// Subset of `MessageDTO` (openapi: components.schemas.MessageDTO).
+@JsonSerializable()
+class MessageDto {
+  const MessageDto({
+    required this.id,
+    required this.conversationId,
+    required this.senderId,
+    required this.content,
+    required this.isRead,
+    required this.createdAt,
+    this.readAt,
+    required this.type,
+    required this.deleted,
+    required this.edited,
+    this.editedAt,
+  });
+
+  factory MessageDto.fromJson(Map<String, dynamic> json) =>
+      _$MessageDtoFromJson(json);
+
+  final int id;
+  final int conversationId;
+  final int senderId;
+  final String content;
+
+  /// The Java record annotates the field `@JsonProperty("isRead")`; some
+  /// Jackson versions also emit a bare `read` key, which is ignored (D15).
+  final bool isRead;
+  final DateTime createdAt;
+  final DateTime? readAt;
+  final MessageTypeDto type;
+  final bool deleted;
+  final bool edited;
+  final DateTime? editedAt;
+
+  ChatMessage toEntity() {
+    return ChatMessage(
+      id: id,
+      conversationId: conversationId,
+      senderId: senderId,
+      content: content,
+      createdAt: createdAt,
+      type: switch (type) {
+        MessageTypeDto.text => ChatMessageType.text,
+        MessageTypeDto.image => ChatMessageType.image,
+        MessageTypeDto.file => ChatMessageType.file,
+      },
+      read: isRead,
+      readAt: readAt,
+      deleted: deleted,
+      edited: edited,
+      editedAt: editedAt,
+    );
+  }
+}
+
+/// Subset of `ConversationDTO` (openapi:
+/// components.schemas.ConversationDTO). The API has no notion of "the
+/// other participant"; the peer is resolved client-side, like `apps/web`.
+@JsonSerializable()
 class ConversationDto {
   const ConversationDto({
     required this.id,
-    required this.peerName,
-    required this.peerUsername,
-    this.peerAvatar,
+    required this.participantIds,
     this.lastMessage,
-    this.unreadCount = 0,
+    required this.unreadCount,
   });
 
-  factory ConversationDto.fromJson(Map<String, dynamic> json) {
-    final peer = (json['recipient'] as Map?)?.cast<String, dynamic>() ??
-        (json['user'] as Map?)?.cast<String, dynamic>() ??
-        {};
-
-    return ConversationDto(
-      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
-      peerName:
-          peer['name']?.toString() ?? peer['username']?.toString() ?? 'Contato',
-      peerUsername: peer['username']?.toString() ?? '',
-      peerAvatar: peer['profileImg']?.toString(),
-      lastMessage: (json['lastMessage'] as Map?)?['content']?.toString(),
-      unreadCount: int.tryParse(json['unreadCount']?.toString() ?? '') ?? 0,
-    );
-  }
+  factory ConversationDto.fromJson(Map<String, dynamic> json) =>
+      _$ConversationDtoFromJson(json);
 
   final int id;
-  final String peerName;
-  final String peerUsername;
-  final String? peerAvatar;
-  final String? lastMessage;
+  final List<int> participantIds;
+  final MessageDto? lastMessage;
   final int unreadCount;
 
-  Conversation toEntity() {
+  /// The first participant id that isn't [currentUserId], or `null` when
+  /// none is found (a conversation with only the current user in it).
+  int? peerUserIdFor(int currentUserId) {
+    for (final id in participantIds) {
+      if (id != currentUserId) {
+        return id;
+      }
+    }
+    return null;
+  }
+
+  Conversation toEntity({int? peerUserId, UserDto? peer}) {
     return Conversation(
       id: id,
-      peerName: peerName,
-      peerUsername: peerUsername,
-      peerAvatar: peerAvatar,
-      lastMessage: lastMessage,
+      peerUserId: peerUserId,
+      peerName: peer?.name,
+      peerUsername: peer?.username,
+      peerAvatar: peer?.profileImg,
+      lastMessage: lastMessage?.content,
+      lastMessageAt: lastMessage?.createdAt,
+      lastMessageType: switch (lastMessage?.type) {
+        MessageTypeDto.image => ChatMessageType.image,
+        MessageTypeDto.file => ChatMessageType.file,
+        _ => ChatMessageType.text,
+      },
       unreadCount: unreadCount,
     );
   }
 }
 
-class ChatMessageDto {
-  const ChatMessageDto({
-    required this.id,
+/// STOMP delete event pushed to `/topic/conversation/{id}`
+/// (`ChatController.java`); not part of the OpenAPI spec (D13).
+@JsonSerializable()
+class MessageDeleteEventDto {
+  const MessageDeleteEventDto({required this.type, required this.messageId});
+
+  factory MessageDeleteEventDto.fromJson(Map<String, dynamic> json) =>
+      _$MessageDeleteEventDtoFromJson(json);
+
+  final String type;
+  final int messageId;
+}
+
+/// STOMP payload sent to `/app/chat.sendMessage`; not part of the OpenAPI
+/// spec (D13), typed by hand from `SendMessageRequestDTO`.
+class SendMessageRequestDto {
+  const SendMessageRequestDto({
+    required this.conversationId,
     required this.senderId,
     required this.content,
-    required this.createdAt,
-    this.read = false,
+    this.type = MessageTypeDto.text,
   });
 
-  factory ChatMessageDto.fromJson(Map<String, dynamic> json) {
-    final sender = (json['sender'] as Map?)?.cast<String, dynamic>() ?? {};
-
-    return ChatMessageDto(
-      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
-      senderId: int.tryParse(
-            (json['senderId'] ?? sender['id'] ?? '').toString(),
-          ) ??
-          0,
-      content: json['content']?.toString() ?? json['message']?.toString() ?? '',
-      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
-          DateTime.now(),
-      read: json['isRead'] == true,
-    );
-  }
-
-  final int id;
+  final int conversationId;
   final int senderId;
   final String content;
-  final DateTime createdAt;
-  final bool read;
+  final MessageTypeDto type;
 
-  ChatMessage toEntity() {
-    return ChatMessage(
-      id: id,
-      senderId: senderId,
-      content: content,
-      createdAt: createdAt,
-      read: read,
-    );
+  Map<String, Object> toJson() => {
+        'conversationId': conversationId,
+        'senderId': senderId,
+        'content': content,
+        'type': switch (type) {
+          MessageTypeDto.text => 'TEXT',
+          MessageTypeDto.image => 'IMAGE',
+          MessageTypeDto.file => 'FILE',
+        },
+      };
+}
+
+/// Returns null for a malformed body or an unknown event shape.
+ChatRealtimeEvent? parseChatRealtimeEvent(String body) {
+  try {
+    final decoded = jsonDecode(body);
+    if (decoded is! Map<String, dynamic>) {
+      return null;
+    }
+
+    if (decoded['type'] == 'DELETE') {
+      final event = MessageDeleteEventDto.fromJson(decoded);
+      return ChatMessageDeleted(messageId: event.messageId);
+    }
+
+    final message = MessageDto.fromJson(decoded).toEntity();
+    return message.edited
+        ? ChatMessageEdited(message)
+        : ChatMessageReceived(message);
+  } on FormatException {
+    return null;
+  } on TypeError {
+    return null;
+  } on ArgumentError {
+    return null;
   }
 }

@@ -554,7 +554,7 @@ public class PostServiceTest {
       }
 
       @Override
-      public String getUserName() {
+      public String getAuthorName() {
         return userName;
       }
 

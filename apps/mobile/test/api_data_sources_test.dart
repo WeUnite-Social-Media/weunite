@@ -6,100 +6,69 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:weunite_mobile/core/error/app_exception.dart';
 import 'package:weunite_mobile/core/network/api_diagnostics.dart';
 import 'package:weunite_mobile/features/auth/data/auth_remote_data_source.dart';
+import 'package:weunite_mobile/features/chat/data/chat_models.dart';
 import 'package:weunite_mobile/features/chat/data/chat_remote_data_source.dart';
 import 'package:weunite_mobile/features/feed/data/feed_remote_data_source.dart';
 import 'package:weunite_mobile/features/opportunities/data/opportunity_remote_data_source.dart';
 import 'package:weunite_mobile/features/profile/data/profile_remote_data_source.dart';
+
+import 'fixtures/api_payloads.dart';
 
 void main() {
   group('API data sources', () {
     test('parses raw post list returned by the API', () async {
       final dataSource = FeedRemoteDataSource(
         _dio({
-          '/api/posts/get': [
-            {
-              'id': '10',
-              'text': 'Treino aberto hoje',
-              'imageUrl': 'https://example.com/post.png',
-              'likesCount': 3,
-              'commentsCount': 1,
-              'createdAt': '2026-09-15T12:00:00Z',
-              'user': {
-                'id': '7',
-                'name': 'Matheus',
-                'username': 'matheus',
-                'profileImg': 'https://example.com/avatar.png',
-              },
-            },
-          ],
+          '/api/posts/get': [feedPostSummaryJson],
         }),
       );
 
       final posts = await dataSource.getTimeline();
 
       expect(posts, hasLength(1));
-      expect(posts.single.content, 'Treino aberto hoje');
-      expect(posts.single.authorName, 'Matheus');
-      expect(posts.single.likesCount, 3);
+      final post = posts.single.toEntity();
+      expect(post.content, 'Treino aberto hoje');
+      expect(post.authorName, 'Matheus Silva');
+      expect(post.likesCount, 3);
+      expect(post.likedByViewer, isTrue);
+    });
+
+    test('parses raw comments list returned by the API', () async {
+      final dataSource = FeedRemoteDataSource(
+        _dio({
+          '/api/comment/get/10': [commentJson],
+        }),
+      );
+
+      final comments = await dataSource.getComments(postId: 10);
+
+      expect(comments, hasLength(1));
+      final comment = comments.single.toEntity();
+      expect(comment.content, 'Boa!');
+      expect(comment.authorUsername, 'matheus');
     });
 
     test('parses raw opportunities list returned by the API', () async {
       final dataSource = OpportunityRemoteDataSource(
         _dio({
-          '/api/opportunities/get': [
-            {
-              'id': 4,
-              'title': 'Peneira sub-20',
-              'description': 'Selecao para atletas',
-              'location': 'Sao Paulo',
-              'dateEnd': '2026-10-01',
-              'subscribersCount': 12,
-              'company': {'name': 'WeUnite FC', 'username': 'weunite'},
-              'skills': [
-                {'name': 'Velocidade'},
-                {'name': 'Passe'},
-              ],
-            },
-          ],
+          '/api/opportunities/get': [opportunityJson],
         }),
       );
 
       final opportunities = await dataSource.getOpportunities();
 
       expect(opportunities, hasLength(1));
-      expect(opportunities.single.title, 'Peneira sub-20');
-      expect(opportunities.single.companyName, 'WeUnite FC');
-      expect(opportunities.single.skills, ['Velocidade', 'Passe']);
+      final opportunity = opportunities.single.toEntity();
+      expect(opportunity.title, 'Peneira sub-20');
+      expect(opportunity.companyName, 'Matheus Silva');
+      expect(opportunity.skills, ['Velocidade', 'Passe']);
     });
 
     test('parses raw conversation and message lists returned by the API',
         () async {
       final dio = _dio({
-        '/api/conversations/user/7': [
-          {
-            'id': 30,
-            'participantIds': [7, 9],
-            'unreadCount': 2,
-            'lastMessage': {
-              'id': 55,
-              'conversationId': 30,
-              'senderId': 9,
-              'content': 'Oi!',
-              'isRead': false,
-              'createdAt': '2026-09-15T12:10:00Z',
-            },
-          },
-        ],
-        '/api/conversations/30/messages/7': [
-          {
-            'id': 55,
-            'conversationId': 30,
-            'senderId': 9,
-            'content': 'Oi!',
-            'isRead': true,
-            'createdAt': '2026-09-15T12:10:00Z',
-          },
-        ],
+        '/api/conversations/user/7': [conversationJson],
+        '/api/conversations/30/messages/7': [messageJson],
       });
       final dataSource = ChatRemoteDataSource(dio);
 
@@ -109,33 +78,38 @@ void main() {
         userId: 7,
       );
 
-      expect(conversations.single.lastMessage, 'Oi!');
+      expect(conversations.single.lastMessage?.content, 'Oi!');
       expect(conversations.single.unreadCount, 2);
       expect(messages.single.content, 'Oi!');
-      expect(messages.single.read, isTrue);
+      expect(messages.single.isRead, isTrue);
+      expect(messages.single.conversationId, 30);
+      expect(messages.single.type, MessageTypeDto.text);
     });
 
-    test('keeps profile parsing compatible with ResponseDTO.data', () async {
+    test('parses ResponseDTO<UserDTO> profile', () async {
       final dataSource = ProfileRemoteDataSource(
         _dio({
-          '/api/user/id/7': {
-            'message': 'ok',
-            'data': {
-              'id': '7',
-              'name': 'Matheus',
-              'username': 'matheus',
-              'role': 'athlete',
-              'bio': 'Atleta',
-            },
-          },
+          '/api/user/id/7': responseDto(userJson),
         }),
       );
 
-      final profile = await dataSource.getProfileById(7);
+      final user = await dataSource.getProfileById(7);
 
-      expect(profile.id, 7);
-      expect(profile.name, 'Matheus');
-      expect(profile.role, 'athlete');
+      expect(user.id, 7);
+      expect(user.name, 'Matheus Silva');
+      expect(user.role, 'ATHLETE');
+    });
+
+    test('parses ResponseDTO<Long> follow counts', () async {
+      final dataSource = ProfileRemoteDataSource(
+        _dio({
+          '/api/follow/followers/7/count': responseDto(3),
+        }),
+      );
+
+      final followers = await dataSource.countFollowers(7);
+
+      expect(followers, 3);
     });
 
     test('verifies email with the backend ResponseDTO session', () async {
@@ -235,6 +209,108 @@ void main() {
           ),
         ),
       );
+    });
+
+    group('malformed payloads become server-format AppExceptions', () {
+      Matcher isServerFormatError() => throwsA(
+            isA<AppException>().having(
+              (error) => error.message,
+              'message',
+              contains('formato inesperado'),
+            ),
+          );
+
+      test('post with a numeric id', () async {
+        final dataSource = FeedRemoteDataSource(
+          _dio({
+            '/api/posts/get': [
+              {...feedPostSummaryJson, 'id': 10},
+            ],
+          }),
+        );
+
+        expect(dataSource.getTimeline, isServerFormatError());
+      });
+
+      test('post with an invalid createdAt', () async {
+        final dataSource = FeedRemoteDataSource(
+          _dio({
+            '/api/posts/get': [
+              {...feedPostSummaryJson, 'createdAt': 'ontem'},
+            ],
+          }),
+        );
+
+        expect(dataSource.getTimeline, isServerFormatError());
+      });
+
+      test('post without a user', () async {
+        final dataSource = FeedRemoteDataSource(
+          _dio({
+            '/api/posts/get': [
+              {...feedPostSummaryJson}..remove('user'),
+            ],
+          }),
+        );
+
+        expect(dataSource.getTimeline, isServerFormatError());
+      });
+
+      test('timeline with a null body', () async {
+        final dataSource = FeedRemoteDataSource(
+          _dio({'/api/posts/get': null}),
+        );
+
+        expect(dataSource.getTimeline, isServerFormatError());
+      });
+
+      test('login response without a data key', () async {
+        final dataSource = AuthRemoteDataSource(
+          _dio({
+            '/api/auth/login': {'message': 'ok'},
+          }),
+        );
+
+        expect(
+          () => dataSource.login(username: 'matheus', password: 'secret'),
+          isServerFormatError(),
+        );
+      });
+
+      test('profile response body is a list instead of an object', () async {
+        final dataSource = ProfileRemoteDataSource(
+          _dio({'/api/user/id/7': []}),
+        );
+
+        expect(() => dataSource.getProfileById(7), isServerFormatError());
+      });
+
+      test('opportunity without a company', () async {
+        final dataSource = OpportunityRemoteDataSource(
+          _dio({
+            '/api/opportunities/get': [
+              {...opportunityJson}..remove('company'),
+            ],
+          }),
+        );
+
+        expect(dataSource.getOpportunities, isServerFormatError());
+      });
+
+      test('message with an unknown type', () async {
+        final dataSource = ChatRemoteDataSource(
+          _dio({
+            '/api/conversations/30/messages/7': [
+              {...messageJson, 'type': 'VIDEO'},
+            ],
+          }),
+        );
+
+        expect(
+          () => dataSource.getMessages(conversationId: 30, userId: 7),
+          isServerFormatError(),
+        );
+      });
     });
   });
 

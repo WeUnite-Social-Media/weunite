@@ -4,9 +4,13 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/profile.dart';
 
 class ProfileHeader extends StatelessWidget {
-  const ProfileHeader({required this.profile, super.key});
+  const ProfileHeader({required this.profile, this.actions, super.key});
 
   final Profile profile;
+
+  /// Buttons shown under the name — "Editar perfil" on my own profile,
+  /// "Seguir" + "Conversar" on someone else's, the same set the web header has.
+  final Widget? actions;
 
   @override
   Widget build(BuildContext context) {
@@ -55,8 +59,14 @@ class ProfileHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(profile.name, style: Theme.of(context).textTheme.headlineSmall),
-              Text('@${profile.username}', style: Theme.of(context).textTheme.bodyMedium),
+              Text(
+                profile.name,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              Text(
+                '@${profile.username}',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -68,6 +78,10 @@ class ProfileHeader extends StatelessWidget {
               if (profile.bio != null) ...[
                 const SizedBox(height: 12),
                 Text(profile.bio!),
+              ],
+              if (actions != null) ...[
+                const SizedBox(height: 16),
+                actions!,
               ],
             ],
           ),

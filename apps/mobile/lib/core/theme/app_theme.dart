@@ -56,10 +56,21 @@ class AppTheme {
           ),
         ),
       ),
+      // Colors must be explicit: with only a font weight, Material 3 resolved
+      // the label to white over the light chip background (unreadable).
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.muted,
-        selectedColor: AppColors.accentGreen.withValues(alpha: 0.14),
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+        backgroundColor: AppColors.accentGreenSurface,
+        selectedColor: AppColors.accentGreen.withValues(alpha: 0.24),
+        disabledColor: AppColors.muted,
+        labelStyle: const TextStyle(
+          color: AppColors.accentGreenStrong,
+          fontWeight: FontWeight.w600,
+        ),
+        secondaryLabelStyle: const TextStyle(
+          color: AppColors.accentGreenStrong,
+          fontWeight: FontWeight.w600,
+        ),
+        side: BorderSide(color: AppColors.accentGreen.withValues(alpha: 0.4)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       ),
     );

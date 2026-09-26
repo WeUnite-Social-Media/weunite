@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/app_exception.dart';
@@ -12,13 +13,36 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   final ProfileRepository _repository;
 
-  Future<void> loadProfile(int userId) async {
-    emit(state.copyWith(isLoading: true, errorMessage: null));
+  Future<void> loadMyProfile() async {
+    final hadProfile = state.profile != null;
+    emit(
+      state.copyWith(
+        isLoading: !hadProfile,
+        loadErrorMessage: () => null,
+        actionErrorMessage: () => null,
+      ),
+    );
     try {
-      final profile = await _repository.getProfileById(userId);
-      emit(state.copyWith(isLoading: false, profile: profile));
+      final profile = await _repository.getMyProfile();
+      emit(
+        state.copyWith(isLoading: false, hasLoaded: true, profile: profile),
+      );
     } on AppException catch (error) {
-      emit(state.copyWith(isLoading: false, errorMessage: error.message));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          hasLoaded: true,
+          loadErrorMessage: hadProfile ? null : () => error.message,
+          actionErrorMessage: hadProfile ? () => error.message : null,
+        ),
+      );
     }
+  }
+
+  void dismissActionError() {
+    if (state.actionErrorMessage == null) {
+      return;
+    }
+    emit(state.copyWith(actionErrorMessage: () => null));
   }
 }

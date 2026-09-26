@@ -77,6 +77,17 @@ public class PostController {
     return ResponseEntity.status(HttpStatus.OK).body(posts);
   }
 
+  @GetMapping("/search")
+  public ResponseEntity<List<FeedPostSummaryDTO>> searchPosts(
+      @AuthenticationPrincipal Jwt jwt,
+      @RequestParam String query,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    Long viewerId = authenticatedUserService.getUserIdOrNull(jwt);
+    List<FeedPostSummaryDTO> posts = postService.searchPosts(viewerId, query, page, size);
+    return ResponseEntity.status(HttpStatus.OK).body(posts);
+  }
+
   @GetMapping("/get/user/{userId}")
   public ResponseEntity<List<FeedPostSummaryDTO>> getPostsByUser(
       @AuthenticationPrincipal Jwt jwt,

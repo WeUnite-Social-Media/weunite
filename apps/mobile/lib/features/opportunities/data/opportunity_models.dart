@@ -1,54 +1,46 @@
+import 'package:json_annotation/json_annotation.dart';
+
+import '../../../core/contracts/skill_dto.dart';
+import '../../../core/contracts/user_dto.dart';
 import '../domain/entities/opportunity.dart';
 
+part 'opportunity_models.g.dart';
+
+/// Subset of `OpportunityDTO` (openapi:
+/// components.schemas.OpportunityDTO), returned by `GET /opportunities/get`.
+@JsonSerializable()
 class OpportunityDto {
   const OpportunityDto({
     required this.id,
     required this.title,
-    required this.description,
-    required this.companyName,
-    required this.dateEnd,
-    this.companyAvatar,
+    this.description,
     this.location,
-    this.skills = const [],
-    this.subscribersCount = 0,
+    required this.dateEnd,
+    required this.createdAt,
+    this.updatedAt,
+    this.skills,
+    required this.company,
+    required this.subscribersCount,
   });
 
-  factory OpportunityDto.fromJson(Map<String, dynamic> json) {
-    final company = (json['company'] as Map?)?.cast<String, dynamic>() ?? {};
-    final skills = (json['skills'] as List? ?? [])
-        .whereType<Map>()
-        .map((skill) => skill['name']?.toString() ?? '')
-        .where((skill) => skill.isNotEmpty)
-        .toList();
-
-    return OpportunityDto(
-      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
-      title: json['title']?.toString() ?? '',
-      description: json['description']?.toString() ?? '',
-      companyName: company['name']?.toString() ??
-          company['username']?.toString() ??
-          'Empresa',
-      companyAvatar: company['profileImg']?.toString(),
-      location: json['location']?.toString(),
-      dateEnd: DateTime.tryParse(json['dateEnd']?.toString() ?? '') ??
-          DateTime.now(),
-      skills: skills,
-      subscribersCount: int.tryParse(
-            (json['subscribersCount'] ?? json['subscribers']?.length ?? 0)
-                .toString(),
-          ) ??
-          0,
-    );
-  }
+  factory OpportunityDto.fromJson(Map<String, dynamic> json) =>
+      _$OpportunityDtoFromJson(json);
 
   final int id;
   final String title;
-  final String description;
-  final String companyName;
-  final String? companyAvatar;
+  final String? description;
   final String? location;
   final DateTime dateEnd;
-  final List<String> skills;
+  final DateTime createdAt;
+
+  /// Absent until the company edits the opportunity for the first time.
+  final DateTime? updatedAt;
+
+  /// `non_null` omits the (server-initialized, never empty) `skills`
+  /// collection when it would be empty; treated as `const []` in
+  /// [toEntity], not an invented value.
+  final List<SkillDto>? skills;
+  final UserDto company;
   final int subscribersCount;
 
   Opportunity toEntity() {
@@ -56,12 +48,40 @@ class OpportunityDto {
       id: id,
       title: title,
       description: description,
-      companyName: companyName,
-      companyAvatar: companyAvatar,
+      companyId: company.id,
+      companyUsername: company.username,
+      companyName: company.name,
+      companyAvatar: company.profileImg,
       location: location,
       dateEnd: dateEnd,
-      skills: skills,
+      skills: skills?.map((skill) => skill.name).toList() ?? const [],
       subscribersCount: subscribersCount,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
+}
+
+/// Subset of `SavedOpportunityDTO`, returned by
+/// `GET /saved-opportunities/athlete/{athleteId}`.
+@JsonSerializable()
+class SavedOpportunityDto {
+  const SavedOpportunityDto({required this.opportunity});
+
+  factory SavedOpportunityDto.fromJson(Map<String, dynamic> json) =>
+      _$SavedOpportunityDtoFromJson(json);
+
+  final OpportunityDto opportunity;
+}
+
+/// Subset of `SubscriberDTO` (an application to an opportunity), returned by
+/// `GET /subscriber/athlete/{athleteId}`.
+@JsonSerializable()
+class SubscriberDto {
+  const SubscriberDto({required this.opportunity});
+
+  factory SubscriberDto.fromJson(Map<String, dynamic> json) =>
+      _$SubscriberDtoFromJson(json);
+
+  final OpportunityDto opportunity;
 }

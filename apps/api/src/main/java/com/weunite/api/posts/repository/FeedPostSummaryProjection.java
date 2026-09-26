@@ -16,7 +16,7 @@ public interface FeedPostSummaryProjection {
 
   Long getUserId();
 
-  String getUserName();
+  String getAuthorName();
 
   String getUsername();
 
