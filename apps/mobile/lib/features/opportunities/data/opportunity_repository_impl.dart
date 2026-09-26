@@ -64,6 +64,33 @@ class OpportunityRepositoryImpl implements OpportunityRepository {
         .toList();
   }
 
+  @override
+  Future<List<Opportunity>> getMySubscriptions() async {
+    final athleteId = _currentUserProvider.requireUserId();
+    final subscriptions = await _remoteDataSource.getSubscriptions(
+      athleteId: athleteId,
+    );
+    // Same unwrapping as getSavedOpportunities, mirrored: applied by
+    // definition, the saved flag still has to be resolved.
+    final entities = subscriptions
+        .map((item) => item.opportunity.toEntity().copyWith(isSubscribed: true))
+        .toList();
+    final savedIds = await _idsOrEmpty(
+      () async => (await _remoteDataSource.getSavedOpportunities(
+        athleteId: athleteId,
+      ))
+          .map((item) => item.opportunity.id)
+          .toSet(),
+    );
+    return entities
+        .map(
+          (opportunity) => opportunity.copyWith(
+            isSaved: savedIds.contains(opportunity.id),
+          ),
+        )
+        .toList();
+  }
+
   Future<List<Opportunity>> _withViewerFlags(
     List<Opportunity> entities,
   ) async {

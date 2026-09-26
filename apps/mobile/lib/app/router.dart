@@ -23,7 +23,9 @@ import '../features/notifications/presentation/cubit/notifications_cubit.dart';
 import '../features/notifications/presentation/screens/notifications_screen.dart';
 import '../features/opportunities/domain/repositories/opportunity_repository.dart';
 import '../features/opportunities/presentation/cubit/opportunities_cubit.dart';
+import '../features/opportunities/presentation/screens/my_applications_screen.dart';
 import '../features/opportunities/presentation/screens/opportunities_screen.dart';
+import '../features/opportunities/presentation/screens/saved_opportunities_screen.dart';
 import '../features/profile/domain/repositories/profile_repository.dart';
 import '../features/profile/presentation/cubit/profile_cubit.dart';
 import '../features/profile/presentation/cubit/profile_posts_cubit.dart';
@@ -40,6 +42,9 @@ import '../features/search/presentation/screens/search_screen.dart';
 ///   `Conversation` before rendering `ConversationScreen`.
 /// - `/profile/:userId`: pushed full-screen, a third party's profile.
 /// - `/posts/:postId`: placeholder (see `PostDetailScreen`).
+/// - `/opportunities/applications`, `/opportunities/saved`: pushed
+///   full-screen, athlete-only "Minhas candidaturas" / "Oportunidades
+///   salvas", reached from the Opportunities tab's navigation entries.
 GoRouter buildRouter({
   required AuthCubit authCubit,
   required Listenable refreshListenable,
@@ -87,6 +92,14 @@ GoRouter buildRouter({
         builder: (context, state) => PostDetailScreen(
           postId: int.parse(state.pathParameters['postId']!),
         ),
+      ),
+      GoRoute(
+        path: '/opportunities/applications',
+        builder: (context, state) => const MyApplicationsScreen(),
+      ),
+      GoRoute(
+        path: '/opportunities/saved',
+        builder: (context, state) => const SavedOpportunitiesScreen(),
       ),
       GoRoute(
         path: '/notifications',

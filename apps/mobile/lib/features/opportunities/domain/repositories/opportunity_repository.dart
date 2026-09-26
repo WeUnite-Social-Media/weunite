@@ -15,6 +15,11 @@ abstract class OpportunityRepository {
   /// the web "Oportunidades salvas" page shows.
   Future<List<Opportunity>> getSavedOpportunities();
 
+  /// Opportunities the signed-in athlete applied to — the same list the web
+  /// "Minhas candidaturas" page shows. Applied by definition
+  /// (`isSubscribed: true`); `isSaved` is still resolved per item.
+  Future<List<Opportunity>> getMySubscriptions();
+
   /// Saves or unsaves the opportunity for the signed-in athlete; returns the
   /// resulting state (`true` = saved), read back from the API.
   Future<bool> toggleSaved({required int opportunityId});
