@@ -106,6 +106,33 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<AppUser> verifyEmail({
+    required String email,
+    required String verificationToken,
+  }) async {
+    final session = await _remoteDataSource.verifyEmail(
+      email: email,
+      verificationToken: verificationToken,
+    );
+
+    // Same handling as login: the jwt is optional in the contract, and the
+    // expiry drives the session-expired flow, so it has to be stored too.
+    final jwt = session.jwt;
+    if (jwt == null || jwt.isEmpty) {
+      throw const AppException('Resposta de verificacao invalida.');
+    }
+
+    final expiresInMillis = session.expiresIn;
+    final expiresAt = expiresInMillis != null
+        ? DateTime.now().add(Duration(milliseconds: expiresInMillis))
+        : null;
+    await _tokenStorage.saveTokens(accessToken: jwt, expiresAt: expiresAt);
+    await _tokenStorage.saveUserJson(jsonEncode(session.user.toJson()));
+    _currentUser = session.user.toAppUser();
+    return _currentUser!;
+  }
+
+  @override
   Future<void> logout() async {
     _currentUser = null;
     await _tokenStorage.clear();

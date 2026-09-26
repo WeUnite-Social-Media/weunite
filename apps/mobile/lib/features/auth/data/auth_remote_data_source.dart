@@ -70,4 +70,29 @@ class AuthRemoteDataSource {
       throw mapDioError(error, stackTrace);
     }
   }
+
+  /// Verifies the e-mail and returns the session, like login does.
+  ///
+  /// This method came from the e-mail verification branch, which predated the
+  /// typed-contract refactor: it used `AuthSessionDto` and read the body
+  /// directly. It now uses `AuthDto` and the same envelope decoding as
+  /// [login], so a malformed payload fails the same way everywhere.
+  Future<AuthDto> verifyEmail({
+    required String email,
+    required String verificationToken,
+  }) async {
+    try {
+      final encodedEmail = Uri.encodeComponent(email);
+      final response = await _dio.post<Object?>(
+        '/auth/verify-email/$encodedEmail',
+        data: {'verificationToken': verificationToken},
+      );
+      return decodeResponseData<AuthDto>(
+        response.data,
+        (data) => AuthDto.fromJson(asJsonObject(data)),
+      );
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
 }

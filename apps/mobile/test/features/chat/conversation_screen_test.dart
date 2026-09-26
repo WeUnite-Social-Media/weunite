@@ -14,6 +14,13 @@ import 'package:weunite_mobile/features/chat/presentation/widgets/voice_recorder
 
 class _FakeAuthRepository implements AuthRepository {
   @override
+  Future<AppUser> verifyEmail({
+    required String email,
+    required String verificationToken,
+  }) async =>
+      throw UnimplementedError();
+
+  @override
   AppUser? currentUser;
 
   @override

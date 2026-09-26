@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../cubit/auth_cubit.dart';
+import 'verify_email_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -65,7 +66,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
             );
           }
           if (state.successMessage != null) {
-            Navigator.of(context).pop();
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute<void>(
+                builder: (_) => VerifyEmailScreen(
+                  email: _emailController.text.trim(),
+                ),
+              ),
+            );
           }
         },
         builder: (context, state) {

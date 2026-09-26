@@ -70,7 +70,13 @@ class AuthCubit extends Cubit<AuthState> {
     required String email,
     required String password,
   }) async {
-    emit(state.copyWith(status: AuthStatus.loading, errorMessage: null));
+    emit(
+      state.copyWith(
+        status: AuthStatus.loading,
+        errorMessage: null,
+        successMessage: null,
+      ),
+    );
     try {
       await _repository.signUpAthlete(
         name: name,
@@ -89,6 +95,7 @@ class AuthCubit extends Cubit<AuthState> {
         state.copyWith(
           status: AuthStatus.unauthenticated,
           errorMessage: error.message,
+          successMessage: null,
         ),
       );
     }
@@ -100,7 +107,13 @@ class AuthCubit extends Cubit<AuthState> {
     required String email,
     required String cnpj,
   }) async {
-    emit(state.copyWith(status: AuthStatus.loading, errorMessage: null));
+    emit(
+      state.copyWith(
+        status: AuthStatus.loading,
+        errorMessage: null,
+        successMessage: null,
+      ),
+    );
     try {
       await _repository.signUpCompany(
         name: name,
@@ -119,6 +132,49 @@ class AuthCubit extends Cubit<AuthState> {
         state.copyWith(
           status: AuthStatus.unauthenticated,
           errorMessage: error.message,
+          successMessage: null,
+        ),
+      );
+    }
+  }
+
+  Future<void> verifyEmail({
+    required String email,
+    required String verificationToken,
+  }) async {
+    emit(
+      state.copyWith(
+        status: AuthStatus.loading,
+        errorMessage: null,
+        successMessage: null,
+      ),
+    );
+    try {
+      final user = await _repository.verifyEmail(
+        email: email,
+        verificationToken: verificationToken,
+      );
+      emit(
+        state.copyWith(
+          status: AuthStatus.authenticated,
+          user: user,
+          successMessage: 'Email verificado com sucesso.',
+        ),
+      );
+    } on AppException catch (error) {
+      emit(
+        state.copyWith(
+          status: AuthStatus.unauthenticated,
+          errorMessage: error.message,
+          successMessage: null,
+        ),
+      );
+    } catch (_) {
+      emit(
+        state.copyWith(
+          status: AuthStatus.unauthenticated,
+          errorMessage: 'Nao foi possivel verificar seu email.',
+          successMessage: null,
         ),
       );
     }

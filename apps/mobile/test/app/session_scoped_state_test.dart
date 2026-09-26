@@ -40,6 +40,13 @@ const _bob = AppUser(
 
 class _FakeAuthRepository implements AuthRepository {
   @override
+  Future<AppUser> verifyEmail({
+    required String email,
+    required String verificationToken,
+  }) async =>
+      throw UnimplementedError();
+
+  @override
   AppUser? currentUser;
 
   @override

@@ -12,6 +12,13 @@ import 'package:weunite_mobile/features/reporting/domain/repositories/report_rep
 
 class _FakeAuthRepository implements AuthRepository {
   @override
+  Future<AppUser> verifyEmail({
+    required String email,
+    required String verificationToken,
+  }) async =>
+      throw UnimplementedError();
+
+  @override
   AppUser? currentUser;
 
   @override
