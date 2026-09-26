@@ -31,6 +31,11 @@ jobs:
       # The mobile package's lint/typecheck/test/build scripts all shell out to
       # `flutter`, so without this the whole job fails at @weunite/mobile#lint
       # with "flutter: not found".
+      # `flutter build apk` needs the Android SDK, and the runner does not point
+      # ANDROID_HOME at its preinstalled copy on its own.
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
