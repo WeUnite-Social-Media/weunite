@@ -95,6 +95,15 @@ Itens 1–27 concluídos e validados no emulador. Sugestão de continuidade (par
 - `ChatController` confia no `senderId` do payload STOMP (backend; decisão do time).
 - `AppUser` em cache não reflete edição de nome/foto até novo login.
 
+## Pendências
+
+- Menu de 3 pontos do `PostCard`: implementado só o item "Denunciar" (não-autor). A web
+  mostra "Editar"/"Excluir"/"Compartilhar" para o autor do post — o mobile ainda não tem
+  fluxo de editar/excluir post, e "Compartilhar" foi deixado de fora desta etapa por
+  decisão do time: a web não tem rota pública de post (`/posts/:postId` continua
+  placeholder) e o botão de compartilhar dela é um no-op. Até isso existir, o autor não
+  vê nenhum menu no card.
+
 ## Decisões técnicas
 
 - (2026-09-17) `PostEvents` sincroniza listas de posts entre telas; **app-scoped** porque rotas empilhadas fora do shell não enxergam providers do shell.

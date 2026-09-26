@@ -23,6 +23,9 @@ import '../features/opportunities/domain/repositories/opportunity_repository.dar
 import '../features/profile/data/profile_remote_data_source.dart';
 import '../features/profile/data/profile_repository_impl.dart';
 import '../features/profile/domain/repositories/profile_repository.dart';
+import '../features/reporting/data/report_remote_data_source.dart';
+import '../features/reporting/data/report_repository_impl.dart';
+import '../features/reporting/domain/repositories/report_repository.dart';
 
 class AppDependencies {
   const AppDependencies({
@@ -32,6 +35,7 @@ class AppDependencies {
     required this.chatRepository,
     required this.profileRepository,
     required this.notificationRepository,
+    required this.reportRepository,
     required this.currentUserProvider,
     required this.sessionEvents,
   });
@@ -42,6 +46,7 @@ class AppDependencies {
   final ChatRepository chatRepository;
   final ProfileRepository profileRepository;
   final NotificationRepository notificationRepository;
+  final ReportRepository reportRepository;
   final CurrentUserProvider currentUserProvider;
   final SessionEvents sessionEvents;
 }
@@ -94,6 +99,10 @@ AppDependencies bootstrap() {
     notificationRepository: NotificationRepositoryImpl(
       remoteDataSource: NotificationRemoteDataSource(apiClient.dio),
       realtimeClient: realtimeClient,
+      currentUserProvider: currentUserProvider,
+    ),
+    reportRepository: ReportRepositoryImpl(
+      remoteDataSource: ReportRemoteDataSource(apiClient.dio),
       currentUserProvider: currentUserProvider,
     ),
     currentUserProvider: currentUserProvider,

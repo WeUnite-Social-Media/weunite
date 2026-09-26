@@ -12,6 +12,7 @@ import '../features/feed/domain/repositories/feed_repository.dart';
 import '../features/notifications/domain/repositories/notification_repository.dart';
 import '../features/opportunities/domain/repositories/opportunity_repository.dart';
 import '../features/profile/domain/repositories/profile_repository.dart';
+import '../features/reporting/domain/repositories/report_repository.dart';
 import 'bootstrap.dart';
 import 'router.dart';
 
@@ -79,6 +80,9 @@ class _WeUniteMobileAppState extends State<WeUniteMobileApp> {
         ),
         RepositoryProvider<NotificationRepository>.value(
           value: dependencies.notificationRepository,
+        ),
+        RepositoryProvider<ReportRepository>.value(
+          value: dependencies.reportRepository,
         ),
         RepositoryProvider<CurrentUserProvider>.value(
           value: dependencies.currentUserProvider,

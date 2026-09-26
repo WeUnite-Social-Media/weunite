@@ -20,6 +20,8 @@ import 'package:weunite_mobile/features/opportunities/domain/entities/opportunit
 import 'package:weunite_mobile/features/opportunities/domain/repositories/opportunity_repository.dart';
 import 'package:weunite_mobile/features/profile/domain/entities/profile.dart';
 import 'package:weunite_mobile/features/profile/domain/repositories/profile_repository.dart';
+import 'package:weunite_mobile/features/reporting/domain/entities/report_entity_type.dart';
+import 'package:weunite_mobile/features/reporting/domain/repositories/report_repository.dart';
 
 const _alice = AppUser(
   id: 1,
@@ -248,6 +250,16 @@ class _EmptyNotificationRepository implements NotificationRepository {
   Stream<AppNotification> watchNewNotifications() => const Stream.empty();
 }
 
+class _EmptyReportRepository implements ReportRepository {
+  @override
+  Future<String?> submitReport({
+    required ReportEntityType type,
+    required int entityId,
+    required String reason,
+  }) async =>
+      null;
+}
+
 AppDependencies _dependencies() {
   final authRepository = _FakeAuthRepository();
   return AppDependencies(
@@ -257,6 +269,7 @@ AppDependencies _dependencies() {
     chatRepository: _FakeChatRepository(),
     profileRepository: _EmptyProfileRepository(),
     notificationRepository: _EmptyNotificationRepository(),
+    reportRepository: _EmptyReportRepository(),
     currentUserProvider: AuthCurrentUserProvider(authRepository),
     sessionEvents: SessionEvents(),
   );
