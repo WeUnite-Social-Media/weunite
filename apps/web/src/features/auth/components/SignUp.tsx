@@ -49,6 +49,10 @@ export function SignUp({
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  // `required` has no effect on the Radix checkbox (it renders a button,
+  // not an input), so acceptance was never actually enforced. The submit
+  // button now waits for it, which is also what the mobile form does.
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const { signup, loading } = useAuthStore();
   const password = form.watch("password");
   const progress = usePasswordStrength(password);
@@ -197,7 +201,13 @@ export function SignUp({
 
                 <div className="flex flex-col space-y-2">
                   <div className="flex items-start space-x-2">
-                    <Checkbox id="terms" required />
+                    <Checkbox
+                      id="terms"
+                      checked={acceptedTerms}
+                      onCheckedChange={(checked) =>
+                        setAcceptedTerms(checked === true)
+                      }
+                    />
                     <div className="space-y-1">
                       <label
                         htmlFor="terms"
@@ -215,8 +225,12 @@ export function SignUp({
                     </div>
                   </div>
 
-                  <Button type="submit" disabled={loading}>
-                    {loading ? <Loader2 className="animate-spin" /> : "Cadastrar"}
+                  <Button type="submit" disabled={loading || !acceptedTerms}>
+                    {loading ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      "Cadastrar"
+                    )}
                   </Button>
 
                   <span className="text-xs">
@@ -236,10 +250,7 @@ export function SignUp({
         </CardContent>
       </Card>
 
-      <TermsModal
-        open={isTermsModalOpen}
-        onOpenChange={setIsTermsModalOpen}
-      />
+      <TermsModal open={isTermsModalOpen} onOpenChange={setIsTermsModalOpen} />
     </div>
   );
 }

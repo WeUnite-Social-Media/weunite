@@ -33,7 +33,7 @@ const _alice = AppUser(
 const _bob = AppUser(
   id: 2,
   name: 'Bob',
-  username: 'bob',
+  username: 'bobbie',
   email: 'bob@weunite.com',
   role: 'ATHLETE',
 );
@@ -62,20 +62,40 @@ class _FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> signUpAthlete({
+  Future<String?> signUpAthlete({
     required String name,
     required String username,
     required String email,
     required String password,
-  }) async {}
+  }) async =>
+      null;
 
   @override
-  Future<void> signUpCompany({
+  Future<String?> signUpCompany({
     required String name,
     required String username,
     required String email,
     required String cnpj,
-  }) async {}
+    required String password,
+  }) async =>
+      null;
+
+  @override
+  Future<String?> sendResetPassword({required String email}) async => null;
+
+  @override
+  Future<String?> verifyResetToken({
+    required String email,
+    required String verificationToken,
+  }) async =>
+      null;
+
+  @override
+  Future<String?> resetPassword({
+    required String verificationToken,
+    required String newPassword,
+  }) async =>
+      null;
 
   @override
   Future<void> logout() async {
@@ -367,7 +387,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.logout));
       await tester.pumpAndSettle();
 
-      await _login(tester, 'bob');
+      await _login(tester, 'bobbie');
       expect(find.text('Post do Bob'), findsOneWidget);
       expect(find.text('Post da Alice'), findsNothing);
     },

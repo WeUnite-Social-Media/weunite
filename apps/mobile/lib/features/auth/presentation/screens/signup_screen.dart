@@ -1,15 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../domain/auth_validation.dart';
 import '../cubit/auth_cubit.dart';
-import 'verify_email_screen.dart';
 
+import '../widgets/password_form_field.dart';
+import '../widgets/password_strength_indicator.dart';
+import '../widgets/terms_acceptance_field.dart';
+
+/// Sign-up, covering both of the web's tabs in one screen: `SignUp.tsx`
+/// (athlete) and `SignUpCompany.tsx` (club). The web switches between them with
+/// the `/auth/signup` and `/auth/signupcompany` routes; the phone keeps one
+/// screen with a segmented control so the data typed so far survives a switch.
+///
+/// Fields, order, labels, placeholders and validation messages are the web's.
+/// Two things differ on purpose, both flagged in HANDOFF.md:
+///
+/// - a password confirmation field, which the web sign-up lacks (the web only
+///   confirms when resetting). A typo on a phone keyboard is easy to make and
+///   impossible to spot behind the dots, and the account cannot be used until
+///   the password is right.
+/// - the terms checkbox is actually enforced. The web marks it `required`, but
+///   that attribute does nothing on its button-based checkbox.
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+  const SignUpScreen({this.initialTab = SignUpTab.athlete, super.key});
+
+  final SignUpTab initialTab;
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
 }
+
+enum SignUpTab { athlete, company }
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
@@ -17,8 +42,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _passwordConfirmationController = TextEditingController();
   final _cnpjController = TextEditingController();
-  bool _isCompany = false;
+
+  late SignUpTab _tab = widget.initialTab;
+  bool _acceptedTerms = false;
+  bool _termsTouched = false;
+  String _password = '';
+
+  bool get _isCompany => _tab == SignUpTab.company;
 
   @override
   void dispose() {
@@ -26,12 +58,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordConfirmationController.dispose();
     _cnpjController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
+    setState(() => _termsTouched = true);
+    final isFormValid = _formKey.currentState!.validate();
+    if (!isFormValid || !_acceptedTerms) {
       return;
     }
 
@@ -41,7 +76,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         name: _nameController.text.trim(),
         username: _usernameController.text.trim(),
         email: _emailController.text.trim(),
-        cnpj: _cnpjController.text.trim(),
+        // The API wants the 14 digits, not the mask.
+        cnpj: onlyDigits(_cnpjController.text),
+        password: _passwordController.text,
       );
     } else {
       await cubit.signUpAthlete(
@@ -55,8 +92,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Criar conta')),
+      appBar: AppBar(title: const Text('Crie sua conta')),
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
           final message = state.errorMessage ?? state.successMessage;
@@ -65,81 +103,152 @@ class _SignUpScreenState extends State<SignUpScreen> {
               SnackBar(content: Text(message)),
             );
           }
-          if (state.successMessage != null) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute<void>(
-                builder: (_) => VerifyEmailScreen(
-                  email: _emailController.text.trim(),
-                ),
-              ),
+          final email = _emailController.text.trim();
+          final createdAccount = state.successMessage != null;
+          if (message != null) {
+            context.read<AuthCubit>().clearMessages();
+          }
+          if (createdAccount) {
+            // Replaces the sign-up screen, as the web replaces the tab with
+            // `/auth/verify-email/:email`: the account exists now, so going
+            // back to a filled-in form would only invite a duplicate attempt.
+            context.pushReplacement(
+              '/verify-email/${Uri.encodeComponent(email)}',
             );
           }
         },
         builder: (context, state) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SegmentedButton<bool>(
+                  Text(
+                    'Preencha os dados abaixo para começar',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium
+                        ?.copyWith(color: AppColors.mutedForeground),
+                  ),
+                  const SizedBox(height: 20),
+                  SegmentedButton<SignUpTab>(
                     segments: const [
-                      ButtonSegment(value: false, label: Text('Atleta')),
-                      ButtonSegment(value: true, label: Text('Empresa')),
+                      ButtonSegment(
+                        value: SignUpTab.athlete,
+                        label: Text('Atleta'),
+                        icon: Icon(Icons.person_outline),
+                      ),
+                      ButtonSegment(
+                        value: SignUpTab.company,
+                        label: Text('Clube'),
+                        icon: Icon(Icons.apartment_outlined),
+                      ),
                     ],
-                    selected: {_isCompany},
-                    onSelectionChanged: (value) =>
-                        setState(() => _isCompany = value.first),
+                    selected: {_tab},
+                    onSelectionChanged: state.isLoading
+                        ? null
+                        : (value) => setState(() => _tab = value.first),
                   ),
                   const SizedBox(height: 20),
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(labelText: 'Nome'),
-                    validator: _required,
+                    textInputAction: TextInputAction.next,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      labelText: 'Nome',
+                      hintText: 'João da Silva',
+                      prefixIcon: Icon(Icons.badge_outlined),
+                    ),
+                    validator: validateName,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _usernameController,
-                    decoration: const InputDecoration(labelText: 'Usuario'),
-                    validator: _required,
+                    autocorrect: false,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Username',
+                      hintText: 'JoaoSilva',
+                      prefixIcon: Icon(Icons.person_outline),
+                    ),
+                    validator: validateUsername,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,
-                    decoration: const InputDecoration(labelText: 'E-mail'),
+                    autocorrect: false,
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Informe seu e-mail.';
-                      }
-                      if (!value.contains('@')) {
-                        return 'E-mail invalido.';
-                      }
-                      return null;
-                    },
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      hintText: 'joaosilva@provedor.com',
+                      prefixIcon: Icon(Icons.alternate_email),
+                    ),
+                    validator: validateEmail,
                   ),
-                  const SizedBox(height: 12),
-                  if (_isCompany)
+                  const SizedBox(height: 16),
+                  PasswordFormField(
+                    controller: _passwordController,
+                    label: 'Senha',
+                    validator: validatePassword,
+                    onChanged: (value) => setState(() => _password = value),
+                  ),
+                  const SizedBox(height: 16),
+                  PasswordFormField(
+                    controller: _passwordConfirmationController,
+                    label: 'Confirme sua senha',
+                    validator: (value) => validatePasswordConfirmation(
+                      value,
+                      _passwordController.text,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  PasswordStrengthIndicator(password: _password),
+                  if (_isCompany) ...[
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _cnpjController,
-                      decoration: const InputDecoration(labelText: 'CNPJ'),
-                      validator: _required,
-                    )
-                  else
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: 'Senha'),
-                      validator: (value) => value == null || value.length < 6
-                          ? 'Minimo de 6 caracteres.'
-                          : null,
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      inputFormatters: [_CnpjInputFormatter()],
+                      decoration: const InputDecoration(
+                        labelText: 'CNPJ',
+                        hintText: 'XX.XXX.XXX/0000-XX',
+                        prefixIcon: Icon(Icons.apartment_outlined),
+                        helperText: 'Digite apenas números. A formatação será '
+                            'aplicada automaticamente.',
+                        helperMaxLines: 2,
+                      ),
+                      validator: validateCnpj,
                     ),
-                  const SizedBox(height: 24),
+                  ],
+                  const SizedBox(height: 20),
+                  TermsAcceptanceField(
+                    value: _acceptedTerms,
+                    onChanged: (value) => setState(() {
+                      _acceptedTerms = value;
+                      _termsTouched = true;
+                    }),
+                    errorText: _termsTouched && !_acceptedTerms
+                        ? 'Aceite os termos para criar sua conta.'
+                        : null,
+                  ),
+                  const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: state.isLoading ? null : _submit,
-                    child: Text(
-                      _isCompany ? 'Cadastrar empresa' : 'Cadastrar atleta',
+                    child: state.isLoading
+                        ? const SizedBox.square(
+                            dimension: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Cadastrar'),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: TextButton(
+                      onPressed: state.isLoading ? null : () => context.pop(),
+                      child: const Text('Já se cadastrou? Login'),
                     ),
                   ),
                 ],
@@ -150,8 +259,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
   }
+}
 
-  String? _required(String? value) {
-    return value == null || value.trim().isEmpty ? 'Campo obrigatorio.' : null;
+/// Applies the web's progressive CNPJ mask while typing and keeps the caret at
+/// the end, so the punctuation appearing mid-word never moves the cursor back.
+class _CnpjInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final formatted = formatCnpj(newValue.text);
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
   }
 }

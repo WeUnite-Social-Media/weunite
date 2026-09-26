@@ -1,31 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../cubit/auth_cubit.dart';
 import '../widgets/auth_scaffold.dart';
 import '../widgets/verification_code_field.dart';
 
-/// E-mail verification, the phone version of the web's `VerifyEmail` page.
+/// Step 2 of the recovery flow: the web's `VerifyResetToken` page.
 ///
-/// `POST /auth/verify-email/{email}` answers with a jwt and the user, so a
-/// verified account is logged in straight away and the router moves to the feed
-/// — the same behaviour as the web, whose store sets `isAuthenticated` here.
-///
-/// There is no resend: the API has no endpoint for it. The web shows a
-/// "Reenviar código" button, but its handler only restarts a countdown and
-/// sends no request, so copying it would give the phone a button that lies.
-/// What is shown instead is where to look for the message.
-class VerifyEmailScreen extends StatefulWidget {
-  const VerifyEmailScreen({required this.email, super.key});
+/// `POST /auth/verify-reset-token/{email}` only checks the code — it does not
+/// consume it — and the code itself is then the path segment of
+/// `POST /auth/reset-password/{verificationToken}`, which is why the next screen
+/// is reached with the code in the route, exactly as the web does.
+class VerifyResetTokenScreen extends StatefulWidget {
+  const VerifyResetTokenScreen({required this.email, super.key});
 
   final String email;
 
   @override
-  State<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
+  State<VerifyResetTokenScreen> createState() => _VerifyResetTokenScreenState();
 }
 
-class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
+class _VerifyResetTokenScreenState extends State<VerifyResetTokenScreen> {
   final _formKey = GlobalKey<FormState>();
   final _codeController = TextEditingController();
 
@@ -39,7 +36,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    context.read<AuthCubit>().verifyEmail(
+    context.read<AuthCubit>().verifyResetToken(
           email: widget.email,
           verificationToken: _codeController.text.trim(),
         );
@@ -48,7 +45,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Verificação de email')),
+      appBar: AppBar(title: const Text('Redefinição de senha')),
       body: SafeArea(
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
@@ -57,7 +54,16 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(message)),
               );
+            }
+            final verified = state.successMessage != null;
+            if (message != null) {
               context.read<AuthCubit>().clearMessages();
+            }
+            if (verified) {
+              context.push(
+                '/reset-password/'
+                '${Uri.encodeComponent(_codeController.text.trim())}',
+              );
             }
           },
           builder: (context, state) {
@@ -69,7 +75,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const AuthStepHeader(
-                      title: 'Verificação de email',
+                      title: 'Redefinição de senha',
                       description:
                           'Um código de seis digitos foi enviado ao seu e-mail',
                     ),
@@ -97,13 +103,15 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                             )
                           : const Text('Verificar código'),
                     ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Não recebeu o código? Procure também na caixa de spam.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.mutedForeground,
-                          ),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: TextButton(
+                        onPressed: state.isLoading ? null : () => context.pop(),
+                        child: const Text(
+                          'Não recebeu o código? Reenviar',
+                          style: TextStyle(color: AppColors.mutedForeground),
+                        ),
+                      ),
                     ),
                   ],
                 ),

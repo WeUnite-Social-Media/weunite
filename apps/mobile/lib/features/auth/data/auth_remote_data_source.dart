@@ -27,14 +27,16 @@ class AuthRemoteDataSource {
     }
   }
 
-  Future<void> signUpAthlete({
+  /// Returns the envelope message ("Cadastro concluído! Verifique seu email"),
+  /// which is what the web puts in its toast.
+  Future<String?> signUpAthlete({
     required String name,
     required String username,
     required String email,
     required String password,
   }) async {
     try {
-      await _dio.post<void>(
+      final response = await _dio.post<Object?>(
         '/auth/signup',
         data: CreateUserRequestDto(
           name: name,
@@ -44,19 +46,28 @@ class AuthRemoteDataSource {
           role: 'athlete',
         ).toJson(),
       );
+      return decodeResponseMessage(response.data);
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
     }
   }
 
-  Future<void> signUpCompany({
+  /// `POST /auth/signup/company`.
+  ///
+  /// The password is required here: both sign-up routes hit the same
+  /// `CreateUserRequestDTO`, whose `password` is `@NotBlank @ValidPassword`, so
+  /// a club sign-up without one is rejected with 400 before a user is created.
+  /// The web's `signUpCompanySchema` does send it (its TypeScript interface
+  /// omitting the field is what made this easy to miss).
+  Future<String?> signUpCompany({
     required String name,
     required String username,
     required String email,
     required String cnpj,
+    required String password,
   }) async {
     try {
-      await _dio.post<void>(
+      final response = await _dio.post<Object?>(
         '/auth/signup/company',
         data: CreateUserRequestDto(
           name: name,
@@ -64,8 +75,58 @@ class AuthRemoteDataSource {
           email: email,
           role: 'company',
           cnpj: cnpj,
+          password: password,
         ).toJson(),
       );
+      return decodeResponseMessage(response.data);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
+  /// `POST /auth/send-reset-password` — mails a six-digit code.
+  Future<String?> sendResetPassword({required String email}) async {
+    try {
+      final response = await _dio.post<Object?>(
+        '/auth/send-reset-password',
+        data: {'email': email},
+      );
+      return decodeResponseMessage(response.data);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
+  /// `POST /auth/verify-reset-token/{email}` — checks the code without
+  /// consuming it; the code itself is then the path segment of the reset call.
+  Future<String?> verifyResetToken({
+    required String email,
+    required String verificationToken,
+  }) async {
+    try {
+      final response = await _dio.post<Object?>(
+        '/auth/verify-reset-token/${Uri.encodeComponent(email)}',
+        data: {'verificationToken': verificationToken},
+      );
+      return decodeResponseMessage(response.data);
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
+  /// `POST /auth/reset-password/{verificationToken}`. Sets the new password and
+  /// clears the token; it does not return a session, so the user logs in again
+  /// afterwards — same as the web, which sends you back to `/auth`.
+  Future<String?> resetPassword({
+    required String verificationToken,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _dio.post<Object?>(
+        '/auth/reset-password/${Uri.encodeComponent(verificationToken)}',
+        data: {'newPassword': newPassword},
+      );
+      return decodeResponseMessage(response.data);
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
     }

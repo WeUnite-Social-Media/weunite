@@ -6,7 +6,11 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/presentation/cubit/auth_cubit.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
+import '../features/auth/presentation/screens/reset_password_screen.dart';
+import '../features/auth/presentation/screens/send_reset_password_screen.dart';
 import '../features/auth/presentation/screens/signup_screen.dart';
+import '../features/auth/presentation/screens/verify_email_screen.dart';
+import '../features/auth/presentation/screens/verify_reset_token_screen.dart';
 import '../features/chat/domain/repositories/chat_repository.dart';
 import '../features/chat/presentation/cubit/chat_cubit.dart';
 import '../features/chat/presentation/screens/conversation_route_screen.dart';
@@ -64,7 +68,35 @@ GoRouter buildRouter({
       ),
       GoRoute(
         path: '/signup',
-        builder: (context, state) => const SignUpScreen(),
+        // `?tab=company` opens the club form directly, the phone equivalent of
+        // the web's separate `/auth/signupcompany` route.
+        builder: (context, state) => SignUpScreen(
+          initialTab: state.uri.queryParameters['tab'] == 'company'
+              ? SignUpTab.company
+              : SignUpTab.athlete,
+        ),
+      ),
+      GoRoute(
+        path: '/verify-email/:email',
+        builder: (context, state) => VerifyEmailScreen(
+          email: state.pathParameters['email']!,
+        ),
+      ),
+      GoRoute(
+        path: '/send-reset-password',
+        builder: (context, state) => const SendResetPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/verify-reset-token/:email',
+        builder: (context, state) => VerifyResetTokenScreen(
+          email: state.pathParameters['email']!,
+        ),
+      ),
+      GoRoute(
+        path: '/reset-password/:verificationToken',
+        builder: (context, state) => ResetPasswordScreen(
+          verificationToken: state.pathParameters['verificationToken']!,
+        ),
       ),
       // Declared before `/chat/:conversationId` so "new" is not parsed as an id.
       GoRoute(
@@ -210,11 +242,25 @@ GoRouter buildRouter({
   );
 }
 
+/// Routes an unauthenticated visitor is allowed to be on: login, both sign-up
+/// forms, e-mail verification and the three password-recovery steps. Anything
+/// else sends them back to `/login`.
+const _publicRoutePrefixes = [
+  '/login',
+  '/signup',
+  '/verify-email',
+  '/send-reset-password',
+  '/verify-reset-token',
+  '/reset-password',
+];
+
 String? _redirect(AuthCubit authCubit, GoRouterState state) {
   final status = authCubit.state.status;
-  final atSplash = state.matchedLocation == '/splash';
-  final atAuthRoute =
-      state.matchedLocation == '/login' || state.matchedLocation == '/signup';
+  final location = state.matchedLocation;
+  final atSplash = location == '/splash';
+  final atAuthRoute = _publicRoutePrefixes.any(
+    (prefix) => location == prefix || location.startsWith('$prefix/'),
+  );
 
   if (status == AuthStatus.checking) {
     return atSplash ? null : '/splash';

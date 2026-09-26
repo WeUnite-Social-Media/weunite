@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useAuthMessages } from "@/features/auth/hooks/useAuthMessages";
+import { usePasswordStrength } from "@/features/auth/hooks/usePasswordStrength";
 import { signUpCompanySchema } from "@/features/auth/schemas/signUp.schema";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { TermsModal } from "@/features/legal/components/TermsModal";
@@ -30,6 +31,7 @@ import {
   FormMessage,
 } from "@/shared/components/ui/form";
 import { Input } from "@/shared/components/ui/input";
+import { Progress } from "@/shared/components/ui/progress";
 
 const formatCNPJ = (value: string) => {
   const numbers = value.replace(/\D/g, "");
@@ -43,10 +45,7 @@ const formatCNPJ = (value: string) => {
     return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d+)/, "$1.$2.$3/$4");
   }
 
-  return numbers.replace(
-    /(\d{2})(\d{3})(\d{3})(\d{4})(\d+)/,
-    "$1.$2.$3/$4-$5",
-  );
+  return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d+)/, "$1.$2.$3/$4-$5");
 };
 
 const extractCNPJNumbers = (formattedCNPJ: string) => {
@@ -74,6 +73,13 @@ export function SignUpCompany({
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  // `required` has no effect on the Radix checkbox (it renders a button,
+  // not an input), so acceptance was never actually enforced. The submit
+  // button now waits for it, which is also what the mobile form does.
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  // Same hook, same score as the athlete form: one source for the password
+  // rule across user sign-up, club sign-up and password recovery.
+  const progress = usePasswordStrength(form.watch("password"));
 
   async function onSubmit(values: z.infer<typeof signUpCompanySchema>) {
     const result = await signup(values);
@@ -209,6 +215,11 @@ export function SignUpCompany({
                   )}
                 />
 
+                <div>
+                  <Progress value={progress} />
+                  <span className="text-xs">Segurança da senha</span>
+                </div>
+
                 <FormField
                   control={form.control}
                   name="cnpj"
@@ -244,7 +255,13 @@ export function SignUpCompany({
 
                 <div className="flex flex-col space-y-3">
                   <div className="flex items-start space-x-2">
-                    <Checkbox id="terms" required />
+                    <Checkbox
+                      id="terms"
+                      checked={acceptedTerms}
+                      onCheckedChange={(checked) =>
+                        setAcceptedTerms(checked === true)
+                      }
+                    />
                     <div className="space-y-1">
                       <label
                         htmlFor="terms"
@@ -262,7 +279,7 @@ export function SignUpCompany({
                     </div>
                   </div>
 
-                  <Button type="submit" disabled={loading}>
+                  <Button type="submit" disabled={loading || !acceptedTerms}>
                     {loading ? (
                       <Loader2 className="animate-spin" />
                     ) : (
@@ -287,10 +304,7 @@ export function SignUpCompany({
         </CardContent>
       </Card>
 
-      <TermsModal
-        open={isTermsModalOpen}
-        onOpenChange={setIsTermsModalOpen}
-      />
+      <TermsModal open={isTermsModalOpen} onOpenChange={setIsTermsModalOpen} />
     </div>
   );
 }

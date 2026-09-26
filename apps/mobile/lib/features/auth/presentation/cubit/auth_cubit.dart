@@ -36,10 +36,22 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
+  /// Drops the message the UI has already shown, so it is not shown twice when
+  /// the state changes again (the web's `clearMessages`).
+  void clearMessages() {
+    if (state.errorMessage == null && state.successMessage == null) {
+      return;
+    }
+    emit(state.copyWith());
+  }
+
   Future<void> login({
     required String username,
     required String password,
   }) async {
+    if (state.isLoading) {
+      return;
+    }
     emit(state.copyWith(status: AuthStatus.loading, errorMessage: null));
     try {
       final user = await _repository.login(
@@ -69,7 +81,92 @@ class AuthCubit extends Cubit<AuthState> {
     required String username,
     required String email,
     required String password,
+  }) {
+    return _runUnauthenticatedAction(
+      () => _repository.signUpAthlete(
+        name: name,
+        username: username,
+        email: email,
+        password: password,
+      ),
+      fallbackMessage: 'Cadastro concluido! Verifique seu email',
+      failureMessage: 'Nao foi possivel concluir o cadastro.',
+    );
+  }
+
+  Future<void> signUpCompany({
+    required String name,
+    required String username,
+    required String email,
+    required String cnpj,
+    required String password,
+  }) {
+    return _runUnauthenticatedAction(
+      () => _repository.signUpCompany(
+        name: name,
+        username: username,
+        email: email,
+        cnpj: cnpj,
+        password: password,
+      ),
+      fallbackMessage: 'Cadastro concluido! Verifique seu email',
+      failureMessage: 'Nao foi possivel cadastrar o clube.',
+    );
+  }
+
+  /// Step 1 of the recovery flow: mails a six-digit code
+  /// (`POST /auth/send-reset-password`).
+  Future<void> sendResetPassword({required String email}) {
+    return _runUnauthenticatedAction(
+      () => _repository.sendResetPassword(email: email),
+      fallbackMessage: 'Codigo enviado!',
+      failureMessage: 'Nao foi possivel enviar o codigo.',
+    );
+  }
+
+  /// Step 2: checks the code before asking for a new password.
+  Future<void> verifyResetToken({
+    required String email,
+    required String verificationToken,
+  }) {
+    return _runUnauthenticatedAction(
+      () => _repository.verifyResetToken(
+        email: email,
+        verificationToken: verificationToken,
+      ),
+      fallbackMessage: 'Codigo verificado!',
+      failureMessage: 'Nao foi possivel verificar o codigo.',
+    );
+  }
+
+  /// Step 3: stores the new password. No session comes back, so the user goes
+  /// to the login screen afterwards — the same as the web.
+  Future<void> resetPassword({
+    required String verificationToken,
+    required String newPassword,
+  }) {
+    return _runUnauthenticatedAction(
+      () => _repository.resetPassword(
+        verificationToken: verificationToken,
+        newPassword: newPassword,
+      ),
+      fallbackMessage: 'Senha redefinida!',
+      failureMessage: 'Nao foi possivel redefinir a senha.',
+    );
+  }
+
+  /// Shared shape of every call that reports a message but does *not* create a
+  /// session (both sign-ups and the three recovery steps): shows the loading
+  /// state, blocks a second submit while it is in flight, and ends back on
+  /// `unauthenticated` with either the API's own message or the error's.
+  Future<void> _runUnauthenticatedAction(
+    Future<String?> Function() action, {
+    required String fallbackMessage,
+    required String failureMessage,
   }) async {
+    if (state.isLoading) {
+      return;
+    }
     emit(
       state.copyWith(
         status: AuthStatus.loading,
@@ -78,16 +175,11 @@ class AuthCubit extends Cubit<AuthState> {
       ),
     );
     try {
-      await _repository.signUpAthlete(
-        name: name,
-        username: username,
-        email: email,
-        password: password,
-      );
+      final message = await action();
       emit(
         state.copyWith(
           status: AuthStatus.unauthenticated,
-          successMessage: 'Cadastro criado. Verifique seu e-mail.',
+          successMessage: message ?? fallbackMessage,
         ),
       );
     } on AppException catch (error) {
@@ -98,40 +190,11 @@ class AuthCubit extends Cubit<AuthState> {
           successMessage: null,
         ),
       );
-    }
-  }
-
-  Future<void> signUpCompany({
-    required String name,
-    required String username,
-    required String email,
-    required String cnpj,
-  }) async {
-    emit(
-      state.copyWith(
-        status: AuthStatus.loading,
-        errorMessage: null,
-        successMessage: null,
-      ),
-    );
-    try {
-      await _repository.signUpCompany(
-        name: name,
-        username: username,
-        email: email,
-        cnpj: cnpj,
-      );
+    } catch (_) {
       emit(
         state.copyWith(
           status: AuthStatus.unauthenticated,
-          successMessage: 'Empresa cadastrada. Verifique seu e-mail.',
-        ),
-      );
-    } on AppException catch (error) {
-      emit(
-        state.copyWith(
-          status: AuthStatus.unauthenticated,
-          errorMessage: error.message,
+          errorMessage: failureMessage,
           successMessage: null,
         ),
       );
@@ -142,6 +205,9 @@ class AuthCubit extends Cubit<AuthState> {
     required String email,
     required String verificationToken,
   }) async {
+    if (state.isLoading) {
+      return;
+    }
     emit(
       state.copyWith(
         status: AuthStatus.loading,
