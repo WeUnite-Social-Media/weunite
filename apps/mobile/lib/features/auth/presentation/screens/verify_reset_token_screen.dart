@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../cubit/auth_cubit.dart';
+import '../widgets/auth_action.dart';
 import '../widgets/auth_scaffold.dart';
 import '../widgets/verification_code_field.dart';
 
@@ -32,14 +33,23 @@ class _VerifyResetTokenScreenState extends State<VerifyResetTokenScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    context.read<AuthCubit>().verifyResetToken(
-          email: widget.email,
-          verificationToken: _codeController.text.trim(),
-        );
+    final cubit = context.read<AuthCubit>();
+    final code = _codeController.text.trim();
+    final verified = await runAuthAction(
+      context,
+      () => cubit.verifyResetToken(
+        email: widget.email,
+        verificationToken: code,
+      ),
+    );
+    if (!verified || !mounted) {
+      return;
+    }
+    context.push('/reset-password/${Uri.encodeComponent(code)}');
   }
 
   @override
@@ -47,25 +57,7 @@ class _VerifyResetTokenScreenState extends State<VerifyResetTokenScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Redefinição de senha')),
       body: SafeArea(
-        child: BlocConsumer<AuthCubit, AuthState>(
-          listener: (context, state) {
-            final message = state.errorMessage ?? state.successMessage;
-            if (message != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(message)),
-              );
-            }
-            final verified = state.successMessage != null;
-            if (message != null) {
-              context.read<AuthCubit>().clearMessages();
-            }
-            if (verified) {
-              context.push(
-                '/reset-password/'
-                '${Uri.encodeComponent(_codeController.text.trim())}',
-              );
-            }
-          },
+        child: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, state) {
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),

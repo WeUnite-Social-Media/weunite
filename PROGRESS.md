@@ -38,29 +38,28 @@ a restaurar (ver seção "Git, PR e configuração de agentes").
 
 Status por item desta etapa: ver a tabela abaixo (itens 33+).
 
-
 ## Etapa 2 — status por item (desktop como referência)
 
 Legenda: ✅ concluído · 🟡 parcial · ⏳ pendente · ⛔ fora do escopo por decisão
 
-| # | Item | Status | Observações |
-|---|------|--------|-------------|
-| 33 | Notificações na Home | ✅ | Sino + badge ("9+"), tela com busca, filtros, agrupamento, "Novo", marcar uma/todas, remover, realtime pelo tópico que a API já publicava. Commit `a45ee67`. Validado no emulador (contador batendo com a API, marcar todas gravou no banco). |
-| 34 | Posts — compartilhar | ⛔ | A web tem o item no menu **sem handler** e **não há rota pública de post**. Decisão do usuário: fora desta etapa. Proposta registrada: criar `/post/:id` na web. |
-| 35 | Posts — denunciar | ✅ | Feature `reporting` genérica sobre `POST /reports/create/{userId}`, 10 motivos exatos, detalhes 500 chars, aviso e validações da web. Commit `4bc9bf6`. Denúncia real gravada no banco. |
-| 36 | Posts — menu de 3 pontos | ✅ | Só para quem não é autor, com "Denunciar" (mesma regra da web). Autor não vê menu — ver pendências. |
-| 37 | Oportunidades — pesquisa | ✅ | Filtro no cliente com a mesma regra do `opportunityFilter.ts`; carrossel escondido durante a busca; mensagem de vazio da web. Commit `ee07a60`. **A web também foi consertada** (commit `3a187f9`) — o campo dela nunca filtrou nada. |
-| 38 | Minhas candidaturas | ✅ | `GET /subscriber/athlete/{id}` pelo método que já existia; ordenação por prazo da web; textos de vazio exatos; cancelar remove o card. |
-| 39 | Oportunidades salvas | ✅ | Rota nova reutilizando `SavedOpportunitiesCubit`/`SavedOpportunitiesList` da aba do perfil — fonte de dados única, como exigido. |
-| 40 | Candidatar-se | ✅ | Já existia (item 8 da etapa 1); agora também pelo card redesenhado e pela tela de candidaturas. |
-| 41 | Cancelar candidatura | ✅ | Idem; na tela de candidaturas o item sai da lista. |
-| 42 | Sugestões de oportunidades | ✅ | Carrossel "Oportunidades Sugestões" sobre a lista já carregada — é o que a web faz (não existe endpoint de recomendação). Commit `29ff0bf`. |
-| 43 | Oportunidades — menu de 3 pontos | ✅ | No card e no detalhe, com "Denunciar", reutilizando a sheet do item 35. Dono não vê menu — ver pendências. |
-| 44 | Oportunidades — compartilhar | ⛔ | Mesma situação do item 34: botão morto na web, sem rota pública. Fora por decisão. |
-| 45 | Oportunidades — denunciar | ✅ | Mesmo fluxo e endpoint do item 35, com `type: OPPORTUNITY`. |
-| 46 | Design do card de oportunidade | ✅ | Hierarquia da web: empresa + "ha {tempo}", título, descrição, habilidades, local / "Ate dd/MM/yyyy" / "{n} candidatos", salvar e candidatar no rodapé. `timeAgo` é porte fiel do `getTimeAgo`. |
-| 47 | Chat — áudio | 🟡 | Em implementação no momento desta atualização. Caminho decidido: igual ao da web (upload em `/messages/upload` + detecção por extensão da URL), sem mexer no backend (o enum não tem AUDIO e o tipo é descartado antes de chegar nele). |
-| 48 | MOBILE_TESTING.md | ✅ | Escrito a partir da instalação real no POCO X5 Pro, com as travas do MIUI e o contorno que funcionou. |
+| #   | Item                             | Status | Observações                                                                                                                                                                                                                                   |
+| --- | -------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 33  | Notificações na Home             | ✅     | Sino + badge ("9+"), tela com busca, filtros, agrupamento, "Novo", marcar uma/todas, remover, realtime pelo tópico que a API já publicava. Commit `a45ee67`. Validado no emulador (contador batendo com a API, marcar todas gravou no banco). |
+| 34  | Posts — compartilhar             | ⛔     | A web tem o item no menu **sem handler** e **não há rota pública de post**. Decisão do usuário: fora desta etapa. Proposta registrada: criar `/post/:id` na web.                                                                              |
+| 35  | Posts — denunciar                | ✅     | Feature `reporting` genérica sobre `POST /reports/create/{userId}`, 10 motivos exatos, detalhes 500 chars, aviso e validações da web. Commit `4bc9bf6`. Denúncia real gravada no banco.                                                       |
+| 36  | Posts — menu de 3 pontos         | ✅     | Só para quem não é autor, com "Denunciar" (mesma regra da web). Autor não vê menu — ver pendências.                                                                                                                                           |
+| 37  | Oportunidades — pesquisa         | ✅     | Filtro no cliente com a mesma regra do `opportunityFilter.ts`; carrossel escondido durante a busca; mensagem de vazio da web. Commit `ee07a60`. **A web também foi consertada** (commit `3a187f9`) — o campo dela nunca filtrou nada.         |
+| 38  | Minhas candidaturas              | ✅     | `GET /subscriber/athlete/{id}` pelo método que já existia; ordenação por prazo da web; textos de vazio exatos; cancelar remove o card.                                                                                                        |
+| 39  | Oportunidades salvas             | ✅     | Rota nova reutilizando `SavedOpportunitiesCubit`/`SavedOpportunitiesList` da aba do perfil — fonte de dados única, como exigido.                                                                                                              |
+| 40  | Candidatar-se                    | ✅     | Já existia (item 8 da etapa 1); agora também pelo card redesenhado e pela tela de candidaturas.                                                                                                                                               |
+| 41  | Cancelar candidatura             | ✅     | Idem; na tela de candidaturas o item sai da lista.                                                                                                                                                                                            |
+| 42  | Sugestões de oportunidades       | ✅     | Carrossel "Oportunidades Sugestões" sobre a lista já carregada — é o que a web faz (não existe endpoint de recomendação). Commit `29ff0bf`.                                                                                                   |
+| 43  | Oportunidades — menu de 3 pontos | ✅     | No card e no detalhe, com "Denunciar", reutilizando a sheet do item 35. Dono não vê menu — ver pendências.                                                                                                                                    |
+| 44  | Oportunidades — compartilhar     | ⛔     | Mesma situação do item 34: botão morto na web, sem rota pública. Fora por decisão.                                                                                                                                                            |
+| 45  | Oportunidades — denunciar        | ✅     | Mesmo fluxo e endpoint do item 35, com `type: OPPORTUNITY`.                                                                                                                                                                                   |
+| 46  | Design do card de oportunidade   | ✅     | Hierarquia da web: empresa + "ha {tempo}", título, descrição, habilidades, local / "Ate dd/MM/yyyy" / "{n} candidatos", salvar e candidatar no rodapé. `timeAgo` é porte fiel do `getTimeAgo`.                                                |
+| 47  | Chat — áudio                     | 🟡     | Em implementação no momento desta atualização. Caminho decidido: igual ao da web (upload em `/messages/upload` + detecção por extensão da URL), sem mexer no backend (o enum não tem AUDIO e o tipo é descartado antes de chegar nele).       |
+| 48  | MOBILE_TESTING.md                | ✅     | Escrito a partir da instalação real no POCO X5 Pro, com as travas do MIUI e o contorno que funcionou.                                                                                                                                         |
 
 ### Pendências registradas desta etapa
 
@@ -75,42 +74,148 @@ Legenda: ✅ concluído · 🟡 parcial · ⏳ pendente · ⛔ fora do escopo po
 
 - `flutter run`/`adb install` falham com `INSTALL_FAILED_USER_RESTRICTED` mesmo com "Instalar via
   USB" ligado. **Funciona:** `adb push <apk> /data/local/tmp/wu.apk` + `adb shell pm install -r -t
-  /data/local/tmp/wu.apk`.
+/data/local/tmp/wu.apk`.
 - `adb shell input tap/text` é bloqueado (`SecurityException: INJECT_EVENTS`): no aparelho real não
   dá para automatizar toques, só ler tela/logs. O QA automatizado continua no emulador.
+
+## Merges na `main` (2026-09-26)
+
+Tudo o que as etapas 1 e 2 produziram esta na `main`, em tres merges, sem quebrar web nem mobile:
+
+| PR                                                             | Commit na `main` | Conteudo                                                                                                                                                                                            |
+| -------------------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#38](https://github.com/WeUnite-Social-Media/weunite/pull/38) | `17cf3d9`        | Backlog mobile inteiro + paridade com o desktop (etapas 1 e 2).                                                                                                                                     |
+| [#33](https://github.com/WeUnite-Social-Media/weunite/pull/33) | `b02980a`        | Verificacao de e-mail (trabalho do colega). Dois conflitos resolvidos mantendo os dois lados; `verifyEmail` adaptado para `AuthDto`/`decodeResponseData` e passando a guardar a expiracao do token. |
+| [#39](https://github.com/WeUnite-Social-Media/weunite/pull/39) | `56a736a`        | Criacao de oportunidade, portada do PR #37 com o credito de autoria preservado (o #37 recebeu um comentario explicando, nao foi fechado).                                                           |
+
+A CI ficou verde pela primeira vez desde que o app Flutter entrou no monorepo: o `ci.yml` ganhou
+`subosito/flutter-action@v2` + `flutter pub get`, e o build do APK ficou **fora** do pipeline
+(`turbo run build --filter=!@weunite/mobile`), porque o runner nao tem Android SDK. Lint, typecheck
+e os testes do Flutter rodam normalmente.
+
+Rollback: qualquer um dos tres merges pode ser revertido isoladamente (`git revert -m 1 <sha>`).
+
+## Etapa 3 - Autenticacao mobile (itens 31-52)
+
+_Branch `feat/mobile-auth-parity`, a partir de `origin/main` (`56a736a`). Commit `b8b8719`._
+
+**O que o web realmente tem** (levantado antes de escrever qualquer linha):
+
+| Arquivo web                                       | Papel                                                                          |
+| ------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `features/auth/components/Login.tsx`              | login, olho na senha, link "Esqueceu sua senha?", botao Google **sem handler** |
+| `features/auth/components/SignUp.tsx`             | cadastro de atleta, barra de forca, checkbox de termos, `TermsModal`           |
+| `features/auth/components/SignUpCompany.tsx`      | cadastro de clube, mascara de CNPJ, **sem** barra de forca                     |
+| `features/auth/pages/VerifyEmail.tsx`             | codigo de 6 digitos (`InputOTP`); "Reenviar codigo" **nao reenvia**            |
+| `features/auth/pages/SendResetPassword.tsx`       | e-mail + reenvio real com contador de 60s                                      |
+| `features/auth/pages/VerifyResetToken.tsx`        | codigo de 6 digitos do reset                                                   |
+| `features/auth/pages/ResetPassword.tsx`           | nova senha + confirmacao + barra de forca                                      |
+| `features/auth/stores/useAuthStore.ts`            | estado (zustand + persist), jwt e user                                         |
+| `features/auth/api/authService.ts`                | os 7 endpoints                                                                 |
+| `shared/schemas/common/user.schema.ts`            | nome, username, e-mail, senha                                                  |
+| `features/auth/schemas/*.schema.ts`               | login, cadastro, recuperacao                                                   |
+| `shared/validators/cnpjValidator.ts`              | digitos verificadores do CNPJ                                                  |
+| `features/auth/hooks/usePasswordStrength.ts`      | score 0-100 (20 por criterio)                                                  |
+| `features/legal/components/TermsOfUseArticle.tsx` | texto dos termos                                                               |
+
+**API** (`AuthController`): `POST /auth/signup`, `/auth/signup/company`, `/auth/login`,
+`/auth/verify-email/{email}`, `/auth/send-reset-password`, `/auth/verify-reset-token/{email}`,
+`/auth/reset-password/{token}`. Nenhuma rota social, nenhum reenvio de confirmacao.
+
+| #   | Item                                | Status              | Observacoes                                                                                                                                                                                                                                                                                                                      |
+| --- | ----------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 31  | Analise completa do auth web        | OK                  | Tabela acima; os 12 pontos pedidos foram levantados antes de mexer no mobile.                                                                                                                                                                                                                                                    |
+| 32  | Cadastro pelo mobile nao funcionava | OK                  | **Causa achada:** o app chamava `/auth/signup/company` **sem senha**, e as duas rotas usam o mesmo `CreateUserRequestDTO`, cujo `password` e `@NotBlank @ValidPassword`. Confirmado contra a API real: payload antigo -> `400 {"password":"Senha invalida"}`; payload novo -> `201`.                                             |
+| 33  | Verificacao de e-mail               | OK                  | Ja existia (PR #33) e foi mantida; tela redesenhada, campo de 6 digitos que envia sozinho ao completar, e a sessao que a API devolve passa a ser guardada com expiracao. **Reenvio nao existe na API** - nao foi inventado.                                                                                                      |
+| 34  | Forca da senha                      | OK                  | `passwordStrength` e porte exato do `usePasswordStrength` (20 por criterio). Barra + checklist dos 5 requisitos.                                                                                                                                                                                                                 |
+| 35  | Confirmacao de senha                | OK                  | Nos dois cadastros e na nova senha. Mensagem "As senhas devem ser iguais", a mesma do `resetPasswordSchema`. **A web nao tem confirmacao no cadastro** - diferenca proposital.                                                                                                                                                   |
+| 36  | Mostrar/esconder senha              | OK                  | `PasswordFormField` usado em todos os campos sensiveis (login, cadastro, confirmacao, nova senha, confirmacao da nova, clube). So alterna `obscureText`: nao mexe no texto nem no foco.                                                                                                                                          |
+| 37  | Aceite dos termos                   | OK                  | Checkbox + "Ler termos e condicoes" abrindo os Termos de Uso com o texto do web. **Enforcado no mobile e corrigido na web**: `required` nao faz nada no checkbox do Radix, entao o site deixava cadastrar sem aceite. Nao ha politica de privacidade no projeto - nao foi inventada URL.                                         |
+| 38  | Esqueceu a senha                    | OK                  | Tres telas novas sobre os tres endpoints que o web usa, incluindo o contador de 60s do reenvio. Fluxo inteiro exercitado contra a API real.                                                                                                                                                                                      |
+| 39  | Login com Google                    | FORA                | **Nao ha o que reaproveitar.** O botao do web nao tem `onClick`, provider, client id nem endpoint; `/api/auth` tem 7 rotas, nenhuma social. Implementar exigiria criar autenticacao nova no backend - o oposto da regra "nao criar um segundo sistema". O mobile ficou **sem** o botao, em vez de ganhar um segundo botao morto. |
+| 40  | Cadastro de clube - senha           | OK                  | Senha, confirmacao, olho, forca e termos, iguais ao atleta. Era o campo que faltava (item 32).                                                                                                                                                                                                                                   |
+| 41  | Cadastro de clube - forca           | OK                  | Mesmo `auth_validation.dart` do atleta e do reset. **A web tambem ganhou a barra**, pelo mesmo hook do cadastro de atleta.                                                                                                                                                                                                       |
+| 42  | Cadastro de clube - fluxo completo  | OK                  | Campos do web: nome, username, e-mail, senha, CNPJ com mascara progressiva e digitos verificadores. Nao ha logo, endereco, documentos nem responsaveis no cadastro web - nada foi inventado.                                                                                                                                     |
+| 43  | Validacoes iguais as do web         | OK                  | Um arquivo so (`features/auth/domain/auth_validation.dart`) para atleta, clube e recuperacao. Testes travam as regras contra os schemas do web.                                                                                                                                                                                  |
+| 44  | Mensagens de erro                   | OK                  | O app mostra a mensagem que a API devolve ("Usuario ja existe", "Verifique seu email para fazer login", "Token invalido", "Usuario nao encontrado"), via `_extractApiErrorMessage`. `decodeResponseMessage` faz o mesmo no caminho de sucesso.                                                                                   |
+| 45  | Loading e duplo envio               | OK                  | Guard `if (state.isLoading) return;` no cubit + botoes desabilitados com spinner em todas as acoes.                                                                                                                                                                                                                              |
+| 46  | Sessao e persistencia               | OK                  | `TokenStorage` com expiracao; `verifyEmail` passou a gravar a expiracao como o login ja fazia. Nao existe refresh token na API.                                                                                                                                                                                                  |
+| 47  | Navegacao                           | OK                  | Rotas `/verify-email/:email`, `/send-reset-password`, `/verify-reset-token/:email`, `/reset-password/:token`, todas liberadas para visitante; `/signup?tab=company` abre direto o cadastro de clube.                                                                                                                             |
+| 48  | Design                              | OK                  | Wordmark, titulos e textos do web, adaptados: um scroll por tela, campos de largura cheia, abas Atleta/Clube em vez de duas rotas, codigo em um campo so (seis caixas separadas quebram o foco no Android e impedem colar).                                                                                                      |
+| 49  | Bateria de testes                   | ver secao de testes |                                                                                                                                                                                                                                                                                                                                  |
+| 50  | Reteste do web                      | ver secao de testes |                                                                                                                                                                                                                                                                                                                                  |
+| 51  | Documentacao                        | OK                  | Esta secao + secao no `HANDOFF.md`.                                                                                                                                                                                                                                                                                              |
+| 52  | Doc para testar no celular          | OK                  | Secao 10 do `MOBILE_TESTING.md`: regras de senha, como ler o codigo no banco quando nao ha SMTP, os roteiros e o que **nao** da para testar.                                                                                                                                                                                     |
+
+### Diferencas propositais em relacao ao web (e por que)
+
+1. **Confirmacao de senha nos cadastros.** O teclado do celular erra mais e o erro fica escondido
+   atras dos pontinhos; a conta so e usavel se a senha estiver certa.
+2. **Maximo de 30 caracteres na senha.** So a API cobrava (`ValidPasswordValidator.MAX_LENGTH`);
+   o schema do web nao tem teto, entao o navegador aceita e o servidor recusa.
+3. **Conjunto de simbolos da API, nao o do zod.** `/[^A-Za-z0-9]/` aceita `~`, que o
+   `ValidPasswordValidator` recusa. O app usa a lista do servidor e avisa antes de enviar.
+4. **Sem botao do Google** (item 39).
+5. **Sem botao de reenviar o codigo de confirmacao** - nao existe endpoint; o do web so reinicia
+   um contador.
+
+### Armadilha encontrada na API (e evitada)
+
+`POST /auth/send-reset-password` responde `{"message":"Codigo enviado!"}` - **sem a chave `data`**.
+Usar `decodeResponseData` aqui estouraria `FormatException('ResponseDTO without data')` num caso de
+sucesso. Por isso existe `decodeResponseMessage`, que le so a mensagem e nunca lanca.
+
+### Fluxos exercitados contra a API real (backend no Docker)
+
+| Fluxo                                                            | Resultado                                                           |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `POST /auth/signup/company` com o payload **antigo** (sem senha) | `400 {"password":"Senha invalida"}` - o bug do item 32, reproduzido |
+| `POST /auth/signup/company` com o payload **novo**               | `201 Cadastro concluido! Verifique seu email`                       |
+| `POST /auth/signup` (atleta)                                     | `201`                                                               |
+| Username duplicado / e-mail duplicado                            | `409 Usuario ja existe`                                             |
+| Login antes de verificar o e-mail                                | `400 Verifique seu email para fazer login`                          |
+| `POST /auth/verify-email/{email}` com o codigo do banco          | `200` + jwt + `expiresIn`                                           |
+| Login depois de verificar                                        | `200`                                                               |
+| `POST /auth/send-reset-password`                                 | `200 Codigo enviado!` (sem `data`)                                  |
+| `verify-reset-token` com codigo errado                           | `400 Token invalido`                                                |
+| `verify-reset-token` com codigo certo                            | `200 Codigo verificado!`                                            |
+| `reset-password` com senha fraca                                 | `400` com a regra que faltou                                        |
+| `reset-password` com senha valida                                | `200 Senha redefinida!`                                             |
+| Login com a senha nova / com a antiga                            | `200` / `401 Usuario ou senha invalidos`                            |
+| `send-reset-password` para e-mail inexistente                    | `404 Usuario nao encontrado`                                        |
 
 ## Status dos itens
 
 Legenda: ✅ concluído e validado no emulador · 🟡 parcial · ⏳ pendente · ⛔ bloqueado
 
-| # | Item | Status | Observações |
-|---|------|--------|-------------|
-| 1 | Barra de pesquisa na Home | ✅ | Barra no topo do feed → `/search` (debounce 300ms). Seções Pessoas/Posts/Oportunidades, loading, vazio, erro. Commit `3277333`. |
-| 2 | Pesquisa de usuários (nome/username) | ✅ | Seção "Pessoas" com `GET /user/search`; avatar, nome, @username, chip Empresa; toque abre o perfil. |
-| 3 | Imagem em posts | ✅ | Picker, preview, remover, "Trocar imagem", upload Cloudinary, feed e perfil, persiste. ("Trocar imagem" só analisado, não exercitado no emulador.) |
-| 4 | Post atualiza no perfil | ✅ | `PostEvents` sincroniza feed↔perfil. Validado após force-stop + relaunch. |
-| 5 | Nome do autor no feed | ✅ | **Bug de backend**: alias `u.name AS userName` colidia com `username`. Alias → `authorName` (`ac901c4`) + teste de persistência. Corrige também a web. |
-| 6 | Abrir perfil ao clicar no usuário | ✅ | `openUserProfile` em PostCard, comentários, card/detalhe de oportunidade e busca. Chat **não** alterado (regra do item). `UserProfileScreen` lista os posts do usuário. |
-| 7 | Salvar oportunidade | ✅ | Toggle + leitura de volta (`isSaved`), ícone preenchido, flag carregada na listagem, persiste. |
-| 8 | Candidatura | ✅ | Toggle + `isSubscribed`, contador ajusta, duplo toque bloqueado (`pendingIds`), persiste. |
-| 9 | Detalhes da oportunidade | ✅ | Sheet com status, empresa clicável, descrição, skills, local, prazo, publicação, candidatos e ações. Campos inexistentes no banco (requisitos/modalidade/vagas) **não foram inventados**. |
-| 10 | Etiquetas de habilidade ilegíveis | ✅ | `chipTheme` com cores explícitas + teste de contraste WCAG (`bc5ec0f`). |
-| 11 | Edição do perfil | ✅ | Validado no emulador (gravou altura/peso/posição/pé em `athlete_profile`). Tela "Editar perfil" (nome, username, bio, privado, altura, peso, posição, perna, nascimento, skills, foto, capa, remover capa) → `PUT /user/update/{username}` + `DELETE /user/banner/delete/{username}`. Commit `19b6435`. |
-| 12 | Chat atualiza automaticamente | ✅ | `ChatCubit` assina o tópico STOMP de todas as conversas; prévia, horário, badge e reordenação. |
-| 13 | Estado vazio no chat | ✅ | Ícone + texto + CTA "Nova conversa" (busca do chat, item 19) + pull-to-refresh. |
-| 14 | Marcar mensagens como lidas | ✅ | `PUT /conversations/{id}/read/{userId}` ao abrir e ao receber com a tela aberta; badge zera; conferido no banco. |
-| 15 | Destaque dos itens da lista de chat | ✅ | Card branco com borda (verde quando não lida), avatar, nome, prévia, horário relativo e badge vermelho. |
-| 16 | Fotos no chat | ✅ | `POST /messages/upload` → URL → mensagem STOMP `type: IMAGE`; bolha renderiza a imagem. |
-| 17 | Emojis no chat | ✅ | UTF-8 preservado (`jsonEncode`) + seletor rápido de 20 emojis no compositor. |
-| 18 | PROGRESS.md / continuidade | ✅ | Este arquivo + `HANDOFF.md`. |
-| 19 | Nova conversa a partir do chat | ✅ | Tela `/chat/new`: só usuários, sem posts/oportunidades, eu mesmo fora da lista; toque abre/cria a conversa e **não** o perfil. Entradas: barra no topo da aba Chat, FAB e CTA do estado vazio. Validado — criou a conversa 2, a lista atualizou, e buscar de novo abriu a **mesma** conversa. |
-| 20 | Oportunidades da empresa no perfil | ✅ | `CompanyOpportunitiesCubit` + `CompanyOpportunitiesList` na aba "Oportunidades" do perfil da empresa e em `/profile/:userId` de empresa; abre o detalhe. Recarrega no pull-to-refresh (`refreshTick`). Validado com 3 oportunidades, incluindo uma criada pela API durante o teste. |
-| 21 | Enviar mensagem pelo perfil | ✅ | Botão **"Conversar"** no perfil de terceiros (mesmo par do `HeaderProfile` da web); abre a conversa existente ou cria. Validado: abriu a conversa 1 com a Ana, com histórico, sem duplicar. |
-| 22 | Seguir usuários | ✅ | `Seguir`/`Deixar de seguir` no perfil; `POST /follow/followAndUnfollow/{a}/{b}`, estado lido de `GET /follow/get/{a}/{b}` (`ACCEPTED`) e relido após o toggle; contador acompanha. Validado seguir → persistir ao reabrir → deixar de seguir (tabela `follow`). |
-| 23 | Seguir clubes/empresas | ✅ | Mesmo componente e mesma regra do item 22 — a web e a API não distinguem papel aqui. Validado no perfil da empresa. |
-| 25 | Características do atleta | ✅ | Aba "Sobre" replica o `AboutProfile` da web (Idade, Posição, Pé dominante, Altura, Peso com `N/A`, + habilidades). Editar perfil passou a gravar **altura em metros** (gravava cm, virava "182m") e o pé dominante virou seleção com as 3 opções da web, preservando valor legado. Validado: 1.82m / Destro. |
-| 26 | Peneiras — inscrição do atleta | ✅ | A ação existia só no detalhe, abaixo da dobra. Agora o **card** tem "Candidatar-se" (como o card da web) e no detalhe o botão é fixo no rodapé; rótulos iguais aos da web. Validado: candidatura gravada em `subscriber` a partir do perfil da empresa. |
-| 27 | Peneiras — salvar | ✅ | O bookmark já existia na aba Oportunidades; passou a existir também nas oportunidades listadas no perfil da empresa (para quem vê como atleta), com as flags resolvidas igual à listagem principal. |
+| #   | Item                                 | Status | Observações                                                                                                                                                                                                                                                                                                  |
+| --- | ------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Barra de pesquisa na Home            | ✅     | Barra no topo do feed → `/search` (debounce 300ms). Seções Pessoas/Posts/Oportunidades, loading, vazio, erro. Commit `3277333`.                                                                                                                                                                              |
+| 2   | Pesquisa de usuários (nome/username) | ✅     | Seção "Pessoas" com `GET /user/search`; avatar, nome, @username, chip Empresa; toque abre o perfil.                                                                                                                                                                                                          |
+| 3   | Imagem em posts                      | ✅     | Picker, preview, remover, "Trocar imagem", upload Cloudinary, feed e perfil, persiste. ("Trocar imagem" só analisado, não exercitado no emulador.)                                                                                                                                                           |
+| 4   | Post atualiza no perfil              | ✅     | `PostEvents` sincroniza feed↔perfil. Validado após force-stop + relaunch.                                                                                                                                                                                                                                    |
+| 5   | Nome do autor no feed                | ✅     | **Bug de backend**: alias `u.name AS userName` colidia com `username`. Alias → `authorName` (`ac901c4`) + teste de persistência. Corrige também a web.                                                                                                                                                       |
+| 6   | Abrir perfil ao clicar no usuário    | ✅     | `openUserProfile` em PostCard, comentários, card/detalhe de oportunidade e busca. Chat **não** alterado (regra do item). `UserProfileScreen` lista os posts do usuário.                                                                                                                                      |
+| 7   | Salvar oportunidade                  | ✅     | Toggle + leitura de volta (`isSaved`), ícone preenchido, flag carregada na listagem, persiste.                                                                                                                                                                                                               |
+| 8   | Candidatura                          | ✅     | Toggle + `isSubscribed`, contador ajusta, duplo toque bloqueado (`pendingIds`), persiste.                                                                                                                                                                                                                    |
+| 9   | Detalhes da oportunidade             | ✅     | Sheet com status, empresa clicável, descrição, skills, local, prazo, publicação, candidatos e ações. Campos inexistentes no banco (requisitos/modalidade/vagas) **não foram inventados**.                                                                                                                    |
+| 10  | Etiquetas de habilidade ilegíveis    | ✅     | `chipTheme` com cores explícitas + teste de contraste WCAG (`bc5ec0f`).                                                                                                                                                                                                                                      |
+| 11  | Edição do perfil                     | ✅     | Validado no emulador (gravou altura/peso/posição/pé em `athlete_profile`). Tela "Editar perfil" (nome, username, bio, privado, altura, peso, posição, perna, nascimento, skills, foto, capa, remover capa) → `PUT /user/update/{username}` + `DELETE /user/banner/delete/{username}`. Commit `19b6435`.      |
+| 12  | Chat atualiza automaticamente        | ✅     | `ChatCubit` assina o tópico STOMP de todas as conversas; prévia, horário, badge e reordenação.                                                                                                                                                                                                               |
+| 13  | Estado vazio no chat                 | ✅     | Ícone + texto + CTA "Nova conversa" (busca do chat, item 19) + pull-to-refresh.                                                                                                                                                                                                                              |
+| 14  | Marcar mensagens como lidas          | ✅     | `PUT /conversations/{id}/read/{userId}` ao abrir e ao receber com a tela aberta; badge zera; conferido no banco.                                                                                                                                                                                             |
+| 15  | Destaque dos itens da lista de chat  | ✅     | Card branco com borda (verde quando não lida), avatar, nome, prévia, horário relativo e badge vermelho.                                                                                                                                                                                                      |
+| 16  | Fotos no chat                        | ✅     | `POST /messages/upload` → URL → mensagem STOMP `type: IMAGE`; bolha renderiza a imagem.                                                                                                                                                                                                                      |
+| 17  | Emojis no chat                       | ✅     | UTF-8 preservado (`jsonEncode`) + seletor rápido de 20 emojis no compositor.                                                                                                                                                                                                                                 |
+| 18  | PROGRESS.md / continuidade           | ✅     | Este arquivo + `HANDOFF.md`.                                                                                                                                                                                                                                                                                 |
+| 19  | Nova conversa a partir do chat       | ✅     | Tela `/chat/new`: só usuários, sem posts/oportunidades, eu mesmo fora da lista; toque abre/cria a conversa e **não** o perfil. Entradas: barra no topo da aba Chat, FAB e CTA do estado vazio. Validado — criou a conversa 2, a lista atualizou, e buscar de novo abriu a **mesma** conversa.                |
+| 20  | Oportunidades da empresa no perfil   | ✅     | `CompanyOpportunitiesCubit` + `CompanyOpportunitiesList` na aba "Oportunidades" do perfil da empresa e em `/profile/:userId` de empresa; abre o detalhe. Recarrega no pull-to-refresh (`refreshTick`). Validado com 3 oportunidades, incluindo uma criada pela API durante o teste.                          |
+| 21  | Enviar mensagem pelo perfil          | ✅     | Botão **"Conversar"** no perfil de terceiros (mesmo par do `HeaderProfile` da web); abre a conversa existente ou cria. Validado: abriu a conversa 1 com a Ana, com histórico, sem duplicar.                                                                                                                  |
+| 22  | Seguir usuários                      | ✅     | `Seguir`/`Deixar de seguir` no perfil; `POST /follow/followAndUnfollow/{a}/{b}`, estado lido de `GET /follow/get/{a}/{b}` (`ACCEPTED`) e relido após o toggle; contador acompanha. Validado seguir → persistir ao reabrir → deixar de seguir (tabela `follow`).                                              |
+| 23  | Seguir clubes/empresas               | ✅     | Mesmo componente e mesma regra do item 22 — a web e a API não distinguem papel aqui. Validado no perfil da empresa.                                                                                                                                                                                          |
+| 25  | Características do atleta            | ✅     | Aba "Sobre" replica o `AboutProfile` da web (Idade, Posição, Pé dominante, Altura, Peso com `N/A`, + habilidades). Editar perfil passou a gravar **altura em metros** (gravava cm, virava "182m") e o pé dominante virou seleção com as 3 opções da web, preservando valor legado. Validado: 1.82m / Destro. |
+| 26  | Peneiras — inscrição do atleta       | ✅     | A ação existia só no detalhe, abaixo da dobra. Agora o **card** tem "Candidatar-se" (como o card da web) e no detalhe o botão é fixo no rodapé; rótulos iguais aos da web. Validado: candidatura gravada em `subscriber` a partir do perfil da empresa.                                                      |
+| 27  | Peneiras — salvar                    | ✅     | O bookmark já existia na aba Oportunidades; passou a existir também nas oportunidades listadas no perfil da empresa (para quem vê como atleta), com as flags resolvidas igual à listagem principal.                                                                                                          |
 
 | 29 | Abas no perfil de outro usuário | ✅ | `ProfileTabs` extraído do meu perfil e usado nos dois: Posts / Sobre / Oportunidades (empresa). Só o conteúdo da aba selecionada aparece. Mesma divisão do `FeedProfile.tsx` da web (que também só mostra a aba de oportunidades em perfil de empresa). |
 | 30 | Aba "Salvos" no meu perfil | ✅ | `SavedOpportunitiesCubit` + `SavedOpportunitiesList` sobre `GET /saved-opportunities/athlete/{id}` — o mesmo endpoint da página "Oportunidades salvas" da web, através do método de data source que já alimentava as flags. Abre o detalhe, remove dos salvos (a web não permite), estado vazio com o texto da web, e recarrega ao selecionar a aba. |
@@ -181,9 +286,11 @@ Itens 1–27 concluídos e validados no emulador. Sugestão de continuidade (par
 ## Registro de trabalho
 
 ### Rodada anterior (já commitada)
+
 - Branch `feat/mobile-post-image-and-profile-posts`: `image_picker`; imagem em post; `ProfilePostsCubit` + aba Posts do perfil; `PostEvents`; fix pull-to-refresh do feed. 148 testes verdes.
 
 ### Rodada atual (branch `feat/mobile-backlog`)
+
 - `93691e2` — cria o PROGRESS.md.
 - `bc5ec0f` — item 10: `app_colors.dart`, `app_theme.dart`, novo `test/core/theme/app_theme_test.dart`.
 - `ac901c4` — item 5 (API): `PostRepository`, `FeedPostSummaryProjection`, `PostService`, `PostServiceTest`, `PostInteractionPersistenceTest`.

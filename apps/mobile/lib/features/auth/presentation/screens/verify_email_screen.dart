@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../cubit/auth_cubit.dart';
+import '../widgets/auth_action.dart';
 import '../widgets/auth_scaffold.dart';
 import '../widgets/verification_code_field.dart';
 
@@ -35,14 +36,20 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    context.read<AuthCubit>().verifyEmail(
-          email: widget.email,
-          verificationToken: _codeController.text.trim(),
-        );
+    final cubit = context.read<AuthCubit>();
+    // A verified account is authenticated, so the router leaves this screen on
+    // its own; only a failure needs reporting.
+    await runAuthAction(
+      context,
+      () => cubit.verifyEmail(
+        email: widget.email,
+        verificationToken: _codeController.text.trim(),
+      ),
+    );
   }
 
   @override
@@ -50,16 +57,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Verificação de email')),
       body: SafeArea(
-        child: BlocConsumer<AuthCubit, AuthState>(
-          listener: (context, state) {
-            final message = state.errorMessage ?? state.successMessage;
-            if (message != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(message)),
-              );
-              context.read<AuthCubit>().clearMessages();
-            }
-          },
+        child: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, state) {
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),

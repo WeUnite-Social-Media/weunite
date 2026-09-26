@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/auth_validation.dart';
 import '../cubit/auth_cubit.dart';
+import '../widgets/auth_action.dart';
 import '../widgets/auth_scaffold.dart';
 import '../widgets/password_form_field.dart';
 
@@ -36,14 +37,20 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    context.read<AuthCubit>().login(
-          username: _usernameController.text.trim(),
-          password: _passwordController.text,
-        );
+    final cubit = context.read<AuthCubit>();
+    // A successful login authenticates the session and the router moves on by
+    // itself, so nothing to do here besides reporting a failure.
+    await runAuthAction(
+      context,
+      () => cubit.login(
+        username: _usernameController.text.trim(),
+        password: _passwordController.text,
+      ),
+    );
   }
 
   @override
@@ -51,15 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final textTheme = Theme.of(context).textTheme;
     return Scaffold(
       body: SafeArea(
-        child: BlocConsumer<AuthCubit, AuthState>(
-          listener: (context, state) {
-            if (state.errorMessage != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.errorMessage!)),
-              );
-              context.read<AuthCubit>().clearMessages();
-            }
-          },
+        child: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, state) {
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),

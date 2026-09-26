@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/auth_validation.dart';
 import '../cubit/auth_cubit.dart';
+import '../widgets/auth_action.dart';
 
 import '../widgets/password_form_field.dart';
 import '../widgets/password_strength_indicator.dart';
@@ -71,23 +72,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
 
     final cubit = context.read<AuthCubit>();
-    if (_isCompany) {
-      await cubit.signUpCompany(
-        name: _nameController.text.trim(),
-        username: _usernameController.text.trim(),
-        email: _emailController.text.trim(),
-        // The API wants the 14 digits, not the mask.
-        cnpj: onlyDigits(_cnpjController.text),
-        password: _passwordController.text,
-      );
-    } else {
-      await cubit.signUpAthlete(
-        name: _nameController.text.trim(),
-        username: _usernameController.text.trim(),
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+    final email = _emailController.text.trim();
+    final created = await runAuthAction(
+      context,
+      () => _isCompany
+          ? cubit.signUpCompany(
+              name: _nameController.text.trim(),
+              username: _usernameController.text.trim(),
+              email: email,
+              // The API wants the 14 digits, not the mask.
+              cnpj: onlyDigits(_cnpjController.text),
+              password: _passwordController.text,
+            )
+          : cubit.signUpAthlete(
+              name: _nameController.text.trim(),
+              username: _usernameController.text.trim(),
+              email: email,
+              password: _passwordController.text,
+            ),
+    );
+    if (!created || !mounted) {
+      return;
     }
+    // Replaces the sign-up screen, as the web replaces the tab with
+    // `/auth/verify-email/:email`: the account exists now, so going back to a
+    // filled-in form would only invite a duplicate attempt.
+    context.pushReplacement('/verify-email/${Uri.encodeComponent(email)}');
   }
 
   @override
@@ -95,28 +105,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final textTheme = Theme.of(context).textTheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Crie sua conta')),
-      body: BlocConsumer<AuthCubit, AuthState>(
-        listener: (context, state) {
-          final message = state.errorMessage ?? state.successMessage;
-          if (message != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(message)),
-            );
-          }
-          final email = _emailController.text.trim();
-          final createdAccount = state.successMessage != null;
-          if (message != null) {
-            context.read<AuthCubit>().clearMessages();
-          }
-          if (createdAccount) {
-            // Replaces the sign-up screen, as the web replaces the tab with
-            // `/auth/verify-email/:email`: the account exists now, so going
-            // back to a filled-in form would only invite a duplicate attempt.
-            context.pushReplacement(
-              '/verify-email/${Uri.encodeComponent(email)}',
-            );
-          }
-        },
+      body: BlocBuilder<AuthCubit, AuthState>(
         builder: (context, state) {
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),

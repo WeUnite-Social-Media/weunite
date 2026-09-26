@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/auth_validation.dart';
 import '../cubit/auth_cubit.dart';
+import '../widgets/auth_action.dart';
 import '../widgets/auth_scaffold.dart';
 
 /// Step 1 of "Esqueceu sua senha?", the phone version of the web's
@@ -59,11 +60,18 @@ class _SendResetPasswordScreenState extends State<SendResetPasswordScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    await context.read<AuthCubit>().sendResetPassword(
-          email: _emailController.text.trim(),
-        );
-    if (mounted) {
-      _startCooldown();
+    final cubit = context.read<AuthCubit>();
+    final email = _emailController.text.trim();
+    final sent = await runAuthAction(
+      context,
+      () => cubit.sendResetPassword(email: email),
+    );
+    if (!mounted) {
+      return;
+    }
+    _startCooldown();
+    if (sent) {
+      context.push('/verify-reset-token/${Uri.encodeComponent(email)}');
     }
   }
 
@@ -72,25 +80,7 @@ class _SendResetPasswordScreenState extends State<SendResetPasswordScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Redefinição de senha')),
       body: SafeArea(
-        child: BlocConsumer<AuthCubit, AuthState>(
-          listener: (context, state) {
-            final message = state.errorMessage ?? state.successMessage;
-            if (message != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(message)),
-              );
-            }
-            final sent = state.successMessage != null;
-            if (message != null) {
-              context.read<AuthCubit>().clearMessages();
-            }
-            if (sent) {
-              context.push(
-                '/verify-reset-token/'
-                '${Uri.encodeComponent(_emailController.text.trim())}',
-              );
-            }
-          },
+        child: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, state) {
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
