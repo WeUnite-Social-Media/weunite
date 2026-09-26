@@ -39,136 +39,168 @@
 Status: `[CONCLUÍDO]` = implementado **e validado no emulador**; `[PRECISA TESTAR]` = implementado, testes automatizados passam, falta validar no app; `[PARCIAL]`; `[PENDENTE]`; `[BLOQUEADO]`.
 
 ### 1. Barra de pesquisa na Home — [CONCLUÍDO]
+
 Restaurar busca na Home: usuários, posts, oportunidades; padrão visual do app; loading; estado vazio; navegação ao clicar; não quebrar outras buscas; reaproveitar implementação anterior.
 **Feito:** barra na Home abre `/search` (tela dedicada, campo com autofoco, debounce 300 ms igual à web). Seções **Pessoas / Posts / Oportunidades**, com loading, vazio (`Nenhum resultado para "x".`) e erro com "Tentar novamente". Validado no emulador (busca "ana", "futebol", "zzzzz").
 
 ### 2. Pesquisa específica de usuários — [CONCLUÍDO]
+
 Buscar por nome e username, mostrar dados suficientes e abrir o perfil.
 **Feito:** seção "Pessoas" usa `GET /api/user/search?query=`; mostra avatar, nome, `@username` e chip "Empresa"; toque abre o perfil. (Obs.: a API também casa por e-mail — decisão do time, registrado como risco.)
 
 ### 3. Envio de imagem em posts — [CONCLUÍDO]
+
 Selecionar imagem, pré-visualizar, remover/trocar, publicar junto do conteúdo, aparecer no feed e no perfil; validar upload, persistência e carregamento.
-**Feito:** `image_picker` + multipart `image` em `POST /posts/create/{userId}`; preview, botão remover e botão **Trocar imagem**; imagem some/aparece corretamente; renderiza no feed e no perfil; persiste após reiniciar. Validado (upload real no Cloudinary). *Obs.: o botão "Trocar imagem" foi adicionado depois e não foi exercitado no emulador (só análise/testes).*
+**Feito:** `image_picker` + multipart `image` em `POST /posts/create/{userId}`; preview, botão remover e botão **Trocar imagem**; imagem some/aparece corretamente; renderiza no feed e no perfil; persiste após reiniciar. Validado (upload real no Cloudinary). _Obs.: o botão "Trocar imagem" foi adicionado depois e não foi exercitado no emulador (só análise/testes)._
 
 ### 4. Post não atualiza no perfil — [CONCLUÍDO]
+
 Post novo deve aparecer no perfil imediatamente, sem refresh manual, e persistir após reiniciar.
 **Feito:** barramento `PostEvents` (ver §31). Ao publicar, feed e perfil recarregam juntos; validado com `force-stop` + relaunch.
 
 ### 5. Nome do autor no feed — [CONCLUÍDO]
+
 Exibir o nome da pessoa (ex.: "Caio Godas"), username como secundário.
 **Feito:** era **bug de backend** (alias SQL colidindo — §6). Corrigido na API; o app já exibia `name`/`@username`.
 
 ### 6. Abrir perfil ao clicar no usuário — [CONCLUÍDO]
+
 Foto/nome abrem o perfil no feed, posts, comentários, oportunidades, resultados de busca e listagens. **Exceção: não aplicar dentro do chat.**
 **Feito:** helper `openUserProfile` (próprio id → aba `/profile`; outros → `/profile/:userId`). Aplicado em PostCard, comentários (fecha o sheet antes), card/detalhe de oportunidade e resultados de busca. Chat não alterado. Validado no emulador.
 
 ### 7. Botão "Salvar oportunidade" — [CONCLUÍDO]
+
 Salvar/remover, indicar visualmente, persistir, sem inconsistência front/back.
 **Feito:** `POST /saved-opportunities/toggle/...` + leitura de volta (`isSaved`); ícone preenchido/verde; estado carregado na listagem; persiste após reiniciar. Validado (banco `saved_opportunities`).
 
 ### 8. Candidatura a oportunidades — [CONCLUÍDO]
+
 Abrir, candidatar, confirmação visual, ver que já se candidatou, impedir duplicidade, manter após reiniciar.
 **Feito:** `POST /subscriber/toggleSubscriber/...` + `isSubscribed`; botão vira "Candidatura enviada" (toque cancela); contador de inscritos ajusta; duplo toque bloqueado por `pendingIds`. Validado: candidatar → cancelar → candidatar (linhas na tabela `subscriber`).
 
 ### 9. Faltam informações nas oportunidades — [CONCLUÍDO]
+
 Mostrar tudo que existir no banco; organizar visualmente; não inventar dados.
 **Feito:** sheet de detalhe com status (Aberta/Encerrada), empresa (clicável), descrição, habilidades, local, "Inscrições até", "Publicada em", nº de candidatos e ações. **Campos inexistentes no banco (requisitos, modalidade, vagas) não foram inventados** — ver §15.
 
 ### 10. Etiquetas de habilidades ilegíveis — [CONCLUÍDO]
+
 Contraste/cores/bordas, claro e escuro.
 **Feito:** `chipTheme` com verde-800 sobre verde-100 + borda (~7:1). Só existe tema claro no app. Teste de widget garante a cor e o contraste.
 
 ### 11. Edição do perfil — [CONCLUÍDO]
+
 Bio, características, habilidades, foto, banner; persistir, refletir na hora e após reabrir; trocar/remover imagem.
 **Feito:** tela "Editar perfil" (nome, username, bio, privado, altura, peso, posição, pé dominante, data de nascimento, habilidades via catálogo, foto e capa, remover capa) → `PUT /user/update/{username}` multipart e `DELETE /user/banner/delete/{username}`; ao salvar, o perfil recarrega. Validado no emulador: alterações gravadas em `athlete_profile` e refletidas na aba "Sobre".
 
 ### 12. Chat não atualiza automaticamente — [CONCLUÍDO]
+
 Novas mensagens aparecem sozinhas; conversa e lista atualizam; última mensagem, horário e contador.
 **Feito:** `ChatCubit` assina o tópico STOMP de cada conversa; atualiza prévia/horário/badge e reordena. Validado (mensagem enviada pela Ana via script STOMP apareceu sem refresh).
 
 ### 13. Tela em branco quando não existem conversas — [CONCLUÍDO]
+
 Estado vazio + ação para procurar usuários/nova conversa.
 **Feito:** ícone + "Voce ainda nao possui conversas." + botão "Procurar pessoas" (hoje abre `/search`; **o item 19 pede que passe a abrir a busca exclusiva do chat**). Validado com a conta empresa.
 
 ### 14. Mensagens não são marcadas como lidas — [CONCLUÍDO]
+
 Marcar ao visualizar, atualizar backend e contador, sumir indicador, manter estado.
 **Feito:** `PUT /conversations/{id}/read/{userId}` ao abrir a conversa e a cada mensagem recebida com a tela aberta; badge zerado local + recarga ao voltar. Validado no banco (`tb_message.is_read`).
 
 ### 15. Destaque das conversas no mobile — [CONCLUÍDO]
+
 Item destacado do fundo, como no desktop; avatar, nome, última mensagem, horário, contador; estados lido/não lido.
 **Feito:** card branco com borda (verde quando não lida), avatar 24, nome em peso maior, prévia, horário e badge vermelho. Validado visualmente.
 
 ### 16. Envio de fotos no chat — [CONCLUÍDO]
+
 Botão, seleção, upload, envio, exibição, persistência.
 **Feito:** botão de imagem no compositor → `POST /messages/upload` (retorna `fileUrl`) → mensagem STOMP `type: IMAGE` com a URL; bolha renderiza a imagem. Validado (mensagem id 4 no banco).
 
 ### 17. Emojis no chat — [CONCLUÍDO]
+
 Digitados normalmente, armazenados/exibidos corretamente, sem quebrar envio/histórico/preview; se possível um seletor.
 **Feito:** conteúdo vai por `jsonEncode` (UTF-8 preservado); adicionado **seletor rápido** com 20 emojis no compositor. Validado (⚽ gravado e exibido).
 
 ### 18. PROGRESS.md / continuidade — [CONCLUÍDO]
+
 `PROGRESS.md` criado e atualizado; este `HANDOFF.md` completa o protocolo.
 
 ### 19. Iniciar nova conversa pelo chat — [CONCLUÍDO]
+
 A busca **dentro do Chat** deve: pesquisar **apenas usuários**; não exibir posts nem oportunidades; mostrar foto, nome e username; ao clicar, **abrir a conversa** (existente ou nova) e **não** o perfil; botão claro "Nova conversa". Manter a busca geral abrindo perfil nas outras áreas.
 **Feito:** `/chat/new` (`NewConversationScreen` + `UserSearchCubit`) busca **apenas usuários** (debounce 300 ms), deixa o próprio usuário de fora e, ao tocar, chama `ChatRepository.startConversationWith(userId)` → `POST /conversations/create` (a API devolve a existente quando já há uma 1:1) e abre `/chat/:id`. Entradas: barra "Buscar pessoas para conversar" no topo da aba Chat, FAB "Nova conversa" e o botão do estado vazio. Validado: criou a conversa 2 (empresa↔atleta), a lista passou a mostrá-la, e repetir a busca abriu a **mesma** conversa.
 
 ### 20. Exibir oportunidades criadas pela empresa — [CONCLUÍDO]
+
 Seção "Oportunidades da empresa" deve listar as oportunidades daquela empresa (título, status, modalidade, localização, data, vagas quando existir), abrir detalhes ao clicar, refletir criação/edição/remoção e persistir.
 **Feito:** `CompanyOpportunitiesCubit` + `CompanyOpportunitiesList` (`GET /opportunities/get/company/{companyId}`) na aba "Oportunidades" do perfil da empresa e numa seção do `/profile/:userId` quando o perfil é de empresa; toque abre o detalhe. O pull-to-refresh do perfil recarrega a lista (`refreshTick`). Campos inexistentes (modalidade/vagas) continuam não sendo inventados. Validado com 3 oportunidades, incluindo uma criada pela API durante o teste.
 
 ### 21. Enviar mensagem pelo perfil de outro usuário — [CONCLUÍDO]
+
 Reutilizar a ação que a web já tem no perfil; abrir a conversa existente ou criar, indo direto para a tela de mensagens.
 **Referência na web:** `apps/web/src/features/profile/components/HeaderProfile.tsx` — botão "Conversar" (ícone `Send`, "Abrindo..." enquanto cria), só quando `!isOwnProfile`.
 **Feito:** `UserProfileActions` no cabeçalho de `/profile/:userId` com o mesmo par de botões. Usa `startConversationWith` (o mesmo método do item 19) e navega para `/chat/:id`. Validado: abriu a conversa existente com a Ana, com histórico, sem criar duplicata.
 
 ### 22. Seguir usuários — [CONCLUÍDO]
+
 Seguir, deixar de seguir, refletir no visual, persistir e manter após recarregar.
 **Referência na web:** `HeaderProfile.tsx` / `CardFollowing.tsx` + `useFollowAction` → `POST /follow/followAndUnfollow/{a}/{b}`, status por `GET /follow/get/{a}/{b}` (`status === 'ACCEPTED'`).
 **Feito:** mesmo par de rótulos ("Seguir" / "Deixar de seguir") em `UserProfileActions`; `Profile.isFollowing` vem de `GET /follow/get/...` no carregamento e o toggle **relê** o estado (a web deduz pela string da mensagem, o que é frágil); contador de seguidores acompanha, com reversão em caso de erro. Validado: seguir → reabrir o perfil → deixar de seguir, conferindo a tabela `follow`.
 
 ### 23. Seguir clubes — [CONCLUÍDO]
+
 **Feito:** é o **mesmo** componente e o mesmo endpoint — a web não diferencia papel no botão de seguir e a API também não (`FollowService` só valida `follower != followed`). Nenhuma solução paralela foi criada. Validado no perfil da empresa.
 
 ### 25. Características do atleta no Editar perfil — [CONCLUÍDO]
+
 **Referência na web:** `EditProfile.tsx` (bloco "Informações do atleta", só para `role === 'athlete'`): `height` (m, step 0.01), `weight` (kg), `footDomain` (select Direito/Esquerdo/Ambos), `position` (texto), `birthDate` (`YYYY-MM-DD`), `skills`; e `AboutProfile.tsx`, que mostra Idade, Posição, Pé dominante, Altura (`${height}m`), Peso (`${weight}kg`) com fallback "N/A".
 **Feito:** os campos já existiam no mobile, mas com duas divergências reais, agora corrigidas:
+
 - a altura era pedida em **centímetros** e gravada como `182`, que a web renderiza como "182m" — agora é em **metros** (`1.82`);
 - o pé dominante era texto livre — virou a mesma seleção de três opções da web, mantendo como opção o valor já salvo para não apagar dado legado ao salvar.
-Além disso, a aba **"Sobre"** (que mostrava só a bio) passou a replicar o `AboutProfile`: características do atleta, CNPJ/`N/A` quando for empresa e as habilidades. Validado: 1.82m / 78kg / Destro / Meio-campo aparecendo em "Sobre" e no banco.
+  Além disso, a aba **"Sobre"** (que mostrava só a bio) passou a replicar o `AboutProfile`: características do atleta, CNPJ/`N/A` quando for empresa e as habilidades. Validado: 1.82m / 78kg / Destro / Meio-campo aparecendo em "Sobre" e no banco.
 
 ### 26. Peneiras — inscrição do atleta — [CONCLUÍDO]
+
 **Referência na web:** o botão de candidatura fica no **rodapé do card** (`OpportunityCard.tsx`) e também no detalhe; visível só quando `isAthlete && !isOwner`; rótulos "Candidatar-se" / "Cancelar candidatura" / "Prazo encerrado" (desabilitado) / "Processando...".
 **Causa do problema relatado:** no mobile a ação existia **apenas dentro do detalhe e abaixo da dobra** — era preciso rolar o bottom sheet para vê-la; numa conta empresa ela é escondida de propósito.
 **Feito:** `SubscribeButton` (rótulos iguais aos da web) no rodapé do card e, no detalhe, fixado no rodapé do sheet. Validado: candidatura gravada em `subscriber` a partir do perfil da empresa e refletida na aba Oportunidades.
 
 ### 27. Peneiras — salvar — [CONCLUÍDO]
+
 **Referência na web:** ícone `Bookmark` no card, só para atleta (`OpportunityCard.tsx`); o detalhe da web **não** tem o botão.
 **Feito:** o bookmark já existia na aba Oportunidades (item 7); o que faltava era nas oportunidades listadas **no perfil da empresa** — agora aparecem lá para quem vê como atleta, com `isSaved`/`isSubscribed` resolvidos pela mesma rotina da listagem principal (`_withViewerFlags`). Validado no emulador.
 
 ### 29. Abas no perfil de outro usuário — [CONCLUÍDO]
+
 Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
 **Referência na web:** `apps/web/src/features/profile/components/FeedProfile.tsx` — um único conjunto de abas para qualquer perfil (Publicações / Comentários / Sobre, + Oportunidades quando o dono é empresa); a aba inicial é sempre a primeira, e o que muda entre meu perfil e o de outro fica só no cabeçalho.
 **Feito:** o `TabBar` do meu perfil virou o componente `ProfileTabs`, usado nas duas telas. `/profile/:userId` passou a ter Posts / Sobre / Oportunidades (empresa), mostrando só a aba selecionada. Validado no emulador.
 **Diferença que permanece:** o mobile não tem a aba "Comentários" que a web tem (não foi pedida; `GET /comment/get/user/{id}` existe caso queiram).
 
 ### 30. Aba de oportunidades salvas no meu perfil — [CONCLUÍDO]
+
 **Referência na web:** não existe aba de salvos no perfil; a funcionalidade vive em `/opportunity/saved` (`SavedOpportunitiesPage.tsx`, `useGetSavedOpportunities` → `GET /saved-opportunities/athlete/{id}`, guard de atleta, vazio "Nenhuma oportunidade salva ainda").
 **Feito:** aba "Salvos" no meu perfil com `SavedOpportunitiesCubit` + `SavedOpportunitiesList` sobre **o mesmo endpoint**, reaproveitando o método de data source que já alimentava as flags `isSaved`. Abre o detalhe, mostra o vazio com o texto da web e recarrega ao selecionar a aba.
 **Diferença consciente:** aqui dá para **remover dos salvos** (a web não deixa — o bookmark da página dela é decorativo), porque o item pedia que a aba se atualizasse ao remover.
 
 ### 31. Status de visualização das mensagens — [CONCLUÍDO]
+
 **Referência na web:** `apps/web/src/features/chat/components/Message.tsx` — dois ícones `Check` nas mensagens que eu enviei, cinza quando `message.read` é falso e verde quando é verdadeiro. Não existe "enviada/entregue" separado, nem na web nem na API.
 **Campos da API:** `MessageDTO.isRead` e `readAt` (`Message.java`), atualizados por `MessageService.markMessagesAsRead` (mensagens da conversa cujo remetente != leitor).
 **Feito:** mesmo duplo check no mobile. Como a web marca como lida só por REST (`PUT /conversations/{id}/read/{userId}`), o remetente dela nunca vê o check virar verde sem refetch; o mobile passou a publicar também em `/app/chat.markAsRead` e a assinar `/topic/conversation/{id}/read` — **ambos já existiam no backend** (`ChatController`), nada foi criado. Validado: a "Ana" leu por STOMP e os checks ficaram verdes na hora.
 
 ### 32. Badge de não lidas na navegação — [CONCLUÍDO]
+
 **Referência na web:** a web **não** tem badge de chat no menu (o badge verde da sidebar é de notificações, `GET /notifications/user/{id}/unread-count`, cortado em "9+"). O `unreadCount` de chat só existe por conversa, em `GET /conversations/user/{userId}`.
 **Feito:** badge vermelho no ícone de Chat da barra inferior, com corte "9+", lendo `ChatState.totalUnreadCount` — a soma do `unreadCount` das conversas que o `ChatCubit` já mantém e atualiza por STOMP. Sem contador paralelo, sem requisição nova. Validado: mensagem recebida com o app na Home fez o badge aparecer sozinho; abrir a conversa zerou.
 
 > Observação: não houve item 24 nem 28 na lista enviada pelo usuário.
 
 ### Requisitos/descobertas adicionais (não pedidos, encontrados em QA)
+
 - Feed não fazia pull-to-refresh com poucos posts — **corrigido**.
 - `GET /api/user/search` casa também por e-mail — **apenas registrado** (decisão do time).
 - `/posts/:postId` (`PostDetailScreen`) é placeholder — **pendente**.
@@ -180,20 +212,24 @@ Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
 ## 3. O QUE FOI FEITO NESTA SESSÃO (detalhado)
 
 ### 3.1 Etiquetas ilegíveis (item 10) — commit `bc5ec0f`
+
 **Errado:** `chipTheme` definia só `fontWeight`; no Material 3 a cor do label acabava resolvida como branca sobre fundo claro → texto invisível.
 **Solução:** cores explícitas no tema (`labelStyle`/`secondaryLabelStyle` com `AppColors.accentGreenStrong`, `backgroundColor` `accentGreenSurface`, borda `accentGreen 40%`). Duas cores novas em `AppColors`.
 **Por quê:** corrigir no tema conserta todos os chips (oportunidades, detalhe, perfil) de uma vez.
 **Teste:** widget test verifica a cor do label e calcula contraste WCAG ≥ 4.5.
 
 ### 3.2 Nome do autor no feed (item 5) — commit `ac901c4` (**backend**)
+
 **Errado:** o feed exibia o username no lugar do nome. Causa real: nas queries nativas de feed, os aliases `u.name AS userName` e `u.username AS username` **colidem** — o banco faz case-folding de aliases não citados, os dois viram `username` e o nome se perde na projeção.
 **Solução:** alias renomeado para `authorName` nas duas queries (`findFeedSummaries` e `findFeedSummariesByUserId`), getter da projeção `getUserName()` → `getAuthorName()`, ajuste no `PostService` e no fake do teste unitário.
 **Por quê:** o teste unitário usava projeção falsa e nunca pegaria colisão de alias; por isso foi adicionado **teste de persistência** (`@DataJpaTest`) que executa as duas queries e compara nome vs username.
 **Efeito colateral positivo:** corrige também a web, que consome o mesmo DTO.
 
 ### 3.3 Abrir perfil ao tocar no usuário (item 6) — commit `c4e3439`
+
 **Errado:** avatar/nome não eram clicáveis; entidades não carregavam o id do autor; perfil de terceiros só mostrava o cabeçalho.
 **Solução:**
+
 - `Post.authorId`, `Comment.authorId`, `Opportunity.companyId` (opcionais, preenchidos pelos DTOs) — opcionais para não quebrar construções existentes em testes.
 - `openUserProfile(context, id, {closeCurrentRoute})` + função pura `profileLocationFor` (testada): próprio id → `context.go('/profile')` (troca de aba), outros → `context.push('/profile/:id')`.
 - `PostCard` ganhou `enableAuthorNavigation` (desligado dentro do próprio perfil).
@@ -201,17 +237,21 @@ Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
 - **`PostEvents` passou a ser app-scoped** (criado em `WeUniteMobileApp`), porque rotas empilhadas fora do shell (`/profile/:userId`, `/search`) não enxergam providers criados dentro do `StatefulShellRoute`.
 
 ### 3.4 Busca (itens 1 e 2) — commit `3277333` (**backend + mobile**)
+
 **Errado:** não existia busca no mobile; a API não tinha busca de posts.
 **Solução backend:** `GET /api/posts/search?query=&page=&size=` — query nativa nova (`searchFeedSummaries`) que filtra `post.text ILIKE %query%` respeitando `deleted = false`, reutilizando a mesma projeção do feed; `PostService.searchPosts` (query vazia ⇒ lista vazia, `size` limitado a 100); teste de persistência cobrindo case-insensitive e post apagado.
 **Solução mobile:** `SearchCubit` (debounce 300 ms, `Future.wait` de 3 fontes) + `/search`:
+
 - usuários: `GET /user/search` (via `ProfileRepository.searchUsers`);
 - posts: endpoint novo (via `FeedRepository.searchPosts`);
 - oportunidades: **filtro no cliente** sobre `GET /opportunities/get` (título, descrição, empresa, local, skills) — **mesma estratégia do `apps/web`**, já que a API não tem busca de oportunidades.
-**Limitação conhecida:** nos resultados de busca o post é exibido sem ação de curtir (só comentários), para não duplicar a lógica otimista de likes num terceiro cubit.
+  **Limitação conhecida:** nos resultados de busca o post é exibido sem ação de curtir (só comentários), para não duplicar a lógica otimista de likes num terceiro cubit.
 
 ### 3.5 Oportunidades: salvar, candidatar, detalhes (itens 7, 8, 9) — commit `5d29a2e`
+
 **Errado:** `onPressed: () {}` no bookmark e no "Candidatar-se"; a listagem não sabia se o usuário salvou/se candidatou; detalhe pobre.
 **Solução:**
+
 - `OpportunityRepositoryImpl` recebeu `CurrentUserProvider`; `getOpportunities` busca **uma vez** os conjuntos salvos (`/saved-opportunities/athlete/{id}`) e inscritos (`/subscriber/athlete/{id}`) e marca `isSaved`/`isSubscribed` (falha desses dois não quebra a listagem — conta empresa recebe erro, flags ficam falsas).
 - `toggleSaved`/`toggleSubscription` no repositório **não recebem mais `athleteId`** (regra do projeto: id do usuário logado vem do `CurrentUserProvider`) e **retornam o estado final lido da API** (`isSaved`/`isSubscribed`), evitando divergência front/back.
 - `OpportunitiesCubit` faz atualização otimista + reconciliação + reversão com mensagem; `pendingIds` bloqueia toque duplo.
@@ -219,8 +259,10 @@ Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
 - Ações escondidas para conta empresa (endpoints são athlete-only).
 
 ### 3.6 Chat (itens 12, 13, 14, 15, 16, 17) — commit `d187729`
+
 **Errado:** lista sem realtime, sem pull-to-refresh e sem estado vazio; itens sem contraste; mensagens nunca marcadas como lidas (badge preso); sem envio de imagem; sem seletor de emoji.
 **Solução:**
+
 - `ChatCubit` agora assina `watchConversation(id)` de **todas** as conversas carregadas; ao receber mensagem atualiza prévia/horário/tipo/badge e reordena (mais recente primeiro). Recebe `currentUserId` (vindo do `AuthCubit` no router) só para decidir se a mensagem é do outro lado.
 - `Conversation` ganhou `lastMessageAt` e `lastMessageType` (prévia "Imagem"/"Arquivo").
 - `ConversationCubit.start()` chama `markAsRead()`; também marca ao receber mensagem com a tela aberta. Falha é silenciosa (read receipt é best-effort).
@@ -229,6 +271,7 @@ Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
 - Emoji: seletor simples (sem dependência nova) que insere no ponto do cursor.
 
 ### 3.7 Edição de perfil (item 11) + base dos itens 19/20 — commit `19b6435`
+
 - `UserDto`/`Profile` ganharam `isPrivate`, `height`, `weight`, `footDomain`, `position`, `birthDate`, `skills`.
 - `UpdateUserRequestDto` (novo) monta o JSON do part `user` — só envia campos preenchidos (a API mantém o valor atual em `null` e limpa a bio com string vazia).
 - `EditProfileCubit`/`EditProfileScreen`: formulário completo, catálogo de skills (`GET /opportunities/skills`), seleção de foto/capa (10 MB), remoção de capa, salvar com estado `isSaving` e erro; ao concluir, `ProfileCubit.loadMyProfile()`.
@@ -242,6 +285,7 @@ Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
 > Use `git show --stat <commit>` para o detalhe fino. Lista por área:
 
 **Backend (`apps/api`)**
+
 - `src/main/java/com/weunite/api/posts/repository/PostRepository.java` — alias `authorName` nas 2 queries de feed; **nova** query `searchFeedSummaries`.
 - `src/main/java/com/weunite/api/posts/repository/FeedPostSummaryProjection.java` — `getUserName()` → `getAuthorName()`.
 - `src/main/java/com/weunite/api/posts/service/PostService.java` — usa `getAuthorName()`; **novo** `searchPosts(...)`.
@@ -250,6 +294,7 @@ Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
 - `src/test/java/com/weunite/api/posts/domain/PostInteractionPersistenceTest.java` — 2 testes novos (nome vs username; busca por texto).
 
 **Mobile — core**
+
 - `lib/core/theme/app_colors.dart` — `accentGreenStrong`, `accentGreenSurface`.
 - `lib/core/theme/app_theme.dart` — `chipTheme` legível.
 - `lib/core/contracts/user_dto.dart` — novos campos do usuário.
@@ -260,6 +305,7 @@ Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
 - `lib/app/bootstrap.dart` — `OpportunityRepositoryImpl` recebe `CurrentUserProvider`.
 
 **Mobile — feed**
+
 - `data/feed_remote_data_source.dart` — `searchPosts`, `getUserPosts`, imagem no `createPost`, helper movido para core.
 - `data/feed_repository_impl.dart`, `domain/repositories/feed_repository.dart` — `getMyPosts`, `getUserPosts`, `searchPosts`, `createPost(imagePath)`.
 - `domain/entities/post.dart` / `comment.dart` — `authorId`.
@@ -272,6 +318,7 @@ Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
 - `presentation/screens/feed_screen.dart` — barra de busca, `AlwaysScrollableScrollPhysics`, helpers de sheet.
 
 **Mobile — profile**
+
 - `data/profile_remote_data_source.dart` — `searchUsers`, `updateUser`, `deleteBanner`, `getSkills`.
 - `data/profile_models.dart` — mapeia novos campos.
 - `data/update_profile_models.dart` — **novo**.
@@ -286,6 +333,7 @@ Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
 - `presentation/screens/edit_profile_screen.dart` — **novo**.
 
 **Mobile — opportunities**
+
 - `data/opportunity_models.dart` — `createdAt`, `SavedOpportunityDto`, `SubscriberDto`.
 - `data/opportunity_remote_data_source.dart` — salvos, inscrições, `isSaved`, `isSubscribed`, `getCompanyOpportunities`.
 - `data/opportunity_repository_impl.dart`, `domain/repositories/opportunity_repository.dart` — flags, toggles sem `athleteId`, `getCompanyOpportunities`.
@@ -296,6 +344,7 @@ Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
 - `presentation/screens/opportunities_screen.dart` — ações, `pendingIds`, gate de atleta.
 
 **Mobile — chat**
+
 - `data/chat_models.dart` — `type` no `SendMessageRequestDto`; `lastMessageAt`/`lastMessageType`.
 - `data/chat_realtime_client.dart` — `sendMessage(type:)`.
 - `data/chat_remote_data_source.dart` — `markAsRead`, `uploadAttachment`, `createConversation`.
@@ -307,6 +356,7 @@ Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
 - `presentation/screens/conversation_screen.dart` — bolha de imagem, botões de imagem/emoji.
 
 **Mobile — search (novo módulo)**
+
 - `presentation/cubit/search_cubit.dart` (+ state), `presentation/screens/search_screen.dart`, `presentation/widgets/home_search_bar.dart`.
 
 **Testes alterados/criados** — ver §25.
@@ -317,19 +367,19 @@ Separar os conteúdos em abas, como no meu perfil, em vez de empilhar tudo.
 
 ## 5. ARQUIVOS CRIADOS (resumo de finalidade)
 
-| Arquivo | Para que serve | Quem usa | Pendências |
-|---|---|---|---|
-| `lib/core/network/image_media_type.dart` | Content-type de imagem por extensão (Cloudinary rejeita octet-stream) | feed, chat, profile (data) | — |
-| `lib/features/feed/domain/post_events.dart` | Barramento de eventos de post (criado/alterado/comentado) | `FeedCubit`, `ProfilePostsCubit`, sheets | — |
-| `lib/features/profile/presentation/navigation/open_user_profile.dart` | Decide e executa navegação para perfil | feed, comentários, oportunidades, busca | — |
-| `lib/features/profile/presentation/widgets/profile_posts_list.dart` | Lista de posts embutida no perfil | `ProfileScreen`, `UserProfileScreen` | — |
-| `lib/features/profile/presentation/cubit/profile_posts_cubit.dart` (+state) | Posts de um perfil (próprio ou de terceiro) | telas de perfil | — |
-| `lib/features/profile/presentation/cubit/edit_profile_cubit.dart` (+state) | Estado do formulário de perfil | `EditProfileScreen` | validar no emulador |
-| `lib/features/profile/presentation/screens/edit_profile_screen.dart` | Formulário de edição | `ProfileScreen` | validar no emulador |
-| `lib/features/profile/data/update_profile_models.dart` | Body do part `user` do update | `ProfileRemoteDataSource` | — |
-| `lib/features/opportunities/presentation/widgets/opportunity_detail_route.dart` | Abre o detalhe ligado ao cubit | `OpportunitiesScreen` | — |
-| `lib/features/search/**` | Busca geral (Home) | rota `/search` | — |
-| `apps/mobile/test/**` (vários) | Testes novos | CI/local | — |
+| Arquivo                                                                         | Para que serve                                                        | Quem usa                                 | Pendências          |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------- | ------------------- |
+| `lib/core/network/image_media_type.dart`                                        | Content-type de imagem por extensão (Cloudinary rejeita octet-stream) | feed, chat, profile (data)               | —                   |
+| `lib/features/feed/domain/post_events.dart`                                     | Barramento de eventos de post (criado/alterado/comentado)             | `FeedCubit`, `ProfilePostsCubit`, sheets | —                   |
+| `lib/features/profile/presentation/navigation/open_user_profile.dart`           | Decide e executa navegação para perfil                                | feed, comentários, oportunidades, busca  | —                   |
+| `lib/features/profile/presentation/widgets/profile_posts_list.dart`             | Lista de posts embutida no perfil                                     | `ProfileScreen`, `UserProfileScreen`     | —                   |
+| `lib/features/profile/presentation/cubit/profile_posts_cubit.dart` (+state)     | Posts de um perfil (próprio ou de terceiro)                           | telas de perfil                          | —                   |
+| `lib/features/profile/presentation/cubit/edit_profile_cubit.dart` (+state)      | Estado do formulário de perfil                                        | `EditProfileScreen`                      | validar no emulador |
+| `lib/features/profile/presentation/screens/edit_profile_screen.dart`            | Formulário de edição                                                  | `ProfileScreen`                          | validar no emulador |
+| `lib/features/profile/data/update_profile_models.dart`                          | Body do part `user` do update                                         | `ProfileRemoteDataSource`                | —                   |
+| `lib/features/opportunities/presentation/widgets/opportunity_detail_route.dart` | Abre o detalhe ligado ao cubit                                        | `OpportunitiesScreen`                    | —                   |
+| `lib/features/search/**`                                                        | Busca geral (Home)                                                    | rota `/search`                           | —                   |
+| `apps/mobile/test/**` (vários)                                                  | Testes novos                                                          | CI/local                                 | —                   |
 
 ---
 
@@ -353,12 +403,15 @@ Nada foi alterado em: segurança/JWT, WebSocket/STOMP, Cloudinary, migrations, D
 > Base: `http://localhost:8080/api`. Autenticação: `Authorization: Bearer <jwt>`.
 
 **Criado**
+
 - `GET /posts/search?query=&page=&size=` — busca posts por texto. Resposta: array de `FeedPostSummaryDTO`. Query vazia ⇒ `[]`. Usado por `FeedRemoteDataSource.searchPosts` (tela `/search`).
 
 **Alterado (comportamento)**
+
 - `GET /posts/get` e `GET /posts/get/user/{userId}` — passaram a devolver `user.name` correto (antes vinha o username).
 
 **Usados pelo mobile (inalterados)**
+
 - Auth: `POST /auth/login`, `POST /auth/signup`, `POST /auth/signup/company`, `POST /auth/verify-email/{email}`.
 - Posts: `GET /posts/get`, `GET /posts/get/user/{userId}`, `POST /posts/create/{userId}` (multipart `post` + `image` opcional).
 - Likes/comentários: `POST /likes/toggleLike/{userId}/{postId}`, `GET /comment/get/{postId}`, `POST /comment/create?userId=&postId=`.
@@ -369,6 +422,7 @@ Nada foi alterado em: segurança/JWT, WebSocket/STOMP, Cloudinary, migrations, D
 - Chat STOMP: conecta em `ws://host:8080/ws/websocket` (SockJS), header `Authorization: Bearer ...` no CONNECT; envia em `/app/chat.sendMessage` (`{conversationId, senderId, content, type}`); recebe em `/topic/conversation/{id}`. Existe `/app/chat.markAsRead` (não usado; o app usa o REST).
 
 **Pontos de atenção**
+
 - `GET /user/search` casa por **e-mail** também (possível exposição).
 - `POST /messages/upload` **não cria** a mensagem; só devolve a URL.
 - `POST /conversations/create` é idempotente para 1:1 (devolve a existente).
@@ -452,6 +506,7 @@ Listagem (`GET /opportunities/get`) já marcada com `isSaved`/`isSubscribed`; ca
 ## 16. UPLOAD DE ARQUIVOS / IMAGENS
 
 Tudo vai para **Cloudinary**, sempre pela API (o app nunca fala com o Cloudinary direto). Limite do backend: **10 MB** (`spring.servlet.multipart.max-file-size`); o app reduz para 2048 px / qualidade 85 antes de enviar e recusa acima de 10 MB com mensagem.
+
 - **Post:** `POST /posts/create/{userId}`, part `image` → `post.image_url`.
 - **Chat:** `POST /messages/upload` → `{fileUrl}` → mensagem `IMAGE`.
 - **Foto de perfil / capa:** `PUT /user/update/{username}`, parts `profileImage` / `bannerImage`; remoção da capa por `DELETE /user/banner/delete/{username}`.
@@ -467,17 +522,17 @@ Tudo vai para **Cloudinary**, sempre pela API (o app nunca fala com o Cloudinary
 
 ## 18. COMPONENTES IMPORTANTES
 
-| Arquivo | Função | Onde é usado | Alterações | Pendências |
-|---|---|---|---|---|
-| `feed/presentation/widgets/post_card.dart` | Card de post | feed, perfil, busca | imagem, autor clicável | — |
-| `feed/presentation/widgets/create_post_sheet.dart` | Criar post | FAB do feed | imagem/preview/trocar | trocar imagem não testado no app |
-| `feed/presentation/widgets/comments_sheet.dart` | Comentários | feed, perfis, busca | helper + evento + autor clicável | — |
-| `opportunities/presentation/widgets/opportunity_card.dart` | Card + detalhe | oportunidades, busca | salvar/candidatar/detalhe | — |
-| `chat/presentation/screens/conversations_screen.dart` | Lista de conversas | aba Chat | redesign, refresh, vazio | precisa da busca do item 19 |
-| `chat/presentation/screens/conversation_screen.dart` | Conversa | rota `/chat/:id` | imagem, emoji | sem editar/apagar |
-| `profile/presentation/screens/profile_screen.dart` | Perfil próprio | aba Perfil | posts, editar | aba Oportunidades (item 20) |
-| `profile/presentation/screens/user_profile_screen.dart` | Perfil de terceiros | `/profile/:userId` | posts | oportunidades se for empresa (item 20) |
-| `search/presentation/screens/search_screen.dart` | Busca geral | `/search` | novo | sem curtir nos posts |
+| Arquivo                                                    | Função              | Onde é usado         | Alterações                       | Pendências                             |
+| ---------------------------------------------------------- | ------------------- | -------------------- | -------------------------------- | -------------------------------------- |
+| `feed/presentation/widgets/post_card.dart`                 | Card de post        | feed, perfil, busca  | imagem, autor clicável           | —                                      |
+| `feed/presentation/widgets/create_post_sheet.dart`         | Criar post          | FAB do feed          | imagem/preview/trocar            | trocar imagem não testado no app       |
+| `feed/presentation/widgets/comments_sheet.dart`            | Comentários         | feed, perfis, busca  | helper + evento + autor clicável | —                                      |
+| `opportunities/presentation/widgets/opportunity_card.dart` | Card + detalhe      | oportunidades, busca | salvar/candidatar/detalhe        | —                                      |
+| `chat/presentation/screens/conversations_screen.dart`      | Lista de conversas  | aba Chat             | redesign, refresh, vazio         | precisa da busca do item 19            |
+| `chat/presentation/screens/conversation_screen.dart`       | Conversa            | rota `/chat/:id`     | imagem, emoji                    | sem editar/apagar                      |
+| `profile/presentation/screens/profile_screen.dart`         | Perfil próprio      | aba Perfil           | posts, editar                    | aba Oportunidades (item 20)            |
+| `profile/presentation/screens/user_profile_screen.dart`    | Perfil de terceiros | `/profile/:userId`   | posts                            | oportunidades se for empresa (item 20) |
+| `search/presentation/screens/search_screen.dart`           | Busca geral         | `/search`            | novo                             | sem curtir nos posts                   |
 
 ---
 
@@ -521,9 +576,11 @@ Tema claro único (`AppTheme.light`). Tokens em `AppColors` (+ `accentGreenStron
 ---
 
 ## 23. BUGS CORRIGIDOS
+
 Itens 1–12 da lista acima (com testes automatizados cobrindo 1, 2, 4, 5, 6, 7, 8, 9, 12).
 
 ## 24. BUGS PENDENTES (por prioridade)
+
 1. Item 19 (busca do chat abre perfil e mostra posts) — **é requisito ativo**.
 2. Item 20 (oportunidades da empresa não listadas) — **requisito ativo**.
 3. `/posts/:postId` placeholder.
@@ -542,6 +599,7 @@ Itens 1–12 da lista acima (com testes automatizados cobrindo 1, 2, 4, 5, 6, 7,
 **Automatizados (API):** `PostInteractionPersistenceTest` (10) + `PostServiceTest` (10) — **passando** (rodados no container).
 
 **Manuais no emulador (todos PASSOU, salvo indicação):**
+
 - Login, senha errada, sessão restaurada, sessão expirada — PASSOU.
 - Curtir (inclusive toque duplo), comentar, criar post, abas preservadas — PASSOU.
 - Post com imagem: seleção, preview, publicação, feed, perfil, persistência — PASSOU.
@@ -566,6 +624,7 @@ Itens 1–12 da lista acima (com testes automatizados cobrindo 1, 2, 4, 5, 6, 7,
 Pré-requisitos: API no ar (§28), emulador `Pixel_8_API_35`, app rodando, login `caiogodas` (senha de teste local, ver com o time).
 
 **Item 11 (perfil):**
+
 - [ ] Perfil → "Editar perfil" → alterar bio, altura, peso, posição, perna, data de nascimento, marcar habilidades → Salvar.
 - [ ] Voltar: dados aparecem na aba "Sobre"/cabeçalho; conferir no banco (`tb_user`, `athlete_profile`).
 - [ ] Trocar foto e capa (galeria); conferir URLs do Cloudinary no banco.
@@ -573,12 +632,14 @@ Pré-requisitos: API no ar (§28), emulador `Pixel_8_API_35`, app rodando, login
 - [ ] Fechar e abrir o app: mudanças persistem.
 
 **Item 19 (nova conversa):**
+
 - [ ] Aba Chat → busca do chat → digitar "ana" → aparecem **apenas usuários**.
 - [ ] Clicar na Ana: abre a conversa existente (id 1), **não** o perfil.
 - [ ] Repetir com a empresa (`marcateste`), que não tem conversa: cria e abre conversa nova; conferir `tb_conversation`.
 - [ ] Voltar: a conversa nova aparece na lista.
 
 **Item 20 (oportunidades da empresa):**
+
 - [ ] Logar como `marcateste` → Perfil → aba "Oportunidades": lista "Peneira sub-20 QA".
 - [ ] Como `caiogodas`, abrir `/profile/3` (perfil da empresa) → seção de oportunidades.
 - [ ] Criar outra oportunidade pela API e conferir que aparece após refresh.
@@ -629,8 +690,8 @@ flutter run -d emulator-5554 --dart-define-from-file=config/dev.json
 
 ## 29. DEPENDÊNCIAS
 
-| Pacote | Versão | Motivo | Onde |
-|---|---|---|---|
+| Pacote         | Versão | Motivo                     | Onde                            |
+| -------------- | ------ | -------------------------- | ------------------------------- |
 | `image_picker` | ^1.2.3 | escolher imagem da galeria | criar post, chat, editar perfil |
 
 Nada foi removido. `go_router`, `flutter_bloc`, `dio`, `stomp_dart_client`, `json_annotation`, `intl`, `flutter_secure_storage`, `bloc_test` já existiam.
@@ -674,16 +735,16 @@ Mobile: `WEUNITE_API_URL`, `WEUNITE_WS_URL` (via `--dart-define-from-file=config
 
 A web foi subida com `docker compose --env-file .env -f infra/docker/compose.dev.yml --profile web up -d web` (Vite em http://localhost:3000) e percorrida no navegador com a conta de atleta:
 
-| Fluxo | Resultado |
-|---|---|
-| `pnpm --filter @weunite/web typecheck` | limpo |
-| `pnpm --filter @weunite/web lint` | 0 erros, 6 warnings **pré-existentes** de `react-refresh` (`ui/form.tsx`, `ui/sidebar.tsx`, `ThemeProvider.tsx` — não tocados) |
-| `pnpm --filter @weunite/web build` | sucesso |
-| Home / feed | posts, curtidas e comentários corretos; as iniciais do avatar passaram a usar o nome real (efeito da correção de alias na API) |
-| Perfil / abas / Sobre | normais; "Sobre" mostra 1.82m / 78kg / Destro / Meio-campo — exatamente o que foi salvo pelo mobile |
-| Chat | as duas conversas (inclusive a criada pelo mobile), histórico com emoji e imagem, envio pelo desktop persistido |
-| Peneiras | listagem, "Cancelar candidatura" refletindo a candidatura feita no mobile, salvar pelo desktop com toast de sucesso |
-| Oportunidades salvas | reflete o que foi salvo/removido pelo mobile (mesma fonte de dados) |
+| Fluxo                                  | Resultado                                                                                                                      |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm --filter @weunite/web typecheck` | limpo                                                                                                                          |
+| `pnpm --filter @weunite/web lint`      | 0 erros, 6 warnings **pré-existentes** de `react-refresh` (`ui/form.tsx`, `ui/sidebar.tsx`, `ThemeProvider.tsx` — não tocados) |
+| `pnpm --filter @weunite/web build`     | sucesso                                                                                                                        |
+| Home / feed                            | posts, curtidas e comentários corretos; as iniciais do avatar passaram a usar o nome real (efeito da correção de alias na API) |
+| Perfil / abas / Sobre                  | normais; "Sobre" mostra 1.82m / 78kg / Destro / Meio-campo — exatamente o que foi salvo pelo mobile                            |
+| Chat                                   | as duas conversas (inclusive a criada pelo mobile), histórico com emoji e imagem, envio pelo desktop persistido                |
+| Peneiras                               | listagem, "Cancelar candidatura" refletindo a candidatura feita no mobile, salvar pelo desktop com toast de sucesso            |
+| Oportunidades salvas                   | reflete o que foi salvo/removido pelo mobile (mesma fonte de dados)                                                            |
 
 **Nenhuma regressão encontrada.** Nenhum arquivo de `apps/web` foi alterado nesta branch; o único ponto de contato com a web é a API, e o campo corrigido (`user.name` no feed) é usado por ela apenas nas iniciais do avatar.
 
@@ -817,7 +878,7 @@ o layout. Itens pedidos:
 13. Oportunidades: denunciar.
 14. Redesenho do card de oportunidade seguindo a web.
 15. Chat: envio de áudio.
-Mais: testes completos mobile e desktop, `MOBILE_TESTING.md`, commits, PR, PROGRESS/HANDOFF.
+    Mais: testes completos mobile e desktop, `MOBILE_TESTING.md`, commits, PR, PROGRESS/HANDOFF.
 
 **Divisão de modelos pedida:** Opus para investigar/planejar/decidir; Sonnet para executar.
 O modelo da sessão principal **não pode ser trocado por ferramenta** (o app recusa: "a session must
@@ -849,6 +910,7 @@ Três coisas pedidas **não funcionam na web**, então não havia o que reutiliz
 ## O QUE JÁ FOI ENTREGUE NESTA ETAPA
 
 ### Bloco 0 — busca de oportunidades na web (commit `3a187f9`)
+
 - Criado `apps/web/src/features/opportunities/utils/opportunityFilter.ts` (filtra por título,
   descrição, nome/username da empresa, local e habilidades).
 - `FeedOpportunity.tsx` passou a usar o filtro, esconde o carrossel de sugestões durante a busca e
@@ -858,7 +920,9 @@ Três coisas pedidas **não funcionam na web**, então não havia o que reutiliz
   bind mount do Windows — foi preciso `docker restart weunite-web` para ver a mudança.
 
 ### Bloco 1 — notificações no mobile (commit `a45ee67`)
+
 Reaproveitado da web/API, **sem nada novo no backend**:
+
 - Endpoints: `GET /notifications/user/{id}` (array **cru**), `GET /notifications/user/{id}/unread-count`
   (`{unreadCount}` **cru**), `PUT /notifications/{id}/read`, `PUT /notifications/user/{id}/read-all`,
   `DELETE /notifications/{id}`.
@@ -879,6 +943,7 @@ Reaproveitado da web/API, **sem nada novo no backend**:
   como lidas" gravando no banco (9 → 0) e toque navegando para a aba certa.
 
 ### Bloco 2 — denúncia + menu de três pontos do post (commit `4bc9bf6`)
+
 - `lib/features/reporting/**` genérico (post/comentário/oportunidade), sobre
   `POST /reports/create/{userId}` com `{type, entityId, reason}` (resposta em envelope
   `{message,data}`, diferente das notificações).
@@ -895,6 +960,7 @@ Reaproveitado da web/API, **sem nada novo no backend**:
 - Helper criado à parte: `lib/core/utils/time_ago.dart` (porte fiel de `getTimeAgo` da web) + testes.
 
 ### Bloco 3a — em andamento quando esta seção foi escrita
+
 Um subagente Sonnet está redesenhando o card de oportunidade (hierarquia da web: empresa + "ha X",
 título, descrição, local, "Ate dd/MM/yyyy", "{n} candidatos", salvar, candidatar), adicionando o
 menu de três pontos com "Denunciar" (reutilizando `showReportSheet`) e a seção "Oportunidades
@@ -982,4 +1048,199 @@ d) Depois: teste completo mobile e desktop, criar MOBILE_TESTING.md, atualizar o
 
 Ao terminar cada bloco: dart format, flutter analyze (0 issues), flutter test (todos verdes),
 validação manual, commit e push, e atualizar PROGRESS.md e HANDOFF.md. Não esconda falhas.
+```
+
+---
+
+# ETAPA 3 — AUTENTICAÇÃO MOBILE (itens 31–52, 2026-09-26)
+
+Branch: `feat/mobile-auth-parity`, a partir de `origin/main` (`56a736a`).
+Commits: `b8b8719` (paridade) e `acac6cf` (correção da navegação).
+
+## Antes: os três merges na `main`
+
+| PR  | Commit    | Conteúdo                                                                                      |
+| --- | --------- | --------------------------------------------------------------------------------------------- |
+| #38 | `17cf3d9` | Backlog mobile + paridade com o desktop (etapas 1 e 2).                                       |
+| #33 | `b02980a` | Verificação de e-mail (trabalho do colega); dois conflitos resolvidos mantendo os dois lados. |
+| #39 | `56a736a` | Criação de oportunidade, portada do PR #37 com o crédito preservado.                          |
+
+CI verde pela primeira vez desde que o Flutter entrou no monorepo: `ci.yml` ganhou
+`subosito/flutter-action@v2` + `flutter pub get`, e o build do APK ficou fora do pipeline
+(`turbo run build --filter=!@weunite/mobile`), porque o runner não tem Android SDK.
+Rollback: `git revert -m 1 <sha>` em qualquer um dos três, isoladamente.
+
+## Como a autenticação funciona (os dois clientes, um backend)
+
+`AuthController` (`apps/api/.../auth/controller/AuthController.java`) tem **sete** rotas e mais
+nenhuma:
+
+| Endpoint                                | O que faz                               | Devolve                                    |
+| --------------------------------------- | --------------------------------------- | ------------------------------------------ |
+| `POST /auth/signup`                     | cria atleta e dispara o e-mail          | `ResponseDTO<AuthDTO>` com o user, sem jwt |
+| `POST /auth/signup/company`             | idem para clube (mesmo DTO, com `cnpj`) | idem                                       |
+| `POST /auth/login`                      | autentica                               | user + `jwt` + `expiresIn`                 |
+| `POST /auth/verify-email/{email}`       | confere o código de 6 dígitos           | user + `jwt` + `expiresIn`                 |
+| `POST /auth/send-reset-password`        | manda o código de recuperação           | **só `message`, sem `data`**               |
+| `POST /auth/verify-reset-token/{email}` | confere o código                        | só `message`                               |
+| `POST /auth/reset-password/{token}`     | grava a senha nova                      | só `message`                               |
+
+Não há rota social, não há refresh token e **não há reenvio do código de confirmação**.
+O token de verificação fica em `tb_user.verification_token` e é reaproveitado pelos dois fluxos
+(confirmação de e-mail e recuperação de senha).
+
+Regras que o backend cobra: `CreateUserRequestDTO` (nome 5–100, username 5–30, e-mail, senha
+`@NotBlank @ValidPassword`, `cnpj` com 14 dígitos), `ValidUserRegistrationValidator` (CNPJ
+obrigatório quando `role=COMPANY`) e `ValidPasswordValidator` (8–30 caracteres, maiúscula,
+minúscula, número e um símbolo **de uma lista fechada**: `!@#$%^&*()_+-=[]{};':"\|,.<>/?`).
+
+## Arquivos do web usados como referência
+
+- `apps/web/src/features/auth/components/Login.tsx`
+- `apps/web/src/features/auth/components/SignUp.tsx`
+- `apps/web/src/features/auth/components/SignUpCompany.tsx`
+- `apps/web/src/features/auth/pages/VerifyEmail.tsx`
+- `apps/web/src/features/auth/pages/SendResetPassword.tsx`
+- `apps/web/src/features/auth/pages/VerifyResetToken.tsx`
+- `apps/web/src/features/auth/pages/ResetPassword.tsx`
+- `apps/web/src/features/auth/stores/useAuthStore.ts`
+- `apps/web/src/features/auth/api/authService.ts`
+- `apps/web/src/features/auth/schemas/{login,signUp,recovery}.schema.ts`
+- `apps/web/src/shared/schemas/common/user.schema.ts`
+- `apps/web/src/shared/validators/cnpjValidator.ts`
+- `apps/web/src/features/auth/hooks/usePasswordStrength.ts`
+- `apps/web/src/features/legal/components/TermsOfUseArticle.tsx`
+
+## Arquivos do mobile
+
+Novos:
+
+- `lib/features/auth/domain/auth_validation.dart` — **a fonte única** das regras
+- `lib/features/auth/presentation/widgets/password_form_field.dart` — campo com olho
+- `lib/features/auth/presentation/widgets/password_strength_indicator.dart`
+- `lib/features/auth/presentation/widgets/terms_acceptance_field.dart`
+- `lib/features/auth/presentation/widgets/verification_code_field.dart`
+- `lib/features/auth/presentation/widgets/auth_scaffold.dart`
+- `lib/features/auth/presentation/widgets/auth_action.dart` — `runAuthAction`
+- `lib/features/auth/presentation/screens/send_reset_password_screen.dart`
+- `lib/features/auth/presentation/screens/verify_reset_token_screen.dart`
+- `lib/features/auth/presentation/screens/reset_password_screen.dart`
+- `lib/features/legal/domain/terms_of_use.dart` + `presentation/terms_of_use_sheet.dart`
+
+Alterados: `auth_remote_data_source.dart`, `auth_repository_impl.dart`, `auth_repository.dart`,
+`auth_cubit.dart`, `login_screen.dart`, `signup_screen.dart`, `verify_email_screen.dart`,
+`app/router.dart`, `core/network/json_body.dart` (`decodeResponseMessage`).
+
+Testes novos: `auth_validation_test.dart`, `auth_remote_data_source_test.dart`,
+`auth_recovery_cubit_test.dart`, `signup_screen_test.dart`, `password_recovery_flow_test.dart`.
+
+## O bug que fazia o cadastro pelo mobile não funcionar
+
+`signUpCompany` **não mandava senha**. As duas rotas de cadastro usam o mesmo
+`CreateUserRequestDTO`, cujo `password` é `@NotBlank @ValidPassword`, então criar clube pelo app
+sempre respondia `400 {"password":"Senha inválida"}`. Reproduzido e confirmado contra a API real
+antes e depois da correção.
+
+## Bug de navegação encontrado no emulador (corrigido)
+
+Depois de redefinir a senha o app caía em "Page Not Found" do go_router, com a senha já trocada.
+As seis telas de auth compartilham um `AuthCubit` e continuam montadas embaixo umas das outras;
+como cada uma navegava de um `BlocListener`, a mensagem de sucesso do último passo chegava
+também nas de baixo e a tela do código empurrava `/reset-password/` sem código.
+
+`runAuthAction` passou a chamar a ação, esperar e tratar a resposta na própria tela que
+disparou. Nenhuma tela de auth ouve mais o cubit para navegar.
+
+## Decisões (e o que NÃO foi feito)
+
+1. **Login com Google não existe no projeto.** O botão do web não tem `onClick`, provider,
+   client id nem endpoint. Implementar exigiria criar autenticação nova no backend. O mobile
+   ficou sem o botão em vez de ganhar um segundo botão morto.
+2. **Sem reenvio do código de confirmação**: não há endpoint; o botão do web só reinicia um
+   contador. O reenvio do fluxo de **recuperação** é real e foi implementado com o contador de 60s.
+3. **Confirmação de senha nos cadastros** — a mais que o web, por causa do teclado do celular.
+4. **Máximo de 30 caracteres** e **lista fechada de símbolos** — regras que só a API cobrava.
+5. **Aceite dos termos passou a valer nos dois clientes.** `required` não tem efeito no checkbox
+   do Radix; o site deixava cadastrar sem aceite.
+6. **`decodeResponseMessage`**: `send-reset-password` responde sem a chave `data`;
+   `decodeResponseData` estouraria `FormatException` num caso de sucesso.
+
+## Testes executados
+
+- `dart format`, `flutter analyze` (0 issues), `flutter test` — **373 verdes**.
+- Web: `typecheck`, `lint`, `build` limpos; login, cadastro de atleta e de clube, feed,
+  oportunidades, chat e perfil conferidos no navegador.
+- API real: os 14 casos listados no `PROGRESS.md`.
+- Emulador: os seis roteiros do item 49, detalhados no `PROGRESS.md`.
+- Cruzado: conta criada **no app** entra no **site**, com a senha redefinida pelo app.
+
+## O que continua pendente (não é desta etapa)
+
+- Menu de três pontos do post com **Editar/Excluir** para o autor (item 29).
+- Paridade de UI do catálogo de skills (busca, paginação, limite de 5, skill própria) e o campo
+  de skills do "criar oportunidade", que ainda é texto separado por vírgula (item 30).
+- Compartilhar post/oportunidade: falta rota pública na web.
+- Crash `_elements.contains(element)` na aba Chat, sem causa conhecida; parou de acontecer.
+
+---
+
+# PROMPT PARA CONTINUAR EM OUTRO CONTEXTO (atualizado em 2026-09-26, etapa 3)
+
+> O prompt da etapa 2, mais acima neste arquivo, está **vencido**. Use este.
+
+```
+Você continua o trabalho no app mobile do WeUnite (Flutter) em
+C:\Users\Caio\weunite-mobile-agent, repo WeUnite-Social-Media/weunite.
+
+LEIA PRIMEIRO, nesta ordem:
+1. HANDOFF.md, a seção "ETAPA 3 — AUTENTICAÇÃO MOBILE" (a última do arquivo)
+2. PROGRESS.md, a seção "Etapa 3 — Autenticacao mobile (itens 31-52)"
+3. MOBILE_TESTING.md, seção 10 (como testar a autenticação num celular)
+4. apps/mobile/AGENTS.md (as regras de arquitetura do app)
+
+ESTADO: branch feat/mobile-auth-parity, saída de origin/main (56a736a), com os
+commits b8b8719 (paridade de autenticação) e acac6cf (correção da navegação).
+373 testes verdes, flutter analyze limpo, web com typecheck/lint/build limpos.
+Os itens 31 a 52 estão fechados; o item 39 (Google) está registrado como
+impossível de reaproveitar porque não existe no projeto.
+
+REGRA QUE VALE PARA TUDO: a versão web/desktop (apps/web) é a fonte de verdade.
+Antes de escrever qualquer coisa no mobile, encontre a implementação da web,
+reutilize as mesmas regras, endpoints, mensagens e textos, e diga claramente se
+a web NÃO tiver aquilo, em vez de inventar. Não crie uma segunda implementação
+de algo que já existe.
+
+PENDÊNCIAS, em ordem:
+a) Item 29 — menu de três pontos do post com "Editar" e "Excluir" para o autor.
+   Pesquisa já feita: PUT /posts/update/{userId}/{postId} multipart (campos
+   `post` e `image`), DELETE /posts/delete/{userId}/{postId}, diálogo de
+   confirmação "Tem certeza?" / "Esta ação não pode ser desfeita. O post será
+   permanentemente removido da plataforma.", soft-delete no backend, só o autor.
+b) Item 30 — paridade de UI do catálogo de skills. O endpoint
+   GET /opportunities/skills e o payload {name} já são os mesmos nos dois
+   clientes; falta no mobile a busca, a paginação de 10, o limite de 5 e a
+   skill própria. O campo de skills do "criar oportunidade" ainda é texto
+   separado por vírgula e precisa usar o catálogo.
+c) Compartilhar post/oportunidade: depende de uma rota pública na web
+   (/post/:id), que não existe. Decisão do usuário foi deixar fora.
+d) Crash `_elements.contains(element)` na aba Chat: sem causa conhecida, parou
+   de acontecer. Não adivinhe correção sem log novo.
+
+COMO VALIDAR (obrigatório a cada item): dart format lib test, flutter analyze
+(0 issues), flutter test (tudo verde), teste manual no emulador Pixel_8_API_35
+com o backend no Docker, e conferir que o desktop continua funcionando.
+Commit e push a cada item, e atualize PROGRESS.md e HANDOFF.md. Não esconda falhas.
+
+AMBIENTE:
+- backend: docker compose --env-file .env -f infra/docker/compose.dev.yml --profile api up -d
+- app no emulador: cd apps/mobile && flutter run -d emulator-5554 --dart-define-from-file=config/dev.json
+- o dev server do web (container weunite-web) NÃO recarrega sozinho quando o
+  arquivo muda no Windows: use `docker restart weunite-web` depois de editar.
+- o disco C: encheu durante a etapa 3; apps/mobile/build ocupa mais de 1 GB e
+  pode ser apagado à vontade quando faltar espaço.
+- código de verificação, quando não há SMTP configurado:
+  docker exec weunite-postgres psql -U postgres -d weunite -t -A -c "select verification_token from tb_user where email='...'"
+
+DIVISÃO DE MODELOS: Opus analisa/planeja/decide e revisa; subagentes Sonnet executam.
+Nenhuma configuração de agente existe em disco — não há nada a restaurar.
 ```

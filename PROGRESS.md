@@ -122,30 +122,30 @@ _Branch `feat/mobile-auth-parity`, a partir de `origin/main` (`56a736a`). Commit
 `/auth/verify-email/{email}`, `/auth/send-reset-password`, `/auth/verify-reset-token/{email}`,
 `/auth/reset-password/{token}`. Nenhuma rota social, nenhum reenvio de confirmacao.
 
-| #   | Item                                | Status              | Observacoes                                                                                                                                                                                                                                                                                                                      |
-| --- | ----------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 31  | Analise completa do auth web        | OK                  | Tabela acima; os 12 pontos pedidos foram levantados antes de mexer no mobile.                                                                                                                                                                                                                                                    |
-| 32  | Cadastro pelo mobile nao funcionava | OK                  | **Causa achada:** o app chamava `/auth/signup/company` **sem senha**, e as duas rotas usam o mesmo `CreateUserRequestDTO`, cujo `password` e `@NotBlank @ValidPassword`. Confirmado contra a API real: payload antigo -> `400 {"password":"Senha invalida"}`; payload novo -> `201`.                                             |
-| 33  | Verificacao de e-mail               | OK                  | Ja existia (PR #33) e foi mantida; tela redesenhada, campo de 6 digitos que envia sozinho ao completar, e a sessao que a API devolve passa a ser guardada com expiracao. **Reenvio nao existe na API** - nao foi inventado.                                                                                                      |
-| 34  | Forca da senha                      | OK                  | `passwordStrength` e porte exato do `usePasswordStrength` (20 por criterio). Barra + checklist dos 5 requisitos.                                                                                                                                                                                                                 |
-| 35  | Confirmacao de senha                | OK                  | Nos dois cadastros e na nova senha. Mensagem "As senhas devem ser iguais", a mesma do `resetPasswordSchema`. **A web nao tem confirmacao no cadastro** - diferenca proposital.                                                                                                                                                   |
-| 36  | Mostrar/esconder senha              | OK                  | `PasswordFormField` usado em todos os campos sensiveis (login, cadastro, confirmacao, nova senha, confirmacao da nova, clube). So alterna `obscureText`: nao mexe no texto nem no foco.                                                                                                                                          |
-| 37  | Aceite dos termos                   | OK                  | Checkbox + "Ler termos e condicoes" abrindo os Termos de Uso com o texto do web. **Enforcado no mobile e corrigido na web**: `required` nao faz nada no checkbox do Radix, entao o site deixava cadastrar sem aceite. Nao ha politica de privacidade no projeto - nao foi inventada URL.                                         |
-| 38  | Esqueceu a senha                    | OK                  | Tres telas novas sobre os tres endpoints que o web usa, incluindo o contador de 60s do reenvio. Fluxo inteiro exercitado contra a API real.                                                                                                                                                                                      |
-| 39  | Login com Google                    | FORA                | **Nao ha o que reaproveitar.** O botao do web nao tem `onClick`, provider, client id nem endpoint; `/api/auth` tem 7 rotas, nenhuma social. Implementar exigiria criar autenticacao nova no backend - o oposto da regra "nao criar um segundo sistema". O mobile ficou **sem** o botao, em vez de ganhar um segundo botao morto. |
-| 40  | Cadastro de clube - senha           | OK                  | Senha, confirmacao, olho, forca e termos, iguais ao atleta. Era o campo que faltava (item 32).                                                                                                                                                                                                                                   |
-| 41  | Cadastro de clube - forca           | OK                  | Mesmo `auth_validation.dart` do atleta e do reset. **A web tambem ganhou a barra**, pelo mesmo hook do cadastro de atleta.                                                                                                                                                                                                       |
-| 42  | Cadastro de clube - fluxo completo  | OK                  | Campos do web: nome, username, e-mail, senha, CNPJ com mascara progressiva e digitos verificadores. Nao ha logo, endereco, documentos nem responsaveis no cadastro web - nada foi inventado.                                                                                                                                     |
-| 43  | Validacoes iguais as do web         | OK                  | Um arquivo so (`features/auth/domain/auth_validation.dart`) para atleta, clube e recuperacao. Testes travam as regras contra os schemas do web.                                                                                                                                                                                  |
-| 44  | Mensagens de erro                   | OK                  | O app mostra a mensagem que a API devolve ("Usuario ja existe", "Verifique seu email para fazer login", "Token invalido", "Usuario nao encontrado"), via `_extractApiErrorMessage`. `decodeResponseMessage` faz o mesmo no caminho de sucesso.                                                                                   |
-| 45  | Loading e duplo envio               | OK                  | Guard `if (state.isLoading) return;` no cubit + botoes desabilitados com spinner em todas as acoes.                                                                                                                                                                                                                              |
-| 46  | Sessao e persistencia               | OK                  | `TokenStorage` com expiracao; `verifyEmail` passou a gravar a expiracao como o login ja fazia. Nao existe refresh token na API.                                                                                                                                                                                                  |
-| 47  | Navegacao                           | OK                  | Rotas `/verify-email/:email`, `/send-reset-password`, `/verify-reset-token/:email`, `/reset-password/:token`, todas liberadas para visitante; `/signup?tab=company` abre direto o cadastro de clube.                                                                                                                             |
-| 48  | Design                              | OK                  | Wordmark, titulos e textos do web, adaptados: um scroll por tela, campos de largura cheia, abas Atleta/Clube em vez de duas rotas, codigo em um campo so (seis caixas separadas quebram o foco no Android e impedem colar).                                                                                                      |
-| 49  | Bateria de testes                   | ver secao de testes |                                                                                                                                                                                                                                                                                                                                  |
-| 50  | Reteste do web                      | ver secao de testes |                                                                                                                                                                                                                                                                                                                                  |
-| 51  | Documentacao                        | OK                  | Esta secao + secao no `HANDOFF.md`.                                                                                                                                                                                                                                                                                              |
-| 52  | Doc para testar no celular          | OK                  | Secao 10 do `MOBILE_TESTING.md`: regras de senha, como ler o codigo no banco quando nao ha SMTP, os roteiros e o que **nao** da para testar.                                                                                                                                                                                     |
+| #   | Item                                | Status | Observacoes                                                                                                                                                                                                                                                                                                                      |
+| --- | ----------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 31  | Analise completa do auth web        | OK     | Tabela acima; os 12 pontos pedidos foram levantados antes de mexer no mobile.                                                                                                                                                                                                                                                    |
+| 32  | Cadastro pelo mobile nao funcionava | OK     | **Causa achada:** o app chamava `/auth/signup/company` **sem senha**, e as duas rotas usam o mesmo `CreateUserRequestDTO`, cujo `password` e `@NotBlank @ValidPassword`. Confirmado contra a API real: payload antigo -> `400 {"password":"Senha invalida"}`; payload novo -> `201`.                                             |
+| 33  | Verificacao de e-mail               | OK     | Ja existia (PR #33) e foi mantida; tela redesenhada, campo de 6 digitos que envia sozinho ao completar, e a sessao que a API devolve passa a ser guardada com expiracao. **Reenvio nao existe na API** - nao foi inventado.                                                                                                      |
+| 34  | Forca da senha                      | OK     | `passwordStrength` e porte exato do `usePasswordStrength` (20 por criterio). Barra + checklist dos 5 requisitos.                                                                                                                                                                                                                 |
+| 35  | Confirmacao de senha                | OK     | Nos dois cadastros e na nova senha. Mensagem "As senhas devem ser iguais", a mesma do `resetPasswordSchema`. **A web nao tem confirmacao no cadastro** - diferenca proposital.                                                                                                                                                   |
+| 36  | Mostrar/esconder senha              | OK     | `PasswordFormField` usado em todos os campos sensiveis (login, cadastro, confirmacao, nova senha, confirmacao da nova, clube). So alterna `obscureText`: nao mexe no texto nem no foco.                                                                                                                                          |
+| 37  | Aceite dos termos                   | OK     | Checkbox + "Ler termos e condicoes" abrindo os Termos de Uso com o texto do web. **Enforcado no mobile e corrigido na web**: `required` nao faz nada no checkbox do Radix, entao o site deixava cadastrar sem aceite. Nao ha politica de privacidade no projeto - nao foi inventada URL.                                         |
+| 38  | Esqueceu a senha                    | OK     | Tres telas novas sobre os tres endpoints que o web usa, incluindo o contador de 60s do reenvio. Fluxo inteiro exercitado contra a API real.                                                                                                                                                                                      |
+| 39  | Login com Google                    | FORA   | **Nao ha o que reaproveitar.** O botao do web nao tem `onClick`, provider, client id nem endpoint; `/api/auth` tem 7 rotas, nenhuma social. Implementar exigiria criar autenticacao nova no backend - o oposto da regra "nao criar um segundo sistema". O mobile ficou **sem** o botao, em vez de ganhar um segundo botao morto. |
+| 40  | Cadastro de clube - senha           | OK     | Senha, confirmacao, olho, forca e termos, iguais ao atleta. Era o campo que faltava (item 32).                                                                                                                                                                                                                                   |
+| 41  | Cadastro de clube - forca           | OK     | Mesmo `auth_validation.dart` do atleta e do reset. **A web tambem ganhou a barra**, pelo mesmo hook do cadastro de atleta.                                                                                                                                                                                                       |
+| 42  | Cadastro de clube - fluxo completo  | OK     | Campos do web: nome, username, e-mail, senha, CNPJ com mascara progressiva e digitos verificadores. Nao ha logo, endereco, documentos nem responsaveis no cadastro web - nada foi inventado.                                                                                                                                     |
+| 43  | Validacoes iguais as do web         | OK     | Um arquivo so (`features/auth/domain/auth_validation.dart`) para atleta, clube e recuperacao. Testes travam as regras contra os schemas do web.                                                                                                                                                                                  |
+| 44  | Mensagens de erro                   | OK     | O app mostra a mensagem que a API devolve ("Usuario ja existe", "Verifique seu email para fazer login", "Token invalido", "Usuario nao encontrado"), via `_extractApiErrorMessage`. `decodeResponseMessage` faz o mesmo no caminho de sucesso.                                                                                   |
+| 45  | Loading e duplo envio               | OK     | Guard `if (state.isLoading) return;` no cubit + botoes desabilitados com spinner em todas as acoes.                                                                                                                                                                                                                              |
+| 46  | Sessao e persistencia               | OK     | `TokenStorage` com expiracao; `verifyEmail` passou a gravar a expiracao como o login ja fazia. Nao existe refresh token na API.                                                                                                                                                                                                  |
+| 47  | Navegacao                           | OK     | Rotas `/verify-email/:email`, `/send-reset-password`, `/verify-reset-token/:email`, `/reset-password/:token`, todas liberadas para visitante; `/signup?tab=company` abre direto o cadastro de clube.                                                                                                                             |
+| 48  | Design                              | OK     | Wordmark, titulos e textos do web, adaptados: um scroll por tela, campos de largura cheia, abas Atleta/Clube em vez de duas rotas, codigo em um campo so (seis caixas separadas quebram o foco no Android e impedem colar).                                                                                                      |
+| 49  | Bateria de testes                   | OK     | 373 testes automatizados + os seis roteiros rodados no emulador contra a API real (ver acima).                                                                                                                                                                                                                                   |
+| 50  | Reteste do web                      | OK     | `typecheck`, `lint` e `build` limpos; login, cadastro de atleta e de clube, feed, oportunidades, chat e perfil conferidos no navegador.                                                                                                                                                                                          |
+| 51  | Documentacao                        | OK     | Esta secao + secao no `HANDOFF.md`.                                                                                                                                                                                                                                                                                              |
+| 52  | Doc para testar no celular          | OK     | Secao 10 do `MOBILE_TESTING.md`: regras de senha, como ler o codigo no banco quando nao ha SMTP, os roteiros e o que **nao** da para testar.                                                                                                                                                                                     |
 
 ### Diferencas propositais em relacao ao web (e por que)
 
@@ -183,6 +183,71 @@ sucesso. Por isso existe `decodeResponseMessage`, que le so a mensagem e nunca l
 | `reset-password` com senha valida                                | `200 Senha redefinida!`                                             |
 | Login com a senha nova / com a antiga                            | `200` / `401 Usuario ou senha invalidos`                            |
 | `send-reset-password` para e-mail inexistente                    | `404 Usuario nao encontrado`                                        |
+
+### Bug encontrado rodando o fluxo no emulador (e corrigido)
+
+Depois de redefinir a senha, o app caia na tela "Page Not Found" do go_router.
+A senha **tinha** sido trocada; o problema era so de navegacao.
+
+Causa: login, cadastro e os tres passos da recuperacao compartilham um
+`AuthCubit`, e cada tela continua montada embaixo da seguinte. Como cada uma
+navegava a partir de um `BlocListener`, a mensagem de sucesso do ultimo passo
+chegava tambem nas de baixo: a tela do codigo, dois niveis abaixo, rodava a
+propria navegacao de novo e empurrava `/reset-password/` sem codigo. Os
+snackbars se empilhavam pelo mesmo motivo.
+
+Correcao (`runAuthAction`, commit `acac6cf`): a tela chama a acao, espera e
+trata a resposta ali mesmo. Nenhuma tela de auth ouve mais o cubit para
+navegar. `password_recovery_flow_test.dart` percorre os tres passos e trava o
+caso, mais codigo errado, e-mail inexistente, confirmacao diferente e senha
+fraca.
+
+### Roteiros rodados no emulador (API real no Docker)
+
+TESTE 1 - novo usuario
+
+- abrir cadastro pelo link "atleta" do login
+- senha fraca: barra vermelha em 40%, so dois itens marcados
+- olho mostra e esconde a senha sem apagar o texto nem tirar o foco
+- cadastrar sem termos: "Aceite os termos para criar sua conta." e nada e enviado
+- confirmacao diferente: "As senhas devem ser iguais" e nada e enviado
+- "Ler termos e condicoes" abre o documento com a data 28/03/2026
+- aceitar os termos e cadastrar: snackbar com a mensagem da API
+  ("Cadastro concluido! Verifique seu email") e a tela do codigo
+- codigo de 6 digitos lido no banco: envia sozinho no sexto digito e entra no
+  feed ja autenticado; o perfil mostra a conta nova
+
+TESTE 2 - e-mail/usuario ja existente
+
+- "Usuario ja existe" e o usuario continua no formulario
+
+TESTE 3 - login
+
+- senha errada: "Usuario ou senha invalidos"
+- senha certa: entra
+- force-stop + reabrir: continua logado
+
+TESTE 4 - Google: nao existe no projeto (item 39)
+
+TESTE 5 - esqueceu a senha
+
+- e-mail -> "Codigo enviado!" -> tela do codigo com o e-mail na tela
+- codigo errado: "Token invalido"
+- codigo certo: "Codigo verificado!" -> tela da nova senha
+- confirmacao diferente: "As senhas devem ser iguais"
+- senha valida: "Senha redefinida!" e volta para o login limpo
+- entra com a senha nova; a antiga da 401
+
+TESTE 6 - cadastro de clube
+
+- link "clube" do login abre a aba Clube direto
+- CNPJ com mascara progressiva; `11.222.333/0001-82` e recusado com
+  "CNPJ invalido" antes de sair do app
+- `11.222.333/0001-81` passa, conta criada, e-mail verificado, perfil do clube
+  com a aba "Oportunidades"
+
+Cruzado: a conta criada **no app** entra no **site**, inclusive com a senha
+redefinida pelo app.
 
 ## Status dos itens
 
