@@ -18,9 +18,21 @@ final RegExp _imageUrlPattern = RegExp(
   caseSensitive: false,
 );
 
-/// Mirrors `Message.tsx`'s `isAudioUrl`: `/\.(mp3|wav|ogg|m4a|webm)$/i`.
+/// Based on `Message.tsx`'s `isAudioUrl` (`/\.(mp3|wav|ogg|m4a|webm)$/i`), plus
+/// the extensions Cloudinary actually hands back to this app.
+///
+/// The web only ever produces `.webm`, because MediaRecorder records to it.
+/// Recording on a phone produces AAC/m4a, and Cloudinary — which the API
+/// uploads to with `resource_type: auto` — stores audio as a *video* resource
+/// and returns it as **`.mp4`**. Without `mp4` here an audio message we sent
+/// ourselves fell through to the plain-text branch and showed the raw
+/// Cloudinary link instead of a player.
+///
+/// `mp4` is safe to treat as audio in chat: the API's `MessageType` has no
+/// video value and the app never sends video, so a `/video/upload/` URL in a
+/// conversation is always a voice message.
 final RegExp _audioUrlPattern = RegExp(
-  r'\.(mp3|wav|ogg|m4a|webm)$',
+  r'\.(mp3|wav|ogg|m4a|aac|mp4|webm)$',
   caseSensitive: false,
 );
 

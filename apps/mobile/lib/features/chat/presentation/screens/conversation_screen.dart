@@ -134,7 +134,13 @@ class _MessageBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (!message.deleted && message.type == ChatMessageType.image)
+            // Detected from the content URL, not from `message.type`: the web
+            // sends every attachment as TEXT, so trusting the type showed an
+            // image sent from the desktop as a raw link here.
+            if (!message.deleted &&
+                (message.type == ChatMessageType.image ||
+                    detectMessageMediaKind(message.content) ==
+                        MessageMediaKind.image))
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: ConstrainedBox(
