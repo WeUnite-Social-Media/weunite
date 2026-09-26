@@ -28,8 +28,21 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # The mobile package's lint/typecheck/test/build scripts all shell out to
+      # `flutter`, so without this the whole job fails at @weunite/mobile#lint
+      # with "flutter: not found".
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
+
+      - name: Fetch Flutter packages
+        run: flutter pub get
+        working-directory: apps/mobile
 
       - name: Lint
         run: pnpm lint
