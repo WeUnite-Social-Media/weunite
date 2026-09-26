@@ -141,6 +141,37 @@ class OpportunitiesCubit extends Cubit<OpportunitiesState> {
     ];
   }
 
+  /// Publishes a new opportunity (company accounts only) and reloads the
+  /// listing so it shows up right away, the same way the web refreshes its
+  /// query cache after a successful `createOpportunityRequest`.
+  Future<void> createOpportunity({
+    required String title,
+    required String description,
+    required String location,
+    required DateTime dateEnd,
+    required List<String> skills,
+  }) async {
+    emit(state.copyWith(isSubmitting: true, actionErrorMessage: () => null));
+    try {
+      await _repository.createOpportunity(
+        title: title,
+        description: description,
+        location: location,
+        dateEnd: dateEnd,
+        skills: skills,
+      );
+      emit(state.copyWith(isSubmitting: false));
+      await loadOpportunities();
+    } on AppException catch (error) {
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          actionErrorMessage: () => error.message,
+        ),
+      );
+    }
+  }
+
   void dismissActionError() {
     if (state.actionErrorMessage == null) {
       return;

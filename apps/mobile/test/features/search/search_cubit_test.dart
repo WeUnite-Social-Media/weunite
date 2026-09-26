@@ -156,6 +156,15 @@ class _FakeOpportunityRepository implements OpportunityRepository {
 
   @override
   Future<bool> toggleSubscription({required int opportunityId}) async => true;
+
+  @override
+  Future<void> createOpportunity({
+    required String title,
+    required String description,
+    required String location,
+    required DateTime dateEnd,
+    required List<String> skills,
+  }) async {}
 }
 
 SearchCubit _cubit({

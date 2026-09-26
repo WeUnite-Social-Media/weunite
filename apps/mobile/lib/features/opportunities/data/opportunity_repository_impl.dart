@@ -161,4 +161,23 @@ class OpportunityRepositoryImpl implements OpportunityRepository {
       opportunityId: opportunityId,
     );
   }
+
+  @override
+  Future<void> createOpportunity({
+    required String title,
+    required String description,
+    required String location,
+    required DateTime dateEnd,
+    required List<String> skills,
+  }) async {
+    final companyId = _currentUserProvider.requireUserId();
+    await _remoteDataSource.createOpportunity(
+      companyId: companyId,
+      title: title,
+      description: description,
+      location: location,
+      dateEnd: dateEnd,
+      skills: skills,
+    );
+  }
 }

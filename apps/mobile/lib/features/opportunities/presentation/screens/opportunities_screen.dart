@@ -6,6 +6,7 @@ import '../../../../core/widgets/async_state_view.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../domain/opportunity_filter.dart';
 import '../cubit/opportunities_cubit.dart';
+import '../widgets/create_opportunity_sheet.dart';
 import '../widgets/opportunity_card.dart';
 import '../widgets/opportunity_detail_route.dart';
 import '../widgets/opportunity_suggestions_carousel.dart';
@@ -50,97 +51,110 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
         }
       },
       builder: (context, state) {
-        return AsyncStateView(
-          isLoading: state.isLoading,
-          errorMessage: state.loadErrorMessage,
-          onRetry: context.read<OpportunitiesCubit>().loadOpportunities,
-          child: RefreshIndicator(
-            onRefresh: context.read<OpportunitiesCubit>().loadOpportunities,
-            child: Builder(
-              builder: (context) {
-                // Saving and applying are athlete-only on the API, so a
-                // company account sees the listing without those actions.
-                final isAthlete =
-                    context.read<AuthCubit>().state.user?.isCompany == false;
-                final isSearching = _searchTerm.trim().isNotEmpty;
-                final visibleOpportunities = filterOpportunities(
-                  state.opportunities,
-                  _searchTerm,
-                );
-                // While searching, the suggestions carousel is hidden — same
-                // rule as the web (`!isSearching && opportunities.length > 0`).
-                final showsSuggestions =
-                    !isSearching && state.opportunities.isNotEmpty;
-                final showsEmptySearchMessage =
-                    isSearching && visibleOpportunities.isEmpty;
-                final headerCount = (showsSuggestions ? 1 : 0) +
-                    (showsEmptySearchMessage ? 1 : 0);
-                final itemCount = 1 + headerCount + visibleOpportunities.length;
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: itemCount,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return _OpportunitiesHeader(
-                        controller: _searchController,
-                        isAthlete: isAthlete,
+        final isCompany =
+            context.read<AuthCubit>().state.user?.isCompany == true;
+        return Scaffold(
+          body: AsyncStateView(
+            isLoading: state.isLoading,
+            errorMessage: state.loadErrorMessage,
+            onRetry: context.read<OpportunitiesCubit>().loadOpportunities,
+            child: RefreshIndicator(
+              onRefresh: context.read<OpportunitiesCubit>().loadOpportunities,
+              child: Builder(
+                builder: (context) {
+                  // Saving and applying are athlete-only on the API, so a
+                  // company account sees the listing without those actions.
+                  final isAthlete =
+                      context.read<AuthCubit>().state.user?.isCompany == false;
+                  final isSearching = _searchTerm.trim().isNotEmpty;
+                  final visibleOpportunities = filterOpportunities(
+                    state.opportunities,
+                    _searchTerm,
+                  );
+                  // While searching, the suggestions carousel is hidden — same
+                  // rule as the web (`!isSearching && opportunities.length > 0`).
+                  final showsSuggestions =
+                      !isSearching && state.opportunities.isNotEmpty;
+                  final showsEmptySearchMessage =
+                      isSearching && visibleOpportunities.isEmpty;
+                  final headerCount = (showsSuggestions ? 1 : 0) +
+                      (showsEmptySearchMessage ? 1 : 0);
+                  final itemCount =
+                      1 + headerCount + visibleOpportunities.length;
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: itemCount,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return _OpportunitiesHeader(
+                          controller: _searchController,
+                          isAthlete: isAthlete,
+                        );
+                      }
+                      var position = index - 1;
+                      if (showsSuggestions) {
+                        if (position == 0) {
+                          return OpportunitySuggestionsCarousel(
+                            opportunities: state.opportunities,
+                            onOpenDetail: (opportunity) =>
+                                showOpportunityDetailBound(
+                              context,
+                              opportunityId: opportunity.id,
+                              canAct: isAthlete,
+                            ),
+                          );
+                        }
+                        position -= 1;
+                      }
+                      if (showsEmptySearchMessage) {
+                        if (position == 0) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: Text(
+                              'Nenhuma oportunidade encontrada para '
+                              '"${_searchController.text}".',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          );
+                        }
+                        position -= 1;
+                      }
+                      final opportunity = visibleOpportunities[position];
+                      return OpportunityCard(
+                        opportunity: opportunity,
+                        isPending: state.pendingIds.contains(opportunity.id),
+                        onOpenDetail: () => showOpportunityDetailBound(
+                          context,
+                          opportunityId: opportunity.id,
+                          canAct: isAthlete,
+                        ),
+                        onToggleSaved: isAthlete
+                            ? () => context
+                                .read<OpportunitiesCubit>()
+                                .toggleSaved(opportunityId: opportunity.id)
+                            : null,
+                        onToggleSubscription: isAthlete
+                            ? () => context
+                                .read<OpportunitiesCubit>()
+                                .toggleSubscription(
+                                  opportunityId: opportunity.id,
+                                )
+                            : null,
                       );
-                    }
-                    var position = index - 1;
-                    if (showsSuggestions) {
-                      if (position == 0) {
-                        return OpportunitySuggestionsCarousel(
-                          opportunities: state.opportunities,
-                          onOpenDetail: (opportunity) =>
-                              showOpportunityDetailBound(
-                            context,
-                            opportunityId: opportunity.id,
-                            canAct: isAthlete,
-                          ),
-                        );
-                      }
-                      position -= 1;
-                    }
-                    if (showsEmptySearchMessage) {
-                      if (position == 0) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 24),
-                          child: Text(
-                            'Nenhuma oportunidade encontrada para '
-                            '"${_searchController.text}".',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        );
-                      }
-                      position -= 1;
-                    }
-                    final opportunity = visibleOpportunities[position];
-                    return OpportunityCard(
-                      opportunity: opportunity,
-                      isPending: state.pendingIds.contains(opportunity.id),
-                      onOpenDetail: () => showOpportunityDetailBound(
-                        context,
-                        opportunityId: opportunity.id,
-                        canAct: isAthlete,
-                      ),
-                      onToggleSaved: isAthlete
-                          ? () => context
-                              .read<OpportunitiesCubit>()
-                              .toggleSaved(opportunityId: opportunity.id)
-                          : null,
-                      onToggleSubscription: isAthlete
-                          ? () => context
-                              .read<OpportunitiesCubit>()
-                              .toggleSubscription(opportunityId: opportunity.id)
-                          : null,
-                    );
-                  },
-                );
-              },
+                    },
+                  );
+                },
+              ),
             ),
           ),
+          floatingActionButton: isCompany
+              ? FloatingActionButton(
+                  onPressed: () => showCreateOpportunitySheet(context),
+                  child: const Icon(Icons.add),
+                )
+              : null,
         );
       },
     );

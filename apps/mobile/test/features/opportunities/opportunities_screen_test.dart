@@ -88,6 +88,19 @@ class _FakeOpportunityRepository implements OpportunityRepository {
 
   @override
   Future<bool> toggleSubscription({required int opportunityId}) async => true;
+
+  int createOpportunityCalls = 0;
+
+  @override
+  Future<void> createOpportunity({
+    required String title,
+    required String description,
+    required String location,
+    required DateTime dateEnd,
+    required List<String> skills,
+  }) async {
+    createOpportunityCalls++;
+  }
 }
 
 const _athlete = AppUser(
@@ -96,6 +109,14 @@ const _athlete = AppUser(
   username: 'alice',
   email: 'alice@weunite.com',
   role: 'ATHLETE',
+);
+
+const _company = AppUser(
+  id: 9,
+  name: 'Clube FC',
+  username: 'clubefc',
+  email: 'clube@weunite.com',
+  role: 'COMPANY',
 );
 
 Opportunity _opportunity({
@@ -114,21 +135,22 @@ Opportunity _opportunity({
   );
 }
 
-Future<void> _pump(
+Future<_PumpedOpportunities> _pump(
   WidgetTester tester, {
   required List<Opportunity> opportunities,
+  AppUser user = _athlete,
 }) async {
   await tester.binding.setSurfaceSize(const Size(360, 690));
   addTearDown(() => tester.binding.setSurfaceSize(null));
 
-  final authRepository = _FakeAuthRepository()..currentUser = _athlete;
+  final authRepository = _FakeAuthRepository()..currentUser = user;
   final authCubit = AuthCubit(authRepository, SessionEvents())
     ..restoreSession();
   addTearDown(authCubit.close);
 
-  final opportunityCubit = OpportunitiesCubit(
-    _FakeOpportunityRepository()..opportunities = opportunities,
-  );
+  final opportunityRepository = _FakeOpportunityRepository()
+    ..opportunities = opportunities;
+  final opportunityCubit = OpportunitiesCubit(opportunityRepository);
   addTearDown(opportunityCubit.close);
 
   await tester.pumpWidget(
@@ -144,12 +166,21 @@ Future<void> _pump(
             BlocProvider.value(value: authCubit),
             BlocProvider.value(value: opportunityCubit),
           ],
-          child: const Scaffold(body: OpportunitiesScreen()),
+          child: const OpportunitiesScreen(),
         ),
       ),
     ),
   );
   await tester.pumpAndSettle();
+
+  return _PumpedOpportunities(opportunityRepository, opportunityCubit);
+}
+
+class _PumpedOpportunities {
+  _PumpedOpportunities(this.repository, this.cubit);
+
+  final _FakeOpportunityRepository repository;
+  final OpportunitiesCubit cubit;
 }
 
 void main() {
@@ -216,5 +247,65 @@ void main() {
 
     expect(find.text('Minhas candidaturas'), findsOneWidget);
     expect(find.text('Oportunidades salvas'), findsOneWidget);
+  });
+
+  testWidgets('shows the create-opportunity FAB for a company account',
+      (tester) async {
+    await _pump(
+      tester,
+      opportunities: const [],
+      user: _company,
+    );
+
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+  });
+
+  testWidgets('hides the create-opportunity FAB for an athlete account',
+      (tester) async {
+    await _pump(
+      tester,
+      opportunities: const [],
+      user: _athlete,
+    );
+
+    expect(find.byType(FloatingActionButton), findsNothing);
+  });
+
+  testWidgets(
+      'tapping the FAB opens the create sheet and submitting it creates '
+      'the opportunity', (tester) async {
+    final pumped = await _pump(
+      tester,
+      opportunities: const [],
+      user: _company,
+    );
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Criar oportunidade'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Titulo'),
+      'Peneira sub-20',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Descricao'),
+      'Vaga para lateral esquerdo',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Local'),
+      'Sao Paulo, SP',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Habilidades'),
+      'Velocidade, Passe',
+    );
+
+    await tester.tap(find.text('Publicar oportunidade'));
+    await tester.pumpAndSettle();
+
+    expect(pumped.repository.createOpportunityCalls, 1);
+    expect(find.text('Criar oportunidade'), findsNothing);
   });
 }

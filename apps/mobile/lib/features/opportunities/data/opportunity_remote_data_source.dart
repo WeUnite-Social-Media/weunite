@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
@@ -119,5 +121,47 @@ class OpportunityRemoteDataSource {
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
     }
+  }
+
+  /// `POST /opportunities/create/{companyId}` is multipart: a single
+  /// `opportunity` JSON part, mirroring how the web sends it
+  /// (`opportunityService.createOpportunityRequest`).
+  Future<void> createOpportunity({
+    required int companyId,
+    required String title,
+    required String description,
+    required String location,
+    required DateTime dateEnd,
+    required List<String> skills,
+  }) async {
+    try {
+      await _dio.post<void>(
+        '/opportunities/create/$companyId',
+        data: FormData.fromMap({
+          'opportunity': MultipartFile.fromString(
+            jsonEncode({
+              'title': title,
+              'description': description,
+              'location': location,
+              'dateEnd': _formatDate(dateEnd),
+              'skills': skills
+                  .where((skill) => skill.trim().isNotEmpty)
+                  .map((skill) => {'name': skill.trim()})
+                  .toList(),
+            }),
+            contentType: DioMediaType('application', 'json'),
+          ),
+        }),
+      );
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
+  /// `yyyy-MM-dd`, matching `formatOpportunityDateForApi` on the web.
+  String _formatDate(DateTime value) {
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    return '${value.year}-$month-$day';
   }
 }
