@@ -9,6 +9,7 @@ import '../features/auth/presentation/cubit/auth_cubit.dart';
 import '../features/chat/domain/repositories/chat_repository.dart';
 import '../features/feed/domain/post_events.dart';
 import '../features/feed/domain/repositories/feed_repository.dart';
+import '../features/notifications/domain/repositories/notification_repository.dart';
 import '../features/opportunities/domain/repositories/opportunity_repository.dart';
 import '../features/profile/domain/repositories/profile_repository.dart';
 import 'bootstrap.dart';
@@ -75,6 +76,9 @@ class _WeUniteMobileAppState extends State<WeUniteMobileApp> {
         ),
         RepositoryProvider<ProfileRepository>.value(
           value: dependencies.profileRepository,
+        ),
+        RepositoryProvider<NotificationRepository>.value(
+          value: dependencies.notificationRepository,
         ),
         RepositoryProvider<CurrentUserProvider>.value(
           value: dependencies.currentUserProvider,

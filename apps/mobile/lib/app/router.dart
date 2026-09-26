@@ -18,6 +18,9 @@ import '../features/feed/presentation/cubit/feed_cubit.dart';
 import '../features/feed/presentation/screens/feed_screen.dart';
 import '../features/feed/presentation/screens/post_detail_screen.dart';
 import '../features/home/presentation/app_shell.dart';
+import '../features/notifications/domain/repositories/notification_repository.dart';
+import '../features/notifications/presentation/cubit/notifications_cubit.dart';
+import '../features/notifications/presentation/screens/notifications_screen.dart';
 import '../features/opportunities/domain/repositories/opportunity_repository.dart';
 import '../features/opportunities/presentation/cubit/opportunities_cubit.dart';
 import '../features/opportunities/presentation/screens/opportunities_screen.dart';
@@ -85,6 +88,31 @@ GoRouter buildRouter({
           postId: int.parse(state.pathParameters['postId']!),
         ),
       ),
+      GoRoute(
+        path: '/notifications',
+        // Pushed outside the shell, so it's a sibling of the route that
+        // hosts the session-scoped `NotificationsCubit`, not a descendant —
+        // `context.read` wouldn't find it here (same reasoning as bottom
+        // sheets, see `apps/mobile/AGENTS.md`). The bell in `AppShell` passes
+        // its own `NotificationsCubit` instance via `extra` when pushing;
+        // a route-scoped fallback covers the (currently unused) case of
+        // reaching this route without it, e.g. a future deep link.
+        builder: (context, state) {
+          final existing = state.extra;
+          if (existing is NotificationsCubit) {
+            return BlocProvider.value(
+              value: existing,
+              child: const NotificationsScreen(),
+            );
+          }
+          return BlocProvider(
+            create: (context) =>
+                NotificationsCubit(context.read<NotificationRepository>())
+                  ..load(),
+            child: const NotificationsScreen(),
+          );
+        },
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           final user = context.watch<AuthCubit>().state.user;
@@ -120,6 +148,11 @@ GoRouter buildRouter({
                   context.read<FeedRepository>(),
                   events: context.read<PostEvents>(),
                 ),
+              ),
+              BlocProvider(
+                create: (context) => NotificationsCubit(
+                  context.read<NotificationRepository>(),
+                )..load(),
               ),
             ],
             child: AppShell(navigationShell: navigationShell),

@@ -22,6 +22,22 @@ _Atualizado em 2026-09-18, após o commit `3aa1c37` — **PR [#38](https://githu
 - **Validação obrigatória por item:** `dart format lib test`, `flutter analyze` (0 issues), `flutter test` (tudo verde), teste manual no emulador, persistência conferida (banco/após reiniciar app), commit, atualizar este arquivo, **push**.
 - **Push:** autorizado e funcionando (GitHub CLI autenticado). Commitar e dar push a cada item.
 
+## Etapa em andamento (iniciada em 2026-09-26)
+
+Nova rodada pedida pelo usuário: trazer para o mobile o que já existe no desktop —
+notificações (sino, contador, lista, filtros, marcar lida/todas), posts (menu de 3 pontos,
+compartilhar, denunciar), oportunidades (busca, sugestões, minhas candidaturas, salvas,
+candidatar/cancelar, menu, compartilhar, denunciar, redesenho do card) e áudio no chat.
+Depois: teste completo mobile + desktop, `MOBILE_TESTING.md`, commits, PR e handoff.
+
+**Divisão de trabalho pedida:** Opus para investigar/planejar/decidir, Sonnet para executar.
+O modelo da sessão principal não pode ser trocado por ferramenta (o app bloqueia); a divisão
+é feita com subagentes Sonnet executando sob análise do Opus. Registrado aqui porque o item
+27 do pedido manda restaurar a configuração anterior no fim — e não há configuração em disco
+a restaurar (ver seção "Git, PR e configuração de agentes").
+
+Status por item desta etapa: ver a tabela abaixo (itens 33+).
+
 ## Status dos itens
 
 Legenda: ✅ concluído e validado no emulador · 🟡 parcial · ⏳ pendente · ⛔ bloqueado

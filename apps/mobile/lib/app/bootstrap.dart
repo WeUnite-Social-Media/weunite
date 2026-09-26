@@ -1,5 +1,6 @@
 import '../core/config/app_config.dart';
 import '../core/network/api_client.dart';
+import '../core/realtime/realtime_client.dart';
 import '../core/session/current_user_provider.dart';
 import '../core/session/session_events.dart';
 import '../core/storage/token_storage.dart';
@@ -13,6 +14,9 @@ import '../features/chat/domain/repositories/chat_repository.dart';
 import '../features/feed/data/feed_remote_data_source.dart';
 import '../features/feed/data/feed_repository_impl.dart';
 import '../features/feed/domain/repositories/feed_repository.dart';
+import '../features/notifications/data/notification_remote_data_source.dart';
+import '../features/notifications/data/notification_repository_impl.dart';
+import '../features/notifications/domain/repositories/notification_repository.dart';
 import '../features/opportunities/data/opportunity_remote_data_source.dart';
 import '../features/opportunities/data/opportunity_repository_impl.dart';
 import '../features/opportunities/domain/repositories/opportunity_repository.dart';
@@ -27,6 +31,7 @@ class AppDependencies {
     required this.opportunityRepository,
     required this.chatRepository,
     required this.profileRepository,
+    required this.notificationRepository,
     required this.currentUserProvider,
     required this.sessionEvents,
   });
@@ -36,6 +41,7 @@ class AppDependencies {
   final OpportunityRepository opportunityRepository;
   final ChatRepository chatRepository;
   final ProfileRepository profileRepository;
+  final NotificationRepository notificationRepository;
   final CurrentUserProvider currentUserProvider;
   final SessionEvents sessionEvents;
 }
@@ -55,6 +61,12 @@ AppDependencies bootstrap() {
     tokenStorage: tokenStorage,
   );
   final currentUserProvider = AuthCurrentUserProvider(authRepository);
+  // One socket for the whole app: chat topics and the user's notification
+  // topic ride the same connection, the way the web shares one provider.
+  final realtimeClient = RealtimeClient(
+    config: config,
+    tokenStorage: tokenStorage,
+  );
 
   return AppDependencies(
     authRepository: authRepository,
@@ -71,11 +83,17 @@ AppDependencies bootstrap() {
       realtimeClient: ChatRealtimeClient(
         config: config,
         tokenStorage: tokenStorage,
+        client: realtimeClient,
       ),
       currentUserProvider: currentUserProvider,
     ),
     profileRepository: ProfileRepositoryImpl(
       remoteDataSource: ProfileRemoteDataSource(apiClient.dio),
+      currentUserProvider: currentUserProvider,
+    ),
+    notificationRepository: NotificationRepositoryImpl(
+      remoteDataSource: NotificationRemoteDataSource(apiClient.dio),
+      realtimeClient: realtimeClient,
       currentUserProvider: currentUserProvider,
     ),
     currentUserProvider: currentUserProvider,

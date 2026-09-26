@@ -14,6 +14,8 @@ import 'package:weunite_mobile/features/chat/domain/repositories/chat_repository
 import 'package:weunite_mobile/features/feed/domain/entities/comment.dart';
 import 'package:weunite_mobile/features/feed/domain/entities/post.dart';
 import 'package:weunite_mobile/features/feed/domain/repositories/feed_repository.dart';
+import 'package:weunite_mobile/features/notifications/domain/entities/app_notification.dart';
+import 'package:weunite_mobile/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:weunite_mobile/features/opportunities/domain/entities/opportunity.dart';
 import 'package:weunite_mobile/features/opportunities/domain/repositories/opportunity_repository.dart';
 import 'package:weunite_mobile/features/profile/domain/entities/profile.dart';
@@ -226,6 +228,26 @@ class _EmptyProfileRepository implements ProfileRepository {
   Future<bool> toggleFollow({required int followedId}) async => false;
 }
 
+class _EmptyNotificationRepository implements NotificationRepository {
+  @override
+  Future<List<AppNotification>> getNotifications() async => const [];
+
+  @override
+  Future<int> getUnreadCount() async => 0;
+
+  @override
+  Future<void> markAsRead(int notificationId) async {}
+
+  @override
+  Future<void> markAllAsRead() async {}
+
+  @override
+  Future<void> delete(int notificationId) async {}
+
+  @override
+  Stream<AppNotification> watchNewNotifications() => const Stream.empty();
+}
+
 AppDependencies _dependencies() {
   final authRepository = _FakeAuthRepository();
   return AppDependencies(
@@ -234,6 +256,7 @@ AppDependencies _dependencies() {
     opportunityRepository: _EmptyOpportunityRepository(),
     chatRepository: _FakeChatRepository(),
     profileRepository: _EmptyProfileRepository(),
+    notificationRepository: _EmptyNotificationRepository(),
     currentUserProvider: AuthCurrentUserProvider(authRepository),
     sessionEvents: SessionEvents(),
   );

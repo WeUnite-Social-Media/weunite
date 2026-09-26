@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_bottom_nav.dart';
 import '../../auth/presentation/cubit/auth_cubit.dart';
 import '../../chat/presentation/cubit/chat_cubit.dart';
+import '../../notifications/presentation/cubit/notifications_cubit.dart';
 
 /// Hosts the four bottom-nav tabs as branches of a
 /// `StatefulShellRoute.indexedStack` (see `lib/app/router.dart`): each
@@ -22,6 +23,15 @@ class AppShell extends StatelessWidget {
       appBar: AppBar(
         title: const _BrandTitle(),
         actions: [
+          _NotificationBell(
+            unreadCount: context.select(
+              (NotificationsCubit cubit) => cubit.state.unreadCount,
+            ),
+            onPressed: () => context.push(
+              '/notifications',
+              extra: context.read<NotificationsCubit>(),
+            ),
+          ),
           IconButton(
             tooltip: 'Sair',
             onPressed: context.read<AuthCubit>().logout,
@@ -45,6 +55,33 @@ class AppShell extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Bell in the Home `AppBar`, badged with the unread count from the same
+/// `NotificationsCubit` the `/notifications` screen reads — one source of
+/// truth, the same pattern `AppBottomNav`'s chat badge follows.
+class _NotificationBell extends StatelessWidget {
+  const _NotificationBell({required this.unreadCount, required this.onPressed});
+
+  final int unreadCount;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = const Icon(Icons.notifications_outlined);
+    return IconButton(
+      tooltip: 'Notificacoes',
+      onPressed: onPressed,
+      icon: unreadCount <= 0
+          ? icon
+          : Badge(
+              label: Text(unreadCount > 9 ? '9+' : '$unreadCount'),
+              backgroundColor: AppColors.destructive,
+              textColor: Colors.white,
+              child: icon,
+            ),
     );
   }
 }
