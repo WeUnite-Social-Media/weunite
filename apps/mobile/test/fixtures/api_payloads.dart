@@ -93,4 +93,5 @@ Map<String, Object?> get opportunityJson => {
       'company': {...userJson, 'role': 'COMPANY'},
       'subscribersCount': 12,
       'createdAt': '2026-09-10T12:00:00Z',
+      'updatedAt': '2026-09-12T09:30:00Z',
     };

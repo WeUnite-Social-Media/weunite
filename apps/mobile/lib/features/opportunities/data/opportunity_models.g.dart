@@ -14,6 +14,9 @@ OpportunityDto _$OpportunityDtoFromJson(Map<String, dynamic> json) =>
       location: json['location'] as String?,
       dateEnd: DateTime.parse(json['dateEnd'] as String),
       createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: json['updatedAt'] == null
+          ? null
+          : DateTime.parse(json['updatedAt'] as String),
       skills: (json['skills'] as List<dynamic>?)
           ?.map((e) => SkillDto.fromJson(e as Map<String, dynamic>))
           .toList(),

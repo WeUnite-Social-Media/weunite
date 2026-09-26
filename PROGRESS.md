@@ -103,6 +103,13 @@ Itens 1–27 concluídos e validados no emulador. Sugestão de continuidade (par
   decisão do time: a web não tem rota pública de post (`/posts/:postId` continua
   placeholder) e o botão de compartilhar dela é um no-op. Até isso existir, o autor não
   vê nenhum menu no card.
+- (2026-09-26) `OpportunityCard`/`OpportunityDetailSheet` redesenhados (hierarquia da web,
+  menu de 3 pontos com "Denunciar" para quem não é dono, carrossel "Oportunidades
+  Sugestões"). A empresa dona **não** vê menu nem rodapé no card: a web mostra
+  "Ver inscritos (N)", "Editar", "Excluir" e "Compartilhar" para o dono, e o mobile ainda
+  não tem tela de inscritos nem fluxo de editar/excluir oportunidade — decisão desta etapa
+  foi não criar essa tela e deixar o dono sem ação nenhuma no card/detalhe, com comentário
+  no código (`opportunity_card.dart`) explicando o motivo, em vez de expor um menu parcial.
 
 ## Decisões técnicas
 

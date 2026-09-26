@@ -17,6 +17,7 @@ class OpportunityDto {
     this.location,
     required this.dateEnd,
     required this.createdAt,
+    this.updatedAt,
     this.skills,
     required this.company,
     required this.subscribersCount,
@@ -32,6 +33,9 @@ class OpportunityDto {
   final DateTime dateEnd;
   final DateTime createdAt;
 
+  /// Absent until the company edits the opportunity for the first time.
+  final DateTime? updatedAt;
+
   /// `non_null` omits the (server-initialized, never empty) `skills`
   /// collection when it would be empty; treated as `const []` in
   /// [toEntity], not an invented value.
@@ -45,6 +49,7 @@ class OpportunityDto {
       title: title,
       description: description,
       companyId: company.id,
+      companyUsername: company.username,
       companyName: company.name,
       companyAvatar: company.profileImg,
       location: location,
@@ -52,6 +57,7 @@ class OpportunityDto {
       skills: skills?.map((skill) => skill.name).toList() ?? const [],
       subscribersCount: subscribersCount,
       createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 }

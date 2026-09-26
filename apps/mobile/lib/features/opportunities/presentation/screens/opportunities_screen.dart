@@ -6,6 +6,7 @@ import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../cubit/opportunities_cubit.dart';
 import '../widgets/opportunity_card.dart';
 import '../widgets/opportunity_detail_route.dart';
+import '../widgets/opportunity_suggestions_carousel.dart';
 
 class OpportunitiesScreen extends StatefulWidget {
   const OpportunitiesScreen({super.key});
@@ -41,34 +42,53 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
           onRetry: context.read<OpportunitiesCubit>().loadOpportunities,
           child: RefreshIndicator(
             onRefresh: context.read<OpportunitiesCubit>().loadOpportunities,
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: state.opportunities.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final opportunity = state.opportunities[index];
+            child: Builder(
+              builder: (context) {
                 // Saving and applying are athlete-only on the API, so a
                 // company account sees the listing without those actions.
                 final isAthlete =
                     context.read<AuthCubit>().state.user?.isCompany == false;
-                return OpportunityCard(
-                  opportunity: opportunity,
-                  isPending: state.pendingIds.contains(opportunity.id),
-                  onOpenDetail: () => showOpportunityDetailBound(
-                    context,
-                    opportunityId: opportunity.id,
-                    canAct: isAthlete,
-                  ),
-                  onToggleSaved: isAthlete
-                      ? () => context
-                          .read<OpportunitiesCubit>()
-                          .toggleSaved(opportunityId: opportunity.id)
-                      : null,
-                  onToggleSubscription: isAthlete
-                      ? () => context
-                          .read<OpportunitiesCubit>()
-                          .toggleSubscription(opportunityId: opportunity.id)
-                      : null,
+                final showsSuggestions = state.opportunities.isNotEmpty;
+                final itemCount =
+                    state.opportunities.length + (showsSuggestions ? 1 : 0);
+                return ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: itemCount,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    if (showsSuggestions && index == 0) {
+                      return OpportunitySuggestionsCarousel(
+                        opportunities: state.opportunities,
+                        onOpenDetail: (opportunity) =>
+                            showOpportunityDetailBound(
+                          context,
+                          opportunityId: opportunity.id,
+                          canAct: isAthlete,
+                        ),
+                      );
+                    }
+                    final opportunity = state
+                        .opportunities[showsSuggestions ? index - 1 : index];
+                    return OpportunityCard(
+                      opportunity: opportunity,
+                      isPending: state.pendingIds.contains(opportunity.id),
+                      onOpenDetail: () => showOpportunityDetailBound(
+                        context,
+                        opportunityId: opportunity.id,
+                        canAct: isAthlete,
+                      ),
+                      onToggleSaved: isAthlete
+                          ? () => context
+                              .read<OpportunitiesCubit>()
+                              .toggleSaved(opportunityId: opportunity.id)
+                          : null,
+                      onToggleSubscription: isAthlete
+                          ? () => context
+                              .read<OpportunitiesCubit>()
+                              .toggleSubscription(opportunityId: opportunity.id)
+                          : null,
+                    );
+                  },
                 );
               },
             ),

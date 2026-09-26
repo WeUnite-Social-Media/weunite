@@ -789,47 +789,197 @@ sh: 1: flutter: not found
 - **Como corrigir (sugestão, fora do escopo deste PR porque altera CI compartilhada):** adicionar um passo `subosito/flutter-action@v2` (com a versão usada pelo time) antes do "Lint" em `ci.yml`, ou excluir `@weunite/mobile` dos alvos do turbo na CI enquanto o Flutter não for instalado no runner.
 - Enquanto isso, a validação do mobile é feita localmente: `flutter analyze` (0 issues) e `flutter test` (200 verdes).
 
+---
+
+# ETAPA 2 — PARIDADE COM O DESKTOP (iniciada em 2026-09-26)
+
+> Esta seção é a mais recente. O que está acima descreve a etapa anterior (backlog 1–32, PR #38),
+> que continua válida. Leia esta seção primeiro para saber onde o trabalho parou.
+
+## O que o usuário pediu
+
+Trazer para o mobile o que já existe no desktop, **sem criar implementação paralela**: para cada
+funcionalidade, achar primeiro o componente/hook/service/endpoint da web e reutilizar, adaptando só
+o layout. Itens pedidos:
+
+1. Notificações na Home (sino, contador, lista, filtros, busca, marcar lida/todas, navegação).
+2. Posts: compartilhar.
+3. Posts: denunciar.
+4. Posts: menu de três pontos.
+5. Oportunidades: pesquisa.
+6. Oportunidades: minhas candidaturas.
+7. Oportunidades: salvas.
+8. Oportunidades: candidatar-se.
+9. Oportunidades: cancelar candidatura.
+10. Sugestões de oportunidades.
+11. Oportunidades: menu de três pontos.
+12. Oportunidades: compartilhar.
+13. Oportunidades: denunciar.
+14. Redesenho do card de oportunidade seguindo a web.
+15. Chat: envio de áudio.
+Mais: testes completos mobile e desktop, `MOBILE_TESTING.md`, commits, PR, PROGRESS/HANDOFF.
+
+**Divisão de modelos pedida:** Opus para investigar/planejar/decidir; Sonnet para executar.
+O modelo da sessão principal **não pode ser trocado por ferramenta** (o app recusa: "a session must
+not silently re-price its own turns"); a divisão foi feita com **subagentes Sonnet** executando sob
+especificação e revisão do Opus. Isso não altera configuração em disco — nada a restaurar no fim.
+
+## O QUE A ANÁLISE DO DESKTOP REVELOU (importante, muda o escopo)
+
+Três coisas pedidas **não funcionam na web**, então não havia o que reutilizar:
+
+1. **Compartilhar post e oportunidade**: o item existe no menu da web mas **não tem handler**
+   (`Post.tsx:233-236`, `OpportunityCard.tsx:310-322`). Não há `navigator.share`, nem clipboard,
+   nem toast. E **não existe rota pública** de post nem de oportunidade — o detalhe é sempre modal.
+2. **Busca de oportunidades**: `OpportunitySearch.tsx` é um input controlado, mas `searchTerm`
+   **nunca filtrava nada** em `FeedOpportunity.tsx`. Não há endpoint de busca de oportunidade.
+3. **Áudio no chat**: a web grava (`AudioRecorder.tsx`, MediaRecorder → webm) e faz upload, mas
+   `ChatContainer.handleSendMessage` **descarta o tipo** e sempre envia `TEXT`; o enum do backend
+   (`Message.MessageType`) só tem `TEXT, IMAGE, FILE`. A distinção áudio/imagem/arquivo na web é
+   feita por **regex na extensão da URL**, não pelo campo `type`.
+
+### Decisões do usuário sobre esses pontos (2026-09-26)
+
+- **Compartilhar: fora desta etapa.** Registrar como pendência com a proposta de criar
+  `/post/:id` e `/opportunity/:id` na web se quiserem link que funcione.
+- **Busca de oportunidades: filtrar no cliente E consertar o campo morto da web** (feito).
+- **Áudio: mesmo caminho da web** (upload + detecção por extensão), sem mexer no backend.
+- **Trabalhar por blocos, commitando a cada bloco.**
+
+## O QUE JÁ FOI ENTREGUE NESTA ETAPA
+
+### Bloco 0 — busca de oportunidades na web (commit `3a187f9`)
+- Criado `apps/web/src/features/opportunities/utils/opportunityFilter.ts` (filtra por título,
+  descrição, nome/username da empresa, local e habilidades).
+- `FeedOpportunity.tsx` passou a usar o filtro, esconde o carrossel de sugestões durante a busca e
+  mostra `Nenhuma oportunidade encontrada para "{termo}".`
+- Validado no navegador: filtro por título ("goleiros" → 1 card), por local ("santos"), estado
+  vazio e restauração ao limpar. **Atenção:** o Vite no container não recarrega alterações vindas do
+  bind mount do Windows — foi preciso `docker restart weunite-web` para ver a mudança.
+
+### Bloco 1 — notificações no mobile (commit `a45ee67`)
+Reaproveitado da web/API, **sem nada novo no backend**:
+- Endpoints: `GET /notifications/user/{id}` (array **cru**), `GET /notifications/user/{id}/unread-count`
+  (`{unreadCount}` **cru**), `PUT /notifications/{id}/read`, `PUT /notifications/user/{id}/read-all`,
+  `DELETE /notifications/{id}`.
+- Tópico STOMP que a API **já publicava**: `/topic/user/{userId}/notifications`.
+- Oito tipos do enum, com fallback `unknown` no parsing.
+- Filtros e busca **client-side** (como na web), agrupamento Hoje/Ontem/Esta semana/Antigas, selo
+  "Novo" (<5 min), textos exatos da web nos estados vazio/erro.
+- Arquivos: `lib/features/notifications/**` (data/domain/presentation), sino em
+  `lib/features/home/presentation/app_shell.dart`, rota `/notifications` no router, registro em
+  `bootstrap.dart`/`app.dart`.
+- **Refactor junto:** o cliente STOMP saiu de `features/chat/data/chat_realtime_client.dart` para
+  `lib/core/realtime/realtime_client.dart` (genérico: `subscribe<T>(destination, parse, onReconnect)`
+  e `send`). `ChatRealtimeClient` virou casca fina e mantém a API pública.
+- **Correção do Opus sobre a entrega do Sonnet:** ele tinha aberto uma **segunda conexão WebSocket**
+  para notificações; agora `bootstrap()` cria **um** `RealtimeClient` e injeta em chat e notificações
+  (a web também usa um socket só). `ChatRealtimeClient` aceita `client:` opcional para isso.
+- Validado no emulador: badge batendo com a API, filtros, busca, "Limpar filtros", "Marcar todas
+  como lidas" gravando no banco (9 → 0) e toque navegando para a aba certa.
+
+### Bloco 2 — denúncia + menu de três pontos do post (commit `4bc9bf6`)
+- `lib/features/reporting/**` genérico (post/comentário/oportunidade), sobre
+  `POST /reports/create/{userId}` com `{type, entityId, reason}` (resposta em envelope
+  `{message,data}`, diferente das notificações).
+- **Dez motivos exatos** da web, mesma ordem e rótulos; campo de detalhes com "{n}/500 caracteres";
+  aviso; validação "Por favor, selecione um motivo para a denúncia".
+- **Regra não óbvia replicada:** o texto livre **substitui** o código do motivo no campo `reason`.
+- `showReportSheet(context, {type, entityId, entityTitle})` — é o que o bloco 3 reutiliza.
+- `post_card.dart`: menu `Icons.more_vert` **só para quem não é o autor**, com "Denunciar".
+- **Bug encontrado e corrigido na validação:** a sheet abria **vazia** no emulador — os botões de
+  ação estavam num `Row` que lhes dava largura infinita; só estourava em largura de celular, e os
+  testes (tela padrão maior) não pegavam. Agora são `Expanded`, com teste a 360x690.
+- Validado no emulador: menu aparece/some conforme autoria e a denúncia foi gravada no banco como
+  `POST / entity 4 / harassment / PENDING` com o reporter correto.
+- Helper criado à parte: `lib/core/utils/time_ago.dart` (porte fiel de `getTimeAgo` da web) + testes.
+
+### Bloco 3a — em andamento quando esta seção foi escrita
+Um subagente Sonnet está redesenhando o card de oportunidade (hierarquia da web: empresa + "ha X",
+título, descrição, local, "Ate dd/MM/yyyy", "{n} candidatos", salvar, candidatar), adicionando o
+menu de três pontos com "Denunciar" (reutilizando `showReportSheet`) e a seção "Oportunidades
+Sugestões" (carrossel horizontal com a MESMA lista já carregada, como a web faz — não há endpoint
+de recomendação). **Verificar se essa entrega foi commitada antes de refazer qualquer coisa.**
+
+## O QUE FALTA NESTA ETAPA
+
+1. **Bloco 3a** (card + menu + sugestões): conferir a entrega do subagente, rodar
+   `flutter analyze`/`flutter test`, validar e commitar.
+2. **Bloco 3b**: busca de oportunidades no mobile (mesma regra do `opportunityFilter.ts` da web),
+   tela "Minhas candidaturas" (`GET /subscriber/athlete/{id}`, já existe `getSubscriptions` no data
+   source) e entrada para "Oportunidades salvas" na área de oportunidades — **reutilizando** o
+   `SavedOpportunitiesCubit`/`SavedOpportunitiesList` que já existem (a aba "Salvos" do perfil usa
+   eles; não criar segunda fonte de dados).
+3. **Bloco 4**: áudio no chat (gravar, permissão de microfone, duração, cancelar, enviar via
+   `POST /messages/upload`, tocar depois; detecção por extensão de URL, como a web).
+4. Validar candidatar-se/cancelar (já funcionam; confirmar no fluxo novo do card).
+5. Teste completo mobile + desktop, `MOBILE_TESTING.md`, atualizar PR #38, PROGRESS/HANDOFF.
+
+## AMBIENTE (estado em 2026-09-26)
+
+- Docker: `weunite-postgres`, `weunite-api` e `weunite-web` no ar
+  (`docker compose --env-file .env -f infra/docker/compose.dev.yml --profile api --profile web up -d`).
+- Web em http://localhost:3000, API em http://localhost:8080/api.
+- **Emulador desligado** a pedido do usuário (estava pesando a máquina).
+- **Celular real conectado:** POCO X5 Pro 5G, serial `b99d3e5a`, IP 192.168.15.121, mesma rede do PC
+  (192.168.15.50). O app foi instalado e abre normalmente, e o aparelho alcança a API (HTTP 200).
+  - `config/lan.json` (novo) aponta para `http://192.168.15.50:8080`; rodar com
+    `flutter run -d b99d3e5a --dart-define-from-file=config/lan.json`.
+  - **Travas do MIUI encontradas:** `flutter run`/`adb install` falham com
+    `INSTALL_FAILED_USER_RESTRICTED` mesmo com "Instalar via USB" ligado. **Solução que funcionou:**
+    `adb push <apk> /data/local/tmp/wu.apk` e `adb shell pm install -r -t /data/local/tmp/wu.apk`.
+  - **Entrada simulada bloqueada:** `adb shell input tap/text` retorna `SecurityException`
+    (INJECT_EVENTS). A opção "Depuração USB (Configurações de segurança)" não ficou ativa mesmo
+    após tentativa e reconexão do adb. Consequência: no celular **não dá para automatizar toques** —
+    `screencap`, `uiautomator dump`, logs e banco funcionam. O QA automatizado continua no emulador.
+
+## PERGUNTAS PENDENTES PARA O USUÁRIO (ele pediu para não travar esperando)
+
+1. Criar as rotas `/post/:id` e `/opportunity/:id` na web para o compartilhar gerar link que
+   funcione? (Hoje compartilhar está fora do escopo por decisão dele.)
+2. Implementar editar/excluir post e oportunidade no mobile? Hoje o autor/dono **não vê menu**,
+   porque as únicas ações que a web oferece a ele são essas mais o compartilhar.
+3. Criar a tela de "Ver inscritos" (empresa dona) que a web tem em
+   `/opportunity/:id/subscribers`?
+
 # PROMPT PARA CONTINUAR EM OUTRO CONTEXTO
 
 ```
-Você está continuando um desenvolvimento iniciado por outro agente no projeto WeUnite
-(monorepo WeUnite-Social-Media/weunite; clone local em C:\Users\Caio\weunite-mobile-agent,
-branch feat/mobile-backlog).
+Você está continuando um desenvolvimento no projeto WeUnite (monorepo
+WeUnite-Social-Media/weunite; clone em C:\Users\Caio\weunite-mobile-agent, branch
+feat/mobile-backlog, PR #38 aberto).
 
-Antes de alterar qualquer código:
-
-1. Leia integralmente HANDOFF.md (raiz do repositório).
+Antes de tocar em qualquer código:
+1. Leia HANDOFF.md inteiro, começando pela seção "ETAPA 2 — PARIDADE COM O DESKTOP".
 2. Leia PROGRESS.md.
-3. Analise os arquivos indicados na seção "Arquivos que o próximo agente deve ler primeiro",
-   em especial apps/mobile/AGENTS.md (regras de arquitetura).
-4. Confira o estado atual do Git e do projeto (git log, git status, flutter analyze, flutter test).
-5. Não assuma que itens pendentes estão concluídos.
-6. Não refaça itens marcados como concluídos sem encontrar evidência de problema.
-7. Continue exatamente do ponto indicado em "Estado exato no momento da parada".
-8. Siga a ordem descrita em "Próximos passos".
-9. Preserve as decisões técnicas documentadas, a menos que encontre um problema concreto.
-10. Atualize HANDOFF.md e PROGRESS.md conforme avançar, e faça commit + push a cada item
-    (o usuário acompanha pelo GitHub).
+3. Rode: git log --oneline -15, git status, e em apps/mobile: flutter analyze e flutter test.
+4. Leia apps/mobile/AGENTS.md (regras de arquitetura) antes de criar arquivo novo.
 
-Regras do usuário: lista de requisitos é acumulativa; não quebrar o que funciona; nada de
-ajuste apenas visual (validar backend, persistência e atualização da interface); testar o
-fluxo completo antes de dar um item como concluído.
+REGRA CENTRAL DO USUÁRIO: a versão desktop (apps/web) é a fonte de verdade. Antes de implementar
+qualquer coisa no mobile, procure a implementação equivalente na web (componente, hook, service,
+endpoint, tipos, permissões, textos) e reutilize. Não crie endpoint, tabela nem lógica paralela.
+Se a web não tiver aquilo, diga isso claramente em vez de inventar.
 
-ESTADO: o backlog 1-27 esta concluido e validado no emulador (analyze 0 issues, 197 testes
-verdes, ultimo commit c9282c2 em feat/mobile-backlog).
+DIVISÃO DE MODELOS: Opus analisa/planeja/decide e revisa; subagentes Sonnet executam o código.
+O modelo da sessão principal não pode ser trocado por ferramenta — se precisar, peça ao usuário
+para escolher no seletor de modelo do app.
 
-REGRA IMPORTANTE DO USUARIO: a interface desktop (apps/web) e a referencia. Antes de criar
-qualquer componente novo no mobile, procure a implementacao equivalente na web, identifique
-componente, logica, endpoint e estado, e reutilize ao maximo. Nao crie solucoes paralelas
-para o que ja existe.
+NÃO REFAÇA o que já está pronto e validado: notificações (commit a45ee67), denúncia + menu do post
+(4bc9bf6), busca de oportunidades na web (3a187f9), e todo o backlog 1–32 da etapa anterior.
 
-PROXIMO ITEM A EXECUTAR: as telas de oportunidades que so existem na web -- "Oportunidades
-salvas" (/opportunity/saved), "Minhas candidaturas"/"Minhas oportunidades"
-(/opportunity/my-opportunities) e "Ver inscritos" da empresa dona
-(/opportunity/:id/subscribers). Os metodos de dados ja existem no mobile
-(getSavedOpportunities, getSubscriptions).
+PRÓXIMA TAREFA EXATA:
+a) Conferir se o bloco 3a (redesenho do card de oportunidade + menu de três pontos com Denunciar +
+   seção "Oportunidades Sugestões") foi concluído e commitado; se não, terminar, testar e commitar.
+b) Bloco 3b: busca de oportunidades no mobile (mesma regra de
+   apps/web/src/features/opportunities/utils/opportunityFilter.ts), tela "Minhas candidaturas"
+   (GET /subscriber/athlete/{id}) e entrada para "Oportunidades salvas" na área de oportunidades,
+   reutilizando SavedOpportunitiesCubit/SavedOpportunitiesList que já existem.
+c) Bloco 4: áudio no chat — gravar, permissão de microfone, duração, cancelar, enviar por
+   POST /messages/upload e tocar depois, detectando áudio pela extensão da URL (é o que a web faz;
+   o backend não tem tipo AUDIO e o tipo é descartado antes de chegar nele).
+d) Depois: teste completo mobile e desktop, criar MOBILE_TESTING.md, atualizar o PR #38 e esta
+   documentação.
 
-Todo o contexto anterior necessário está documentado nesses arquivos.
-Não comece o projeto novamente. Não substitua implementações existentes por preferência.
-Não remova funcionalidades que estão funcionando. Primeiro entenda o estado atual, depois continue.
+Ao terminar cada bloco: dart format, flutter analyze (0 issues), flutter test (todos verdes),
+validação manual, commit e push, e atualizar PROGRESS.md e HANDOFF.md. Não esconda falhas.
 ```
