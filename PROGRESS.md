@@ -38,6 +38,47 @@ a restaurar (ver seção "Git, PR e configuração de agentes").
 
 Status por item desta etapa: ver a tabela abaixo (itens 33+).
 
+
+## Etapa 2 — status por item (desktop como referência)
+
+Legenda: ✅ concluído · 🟡 parcial · ⏳ pendente · ⛔ fora do escopo por decisão
+
+| # | Item | Status | Observações |
+|---|------|--------|-------------|
+| 33 | Notificações na Home | ✅ | Sino + badge ("9+"), tela com busca, filtros, agrupamento, "Novo", marcar uma/todas, remover, realtime pelo tópico que a API já publicava. Commit `a45ee67`. Validado no emulador (contador batendo com a API, marcar todas gravou no banco). |
+| 34 | Posts — compartilhar | ⛔ | A web tem o item no menu **sem handler** e **não há rota pública de post**. Decisão do usuário: fora desta etapa. Proposta registrada: criar `/post/:id` na web. |
+| 35 | Posts — denunciar | ✅ | Feature `reporting` genérica sobre `POST /reports/create/{userId}`, 10 motivos exatos, detalhes 500 chars, aviso e validações da web. Commit `4bc9bf6`. Denúncia real gravada no banco. |
+| 36 | Posts — menu de 3 pontos | ✅ | Só para quem não é autor, com "Denunciar" (mesma regra da web). Autor não vê menu — ver pendências. |
+| 37 | Oportunidades — pesquisa | ✅ | Filtro no cliente com a mesma regra do `opportunityFilter.ts`; carrossel escondido durante a busca; mensagem de vazio da web. Commit `ee07a60`. **A web também foi consertada** (commit `3a187f9`) — o campo dela nunca filtrou nada. |
+| 38 | Minhas candidaturas | ✅ | `GET /subscriber/athlete/{id}` pelo método que já existia; ordenação por prazo da web; textos de vazio exatos; cancelar remove o card. |
+| 39 | Oportunidades salvas | ✅ | Rota nova reutilizando `SavedOpportunitiesCubit`/`SavedOpportunitiesList` da aba do perfil — fonte de dados única, como exigido. |
+| 40 | Candidatar-se | ✅ | Já existia (item 8 da etapa 1); agora também pelo card redesenhado e pela tela de candidaturas. |
+| 41 | Cancelar candidatura | ✅ | Idem; na tela de candidaturas o item sai da lista. |
+| 42 | Sugestões de oportunidades | ✅ | Carrossel "Oportunidades Sugestões" sobre a lista já carregada — é o que a web faz (não existe endpoint de recomendação). Commit `29ff0bf`. |
+| 43 | Oportunidades — menu de 3 pontos | ✅ | No card e no detalhe, com "Denunciar", reutilizando a sheet do item 35. Dono não vê menu — ver pendências. |
+| 44 | Oportunidades — compartilhar | ⛔ | Mesma situação do item 34: botão morto na web, sem rota pública. Fora por decisão. |
+| 45 | Oportunidades — denunciar | ✅ | Mesmo fluxo e endpoint do item 35, com `type: OPPORTUNITY`. |
+| 46 | Design do card de oportunidade | ✅ | Hierarquia da web: empresa + "ha {tempo}", título, descrição, habilidades, local / "Ate dd/MM/yyyy" / "{n} candidatos", salvar e candidatar no rodapé. `timeAgo` é porte fiel do `getTimeAgo`. |
+| 47 | Chat — áudio | 🟡 | Em implementação no momento desta atualização. Caminho decidido: igual ao da web (upload em `/messages/upload` + detecção por extensão da URL), sem mexer no backend (o enum não tem AUDIO e o tipo é descartado antes de chegar nele). |
+| 48 | MOBILE_TESTING.md | ✅ | Escrito a partir da instalação real no POCO X5 Pro, com as travas do MIUI e o contorno que funcionou. |
+
+### Pendências registradas desta etapa
+
+- **Compartilhar** (posts e oportunidades): precisa de rota pública na web para o link funcionar.
+- **Autor/dono não vê menu de 3 pontos**: as únicas ações que a web oferece a ele são editar,
+  excluir, ver inscritos e compartilhar — nenhuma existe no mobile ainda.
+- **Tela "Ver inscritos"** (empresa dona), que a web tem em `/opportunity/:id/subscribers`.
+- **Aba "Comentários"** no perfil, que a web tem e o mobile não (`GET /comment/get/user/{id}`).
+- **Sem API de homologação**: um APK só funciona na mesma rede de quem roda o backend.
+
+### Travas do MIUI encontradas ao testar no celular real (POCO X5 Pro, serial `b99d3e5a`)
+
+- `flutter run`/`adb install` falham com `INSTALL_FAILED_USER_RESTRICTED` mesmo com "Instalar via
+  USB" ligado. **Funciona:** `adb push <apk> /data/local/tmp/wu.apk` + `adb shell pm install -r -t
+  /data/local/tmp/wu.apk`.
+- `adb shell input tap/text` é bloqueado (`SecurityException: INJECT_EVENTS`): no aparelho real não
+  dá para automatizar toques, só ler tela/logs. O QA automatizado continua no emulador.
+
 ## Status dos itens
 
 Legenda: ✅ concluído e validado no emulador · 🟡 parcial · ⏳ pendente · ⛔ bloqueado

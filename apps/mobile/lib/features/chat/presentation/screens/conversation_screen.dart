@@ -8,8 +8,11 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/async_state_view.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../domain/entities/conversation.dart';
+import '../../domain/message_media.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../cubit/conversation_cubit.dart';
+import '../widgets/audio_message_player.dart';
+import '../widgets/voice_recorder_button.dart';
 
 class ConversationScreen extends StatelessWidget {
   const ConversationScreen({required this.conversation, super.key});
@@ -159,6 +162,14 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ),
               )
+            else if (!message.deleted &&
+                detectMessageMediaKind(message.content) ==
+                    MessageMediaKind.audio)
+              // The backend has no AUDIO message type (see
+              // domain/message_media.dart), so this is detected from the
+              // content URL itself, never from `message.type` — mirrors
+              // `apps/web`'s `Message.tsx`.
+              AudioMessagePlayer(url: message.content)
             else
               Text(
                 message.deleted
@@ -331,14 +342,24 @@ class _Composer extends StatelessWidget {
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: controller,
               builder: (context, value, _) {
-                final canSend = !isSending && value.text.trim().isNotEmpty;
+                final hasText = value.text.trim().isNotEmpty;
+                // Same rule as the web `MessageInput.tsx`: the recorder only
+                // shows while the text field is empty; typing swaps it back
+                // to the send button.
+                if (!hasText) {
+                  return VoiceRecorderButton(
+                    enabled: !isSending,
+                    onRecorded: (path) =>
+                        context.read<ConversationCubit>().sendAudio(path),
+                  );
+                }
                 return IconButton(
                   icon: const Icon(Icons.send),
-                  onPressed: canSend
-                      ? () => context
+                  onPressed: isSending
+                      ? null
+                      : () => context
                           .read<ConversationCubit>()
-                          .sendMessage(controller.text)
-                      : null,
+                          .sendMessage(controller.text),
                 );
               },
             ),

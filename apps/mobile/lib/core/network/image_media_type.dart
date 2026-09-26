@@ -14,3 +14,22 @@ DioMediaType imageMediaTypeFor(String filename) {
     _ => DioMediaType('image', 'jpeg'),
   };
 }
+
+/// Media type for a chat audio attachment, from its file extension. The
+/// `record` package defaults to `.m4a` (AAC in an MP4 container) on both
+/// Android and iOS, which this maps to `audio/mp4`; other extensions are
+/// mapped for completeness in case a future recorder configuration changes
+/// the output format. Same reasoning as [imageMediaTypeFor]: the multipart
+/// part must carry a real media type for Cloudinary's `auto` upload to
+/// recognize it, not `application/octet-stream`.
+DioMediaType audioMediaTypeFor(String filename) {
+  final extension =
+      filename.contains('.') ? filename.split('.').last.toLowerCase() : '';
+  return switch (extension) {
+    'mp3' => DioMediaType('audio', 'mpeg'),
+    'wav' => DioMediaType('audio', 'wav'),
+    'ogg' => DioMediaType('audio', 'ogg'),
+    'webm' => DioMediaType('audio', 'webm'),
+    _ => DioMediaType('audio', 'mp4'),
+  };
+}

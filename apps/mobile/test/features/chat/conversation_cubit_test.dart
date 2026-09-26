@@ -13,14 +13,17 @@ class _FakeChatRepository implements ChatRepository {
     List<ChatMessage> history = const [],
     this.getMessagesDelay = Duration.zero,
     this.sendMessageThrows = false,
+    this.sendAudioThrows = false,
   }) : _history = history;
 
   final List<ChatMessage> _history;
   final Duration getMessagesDelay;
   final bool sendMessageThrows;
+  final bool sendAudioThrows;
   final _controller = StreamController<ChatRealtimeEvent>();
   int getMessagesCalls = 0;
   final List<String> sentContents = [];
+  final List<String> sentAudioPaths = [];
 
   void emit(ChatRealtimeEvent event) => _controller.add(event);
 
@@ -67,6 +70,17 @@ class _FakeChatRepository implements ChatRepository {
     required int conversationId,
     required String imagePath,
   }) async {}
+
+  @override
+  Future<void> sendAudio({
+    required int conversationId,
+    required String audioPath,
+  }) async {
+    if (sendAudioThrows) {
+      throw const AppException('Falha ao enviar audio.');
+    }
+    sentAudioPaths.add(audioPath);
+  }
 
   @override
   Future<Conversation> startConversationWith(int userId) async =>
@@ -237,5 +251,69 @@ void main() {
             ),
       ],
     );
+
+    blocTest<ConversationCubit, ConversationState>(
+      'sendAudio uploads the recording and bumps messageSentTick',
+      build: () => ConversationCubit(
+        conversationId: 30,
+        repository: _FakeChatRepository(),
+      ),
+      act: (cubit) => cubit.sendAudio('/tmp/recording.m4a'),
+      expect: () => [
+        isA<ConversationState>()
+            .having((state) => state.isSending, 'isSending', true),
+        isA<ConversationState>()
+            .having((state) => state.isSending, 'isSending', false)
+            .having((state) => state.messageSentTick, 'messageSentTick', 1),
+      ],
+    );
+
+    test('sendAudio forwards the recorded file path to the repository',
+        () async {
+      final repository = _FakeChatRepository();
+      final cubit =
+          ConversationCubit(conversationId: 30, repository: repository);
+
+      await cubit.sendAudio('/tmp/recording.m4a');
+
+      expect(repository.sentAudioPaths, ['/tmp/recording.m4a']);
+      await cubit.close();
+    });
+
+    blocTest<ConversationCubit, ConversationState>(
+      'sendAudio emits actionErrorMessage and isSending false when the '
+      'repository call fails',
+      build: () => ConversationCubit(
+        conversationId: 30,
+        repository: _FakeChatRepository(sendAudioThrows: true),
+      ),
+      act: (cubit) => cubit.sendAudio('/tmp/recording.m4a'),
+      expect: () => [
+        isA<ConversationState>()
+            .having((state) => state.isSending, 'isSending', true),
+        isA<ConversationState>()
+            .having((state) => state.isSending, 'isSending', false)
+            .having(
+              (state) => state.actionErrorMessage,
+              'actionErrorMessage',
+              'Falha ao enviar audio.',
+            ),
+      ],
+    );
+
+    test('sendAudio is a no-op while another send is in progress', () async {
+      final repository = _FakeChatRepository(
+        getMessagesDelay: const Duration(milliseconds: 20),
+      );
+      final cubit =
+          ConversationCubit(conversationId: 30, repository: repository);
+
+      final first = cubit.sendMessage('oi');
+      await cubit.sendAudio('/tmp/recording.m4a');
+      await first;
+
+      expect(repository.sentAudioPaths, isEmpty);
+      await cubit.close();
+    });
   });
 }

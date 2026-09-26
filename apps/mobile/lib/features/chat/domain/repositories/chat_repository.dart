@@ -17,6 +17,17 @@ abstract class ChatRepository {
     required String imagePath,
   });
 
+  /// Uploads [audioPath] (a recorded voice message) and sends it as a
+  /// message whose content is the uploaded file's URL. The backend's
+  /// `MessageType` enum has no `AUDIO` value, so the chat UI never relies on
+  /// `message.type` to recognize it — it detects audio from the URL's file
+  /// extension instead, exactly like `apps/web` (see
+  /// `domain/message_media.dart`).
+  Future<void> sendAudio({
+    required int conversationId,
+    required String audioPath,
+  });
+
   /// Opens (or creates) the 1:1 conversation with [userId]. The API returns
   /// the existing conversation when there already is one.
   Future<Conversation> startConversationWith(int userId);

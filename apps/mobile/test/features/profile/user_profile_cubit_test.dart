@@ -83,6 +83,12 @@ class _FakeChatRepository implements ChatRepository {
   }) async {}
 
   @override
+  Future<void> sendAudio({
+    required int conversationId,
+    required String audioPath,
+  }) async {}
+
+  @override
   Future<void> markConversationAsRead(int conversationId) async {}
 
   @override

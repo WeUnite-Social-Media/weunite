@@ -87,6 +87,39 @@ class ConversationCubit extends Cubit<ConversationState> {
     }
   }
 
+  /// Uploads [audioPath] (a recorded voice message) and sends it.
+  Future<void> sendAudio(String audioPath) async {
+    if (state.isSending) {
+      return;
+    }
+    emit(state.copyWith(isSending: true, actionErrorMessage: () => null));
+    try {
+      await _repository.sendAudio(
+        conversationId: conversationId,
+        audioPath: audioPath,
+      );
+      if (isClosed) {
+        return;
+      }
+      emit(
+        state.copyWith(
+          isSending: false,
+          messageSentTick: state.messageSentTick + 1,
+        ),
+      );
+    } on AppException catch (error) {
+      if (isClosed) {
+        return;
+      }
+      emit(
+        state.copyWith(
+          isSending: false,
+          actionErrorMessage: () => error.message,
+        ),
+      );
+    }
+  }
+
   Future<void> loadMessages() async {
     final hadMessages = state.messages.isNotEmpty;
     emit(

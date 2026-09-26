@@ -63,11 +63,15 @@ class ChatRemoteDataSource {
 
   /// `POST /messages/upload` — uploads the attachment to Cloudinary and
   /// returns its URL. It does not create the message: the caller still sends
-  /// it over STOMP, with that URL as the content.
+  /// it over STOMP, with that URL as the content. [contentType] types the
+  /// multipart part correctly (Cloudinary rejects `application/octet-stream`
+  /// uploads); pass [imageMediaTypeFor] for an image and [audioMediaTypeFor]
+  /// for a recorded audio message.
   Future<String> uploadAttachment({
     required int conversationId,
     required int senderId,
     required String filePath,
+    required DioMediaType contentType,
   }) async {
     try {
       final filename = filePath.split(RegExp(r'[\\/]')).last;
@@ -77,7 +81,7 @@ class ChatRemoteDataSource {
           'file': await MultipartFile.fromFile(
             filePath,
             filename: filename,
-            contentType: imageMediaTypeFor(filename),
+            contentType: contentType,
           ),
           'conversationId': conversationId,
           'senderId': senderId,

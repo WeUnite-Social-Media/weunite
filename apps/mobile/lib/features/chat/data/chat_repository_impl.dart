@@ -1,5 +1,6 @@
 import '../../../core/contracts/user_dto.dart';
 import '../../../core/error/app_exception.dart';
+import '../../../core/network/image_media_type.dart';
 import '../../../core/session/current_user_provider.dart';
 import '../domain/entities/chat_realtime_event.dart';
 import '../domain/entities/conversation.dart';
@@ -87,12 +88,39 @@ class ChatRepositoryImpl implements ChatRepository {
       conversationId: conversationId,
       senderId: senderId,
       filePath: imagePath,
+      contentType: imageMediaTypeFor(imagePath),
     );
     _realtimeClient.sendMessage(
       conversationId: conversationId,
       senderId: senderId,
       content: url,
       type: MessageTypeDto.image,
+    );
+  }
+
+  @override
+  Future<void> sendAudio({
+    required int conversationId,
+    required String audioPath,
+  }) async {
+    final senderId = _currentUserProvider.requireUserId();
+    final url = await _remoteDataSource.uploadAttachment(
+      conversationId: conversationId,
+      senderId: senderId,
+      filePath: audioPath,
+      contentType: audioMediaTypeFor(audioPath),
+    );
+    _realtimeClient.sendMessage(
+      conversationId: conversationId,
+      senderId: senderId,
+      content: url,
+      // The backend's MessageType enum (Message.java) only has
+      // TEXT/IMAGE/FILE — there is no AUDIO value to send, so this reuses
+      // FILE (a generic attachment), same as `apps/web`'s actual wire
+      // behavior for every attachment type it sends over STOMP. The chat UI
+      // never reads this back to tell audio apart from a plain file: it
+      // detects audio from the content URL's extension (message_media.dart).
+      type: MessageTypeDto.file,
     );
   }
 
