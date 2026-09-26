@@ -24,14 +24,20 @@ Opportunity _opportunity({
 }
 
 class _FakeOpportunityRepository implements OpportunityRepository {
-  _FakeOpportunityRepository({this.throwsOnToggle = false});
+  _FakeOpportunityRepository({
+    this.throwsOnToggle = false,
+    this.throwsOnCreate = false,
+  });
 
   final bool throwsOnToggle;
+  final bool throwsOnCreate;
   List<Opportunity> opportunities = [_opportunity()];
   int toggleSavedCalls = 0;
   int toggleSubscriptionCalls = 0;
+  int createOpportunityCalls = 0;
   bool savedResult = true;
   bool subscribedResult = true;
+  Map<String, Object?>? lastCreateOpportunity;
 
   @override
   Future<List<Opportunity>> getSavedOpportunities() async => const [];
@@ -66,6 +72,27 @@ class _FakeOpportunityRepository implements OpportunityRepository {
       throw const AppException('Nao foi possivel enviar a candidatura.');
     }
     return subscribedResult;
+  }
+
+  @override
+  Future<void> createOpportunity({
+    required String title,
+    required String description,
+    required String location,
+    required DateTime dateEnd,
+    required List<String> skills,
+  }) async {
+    createOpportunityCalls++;
+    lastCreateOpportunity = {
+      'title': title,
+      'description': description,
+      'location': location,
+      'dateEnd': dateEnd,
+      'skills': skills,
+    };
+    if (throwsOnCreate) {
+      throw const AppException('Nao foi possivel criar a oportunidade.');
+    }
   }
 }
 
@@ -174,6 +201,62 @@ void main() {
         ),
       ],
     );
+  });
+
+  group('OpportunitiesCubit.createOpportunity', () {
+    test('creates and reloads the listing on success', () async {
+      final repository = _FakeOpportunityRepository()
+        ..opportunities = [_opportunity()];
+      final cubit = OpportunitiesCubit(repository);
+
+      final future = cubit.createOpportunity(
+        title: 'Peneira sub-20',
+        description: 'Descricao',
+        location: 'Sao Paulo',
+        dateEnd: DateTime.utc(2026, 12, 1),
+        skills: ['Velocidade'],
+      );
+      expect(cubit.state.isSubmitting, isTrue);
+      await future;
+
+      expect(repository.createOpportunityCalls, 1);
+      expect(repository.lastCreateOpportunity, {
+        'title': 'Peneira sub-20',
+        'description': 'Descricao',
+        'location': 'Sao Paulo',
+        'dateEnd': DateTime.utc(2026, 12, 1),
+        'skills': ['Velocidade'],
+      });
+      expect(cubit.state.isSubmitting, isFalse);
+      // Reloaded from the repository afterwards.
+      expect(cubit.state.hasLoaded, isTrue);
+      expect(cubit.state.opportunities, [_opportunity()]);
+
+      await cubit.close();
+    });
+
+    test('reports the error in actionErrorMessage and does not reload',
+        () async {
+      final repository = _FakeOpportunityRepository(throwsOnCreate: true);
+      final cubit = OpportunitiesCubit(repository);
+
+      await cubit.createOpportunity(
+        title: 'Peneira sub-20',
+        description: 'Descricao',
+        location: 'Sao Paulo',
+        dateEnd: DateTime.utc(2026, 12, 1),
+        skills: const ['Velocidade'],
+      );
+
+      expect(cubit.state.isSubmitting, isFalse);
+      expect(
+        cubit.state.actionErrorMessage,
+        'Nao foi possivel criar a oportunidade.',
+      );
+      expect(cubit.state.hasLoaded, isFalse);
+
+      await cubit.close();
+    });
   });
 
   group('isOpportunityClosed', () {

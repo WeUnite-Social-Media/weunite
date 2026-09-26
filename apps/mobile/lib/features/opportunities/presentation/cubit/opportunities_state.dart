@@ -6,6 +6,7 @@ class OpportunitiesState extends Equatable {
     this.pendingIds = const {},
     this.isLoading = false,
     this.hasLoaded = false,
+    this.isSubmitting = false,
     this.loadErrorMessage,
     this.actionErrorMessage,
   });
@@ -16,6 +17,9 @@ class OpportunitiesState extends Equatable {
   final Set<int> pendingIds;
   final bool isLoading;
   final bool hasLoaded;
+
+  /// A `createOpportunity` request is in flight (company accounts only).
+  final bool isSubmitting;
   final String? loadErrorMessage;
   final String? actionErrorMessage;
 
@@ -24,6 +28,7 @@ class OpportunitiesState extends Equatable {
     Set<int>? pendingIds,
     bool? isLoading,
     bool? hasLoaded,
+    bool? isSubmitting,
     ValueGetter<String?>? loadErrorMessage,
     ValueGetter<String?>? actionErrorMessage,
   }) {
@@ -32,6 +37,7 @@ class OpportunitiesState extends Equatable {
       pendingIds: pendingIds ?? this.pendingIds,
       isLoading: isLoading ?? this.isLoading,
       hasLoaded: hasLoaded ?? this.hasLoaded,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
       loadErrorMessage:
           loadErrorMessage != null ? loadErrorMessage() : this.loadErrorMessage,
       actionErrorMessage: actionErrorMessage != null
@@ -46,6 +52,7 @@ class OpportunitiesState extends Equatable {
         pendingIds,
         isLoading,
         hasLoaded,
+        isSubmitting,
         loadErrorMessage,
         actionErrorMessage,
       ];

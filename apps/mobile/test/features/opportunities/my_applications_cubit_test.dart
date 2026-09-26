@@ -70,6 +70,15 @@ class _FakeOpportunityRepository implements OpportunityRepository {
     }
     return subscribedResult;
   }
+
+  @override
+  Future<void> createOpportunity({
+    required String title,
+    required String description,
+    required String location,
+    required DateTime dateEnd,
+    required List<String> skills,
+  }) async {}
 }
 
 void main() {

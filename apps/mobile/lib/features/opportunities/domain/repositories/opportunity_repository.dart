@@ -27,4 +27,14 @@ abstract class OpportunityRepository {
   /// Applies to or withdraws from the opportunity for the signed-in athlete;
   /// returns the resulting state (`true` = applied), read back from the API.
   Future<bool> toggleSubscription({required int opportunityId});
+
+  /// Publishes a new opportunity for the signed-in company. The company id
+  /// is never passed in — it always comes from the signed-in session.
+  Future<void> createOpportunity({
+    required String title,
+    required String description,
+    required String location,
+    required DateTime dateEnd,
+    required List<String> skills,
+  });
 }
