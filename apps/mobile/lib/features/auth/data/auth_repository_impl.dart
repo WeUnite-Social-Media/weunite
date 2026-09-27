@@ -76,7 +76,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> signUpAthlete({
+  Future<String?> signUpAthlete({
     required String name,
     required String username,
     required String email,
@@ -91,17 +91,46 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> signUpCompany({
+  Future<String?> signUpCompany({
     required String name,
     required String username,
     required String email,
     required String cnpj,
+    required String password,
   }) {
     return _remoteDataSource.signUpCompany(
       name: name,
       username: username,
       email: email,
       cnpj: cnpj,
+      password: password,
+    );
+  }
+
+  @override
+  Future<String?> sendResetPassword({required String email}) {
+    return _remoteDataSource.sendResetPassword(email: email);
+  }
+
+  @override
+  Future<String?> verifyResetToken({
+    required String email,
+    required String verificationToken,
+  }) {
+    return _remoteDataSource.verifyResetToken(
+      email: email,
+      verificationToken: verificationToken,
+    );
+  }
+
+  @override
+  Future<String?> resetPassword({
+    required String verificationToken,
+    required String newPassword,
+  }) {
+    return _remoteDataSource.resetPassword(
+      verificationToken: verificationToken,
+      newPassword: newPassword,
     );
   }
 

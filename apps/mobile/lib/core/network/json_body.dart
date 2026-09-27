@@ -38,3 +38,22 @@ T decodeResponseData<T>(
   }
   return ResponseDto<T>.fromJson(json, fromData).data;
 }
+
+/// Reads only the envelope's `message`, for endpoints whose answer *is* the
+/// message ("Cadastro concluído! Verifique seu email", "Código enviado!",
+/// "Senha redefinida!"). The web shows these strings verbatim in a toast, so
+/// the phone shows the server's text too instead of a local paraphrase.
+///
+/// Returns `null` when the body has no usable message, and never throws: the
+/// call already succeeded, so a missing courtesy message must not look like a
+/// failure.
+String? decodeResponseMessage(Object? body) {
+  if (body is! Map) {
+    return null;
+  }
+  final message = body['message'];
+  if (message is String && message.trim().isNotEmpty) {
+    return message;
+  }
+  return null;
+}

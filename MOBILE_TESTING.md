@@ -12,16 +12,16 @@ instalação real num **POCO X5 Pro 5G (HyperOS/MIUI)**, incluindo as travas que
 
 ## 1. Pré-requisitos
 
-| Ferramenta | Versão usada | Para quê |
-|---|---|---|
-| Git | qualquer recente | clonar o repositório |
-| Flutter SDK | **3.47.4** (Dart 3.13.3) | compilar e rodar o app |
-| Android Studio | Narwhal ou mais novo | SDK do Android, drivers e emulador |
-| Android SDK Platform | **API 36** (e API 35 para o emulador usado nos testes) | compilar |
-| Android NDK | **28.2.13676358** | exigido pelo Gradle deste projeto |
-| JDK | **17** (o que vem com o Android Studio serve) | Gradle |
-| Docker Desktop | qualquer recente | subir API + banco (só quem for rodar o backend local) |
-| pnpm + Node 22 | opcional | só se for mexer na web/API pelo monorepo |
+| Ferramenta           | Versão usada                                           | Para quê                                              |
+| -------------------- | ------------------------------------------------------ | ----------------------------------------------------- |
+| Git                  | qualquer recente                                       | clonar o repositório                                  |
+| Flutter SDK          | **3.47.4** (Dart 3.13.3)                               | compilar e rodar o app                                |
+| Android Studio       | Narwhal ou mais novo                                   | SDK do Android, drivers e emulador                    |
+| Android SDK Platform | **API 36** (e API 35 para o emulador usado nos testes) | compilar                                              |
+| Android NDK          | **28.2.13676358**                                      | exigido pelo Gradle deste projeto                     |
+| JDK                  | **17** (o que vem com o Android Studio serve)          | Gradle                                                |
+| Docker Desktop       | qualquer recente                                       | subir API + banco (só quem for rodar o backend local) |
+| pnpm + Node 22       | opcional                                               | só se for mexer na web/API pelo monorepo              |
 
 Confira o ambiente com:
 
@@ -57,10 +57,10 @@ flutter pub get
 O app **não usa `.env`**: as URLs entram por `--dart-define-from-file`, apontando para um JSON em
 `apps/mobile/config/`. Há dois prontos:
 
-| Arquivo | Para quê | Conteúdo |
-|---|---|---|
-| `config/dev.json` | emulador Android | `http://10.0.2.2:8080` (o host visto de dentro do emulador) |
-| `config/lan.json` | celular real na mesma rede | `http://<IP-DA-MÁQUINA>:8080` |
+| Arquivo           | Para quê                   | Conteúdo                                                    |
+| ----------------- | -------------------------- | ----------------------------------------------------------- |
+| `config/dev.json` | emulador Android           | `http://10.0.2.2:8080` (o host visto de dentro do emulador) |
+| `config/lan.json` | celular real na mesma rede | `http://<IP-DA-MÁQUINA>:8080`                               |
 
 As duas variáveis são `WEUNITE_API_URL` e `WEUNITE_WS_URL`. **Ajuste o IP de `config/lan.json`
 para o IP da sua máquina** (`ipconfig` no Windows, `ip addr` no Linux) antes de rodar no celular.
@@ -133,7 +133,7 @@ No emulador, `10.0.2.2` é o endereço do host — por isso o `dev.json` funcion
    voltar a desligar sozinhas — veja a seção de problemas.
 5. Conecte o cabo e escolha o modo **Transferência de arquivos (MTP)** — a Xiaomi exige MTP para o
    ADB funcionar.
-6. Ao conectar, aceite **"Permitir depuração USB?"** marcando *Sempre permitir deste computador*.
+6. Ao conectar, aceite **"Permitir depuração USB?"** marcando _Sempre permitir deste computador_.
 
 ### 5.2 Verificar que o computador enxerga o aparelho
 
@@ -172,7 +172,7 @@ cd apps/mobile
 flutter run -d <serial-do-aparelho> --dart-define-from-file=config/lan.json
 ```
 
-O `<serial>` é o que aparece em `adb devices`. Isso compila, instala e dá acesso a *hot reload*.
+O `<serial>` é o que aparece em `adb devices`. Isso compila, instala e dá acesso a _hot reload_.
 
 **Se a instalação falhar com `INSTALL_FAILED_USER_RESTRICTED`** (acontece em Xiaomi/POCO mesmo com
 "Instalar via USB" ligado), instale por baixo do bloqueio:
@@ -218,12 +218,12 @@ Para atualizar o app, gere um APK novo e instale por cima (mesma assinatura de d
 
 ## 7. Permissões usadas pelo app
 
-| Permissão | Onde é usada |
-|---|---|
-| Internet | tudo (API REST + WebSocket do chat) |
+| Permissão     | Onde é usada                                                               |
+| ------------- | -------------------------------------------------------------------------- |
+| Internet      | tudo (API REST + WebSocket do chat)                                        |
 | Galeria/fotos | imagem em post, imagem no chat, foto e capa do perfil (via `image_picker`) |
-| Câmera | só se o usuário escolher tirar foto no seletor do sistema |
-| Microfone | gravação de áudio no chat (em desenvolvimento) |
+| Câmera        | só se o usuário escolher tirar foto no seletor do sistema                  |
+| Microfone     | gravação de áudio no chat (em desenvolvimento)                             |
 
 O Android pede cada uma na hora do uso; se alguma for negada, o app segue funcionando sem aquela
 função.
@@ -251,6 +251,7 @@ conta Mi e costuma se desativar sozinha. Sem ela, dá para instalar, ler a tela 
 tirar print (`screencap`) e ver logs — mas não automatizar toques. O QA automatizado roda no emulador.
 
 **O app abre mas não carrega nada (API não responde)**
+
 1. `docker ps` — os contêineres `weunite-api` e `weunite-postgres` estão de pé?
 2. O IP em `config/lan.json` é o da máquina agora? (IP de DHCP muda.)
 3. Celular e PC no mesmo Wi-Fi?
@@ -295,3 +296,123 @@ Com um usuário **empresa**:
 - [ ] Perfil tem a aba "Oportunidades" com as vagas publicadas.
 - [ ] Abrir o detalhe de uma oportunidade.
 - [ ] Iniciar conversa com um atleta pelo chat.
+
+### Autenticação
+
+- [ ] Criar conta de atleta e entrar depois de confirmar o e-mail.
+- [ ] Senha fraca é recusada com a regra que falta escrita na tela.
+- [ ] Olho mostra e esconde a senha sem apagar o que foi digitado.
+- [ ] Confirmação diferente bloqueia o cadastro.
+- [ ] Sem aceitar os termos o cadastro não sai.
+- [ ] Termos de Uso abrem e fecham.
+- [ ] Criar clube com CNPJ mascarado e senha.
+- [ ] CNPJ inválido é recusado antes de enviar.
+- [ ] E-mail ou usuário já cadastrado mostra "Usuário já existe".
+- [ ] Esqueci a senha: código, nova senha, entrar com ela.
+- [ ] Fechar e reabrir o app mantém a sessão.
+
+---
+
+## 10. Testar a autenticação (criar conta, confirmar e-mail, recuperar senha)
+
+Esta parte não precisa de nenhuma configuração especial de build: **não há
+login com Google e não há deep link**. Todo o fluxo acontece dentro do app, e
+a confirmação de e-mail é por **código de seis dígitos**, não por link.
+
+### 10.1 O e-mail precisa sair da API
+
+Quem envia o código é a API, pelo SMTP configurado no `.env` da máquina que
+sobe o backend (as variáveis de e-mail estão listadas no `.env.example`). Se
+esse SMTP não estiver configurado, o cadastro é criado mas **nenhum e-mail
+chega**, e você fica preso na tela do código.
+
+Dois caminhos:
+
+- **Com SMTP configurado:** use um e-mail de verdade que você consiga abrir.
+- **Sem SMTP (ou em máquina de desenvolvimento):** leia o código direto no
+  banco, que é o que o QA faz aqui:
+
+```bash
+docker exec weunite-postgres psql -U postgres -d weunite -t -A -c "select verification_token from tb_user where email='SEU_EMAIL'"
+```
+
+O mesmo código serve para a confirmação de e-mail e para a redefinição de
+senha (a coluna é reaproveitada pelos dois fluxos).
+
+### 10.2 Regras de senha (as mesmas do site)
+
+A senha precisa ter, ao mesmo tempo:
+
+- 8 a 30 caracteres;
+- uma letra maiúscula;
+- uma letra minúscula;
+- um número;
+- um símbolo, entre `!@#$%^&*()_+-=[]{};':"\|,.<>/?`.
+
+O app mostra essa lista embaixo do campo, com uma barra de força, e vai
+marcando cada item conforme você digita. Símbolo fora dessa lista (`~`, `´`)
+é recusado — a API também recusaria.
+
+Nome e nome de usuário têm no mínimo 5 caracteres. Esse detalhe pega muita
+gente: "bob" não serve como usuário.
+
+### 10.3 Roteiro — criar uma conta de atleta
+
+1. Abra o app e toque em **atleta**, no rodapé da tela de login.
+2. Preencha nome, username, e-mail.
+3. Digite uma senha fraca de propósito (`abcdefgh`) e confira que a barra fica
+   vermelha e os itens continuam desmarcados.
+4. Toque no olho do campo de senha: o texto aparece; toque de novo: some.
+5. Corrija para uma senha válida e confira que a barra fica verde.
+6. Digite uma confirmação **diferente** e tente cadastrar: tem que aparecer
+   "As senhas devem ser iguais" e nada é enviado.
+7. Acerte a confirmação e tente cadastrar **sem** marcar os termos: tem que
+   aparecer "Aceite os termos para criar sua conta.".
+8. Toque em "Ler termos e condições": abre o documento; feche.
+9. Marque o aceite e toque em **Cadastrar**.
+10. O app vai para a tela do código e mostra o e-mail cadastrado.
+11. Digite o código de seis dígitos. Ao completar o sexto dígito ele já envia.
+12. Deu certo: você entra direto no feed — a confirmação já devolve a sessão.
+
+### 10.4 Roteiro — criar um clube
+
+Igual ao de atleta, com a aba **Clube** e mais um campo:
+
+- **CNPJ**: digite só números; a máscara `XX.XXX.XXX/0000-XX` é aplicada
+  sozinha. Um CNPJ com dígito verificador errado é recusado antes de sair do
+  app ("CNPJ inválido"). Para testar, `11.222.333/0001-81` é válido.
+
+O clube tem senha, confirmação, olho, barra de força e termos, exatamente
+como o atleta.
+
+### 10.5 Roteiro — esqueci a senha
+
+1. Na tela de login, toque em **Esqueceu sua senha?**.
+2. Informe o e-mail da conta e toque em **Confirmar**.
+3. O botão de reenviar fica bloqueado por 60 segundos, contando na tela.
+4. Na tela seguinte, digite um código errado primeiro: tem que aparecer
+   "Token inválido".
+5. Digite o código certo, defina a nova senha e a confirmação (as mesmas
+   regras de força valem aqui).
+6. Você volta para o login. Entre com a **senha nova**; a antiga não funciona
+   mais.
+
+Um e-mail que não existe responde "Usuário não encontrado" — é o
+comportamento atual da API, igual no site.
+
+### 10.6 Sessão
+
+Feche o app pela lista de recentes e abra de novo: você continua logado. O
+token vale 15 dias; quando expira, o app volta para o login com
+"Sua sessão expirou. Entre novamente.". Sair pelo ícone no topo da Home
+limpa a sessão na hora.
+
+### 10.7 O que **não** dá para testar
+
+- **Login com Google.** O botão existe só no site, sem nenhuma ação por trás:
+  não há provider, client id nem endpoint na API (`/api/auth` tem sete rotas,
+  nenhuma social). Por isso o app não tem esse botão.
+- **Reenviar o código de confirmação de e-mail.** Não existe endpoint de
+  reenvio. O botão "Reenviar código" do site só reinicia um contador, sem
+  mandar nada. O reenvio do **fluxo de recuperação de senha** é de verdade e
+  funciona.
