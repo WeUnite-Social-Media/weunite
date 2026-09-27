@@ -64,6 +64,17 @@ class _EditProfileViewState extends State<_EditProfileView> {
   late final TextEditingController _weight;
   late final TextEditingController _position;
   String _footDomain = '';
+
+  /// Round-trips the account's current privacy without offering a control,
+  /// which is exactly what the web does: `userService.updateUser` sends
+  /// `isPrivate` but `EditProfile.tsx` has no switch for it.
+  ///
+  /// The switch used to be here, and it was a trap: the API turns a follow of
+  /// a private account into a PENDING request (`Follow`'s constructor), and
+  /// neither client has anywhere to accept or decline one — `/follow/accept`
+  /// and `/follow/decline` exist on the API and are called by nobody. Turning
+  /// the account private therefore made it impossible to follow, with the
+  /// follow button silently bouncing back to "Seguir".
   late bool _isPrivate;
   DateTime? _birthDate;
 
@@ -232,12 +243,6 @@ class _EditProfileViewState extends State<_EditProfileView> {
                   maxLines: 5,
                   maxLength: 500,
                   decoration: const InputDecoration(labelText: 'Bio'),
-                ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: _isPrivate,
-                  onChanged: (value) => setState(() => _isPrivate = value),
-                  title: const Text('Perfil privado'),
                 ),
                 if (_isAthlete) ...[
                   const Divider(height: 32),
