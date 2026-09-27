@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Background layer of the adaptive launcher icon: black, with the brand green
+  W on top. The W is the one from the logo in apps/web/public/WeUP.ico, not a
+  letter drawn from scratch.
+-->
+<resources>
+    <color name="ic_launcher_background">#000000</color>
+</resources>
