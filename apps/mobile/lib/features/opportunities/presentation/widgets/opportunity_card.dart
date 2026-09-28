@@ -80,15 +80,24 @@ class OpportunityCard extends StatelessWidget {
           _OpportunityMetaRow(opportunity: opportunity),
           if (onToggleSubscription != null || onToggleSaved != null) ...[
             const SizedBox(height: 12),
+            // `Expanded` instead of a `Spacer`: with the spacer this row made
+            // the whole Opportunities list paint nothing on a device — header,
+            // suggestions and every card disappeared, with no exception in the
+            // log and the data already loaded. Giving the apply button the
+            // leftover width explicitly, and letting the bookmark keep its
+            // intrinsic size, fixes it. Same shape as the fix the report sheet
+            // needed for its action row.
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 if (onToggleSubscription != null)
-                  SubscribeButton(
-                    opportunity: opportunity,
-                    isPending: isPending,
-                    onPressed: onToggleSubscription,
+                  Flexible(
+                    child: SubscribeButton(
+                      opportunity: opportunity,
+                      isPending: isPending,
+                      onPressed: onToggleSubscription,
+                    ),
                   ),
-                const Spacer(),
                 if (onToggleSaved != null)
                   _SaveButton(
                     isSaved: opportunity.isSaved,

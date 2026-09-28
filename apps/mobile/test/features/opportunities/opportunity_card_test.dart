@@ -131,7 +131,73 @@ Future<void> _pump(WidgetTester tester, {required int companyId}) async {
   await tester.pumpAndSettle();
 }
 
+/// Pumps the card the way the Opportunities tab really uses it: inside a
+/// scrolling list, with the toggle callbacks wired, at phone size.
+Future<void> _pumpInList(
+  WidgetTester tester, {
+  required int companyId,
+}) async {
+  await tester.binding.setSurfaceSize(const Size(393, 873));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
+
+  final authRepository = _FakeAuthRepository()..currentUser = _viewer;
+  final authCubit = AuthCubit(authRepository, SessionEvents())
+    ..restoreSession();
+  addTearDown(authCubit.close);
+
+  await tester.pumpWidget(
+    MaterialApp(
+      home: MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<ReportRepository>.value(
+            value: _FakeReportRepository(),
+          ),
+        ],
+        child: BlocProvider.value(
+          value: authCubit,
+          child: Scaffold(
+            body: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: 3,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) => OpportunityCard(
+                // The exact shape `GET /opportunities/get` returns.
+                opportunity: Opportunity(
+                  id: 3,
+                  title: 'Avaliacao de laterais',
+                  description: 'Terceira oportunidade para validar o refresh',
+                  location: 'Santos, SP',
+                  dateEnd: DateTime.utc(2026, 12, 20),
+                  createdAt: DateTime.utc(2026, 9, 18, 4, 21, 42),
+                  companyId: companyId,
+                  companyName: 'Marca Teste QA',
+                  companyUsername: 'marcateste',
+                  skills: const ['Futebol'],
+                  subscribersCount: 1,
+                ),
+                onOpenDetail: () {},
+                onToggleSaved: () {},
+                onToggleSubscription: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
 void main() {
+  testWidgets('renders inside a scrolling list, as the tab uses it',
+      (tester) async {
+    await _pumpInList(tester, companyId: 99);
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Avaliacao de laterais'), findsWidgets);
+    expect(find.text('Santos, SP'), findsWidgets);
+    expect(find.text('Futebol'), findsWidgets);
+  });
   testWidgets(
     'shows the three-dot menu for an opportunity from another company',
     (tester) async {
