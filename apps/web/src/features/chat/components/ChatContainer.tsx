@@ -13,6 +13,7 @@ import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { useOnlineStatus } from "@/features/chat/hooks/useOnlineStatus";
 import { useChatStore } from "@/features/chat/stores/useChatStore";
 import { formatBrazilTime } from "@/shared/utils/formatBrazilTime";
+import type { MessageType } from "@/shared/types/chat.types";
 
 interface Conversation {
   id: number;
@@ -164,16 +165,24 @@ export const ChatContainer = ({
     }, 1500);
   };
 
-  const handleSendMessage = (text: string) => {
+  const handleSendMessage = (text: string, type?: string) => {
     if (!activeConversation?.id || !userId || !isConnected) return;
 
     triggerHapticFeedback("light");
+
+    // The API only knows TEXT, IMAGE and FILE; audio travels as FILE.
+    const messageType: MessageType =
+      type === "IMAGE"
+        ? "IMAGE"
+        : type === "FILE" || type === "AUDIO"
+          ? "FILE"
+          : "TEXT";
 
     sendMessage({
       conversationId: activeConversation.id,
       senderId: Number(userId),
       content: text,
-      type: "TEXT",
+      type: messageType,
     });
   };
 

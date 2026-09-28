@@ -27,8 +27,10 @@ export const Message = ({ message }: MessageProps) => {
     return text.match(/\.(jpg|jpeg|png|gif|webp)$/i);
   };
 
+  // Mobile voice notes are AAC; Cloudinary stores them as video and returns
+  // `.mp4`. Same rule as the mobile app's message_media.dart.
   const isAudioUrl = (text: string) => {
-    return text.match(/\.(mp3|wav|ogg|m4a|webm)$/i);
+    return text.match(/\.(mp3|wav|ogg|m4a|aac|mp4|webm)$/i);
   };
 
   const isFileUrl = (text: string) => {
@@ -54,7 +56,9 @@ export const Message = ({ message }: MessageProps) => {
 
   const renderContent = () => {
     if (isFileUrl(message.text)) {
-      const fullUrl = `${mediaBaseUrl}${message.text}`;
+      const fullUrl = message.text.startsWith("http")
+        ? message.text
+        : `${mediaBaseUrl}${message.text}`;
 
       if (isImageUrl(message.text)) {
         return (
