@@ -9,6 +9,8 @@ import '../../../profile/presentation/navigation/open_user_profile.dart';
 import '../../../reporting/domain/entities/report_entity_type.dart';
 import '../../../reporting/presentation/widgets/report_sheet.dart';
 import '../../domain/entities/post.dart';
+import '../../domain/post_media.dart';
+import 'post_video.dart';
 
 /// Longest a post's text shows in the report sheet's "Denunciando: ..."
 /// preview before it's truncated with "...", matching apps/web's
@@ -103,35 +105,41 @@ class PostCard extends StatelessWidget {
           if (post.content?.isNotEmpty ?? false) Text(post.content!),
           if (post.mediaUrl != null) ...[
             const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 420),
-                child: Image.network(
-                  post.mediaUrl!,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) {
-                      return child;
-                    }
-                    return const SizedBox(
-                      height: 220,
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) => SizedBox(
-                    height: 120,
-                    child: Center(
-                      child: Icon(
-                        Icons.broken_image_outlined,
-                        color: Theme.of(context).disabledColor,
+            // One field carries both: the API uploads a post's media with
+            // Cloudinary's `resource_type: auto`, so a video comes back
+            // through the same `imageUrl` an image does.
+            if (isPostVideoUrl(post.mediaUrl!))
+              PostVideo(url: post.mediaUrl!)
+            else
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 420),
+                  child: Image.network(
+                    post.mediaUrl!,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) {
+                        return child;
+                      }
+                      return const SizedBox(
+                        height: 220,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) => SizedBox(
+                      height: 120,
+                      child: Center(
+                        child: Icon(
+                          Icons.broken_image_outlined,
+                          color: Theme.of(context).disabledColor,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
           ],
           const SizedBox(height: 12),
           Row(

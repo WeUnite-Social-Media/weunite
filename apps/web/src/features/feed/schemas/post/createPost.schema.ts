@@ -16,11 +16,15 @@ export const createPostSchema = z.object({
         const isVideo = file.type.startsWith("video/");
 
         if (isImage) return file.size <= 5 * 1024 * 1024;
-        if (isVideo) return file.size <= 50 * 1024 * 1024;
+        // 10MB, not the 50MB this used to allow: the API caps every multipart
+        // request at 10MB (`spring.servlet.multipart.max-file-size` and
+        // `.max-request-size`), so anything bigger passed this check and then
+        // failed at the server.
+        if (isVideo) return file.size <= 10 * 1024 * 1024;
 
         return false;
       },
-      { message: "Imagens: máx 5MB, Vídeos: máx 50MB" },
+      { message: "Imagens: máx 5MB, Vídeos: máx 10MB" },
     )
     .refine(
       (file) => {

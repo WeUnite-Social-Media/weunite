@@ -76,7 +76,7 @@ class FeedRemoteDataSource {
         parts['image'] = await MultipartFile.fromFile(
           imagePath,
           filename: filename,
-          contentType: imageMediaTypeFor(filename),
+          contentType: postMediaTypeFor(filename),
         );
       }
       await _dio.post<void>(

@@ -33,3 +33,29 @@ DioMediaType audioMediaTypeFor(String filename) {
     _ => DioMediaType('audio', 'mp4'),
   };
 }
+
+/// Media type for a post's video part, from the file extension. Same reason as
+/// [imageMediaTypeFor]: the part must carry a real media type or Cloudinary's
+/// `auto` upload sees `application/octet-stream`. The formats are the ones the
+/// web's post schema accepts (mp4, webm, quicktime).
+DioMediaType videoMediaTypeFor(String filename) {
+  final extension =
+      filename.contains('.') ? filename.split('.').last.toLowerCase() : '';
+  return switch (extension) {
+    'webm' => DioMediaType('video', 'webm'),
+    'mov' => DioMediaType('video', 'quicktime'),
+    _ => DioMediaType('video', 'mp4'),
+  };
+}
+
+/// Media type for whatever a post carries. A post's file part is named
+/// `image` on the API (`PostController`), but it may hold a video, so the
+/// type comes from the extension rather than from the part name.
+DioMediaType postMediaTypeFor(String filename) {
+  final extension =
+      filename.contains('.') ? filename.split('.').last.toLowerCase() : '';
+  const videoExtensions = {'mp4', 'webm', 'mov'};
+  return videoExtensions.contains(extension)
+      ? videoMediaTypeFor(filename)
+      : imageMediaTypeFor(filename);
+}

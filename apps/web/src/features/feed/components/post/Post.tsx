@@ -54,6 +54,7 @@ import { ReportModal } from "@/features/reporting/components/ReportModal";
 import { getTimeAgo } from "@/shared/hooks/useGetTimeAgo";
 import type { PostCard } from "@/shared/types/post.types";
 import { getInitials } from "@/shared/utils/getInitials";
+import { isPostVideoUrl } from "@/features/feed/utils/postMedia";
 
 const actions = [{ icon: Heart }, { icon: MessageCircle }, { icon: Repeat2 }];
 const POST_PREVIEW_LENGTH = 200;
@@ -260,11 +261,23 @@ export default function Post({ post }: { post: PostCard }) {
         <CardContent className="mt-[-18px] w-full">
           <div className="flex w-full items-center justify-center">
             {post.imageUrl ? (
-              <img
-                src={post.imageUrl}
-                alt="Post media"
-                className="mb-2 rounded-sm"
-              />
+              isPostVideoUrl(post.imageUrl) ? (
+                // The composer has always accepted `video/*`, but this was an
+                // `<img>`, so an uploaded video showed up as a broken image.
+                <video
+                  src={post.imageUrl}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="mb-2 max-h-[32rem] rounded-sm"
+                />
+              ) : (
+                <img
+                  src={post.imageUrl}
+                  alt="Post media"
+                  className="mb-2 rounded-sm"
+                />
+              )
             ) : null}
           </div>
 
