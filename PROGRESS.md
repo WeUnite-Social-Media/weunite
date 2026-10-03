@@ -78,6 +78,58 @@ Legenda: ✅ concluído · 🟡 parcial · ⏳ pendente · ⛔ fora do escopo po
 - `adb shell input tap/text` é bloqueado (`SecurityException: INJECT_EVENTS`): no aparelho real não
   dá para automatizar toques, só ler tela/logs. O QA automatizado continua no emulador.
 
+## Etapa 4 - Video em post (2026-10-03)
+
+_Branch `chore/mobile-launcher-icon`, commit `c11ce6b`. Nao subido para a main ainda._
+
+Pedido: "nao consigo mandar video pelo mobile". **Nao e no chat** - la nem o web
+tem (`accept="image/*,.pdf,.doc,.docx,.txt"` no `MessageInput.tsx`, e o enum da
+API e `TEXT, IMAGE, FILE`). E no **post**, e estava pela metade: o web aceitava
+escolher e enviar video (`CreatePost.tsx` com `accept="image/*, video/*"`), mas
+`Post.tsx` renderizava tudo dentro de um `<img>`, entao o video virava imagem
+quebrada. Dava para mandar e ninguem via.
+
+| Camada            | Antes                                                              | Agora                |
+| ----------------- | ------------------------------------------------------------------ | -------------------- |
+| API               | aceita (`resource_type: auto`), devolve URL de video em `imageUrl` | igual                |
+| Web - escolher    | sim                                                                | sim                  |
+| Web - exibir      | **nao** (`<img>`)                                                  | `<video controls>`   |
+| Mobile - escolher | **nao**                                                            | `pickMedia`          |
+| Mobile - exibir   | **nao**                                                            | player com progresso |
+
+Arquivos novos: `features/feed/domain/post_media.dart` (formatos, limites e
+deteccao de video), `features/feed/presentation/widgets/post_video.dart`,
+`apps/web/src/features/feed/utils/postMedia.ts`,
+`test/features/feed/post_media_test.dart`. Dependencia nova: `video_player`.
+
+### Dois furos achados testando de verdade
+
+1. O schema do web permitia **50 MB** de video, mas a API corta todo multipart
+   em 10 MB (`spring.servlet.multipart.max-file-size` e `.max-request-size`).
+   Video entre 10 e 50 MB passava no navegador e morria no servidor. Os dois
+   clientes agora usam 10 MB.
+2. O app deixava publicar so com midia e a API respondia
+   "Validation failed for object='post'": o texto e obrigatorio
+   (`CreatePostRequestDTO`, e `text: z.string().min(1)` no web).
+
+### Validacao
+
+Emulador, com mp4 real gravado por `adb shell screenrecord`: post id 7 criado
+com `.../video/upload/.../gffxd0rck0v6bpo0pmis.mp4`; no app a barra de progresso
+andou de x=229 para x=878 em 2s (tocando); no site o `<video>` reportou
+250x500 e 3,52s. 385 testes verdes, analyze 0 issues, web com typecheck/lint/
+build limpos.
+
+### Pendencia
+
+O APK **nao foi instalado no celular do usuario**: `INSTALL_FAILED_UPDATE_INCOMPATIBLE`,
+a chave de debug da maquina mudou. Para instalar e preciso desinstalar antes
+(`adb -s b99d3e5a uninstall com.example.weunite_mobile`), o que apaga a sessao.
+Nao feito sem autorizacao.
+
+Video **no chat** continua nao existindo em lugar nenhum; exigiria mexer no enum
+da API.
+
 ## Merges na `main` (2026-09-26)
 
 Tudo o que as etapas 1 e 2 produziram esta na `main`, em tres merges, sem quebrar web nem mobile:
