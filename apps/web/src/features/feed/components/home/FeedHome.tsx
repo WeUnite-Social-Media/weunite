@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { PostCard } from "@/shared/types/post.types";
 import Post from "@/features/feed/components/post/Post";
 import PostSkeleton from "@/features/feed/components/post/PostSkeleton";
+import { TrendingHashtags } from "@/features/feed/components/home/TrendingHashtags";
 import { useGetPosts } from "@/features/feed/state/usePosts";
 import { useApiHealthStatus } from "@/app/providers/apiHealthContext";
 
@@ -83,6 +84,8 @@ export function FeedHome() {
   return (
     <div className="flex justify-center w-full">
       <div className="max-w-[700px] w-full flex flex-col items-center">
+        <TrendingHashtags posts={posts} />
+
         {posts.map((post: PostCard) => (
           <Post key={post.id} post={post} />
         ))}
