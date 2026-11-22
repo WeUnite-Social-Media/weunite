@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/app_exception.dart';
 import '../../../chat/domain/repositories/chat_repository.dart';
+import '../../domain/entities/mutual_followers.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
 
@@ -31,10 +32,25 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     try {
       final profile = await _repository.getProfile(userId);
       emit(state.copyWith(isLoading: false, profile: profile));
+      await _loadMutualFollowers();
     } on AppException catch (error) {
       emit(
         state.copyWith(isLoading: false, errorMessage: () => error.message),
       );
+    }
+  }
+
+  /// Loads "Seguido por ...". It is decoration, so a failure never replaces
+  /// the screen or raises a SnackBar: the row just stays hidden.
+  Future<void> _loadMutualFollowers() async {
+    try {
+      final mutual = await _repository.getMutualFollowers(userId);
+      if (isClosed) {
+        return;
+      }
+      emit(state.copyWith(mutualFollowers: mutual));
+    } catch (_) {
+      // Intentionally ignored, see above.
     }
   }
 
@@ -64,6 +80,8 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           profile: _applyFollow(profile, isFollowing: isFollowing),
         ),
       );
+      // Who I follow changed, so the mutual followers may have too.
+      await _loadMutualFollowers();
     } on AppException catch (error) {
       if (isClosed) {
         return;

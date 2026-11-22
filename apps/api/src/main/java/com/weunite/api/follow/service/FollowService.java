@@ -4,16 +4,25 @@ import com.weunite.api.common.exception.BusinessRuleException;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.follow.domain.Follow;
 import com.weunite.api.follow.dto.FollowDTO;
+import com.weunite.api.follow.dto.MutualFollowersDTO;
 import com.weunite.api.follow.exception.FollowNotFoundException;
 import com.weunite.api.follow.mapper.FollowMapper;
 import com.weunite.api.follow.repository.FollowRepository;
 import com.weunite.api.notifications.domain.NotificationType;
 import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.users.domain.User;
+import com.weunite.api.users.dto.UserDTO;
 import com.weunite.api.users.exception.UserNotFoundException;
+import com.weunite.api.users.mapper.UserMapper;
 import com.weunite.api.users.repository.UserRepository;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -27,16 +36,19 @@ public class FollowService {
   private final FollowRepository followRepository;
   private final FollowMapper followMapper;
   private final NotificationService notificationService;
+  private final UserMapper userMapper;
 
   public FollowService(
       UserRepository userRepository,
       FollowRepository followRepository,
       FollowMapper followMapper,
-      NotificationService notificationService) {
+      NotificationService notificationService,
+      UserMapper userMapper) {
     this.followMapper = followMapper;
     this.userRepository = userRepository;
     this.followRepository = followRepository;
     this.notificationService = notificationService;
+    this.userMapper = userMapper;
   }
 
   @Transactional
@@ -154,6 +166,48 @@ public class FollowService {
     followRepository.save(follow);
 
     return followMapper.toResponseDTO("Solicitação de seguimento recusada com sucesso!", follow);
+  }
+
+  @Transactional(readOnly = true)
+  public ResponseDTO<MutualFollowersDTO> getMutualFollowers(Long viewerId, Long targetId, int sample) {
+    String message = "Seguidores em comum consultados com sucesso!";
+
+    if (!userRepository.existsById(targetId)) {
+      throw new UserNotFoundException();
+    }
+
+    if (viewerId.equals(targetId)) {
+      return new ResponseDTO<>(message, new MutualFollowersDTO(0, List.of()));
+    }
+
+    Set<Long> viewerFollowingIds =
+        new HashSet<>(
+            followRepository.findFollowedIdsByFollowerId(viewerId, Follow.FollowStatus.ACCEPTED));
+
+    List<Long> mutualIds =
+        followRepository
+            .findFollowerIdsByFollowedId(targetId, Follow.FollowStatus.ACCEPTED)
+            .stream()
+            .filter(viewerFollowingIds::contains)
+            .toList();
+
+    int safeSample = Math.min(Math.max(sample, 0), 10);
+    List<Long> sampleIds = mutualIds.stream().limit(safeSample).toList();
+
+    Map<Long, User> usersById =
+        sampleIds.isEmpty()
+            ? Map.of()
+            : userRepository.findAllById(sampleIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+    List<UserDTO> users =
+        sampleIds.stream()
+            .map(usersById::get)
+            .filter(Objects::nonNull)
+            .map(userMapper::toUserDTO)
+            .toList();
+
+    return new ResponseDTO<>(message, new MutualFollowersDTO(mutualIds.size(), users));
   }
 
   private Pageable pageRequest(int page, int size) {

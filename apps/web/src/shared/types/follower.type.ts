@@ -26,3 +26,13 @@ export interface FollowAndUnfollow {
   followerId: number;
   followedId: number;
 }
+
+export interface MutualFollowers {
+  total: number;
+  users: User[];
+}
+
+export interface GetMutualFollowers {
+  targetUserId: number;
+  sample?: number;
+}

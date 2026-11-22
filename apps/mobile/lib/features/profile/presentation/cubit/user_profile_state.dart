@@ -8,6 +8,7 @@ class UserProfileState extends Equatable {
     this.isFollowPending = false,
     this.isConversationPending = false,
     this.actionErrorMessage,
+    this.mutualFollowers = const MutualFollowers(),
   });
 
   final bool isLoading;
@@ -24,6 +25,9 @@ class UserProfileState extends Equatable {
   /// [errorMessage], which replaces the whole screen.
   final String? actionErrorMessage;
 
+  /// "Seguido por ...": people I follow who also follow this profile.
+  final MutualFollowers mutualFollowers;
+
   UserProfileState copyWith({
     bool? isLoading,
     Profile? profile,
@@ -31,6 +35,7 @@ class UserProfileState extends Equatable {
     bool? isFollowPending,
     bool? isConversationPending,
     ValueGetter<String?>? actionErrorMessage,
+    MutualFollowers? mutualFollowers,
   }) {
     return UserProfileState(
       isLoading: isLoading ?? this.isLoading,
@@ -42,6 +47,7 @@ class UserProfileState extends Equatable {
       actionErrorMessage: actionErrorMessage != null
           ? actionErrorMessage()
           : this.actionErrorMessage,
+      mutualFollowers: mutualFollowers ?? this.mutualFollowers,
     );
   }
 
@@ -53,5 +59,6 @@ class UserProfileState extends Equatable {
         isFollowPending,
         isConversationPending,
         actionErrorMessage,
+        mutualFollowers,
       ];
 }

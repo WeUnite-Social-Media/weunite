@@ -12,6 +12,7 @@ import EditBanner from "@/features/profile/components/EditBanner";
 import EditProfile from "@/features/profile/components/EditProfile";
 import Followers from "@/features/profile/components/Followers";
 import Following from "@/features/profile/components/Following";
+import MutualFollowers from "@/features/profile/components/MutualFollowers";
 import { useFollowAction } from "@/features/profile/hooks/useFollowAction";
 import { useUserProfile } from "@/features/profile/hooks/useUserProfile";
 import {
@@ -358,6 +359,8 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
                 <span className="hover:cursor-pointer">Seguidores</span>
               </div>
             </div>
+
+            {!isOwnProfile && <MutualFollowers targetUserId={displayUserId} />}
           </div>
         </div>
       </>
@@ -464,6 +467,8 @@ export default function HeaderProfile({ profileUsername }: HeaderProfileProps) {
               <span className="hover:cursor-pointer">Seguidores</span>
             </div>
           </div>
+
+          {!isOwnProfile && <MutualFollowers targetUserId={displayUserId} />}
         </div>
       </div>
     </>

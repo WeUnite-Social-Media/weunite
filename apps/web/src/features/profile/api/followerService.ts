@@ -3,6 +3,7 @@ import type {
   GetFollowers,
   GetFollowing,
   GetFollow,
+  GetMutualFollowers,
 } from "@/shared/types/follower.type";
 import { instance as axios } from "@/shared/api/http";
 import { AxiosError } from "axios";
@@ -155,6 +156,33 @@ export const getFollowRequest = async (data: GetFollow) => {
       data: null,
       message: null,
       error: error.response?.data.message || "Erro ao consultar follow",
+    };
+  }
+};
+
+export const getMutualFollowersRequest = async ({
+  targetUserId,
+  sample = 3,
+}: GetMutualFollowers) => {
+  try {
+    const response = await axios.get(`/follow/mutual/${targetUserId}`, {
+      params: { sample },
+    });
+    return {
+      success: true,
+      data: response.data,
+      message:
+        response.data.message || "Seguidores em comum consultados com sucesso!",
+      error: null,
+    };
+  } catch (err) {
+    const error = err as AxiosError<{ message: string }>;
+    return {
+      success: false,
+      data: null,
+      message: null,
+      error:
+        error.response?.data.message || "Erro ao consultar seguidores em comum",
     };
   }
 };

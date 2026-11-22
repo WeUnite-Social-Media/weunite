@@ -28,6 +28,7 @@ This feature owns user and company profile surfaces on the web client in `apps/w
 - `state/useFollow.ts`
 - `components/EditProfile.tsx`
 - `components/HeaderProfile.tsx`
+- `components/MutualFollowers.tsx` ("seguido por quem voce segue", via `GET /follow/mutual/{id}`)
 
 ## Validation
 

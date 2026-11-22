@@ -5,6 +5,7 @@ import 'package:weunite_mobile/features/feed/domain/entities/post.dart';
 import 'package:weunite_mobile/features/feed/domain/repositories/feed_repository.dart';
 import 'package:weunite_mobile/features/opportunities/domain/entities/opportunity.dart';
 import 'package:weunite_mobile/features/opportunities/domain/repositories/opportunity_repository.dart';
+import 'package:weunite_mobile/features/profile/domain/entities/mutual_followers.dart';
 import 'package:weunite_mobile/features/profile/domain/entities/profile.dart';
 import 'package:weunite_mobile/features/profile/domain/repositories/profile_repository.dart';
 import 'package:weunite_mobile/features/search/presentation/cubit/search_cubit.dart';
@@ -36,6 +37,10 @@ Opportunity _opportunity(
 }
 
 class _FakeProfileRepository implements ProfileRepository {
+  @override
+  Future<MutualFollowers> getMutualFollowers(int userId) async =>
+      const MutualFollowers();
+
   List<Profile> users = const [
     Profile(id: 2, name: 'Ana Teste QA', username: 'anateste', role: 'ATHLETE'),
   ];

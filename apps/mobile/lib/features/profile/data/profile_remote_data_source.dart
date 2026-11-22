@@ -7,6 +7,8 @@ import '../../../core/contracts/user_dto.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/image_media_type.dart';
 import '../../../core/network/json_body.dart';
+import '../domain/entities/mutual_followers.dart';
+import 'profile_models.dart';
 import 'update_profile_models.dart';
 
 class ProfileRemoteDataSource {
@@ -95,6 +97,33 @@ class ProfileRemoteDataSource {
           ? body['data']! as Map<String, Object?>
           : body;
       return follow['status'] == 'ACCEPTED';
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
+  /// `GET /follow/mutual/{targetUserId}?sample=` — followers of the target
+  /// that the signed-in user also follows. The viewer comes from the JWT.
+  Future<MutualFollowers> getMutualFollowers(
+    int targetUserId, {
+    int sample = 3,
+  }) async {
+    try {
+      final response = await _dio.get<Object?>(
+        '/follow/mutual/$targetUserId',
+        queryParameters: {'sample': sample},
+      );
+      return decodeResponseData<MutualFollowers>(response.data, (data) {
+        final json = asJsonObject(data);
+        final users = (json['users'] as List<Object?>? ?? const [])
+            .map((item) => UserDto.fromJson(asJsonObject(item)))
+            .map((user) => user.toProfile(followersCount: 0, followingCount: 0))
+            .toList();
+        return MutualFollowers(
+          total: (json['total'] as num?)?.toInt() ?? 0,
+          users: users,
+        );
+      });
     } catch (error, stackTrace) {
       throw mapDioError(error, stackTrace);
     }

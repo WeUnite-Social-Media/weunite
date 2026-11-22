@@ -2,6 +2,8 @@ package com.weunite.api.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -10,12 +12,16 @@ import com.weunite.api.common.exception.BusinessRuleException;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.follow.domain.Follow;
 import com.weunite.api.follow.dto.FollowDTO;
+import com.weunite.api.follow.dto.MutualFollowersDTO;
 import com.weunite.api.follow.exception.FollowNotFoundException;
 import com.weunite.api.follow.mapper.FollowMapper;
 import com.weunite.api.follow.repository.FollowRepository;
 import com.weunite.api.follow.service.FollowService;
 import com.weunite.api.notifications.service.NotificationService;
 import com.weunite.api.users.domain.User;
+import com.weunite.api.users.dto.UserDTO;
+import com.weunite.api.users.exception.UserNotFoundException;
+import com.weunite.api.users.mapper.UserMapper;
 import com.weunite.api.users.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +42,7 @@ class FollowServiceTest {
   @Mock private FollowRepository followRepository;
   @Mock private FollowMapper followMapper;
   @Mock private NotificationService notificationService;
+  @Mock private UserMapper userMapper;
 
   @InjectMocks private FollowService followService;
 
@@ -122,5 +129,100 @@ class FollowServiceTest {
 
     assertEquals(3L, result.data());
     verify(followRepository).countByFollowedAndStatus(user, Follow.FollowStatus.ACCEPTED);
+  }
+
+  private User userWithId(Long id) {
+    User user = new User();
+    user.setId(id);
+    return user;
+  }
+
+  private UserDTO dtoFor(User user) {
+    return new UserDTO(
+        String.valueOf(user.getId()),
+        "n",
+        "u" + user.getId(),
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        null,
+        null);
+  }
+
+  @Test
+  @DisplayName("Should return only followers of the target that the viewer also follows")
+  void getMutualFollowersReturnsIntersection() {
+    // viewer (1) segue 10 e 20. Seguidores do alvo (5): 20, 30, 10 (ordem do repositorio)
+    when(userRepository.existsById(5L)).thenReturn(true);
+    when(followRepository.findFollowedIdsByFollowerId(1L, Follow.FollowStatus.ACCEPTED))
+        .thenReturn(List.of(10L, 20L));
+    when(followRepository.findFollowerIdsByFollowedId(5L, Follow.FollowStatus.ACCEPTED))
+        .thenReturn(List.of(20L, 30L, 10L));
+    User u20 = userWithId(20L);
+    User u10 = userWithId(10L);
+    when(userRepository.findAllById(List.of(20L, 10L))).thenReturn(List.of(u10, u20));
+    when(userMapper.toUserDTO(u20)).thenReturn(dtoFor(u20));
+    when(userMapper.toUserDTO(u10)).thenReturn(dtoFor(u10));
+
+    ResponseDTO<MutualFollowersDTO> result = followService.getMutualFollowers(1L, 5L, 3);
+
+    assertEquals(2, result.data().total());
+    assertEquals(List.of("20", "10"), result.data().users().stream().map(UserDTO::id).toList());
+  }
+
+  @Test
+  @DisplayName("Should count all mutual followers but only load the requested sample")
+  void getMutualFollowersLimitsSampleButKeepsTotal() {
+    when(userRepository.existsById(5L)).thenReturn(true);
+    when(followRepository.findFollowedIdsByFollowerId(1L, Follow.FollowStatus.ACCEPTED))
+        .thenReturn(List.of(10L, 20L, 30L));
+    when(followRepository.findFollowerIdsByFollowedId(5L, Follow.FollowStatus.ACCEPTED))
+        .thenReturn(List.of(30L, 20L, 10L));
+    User u30 = userWithId(30L);
+    when(userRepository.findAllById(List.of(30L))).thenReturn(List.of(u30));
+    when(userMapper.toUserDTO(u30)).thenReturn(dtoFor(u30));
+
+    ResponseDTO<MutualFollowersDTO> result = followService.getMutualFollowers(1L, 5L, 1);
+
+    assertEquals(3, result.data().total());
+    assertEquals(1, result.data().users().size());
+  }
+
+  @Test
+  @DisplayName("Should return empty result when there are no mutual followers")
+  void getMutualFollowersReturnsEmptyWhenNoIntersection() {
+    when(userRepository.existsById(5L)).thenReturn(true);
+    when(followRepository.findFollowedIdsByFollowerId(1L, Follow.FollowStatus.ACCEPTED))
+        .thenReturn(List.of(10L));
+    when(followRepository.findFollowerIdsByFollowedId(5L, Follow.FollowStatus.ACCEPTED))
+        .thenReturn(List.of(30L));
+
+    ResponseDTO<MutualFollowersDTO> result = followService.getMutualFollowers(1L, 5L, 3);
+
+    assertEquals(0, result.data().total());
+    assertEquals(List.of(), result.data().users());
+    verify(userRepository, never()).findAllById(any());
+  }
+
+  @Test
+  @DisplayName("Should return empty result when viewing own profile")
+  void getMutualFollowersReturnsEmptyForOwnProfile() {
+    when(userRepository.existsById(1L)).thenReturn(true);
+
+    ResponseDTO<MutualFollowersDTO> result = followService.getMutualFollowers(1L, 1L, 3);
+
+    assertEquals(0, result.data().total());
+    verifyNoInteractions(followRepository);
+  }
+
+  @Test
+  @DisplayName("Should throw when the target user does not exist")
+  void getMutualFollowersThrowsWhenTargetDoesNotExist() {
+    when(userRepository.existsById(99L)).thenReturn(false);
+
+    assertThrows(UserNotFoundException.class, () -> followService.getMutualFollowers(1L, 99L, 3));
   }
 }

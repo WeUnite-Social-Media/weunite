@@ -2,11 +2,14 @@ package com.weunite.api.follow.repository;
 
 import com.weunite.api.follow.domain.Follow;
 import com.weunite.api.users.domain.User;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface FollowRepository extends JpaRepository<Follow, Long> {
 
@@ -22,4 +25,16 @@ public interface FollowRepository extends JpaRepository<Follow, Long> {
   long countByFollowedAndStatus(User user, Follow.FollowStatus status);
 
   long countByFollowerAndStatus(User user, Follow.FollowStatus status);
+
+  @Query(
+      "select f.followed.id from Follow f "
+          + "where f.follower.id = :userId and f.status = :status")
+  List<Long> findFollowedIdsByFollowerId(
+      @Param("userId") Long userId, @Param("status") Follow.FollowStatus status);
+
+  @Query(
+      "select f.follower.id from Follow f "
+          + "where f.followed.id = :userId and f.status = :status order by f.id desc")
+  List<Long> findFollowerIdsByFollowedId(
+      @Param("userId") Long userId, @Param("status") Follow.FollowStatus status);
 }

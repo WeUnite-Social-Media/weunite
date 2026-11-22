@@ -10,6 +10,7 @@ import '../../domain/repositories/profile_repository.dart';
 import '../cubit/profile_posts_cubit.dart';
 import '../cubit/user_profile_cubit.dart';
 import '../widgets/about_profile.dart';
+import '../widgets/mutual_followers_row.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_posts_list.dart';
 import '../widgets/profile_tabs.dart';
@@ -124,6 +125,9 @@ class _UserProfileViewState extends State<_UserProfileView> {
                             ProfileHeader(
                               profile: state.profile!,
                               actions: const UserProfileActions(),
+                            ),
+                            MutualFollowersRow(
+                              mutualFollowers: state.mutualFollowers,
                             ),
                             // Same tab structure as my own profile: one
                             // section at a time, not everything stacked.

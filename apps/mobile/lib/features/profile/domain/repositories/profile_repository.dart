@@ -1,3 +1,4 @@
+import '../entities/mutual_followers.dart';
 import '../entities/profile.dart';
 
 abstract class ProfileRepository {
@@ -8,6 +9,9 @@ abstract class ProfileRepository {
   /// Users matching [query] by name or username. Follower counters are not
   /// fetched here (one request per user would be too costly for a search).
   Future<List<Profile>> searchUsers(String query);
+
+  /// Followers of [userId] that the signed-in user also follows.
+  Future<MutualFollowers> getMutualFollowers(int userId);
 
   /// Follows or unfollows [followedId] and returns the resulting state.
   Future<bool> toggleFollow({required int followedId});

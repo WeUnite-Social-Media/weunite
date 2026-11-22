@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.security.service.AuthenticatedUserService;
 import com.weunite.api.follow.dto.FollowDTO;
+import com.weunite.api.follow.dto.MutualFollowersDTO;
 import com.weunite.api.follow.exception.FollowNotFoundException;
 import com.weunite.api.follow.service.FollowService;
 import org.junit.jupiter.api.DisplayName;
@@ -85,5 +86,21 @@ class FollowControllerTest {
 
     assertSame(expected, result.getBody());
     verify(followService).declineFollowRequest(11L, 22L);
+  }
+
+  @Test
+  @DisplayName("Should use the authenticated user as viewer for mutual followers")
+  void getMutualFollowersUsesAuthenticatedViewer() {
+    Jwt jwt = mock(Jwt.class);
+    ResponseDTO<MutualFollowersDTO> expected = new ResponseDTO<>("ok", null);
+
+    when(authenticatedUserService.requireUserId(jwt)).thenReturn(11L);
+    when(followService.getMutualFollowers(11L, 22L, 3)).thenReturn(expected);
+
+    ResponseEntity<ResponseDTO<MutualFollowersDTO>> result =
+        followController.getMutualFollowers(jwt, 22L, 3);
+
+    assertSame(expected, result.getBody());
+    verify(followService).getMutualFollowers(11L, 22L, 3);
   }
 }

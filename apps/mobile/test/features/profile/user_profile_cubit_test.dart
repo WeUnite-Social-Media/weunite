@@ -3,6 +3,7 @@ import 'package:weunite_mobile/core/error/app_exception.dart';
 import 'package:weunite_mobile/features/chat/domain/entities/chat_realtime_event.dart';
 import 'package:weunite_mobile/features/chat/domain/entities/conversation.dart';
 import 'package:weunite_mobile/features/chat/domain/repositories/chat_repository.dart';
+import 'package:weunite_mobile/features/profile/domain/entities/mutual_followers.dart';
 import 'package:weunite_mobile/features/profile/domain/entities/profile.dart';
 import 'package:weunite_mobile/features/profile/domain/repositories/profile_repository.dart';
 import 'package:weunite_mobile/features/profile/presentation/cubit/user_profile_cubit.dart';
@@ -21,6 +22,16 @@ class _FakeProfileRepository implements ProfileRepository {
   bool toggleResult = true;
   AppException? toggleFailure;
   int toggleCalls = 0;
+  MutualFollowers mutual = const MutualFollowers();
+  bool mutualFails = false;
+
+  @override
+  Future<MutualFollowers> getMutualFollowers(int userId) async {
+    if (mutualFails) {
+      throw const AppException('falhou');
+    }
+    return mutual;
+  }
 
   @override
   Future<Profile> getProfile(int userId) async => profile;
@@ -160,6 +171,44 @@ void main() {
 
       expect(cubit.state.profile!.isFollowing, isFalse);
       expect(cubit.state.profile!.followersCount, 10);
+      await cubit.close();
+    });
+  });
+
+  group('UserProfileCubit mutual followers', () {
+    test('loads "seguido por" after the profile', () async {
+      final profiles = _FakeProfileRepository()
+        ..mutual = MutualFollowers(total: 4, users: [_profile()]);
+      final cubit = _cubit(profiles);
+
+      await cubit.load();
+
+      expect(cubit.state.mutualFollowers.total, 4);
+      expect(cubit.state.mutualFollowers.extra, 3);
+      await cubit.close();
+    });
+
+    test('a failure hides the row without breaking the profile', () async {
+      final profiles = _FakeProfileRepository()..mutualFails = true;
+      final cubit = _cubit(profiles);
+
+      await cubit.load();
+
+      expect(cubit.state.profile, isNotNull);
+      expect(cubit.state.errorMessage, isNull);
+      expect(cubit.state.mutualFollowers.isEmpty, isTrue);
+      await cubit.close();
+    });
+
+    test('reloads after following, since who I follow changed', () async {
+      final profiles = _FakeProfileRepository();
+      final cubit = _cubit(profiles);
+      await cubit.load();
+      profiles.mutual = MutualFollowers(total: 1, users: [_profile()]);
+
+      await cubit.toggleFollow();
+
+      expect(cubit.state.mutualFollowers.total, 1);
       await cubit.close();
     });
   });

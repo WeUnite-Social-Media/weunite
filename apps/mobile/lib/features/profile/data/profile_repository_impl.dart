@@ -1,5 +1,6 @@
 import '../../../core/contracts/user_dto.dart';
 import '../../../core/session/current_user_provider.dart';
+import '../domain/entities/mutual_followers.dart';
 import '../domain/entities/profile.dart';
 import '../domain/repositories/profile_repository.dart';
 import 'profile_models.dart';
@@ -64,6 +65,11 @@ class ProfileRepositoryImpl implements ProfileRepository {
     return users
         .map((user) => user.toProfile(followersCount: 0, followingCount: 0))
         .toList();
+  }
+
+  @override
+  Future<MutualFollowers> getMutualFollowers(int userId) {
+    return _remoteDataSource.getMutualFollowers(userId);
   }
 
   @override

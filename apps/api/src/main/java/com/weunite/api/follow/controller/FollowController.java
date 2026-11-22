@@ -3,6 +3,7 @@ package com.weunite.api.follow.controller;
 import com.weunite.api.common.response.ResponseDTO;
 import com.weunite.api.common.security.service.AuthenticatedUserService;
 import com.weunite.api.follow.dto.FollowDTO;
+import com.weunite.api.follow.dto.MutualFollowersDTO;
 import com.weunite.api.follow.exception.FollowNotFoundException;
 import com.weunite.api.follow.service.FollowService;
 import java.util.List;
@@ -74,6 +75,17 @@ public class FollowController {
   @GetMapping("/following/{userId}/count")
   public ResponseEntity<ResponseDTO<Long>> countFollowing(@PathVariable Long userId) {
     ResponseDTO<Long> result = followService.countFollowing(userId);
+    return ResponseEntity.status(HttpStatus.OK).body(result);
+  }
+
+  @GetMapping("/mutual/{targetUserId}")
+  public ResponseEntity<ResponseDTO<MutualFollowersDTO>> getMutualFollowers(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long targetUserId,
+      @RequestParam(defaultValue = "3") int sample) {
+    Long viewerId = authenticatedUserService.requireUserId(jwt);
+    ResponseDTO<MutualFollowersDTO> result =
+        followService.getMutualFollowers(viewerId, targetUserId, sample);
     return ResponseEntity.status(HttpStatus.OK).body(result);
   }
 

@@ -12,6 +12,7 @@ import {
   getFollowingCountRequest,
   getFollowingRequest,
   getFollowRequest,
+  getMutualFollowersRequest,
 } from "@/features/profile/api/followerService";
 import { toast } from "sonner";
 import type { Follower } from "@/shared/types/follower.type";
@@ -27,6 +28,9 @@ export const followKeys = {
     [...followKeys.all, "count", "followers", userId] as const,
   followingCount: (userId: number) =>
     [...followKeys.all, "count", "following", userId] as const,
+  mutualAll: () => [...followKeys.all, "mutual"] as const,
+  mutual: (targetUserId: number) =>
+    [...followKeys.mutualAll(), targetUserId] as const,
   detail: (followerId: number, followedId: number) =>
     [...followKeys.all, "detail", followerId, followedId] as const,
 };
@@ -98,6 +102,8 @@ export const useFollowAndUnfollow = () => {
         queryClient.invalidateQueries({
           queryKey: followKeys.detail(followerId, followedId),
         });
+        // Quem eu sigo mudou, entao "seguido por quem eu sigo" muda em qualquer perfil.
+        queryClient.invalidateQueries({ queryKey: followKeys.mutualAll() });
       } else {
         toast.error(result.error);
       }
@@ -209,5 +215,13 @@ export const useGetFollow = (followerId: number, followedId: number) => {
     queryKey: followKeys.detail(followerId, followedId),
     queryFn: () => getFollowRequest({ followerId, followedId }),
     enabled: !isNaN(followerId) && !isNaN(followedId),
+  });
+};
+
+export const useGetMutualFollowers = (targetUserId: number, enabled = true) => {
+  return useQuery({
+    queryKey: followKeys.mutual(targetUserId),
+    queryFn: () => getMutualFollowersRequest({ targetUserId }),
+    enabled: enabled && !!targetUserId,
   });
 };

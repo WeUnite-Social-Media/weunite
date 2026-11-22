@@ -50,6 +50,62 @@ void main() {
     });
   });
 
+  group('ProfileRepositoryImpl.getMutualFollowers', () {
+    test('parses the total and the sample of users', () async {
+      final repository = ProfileRepositoryImpl(
+        remoteDataSource: ProfileRemoteDataSource(
+          _dio({
+            '/api/follow/mutual/7': _Response(
+              responseDto({
+                'total': 4,
+                'users': [userJson],
+              }),
+            ),
+          }),
+        ),
+        currentUserProvider: _FakeCurrentUserProvider(1),
+      );
+
+      final mutual = await repository.getMutualFollowers(7);
+
+      expect(mutual.total, 4);
+      expect(mutual.users.single.username, 'matheus');
+      expect(mutual.extra, 3);
+      expect(mutual.isEmpty, isFalse);
+    });
+
+    test('is empty when nobody is in common', () async {
+      final repository = ProfileRepositoryImpl(
+        remoteDataSource: ProfileRemoteDataSource(
+          _dio({
+            '/api/follow/mutual/7': _Response(
+              responseDto({'total': 0, 'users': <Object?>[]}),
+            ),
+          }),
+        ),
+        currentUserProvider: _FakeCurrentUserProvider(1),
+      );
+
+      final mutual = await repository.getMutualFollowers(7);
+
+      expect(mutual.isEmpty, isTrue);
+    });
+
+    test('rethrows as AppException when the request fails', () async {
+      final repository = ProfileRepositoryImpl(
+        remoteDataSource: ProfileRemoteDataSource(
+          _dio({'/api/follow/mutual/7': _Response(null, statusCode: 500)}),
+        ),
+        currentUserProvider: _FakeCurrentUserProvider(1),
+      );
+
+      await expectLater(
+        () => repository.getMutualFollowers(7),
+        throwsA(isA<AppException>()),
+      );
+    });
+  });
+
   group('ProfileRepositoryImpl.getProfileByUsername', () {
     test(
         'looks the user up by username, then fetches follow counts for '

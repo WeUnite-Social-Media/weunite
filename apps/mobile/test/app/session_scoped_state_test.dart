@@ -17,6 +17,7 @@ import 'package:weunite_mobile/features/notifications/domain/entities/app_notifi
 import 'package:weunite_mobile/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:weunite_mobile/features/opportunities/domain/entities/opportunity.dart';
 import 'package:weunite_mobile/features/opportunities/domain/repositories/opportunity_repository.dart';
+import 'package:weunite_mobile/features/profile/domain/entities/mutual_followers.dart';
 import 'package:weunite_mobile/features/profile/domain/entities/profile.dart';
 import 'package:weunite_mobile/features/profile/domain/repositories/profile_repository.dart';
 import 'package:weunite_mobile/features/reporting/domain/entities/report_entity_type.dart';
@@ -260,6 +261,10 @@ class _FakeChatRepository implements ChatRepository {
 }
 
 class _FakeProfileRepository implements ProfileRepository {
+  @override
+  Future<MutualFollowers> getMutualFollowers(int userId) async =>
+      const MutualFollowers();
+
   @override
   Future<Profile> getProfileByUsername(String username) async {
     throw const AppException('Nao implementado.');
