@@ -11,6 +11,7 @@ import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { useCreatePost } from "@/features/feed/state/usePosts";
+import { useTextHistory } from "@/features/feed/hook/useTextHistory";
 import { createPostSchema } from "@/features/feed/schemas/post/createPost.schema";
 import { useAuthStore } from "@/features/auth/stores/useAuthStore";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,12 +32,39 @@ export function CreatePost({ open, onOpenChange }: CreatePostProps) {
     },
   });
 
+  const { record, undo, clear, canUndo } = useTextHistory();
   const { user } = useAuthStore();
 
   const createPostMutation = useCreatePost();
+  const isSubmitting = createPostMutation.isPending;
+
+  function handleUndo(): void {
+    const previousText = undo();
+
+    if (previousText !== undefined) {
+      form.setValue("text", previousText, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      form.setFocus("text");
+    }
+  }
+
+  function handleOpenChange(nextOpen: boolean): void {
+    if (!nextOpen && isSubmitting) {
+      return;
+    }
+
+    if (!nextOpen) {
+      form.reset();
+      clear();
+    }
+
+    onOpenChange?.(nextOpen);
+  }
 
   async function onSubmit(values: z.infer<typeof createPostSchema>) {
-    if (!user?.id) return;
+    if (!user?.id || isSubmitting) return;
 
     const result = await createPostMutation.mutateAsync({
       data: values,
@@ -45,14 +73,13 @@ export function CreatePost({ open, onOpenChange }: CreatePostProps) {
 
     if (result.success) {
       form.reset();
+      clear();
       onOpenChange?.(false);
     }
   }
 
-  const isSubmitting = createPostMutation.isPending;
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Criar nova publicação</DialogTitle>
@@ -72,6 +99,15 @@ export function CreatePost({ open, onOpenChange }: CreatePostProps) {
                     placeholder="Escreva sua mensagem aqui..."
                     className="min-h-[150px]"
                     {...field}
+                    disabled={isSubmitting}
+                    onChange={(event) => {
+                      const nextText = event.target.value;
+
+                      if (nextText !== field.value) {
+                        record(field.value);
+                        field.onChange(nextText);
+                      }
+                    }}
                   />
                 )}
               />
@@ -86,6 +122,7 @@ export function CreatePost({ open, onOpenChange }: CreatePostProps) {
                     id="post-image"
                     name={name}
                     type="file"
+                    disabled={isSubmitting}
                     accept="image/*, video/*"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -98,8 +135,22 @@ export function CreatePost({ open, onOpenChange }: CreatePostProps) {
             </div>
           </div>
           <DialogFooter className="mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleUndo}
+              disabled={!canUndo || isSubmitting}
+            >
+              Desfazer
+            </Button>
+
             <DialogClose asChild>
-              <Button variant="outline" className="hover:cursor-pointer">
+              <Button
+                type="button"
+                variant="outline"
+                className="hover:cursor-pointer"
+                disabled={isSubmitting}
+              >
                 Cancelar
               </Button>
             </DialogClose>

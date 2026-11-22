@@ -7,6 +7,7 @@ This feature owns the home feed, posts, comments, and likes on the web client in
 - Render the signed-in home feed and post creation/editing flows.
 - Hold post, comment, and like API adapters plus feature-local query state.
 - Own feed-specific composition such as the home layout and post/comment components.
+- Own browser-local draft text undo history, grouped by typing pauses and bounded by the stack capacity.
 
 ## Does not own
 
@@ -27,6 +28,14 @@ This feature owns the home feed, posts, comments, and likes on the web client in
 - `components/home/FeedHome.tsx`
 - `components/post/Post.tsx`
 - `components/post/CreatePost.tsx`
+- `hook/useTextHistory.ts`: draft text history and undo availability.
+- `lib/Stack.ts`: bounded LIFO storage for draft snapshots.
+
+## Draft history rules
+
+- Record the previous text before updating the form; restoring a snapshot must not record another edit.
+- Clear draft fields and history when the creation dialog closes or a publication succeeds; preserve both after a failed submission.
+- Disable draft editing and undo while publishing, and keep history browser-local.
 
 ## Validation
 
