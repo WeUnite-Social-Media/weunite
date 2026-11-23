@@ -124,6 +124,25 @@ export default function Post({ post }: { post: PostCard }) {
     navigate(`/profile/${post.user.username}`);
   };
 
+  const handlePostClick = () => {
+    navigate(`/post/${post.id}`);
+  };
+
+  const handleShareClick = async () => {
+    const url = `${window.location.origin}/post/${post.id}`;
+
+    if (navigator.share) {
+      await navigator.share({
+        title: "Publicação no WeUnite",
+        text: postText || undefined,
+        url,
+      });
+      return;
+    }
+
+    await navigator.clipboard.writeText(url);
+  };
+
   return (
     <>
       <Comments
@@ -230,14 +249,20 @@ export default function Post({ post }: { post: PostCard }) {
 
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuItem className="hover:cursor-pointer">
+                  <DropdownMenuItem
+                    className="hover:cursor-pointer"
+                    onClick={() => void handleShareClick()}
+                  >
                     <Share className="mr-2 h-4 w-4" />
                     Compartilhar
                   </DropdownMenuItem>
                 </>
               ) : (
                 <>
-                  <DropdownMenuItem className="hover:cursor-pointer">
+                  <DropdownMenuItem
+                    className="hover:cursor-pointer"
+                    onClick={() => void handleShareClick()}
+                  >
                     <Share className="mr-2 h-4 w-4" />
                     Compartilhar
                   </DropdownMenuItem>
@@ -257,7 +282,10 @@ export default function Post({ post }: { post: PostCard }) {
           </DropdownMenu>
         </CardHeader>
 
-        <CardContent className="mt-[-18px] w-full">
+        <CardContent
+          className="mt-[-18px] w-full cursor-pointer"
+          onClick={handlePostClick}
+        >
           <div className="flex w-full items-center justify-center">
             {post.imageUrl ? (
               <img

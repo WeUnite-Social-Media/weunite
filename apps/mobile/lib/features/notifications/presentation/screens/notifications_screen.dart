@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/async_state_view.dart';
-import '../../../feed/presentation/widgets/comments_sheet.dart';
 import '../../../profile/presentation/navigation/open_user_profile.dart';
 import '../../domain/entities/app_notification.dart';
 import '../../domain/entities/notification_filter.dart';
@@ -180,27 +178,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  /// The mobile app has no post-detail route yet (`/posts/:postId` is a
-  /// placeholder, see `lib/app/router.dart`), unlike the web app, which opens
-  /// a Comments modal in place. As an adaptation, we navigate to the Home
-  /// tab and reopen the equivalent comments sheet there a frame later (the
-  /// current context, on the pushed `/notifications` route, is about to be
-  /// unmounted by the `go` call). If the sheet can't be shown for any
-  /// reason, staying on `/feed` is still the documented fallback.
+  /// Post notifications open the dedicated detail route.
   void _openPostComments(BuildContext context, int postId) {
-    final router = GoRouter.of(context);
-    router.go('/feed');
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      final homeContext = router.routerDelegate.navigatorKey.currentContext;
-      if (homeContext == null) {
-        return;
-      }
-      try {
-        showCommentsSheet(homeContext, postId: postId);
-      } on Object {
-        // Fallback already satisfied: we're on /feed.
-      }
-    });
+    context.push('/posts/$postId');
   }
 }
 

@@ -2,7 +2,9 @@ import 'package:json_annotation/json_annotation.dart';
 
 import '../../../core/contracts/json_converters.dart';
 import '../../../core/contracts/user_summary_dto.dart';
+import '../../../core/contracts/user_dto.dart';
 import '../domain/entities/post.dart';
+import 'comment_models.dart';
 
 part 'feed_models.g.dart';
 
@@ -49,6 +51,59 @@ class FeedPostSummaryDto {
       likedByViewer: likedByViewer,
     );
   }
+}
+
+@JsonSerializable()
+class PostDetailDto {
+  const PostDetailDto({
+    required this.id,
+    this.text,
+    this.imageUrl,
+    required this.likes,
+    required this.comments,
+    required this.createdAt,
+    required this.user,
+  });
+
+  factory PostDetailDto.fromJson(Map<String, dynamic> json) =>
+      _$PostDetailDtoFromJson(json);
+
+  @StringIdConverter()
+  final int id;
+  final String? text;
+  final String? imageUrl;
+  final List<PostLikeDto> likes;
+  final List<CommentDto> comments;
+  final DateTime createdAt;
+  final UserDto user;
+
+  Post toEntity({required int viewerId}) {
+    return Post(
+      id: id,
+      content: text,
+      authorId: user.id,
+      authorName: user.name,
+      authorUsername: user.username,
+      authorAvatar: user.profileImg,
+      mediaUrl: imageUrl,
+      createdAt: createdAt,
+      likesCount: likes.length,
+      commentsCount: comments.length,
+      likedByViewer: likes.any((like) => like.user.id == viewerId),
+    );
+  }
+}
+
+@JsonSerializable()
+class PostLikeDto {
+  const PostLikeDto({required this.id, required this.user});
+
+  factory PostLikeDto.fromJson(Map<String, dynamic> json) =>
+      _$PostLikeDtoFromJson(json);
+
+  @StringIdConverter()
+  final int id;
+  final UserDto user;
 }
 
 /// Request body for `POST /posts/create/{userId}` (openapi:

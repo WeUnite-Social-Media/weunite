@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../feed/presentation/widgets/comments_sheet.dart';
 import '../../../feed/presentation/widgets/post_card.dart';
@@ -58,6 +59,7 @@ class ProfilePostsList extends StatelessWidget {
                       .read<ProfilePostsCubit>()
                       .toggleLike(postId: post.id),
                   onComments: () => showCommentsSheet(context, postId: post.id),
+                  onOpen: () => context.push('/posts/${post.id}'),
                 ),
                 const SizedBox(height: 12),
               ],

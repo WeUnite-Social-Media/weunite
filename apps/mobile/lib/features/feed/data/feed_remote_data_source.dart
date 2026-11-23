@@ -14,6 +14,18 @@ class FeedRemoteDataSource {
 
   final Dio _dio;
 
+  Future<PostDetailDto> getPost({required int postId}) async {
+    try {
+      final response = await _dio.get<Object?>('/posts/get/$postId');
+      return decodeResponseData(
+        response.data,
+        (data) => PostDetailDto.fromJson(asJsonObject(data)),
+      );
+    } catch (error, stackTrace) {
+      throw mapDioError(error, stackTrace);
+    }
+  }
+
   Future<List<FeedPostSummaryDto>> getTimeline({int page = 0}) async {
     try {
       final response = await _dio.get<Object?>(

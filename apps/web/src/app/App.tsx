@@ -11,6 +11,8 @@ import { WebSocketProvider } from "@/app/providers/WebSocketProvider";
 import { ApiHealthProvider } from "@/app/providers/ApiHealthProvider";
 import { TermsOfUsePage } from "@/features/legal/pages/TermsOfUsePage";
 import { OnboardingController } from "@/features/onboarding/components/OnboardingController";
+import { PrivateRoutes } from "@/app/routes/PrivateRoutes";
+import { PostDetailPage } from "@/features/feed/pages/PostDetailPage";
 
 function App() {
   return (
@@ -21,6 +23,9 @@ function App() {
           <Routes>
             <Route path="/auth/*" element={<AuthRoutes />} />
             <Route path="/home/*" element={<HomeRoutes />} />
+            <Route element={<PrivateRoutes />}>
+              <Route path="/post/:postId" element={<PostDetailPage />} />
+            </Route>
             <Route path="/profile/*" element={<ProfileRoutes />} />
             <Route path="/opportunity/*" element={<OpportunityRoutes />} />
             <Route path="/chat/*" element={<ChatRoutes />} />

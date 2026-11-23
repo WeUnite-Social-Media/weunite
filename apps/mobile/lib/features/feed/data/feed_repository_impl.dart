@@ -15,6 +15,14 @@ class FeedRepositoryImpl implements FeedRepository {
   final CurrentUserProvider _currentUserProvider;
 
   @override
+  Future<Post> getPost({required int postId}) async {
+    final post = await _remoteDataSource.getPost(postId: postId);
+    return post.toEntity(
+      viewerId: _currentUserProvider.requireUserId(),
+    );
+  }
+
+  @override
   Future<List<Post>> getTimeline({int page = 0}) async {
     final posts = await _remoteDataSource.getTimeline(page: page);
     return posts.map((post) => post.toEntity()).toList();

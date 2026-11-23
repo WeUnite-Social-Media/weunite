@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/widgets/async_state_view.dart';
 import '../../../search/presentation/widgets/home_search_bar.dart';
@@ -93,6 +94,7 @@ class _FeedScreenState extends State<FeedScreen> {
                               ),
                           onComments: () =>
                               showCommentsSheet(context, postId: post.id),
+                          onOpen: () => context.push('/posts/${post.id}'),
                         );
                       },
                     ),

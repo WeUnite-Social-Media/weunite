@@ -2,6 +2,9 @@ import '../entities/comment.dart';
 import '../entities/post.dart';
 
 abstract class FeedRepository {
+  /// The full representation of one post, used by the post-detail route.
+  Future<Post> getPost({required int postId});
+
   Future<List<Post>> getTimeline({int page = 0});
 
   /// Posts authored by the signed-in user, newest first.

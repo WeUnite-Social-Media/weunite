@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../feed/domain/repositories/feed_repository.dart';
 import '../../../feed/presentation/widgets/comments_sheet.dart';
@@ -115,6 +116,7 @@ class _SearchViewState extends State<_SearchView> {
                       post: post,
                       onComments: () =>
                           showCommentsSheet(context, postId: post.id),
+                      onOpen: () => context.push('/posts/${post.id}'),
                     ),
                   ),
               ],

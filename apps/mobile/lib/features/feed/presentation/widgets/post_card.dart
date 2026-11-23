@@ -20,6 +20,7 @@ class PostCard extends StatelessWidget {
     required this.post,
     this.onLike,
     this.onComments,
+    this.onOpen,
     this.enableAuthorNavigation = true,
     super.key,
   });
@@ -27,6 +28,7 @@ class PostCard extends StatelessWidget {
   final Post post;
   final VoidCallback? onLike;
   final VoidCallback? onComments;
+  final VoidCallback? onOpen;
 
   /// Tapping the author's avatar or name opens their profile. Disable it
   /// where the list already belongs to that author's profile.
@@ -43,7 +45,9 @@ class PostCard extends StatelessWidget {
     final currentUserId = context.watch<AuthCubit>().state.user?.id;
     final isOwner = post.authorId != null && post.authorId == currentUserId;
     return WeUniteCard(
-      child: Column(
+      child: InkWell(
+        onTap: onOpen,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
@@ -93,6 +97,7 @@ class PostCard extends StatelessWidget {
                               style: TextStyle(color: AppColors.destructive),
                             ),
                           ],
+                          ),
                         ),
                       ),
                     ],
